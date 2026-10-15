@@ -530,6 +530,7 @@ public sealed partial class StudioForm : Form
     /** Menu shortcuts work anywhere; text input and the Shortcuts window suppress them. */
     private void HandleShortcuts()
     {
+        ClaimAiKeyboard();
         if (ShortcutInput.Pressed(ShortcutActions.NewProject)) projectDialog = true;
         if (ShortcutInput.Pressed(ShortcutActions.OpenProject)) OpenProjectDialog();
         if (ShortcutInput.Pressed(ShortcutActions.Undo)) UndoActive();
@@ -537,6 +538,7 @@ public sealed partial class StudioForm : Form
         if (ShortcutInput.Pressed(ShortcutActions.SaveProject)) SaveActiveDocument();
         HandleNavigationShortcuts();
         HandleLayoutShortcuts();
+        HandleAiShortcuts();
         if (!workspace.CanEdit) return;
         if (ShortcutInput.Pressed(ShortcutActions.BuildPackages)) workspace.Run(() => workspace.Build());
         if (ShortcutInput.Pressed(ShortcutActions.BuildAndInstall)) InstallMod();

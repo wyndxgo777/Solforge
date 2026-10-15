@@ -42,6 +42,7 @@ public sealed partial class StudioForm
             ImGui.EndMenu();
         }
         if (ImGui.MenuItem("Asset browser drawer", ShortcutInput.Text(ShortcutActions.ToggleBrowser))) ToggleBrowserDrawer();
+        if (ImGui.MenuItem("AI workspace", ShortcutInput.Text(ShortcutActions.OpenAiWorkspace))) OpenAiWorkspace();
         ImGui.Separator();
         DrawLayoutMenu();
         ImGui.EndMenu();
