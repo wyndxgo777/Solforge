@@ -103,6 +103,30 @@ try
             "a parallel bound of 1 falls back to serial reads (Phase 06)");
     }
 
+    // A drive that drops out: the read seam fails like ERROR_NOT_READY, and the retry reopens the file.
+    using (var catalog = PackageCatalog.Open(install, cacheOptions: options))
+    {
+        var notReady = new IOException("The device is not ready.", unchecked((int)0x80070015));
+        int calls = 0, failing = 1;
+        catalog.BlockRead = (handle, buffer, offset) =>
+            ++calls <= failing ? throw notReady : RandomAccess.Read(handle, buffer, offset);
+        Check(catalog.ReadOriginal(tags[0]).AsSpan().SequenceEqual(serial[0]) && calls == 2
+            && catalog.ReadStatistics.FileOpens == 2, "a read that fails once with NOT_READY reopens its file and returns the right bytes");
+        var budget = PackageIo.RetryBudget;
+        PackageIo.RetryBudget = TimeSpan.FromMilliseconds(300);
+        calls = 0; failing = int.MaxValue;
+        try { catalog.ReadOriginal(tags[1]); Check(false, "a drive that stays down reports a device error"); }
+        catch (PackageDeviceException error)
+        {
+            Check(PackageIo.IsDeviceError(error) && error.Drive.Length != 0 && error.Message.StartsWith("Drive ", StringComparison.Ordinal),
+                "a drive that stays down reports a device error that names the drive");
+        }
+        finally { PackageIo.RetryBudget = budget; }
+        calls = 0; failing = 0;
+        Check(catalog.ReadOriginal(tags[1]).AsSpan().SequenceEqual(serial[1]),
+            "a failed read caches nothing; the next read returns the right bytes");
+    }
+
     // Phase 08: mock chunk append and entry-table update into a project delta; the source package is only read.
     static string Sha256(string path) => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(path)));
     string sourceHash = Sha256(first);

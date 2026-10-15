@@ -104,8 +104,19 @@ internal sealed class PackageFile
         }
     }
 
-    /** Every requested byte must exist; a short read cannot become a valid tag. */
+    /** Every requested byte must exist; a short read cannot become a valid tag. A device error reopens and retries. */
     internal static byte[] ReadAt(string path, long offset, int count)
+    {
+        long started = 0;
+        for (int attempt = 0; ; attempt++)
+        {
+            try { return ReadOnce(path, offset, count); }
+            catch (IOException error) when (PackageIo.IsDeviceError(error))
+            { if (!PackageIo.Backoff(ref started, attempt)) throw new PackageDeviceException(path, error); }
+        }
+    }
+
+    private static byte[] ReadOnce(string path, long offset, int count)
     {
         using var file = File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.Read);
         long length = RandomAccess.GetLength(file);
