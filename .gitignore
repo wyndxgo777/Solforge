@@ -22,3 +22,23 @@ __pycache__/
 /captures/
 /logs/
 /.local/
+
+# Game data (Phase 01). Nothing from a game installation is committed.
+*.pkg
+*.bin
+*.bik
+*.wem
+*.bnk
+*.pck
+*.usm
+oo2core*.dll
+package_keys*
+destiny*.exe
+# Extracted dumps.
+/dumps/
+/extracted/
+/unpacked/
+/rip/
+/exports/
+# Studio's own generated codebook table (packed from libvorbis/aoTuV books), not game data.
+!src/SunriseStudio.Audio/Resources/wwise-vorbis-codebooks.bin

@@ -197,3 +197,22 @@ WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ```
+
+## Repository components outside the exe
+
+These are part of the Solforge repository but not of `Sunrise Studio.exe`.
+
+| component | version | license | where | notes |
+|---|---|---|---|---|
+| Sunrise Blender add-on (stanuwu/SunriseBlenderPlugin) | 1.13.19, upstream e0b5bc6 | GPL-3.0 | `blender/` | Full text in `blender/LICENSE`. A separate Blender add-on that exchanges files with Studio; no add-on code is compiled into the exe. Changes to `blender/` stay GPL-3.0 and must keep that file. |
+| Parhelion (KyleThmpsn/sundial, crates/parhelion) | 0.5.2, checked at 0bda0c5 | GPL-3.0-only | not in the repository | Consulted as a reference. Porting its code into Solforge would make the combined program GPL-3.0-only and needs its notices here. Its dependencies include tiger-pkg 0.21, egui 0.31 and image 0.25. |
+
+## Provenance
+
+Sunrise Studio upstream (stanuwu/SunriseStudio at 007dd7a) has no license file, and GitHub reports
+no license for it. Its README calls it free and open source but grants no written license. Until
+upstream adds one, Studio's own code is used under the upstream author's terms, not under any
+license listed here.
+
+No game data is in this repository. Packages, package keys, the Oodle library and other files from
+a game installation are read from the user's installation at runtime; `.gitignore` refuses them.
