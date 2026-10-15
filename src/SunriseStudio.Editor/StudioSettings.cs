@@ -27,6 +27,9 @@ public sealed class StudioSettings
     /** Kept as raw JSON so a damaged section falls back per action instead of resetting every preference. */
     public JsonElement? Shortcuts { get; set; }
     public JsonElement? Layout { get; set; }
+    /** AI workspace: folders added for the engines by hand, and found folders the user switched off. */
+    public List<string> AiFolders { get; set; } = [];
+    public List<string> AiHiddenFolders { get; set; } = [];
     /** Editors shown in their own windows, with each window's screen bounds. */
     public List<StudioPopoutState> Popouts { get; set; } = [];
 
@@ -44,6 +47,8 @@ public sealed class StudioSettings
             settings.RecentProjects ??= [];
             settings.SunrisePath ??= "";
             settings.KeySource ??= "";
+            settings.AiFolders ??= [];
+            settings.AiHiddenFolders ??= [];
             settings.Popouts = settings.Popouts?.Where(popout => popout is not null && Enum.IsDefined(popout.Panel)
                 && popout.Panel != StudioPanelKind.Empty).DistinctBy(popout => popout.Panel).ToList() ?? [];
             if (!Enum.IsDefined(settings.LightingMode)) settings.LightingMode = NativeLightingMode.Studio;

@@ -23,6 +23,8 @@ public interface ISolforgeHost
     IReadOnlyList<VisibleObject> Visible { get; }
     Task<IReadOnlyList<ObjectEntry>> ObjectsAsync(string query, CancellationToken cancel);
     Task<JsonObject?> GetObjectAsync(string id, CancellationToken cancel);
+    /** Everything Solforge has open (get_open_documents), read on the UI thread. */
+    Task<JsonObject> GetOpenDocumentsAsync(CancellationToken cancel);
     Task<byte[]?> ScreenshotAsync(string? objectId, bool labels, CancellationToken cancel);
     Task<JsonObject?> GetTagAsync(uint hash, CancellationToken cancel);
     Task<JsonObject?> GetPackageEntryAsync(string id, CancellationToken cancel);
@@ -38,8 +40,10 @@ public static class SolforgeTools
     public const string Instructions =
         "Solforge is the Project Sol game editor. The user's viewport labels (for example " +
         "'Botza District / Static mesh 7489 - Last city crater [182]') are exact names. When the user says " +
-        "'this', 'that one' or 'the one I just clicked', call get_context or get_attention_log first. Resolve " +
-        "spoken names with find_object, then get_object for details. Action tools need the user's approve click.";
+        "'this', 'that one', 'here' or 'the one I just clicked', call get_context or get_attention_log first, and " +
+        "get_open_documents for the open map, asset, inspector values, mission script, tag diff, project changes and build " +
+        "status, before searching files. Resolve spoken names with find_object, then get_object for details. Action tools " +
+        "need the user's approve click.";
 
     public static IReadOnlyList<McpTool> Create(ISolforgeHost host)
     {
@@ -62,8 +66,12 @@ public static class SolforgeTools
         return
         [
             Read("get_context", "What the user is looking at now: hovered and selected objects, camera position and zone, " +
-                "open editor and file, active map and mission, pinned objects.", Schema(),
+                "open editor and file, active map and mission, pinned objects, and a short list of open documents.", Schema(),
                 (_, _) => Task.FromResult(McpToolResult.Text(host.ContextJson))),
+            Read("get_open_documents", "Everything Solforge has open right now: map and mission, the open asset (tag, type, package, " +
+                "name) with its inspector values, the selected objects' property values, the open mission script, the open tag " +
+                "diff, the project change list and the build and notice status.", Schema(),
+                async (_, cancel) => McpToolResult.Json(await host.GetOpenDocumentsAsync(cancel).ConfigureAwait(false))),
             Read("find_object", "Fuzzy-resolve a spoken name ('static mesh 7489', 'last city crater', '[182]', a tag hash) against " +
                 "viewport labels, the Object tree and the asset index of the open map. Returns ranked matches.",
                 Schema(("query", "string", "The name as the user said it", true), ("limit", "integer", "Most matches to return (default 10)", false)),

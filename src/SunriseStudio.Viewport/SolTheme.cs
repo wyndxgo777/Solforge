@@ -373,6 +373,17 @@ public static unsafe class SolTheme
         return clicked;
     }
 
+    /** The width PrimaryButton gives the label, for laying out a row before drawing it. */
+    public static float PrimaryButtonWidth(string label)
+    {
+        int split = label.IndexOf("##", StringComparison.Ordinal);
+        string shown = (split < 0 ? label : label[..split]).ToUpperInvariant();
+        bool font = PushFont(ButtonFont);
+        float width = TrackedWidth(shown, ImGui.GetFontSize() * .1f) + 32 * Scale;
+        if (font) ImGui.PopFont();
+        return width;
+    }
+
     /** A small mode button (Object / Asset): no fill when active, a sun underline instead. */
     public static bool ModeButton(string label, bool active)
     {

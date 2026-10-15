@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Solforge Phase 47B: solforge-mcp.exe, the stdio shim for MCP clients that only speak stdio.
-       It links the discovery reader instead of referencing Solforge.Mcp, so a trimmed publish stays small. -->
+       It links the discovery reader and the context summary instead of referencing Solforge.Mcp, so a trimmed publish stays small. -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net9.0</TargetFramework>
@@ -11,5 +11,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../Solforge.Mcp/McpDiscovery.cs" Link="McpDiscovery.cs" />
+    <Compile Include="../Solforge.Mcp/ContextSummary.cs" Link="ContextSummary.cs" />
   </ItemGroup>
 </Project>
