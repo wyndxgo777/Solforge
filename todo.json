@@ -136,8 +136,8 @@
     {
       "id": "19",
       "title": "Checker Phase: Project & Overlay Engine Audit",
-      "status": "partial",
-      "notes": "tests/SunriseStudio.ProjectSystem.Tests/IntegrityChecks.cs (run by verify.ps1, no install): generated install (60 tags) + project with 50 modified tags and 20 new assets (15 native in an allocated package); base package SHA-256s unchanged, every authored byte reads back after reload with a fresh catalog, re-save byte-identical, dependency manifest complete. Left: build.ps1 + verify.ps1 -SkipBuild green (main session), then flip to done"
+      "status": "done",
+      "notes": "tests/SunriseStudio.ProjectSystem.Tests/IntegrityChecks.cs (run by verify.ps1, no install): generated install (60 tags) + project with 50 modified tags and 20 new assets (15 native in an allocated package); base package SHA-256s unchanged, every authored byte reads back after reload with a fresh catalog, re-save byte-identical, dependency manifest complete. verify.ps1 green on master 2026-10-15"
     },
     {
       "id": "20",
@@ -294,7 +294,7 @@
       "id": "47B",
       "title": "AI CLI Vibecoding Integration (Cline, Claude Code, Antigravity)",
       "status": "partial",
-      "notes": "AI editor area (StudioPanelKind.AI, Window > AI workspace, Ctrl+Shift+A in Sunrise/Unreal presets): ConPTY terminal (Ai/ConPtyTerminal + VtScreen + TerminalView), engine picker claude/cline/agy/custom via cmd /k at the project folder, Context panel (hovered, selected, camera+zone, open file, pinned, attention log; Pin, Send screenshot, Publish toggle), approval queue + AI edits with Undo. src/Solforge.Mcp: TcpListener streamable HTTP on 127.0.0.1 random port, bearer token, Mcp-Session-Id, SSE GET keep-alive, discovery %LOCALAPPDATA%/Solforge/mcp/server-<pid>.json; src/Solforge.Mcp.Shim = solforge-mcp.exe (publish.ps1). Configs: <project>/.mcp.json, ~/.cline/data/settings/cline_mcp_settings.json (+ VS Code Cline if installed), ~/.gemini/antigravity/mcp_config.json. 11 read tools + 5 approve-gated. Checks: tests/SunriseStudio.Mcp.Tests (verify.ps1). Not built or run yet. Left: build + fix, live acceptance test (static mesh 7489 in Claude Code), apply_project_edit into Project changes proper (now AI-edits list), terminal glyph coverage (box drawing), AI pop-out window keyboard input, confirm Cline CLI and Antigravity config paths"
+      "notes": "AI editor area (StudioPanelKind.AI, Window > AI workspace, Ctrl+Shift+A in Sunrise/Unreal presets): ConPTY terminal (Ai/ConPtyTerminal + VtScreen + TerminalView), engine picker claude/cline/agy/custom via cmd /k at the project folder, Context panel (hovered, selected, camera+zone, open file, pinned, attention log; Pin, Send screenshot, Publish toggle), approval queue + AI edits with Undo. src/Solforge.Mcp: TcpListener streamable HTTP on 127.0.0.1 random port, bearer token, Mcp-Session-Id, SSE GET keep-alive, discovery %LOCALAPPDATA%/Solforge/mcp/server-<pid>.json; src/Solforge.Mcp.Shim = solforge-mcp.exe (publish.ps1). Configs: <project>/.mcp.json, ~/.cline/data/settings/cline_mcp_settings.json (+ VS Code Cline if installed), ~/.gemini/antigravity/mcp_config.json. 11 read tools + 5 approve-gated. Checks: tests/SunriseStudio.Mcp.Tests (verify.ps1). Not built or run yet. Left: build + fix, live acceptance test (static mesh 7489 in Claude Code), apply_project_edit into Project changes proper (now AI-edits list), terminal glyph coverage (box drawing), AI pop-out window keyboard input, confirm Cline CLI and Antigravity config paths Main session 2026-10-15: build + verify.ps1 green on master (stdio check hang fixed); left: live acceptance test in Solforge with Claude Code."
     },
     {
       "id": "48",
