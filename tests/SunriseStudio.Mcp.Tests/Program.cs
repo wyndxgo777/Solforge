@@ -149,8 +149,15 @@ async Task StdioRoundTrip()
         var request = new JsonObject { ["jsonrpc"] = "2.0", ["id"] = id, ["method"] = method, ["params"] = parameters ?? new JsonObject() };
         await process.StandardInput.WriteLineAsync(request.ToJsonString());
         await process.StandardInput.FlushAsync();
-        string? line = await process.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(20));
-        Expect(line is not null, method + ": no reply; " + await process.StandardError.ReadToEndAsync());
+        string? line;
+        try { line = await process.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(20)); }
+        catch (TimeoutException) { line = null; }
+        if (line is null)
+        {
+            // Stderr only ends once the shim exits, so read it only after stopping the shim.
+            process.Kill();
+            Expect(false, method + ": no reply; " + await process.StandardError.ReadToEndAsync());
+        }
         var reply = JsonNode.Parse(line!)!;
         Expect(reply["id"]?.GetValue<int>() == id && reply["error"] is null, method + ": " + line);
         return reply["result"]!;
