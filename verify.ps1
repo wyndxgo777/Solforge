@@ -55,6 +55,8 @@ $studioChecks = [ordered]@{
     'MeshAuthoring.Tests' = 'net9.0-windows'; 'AssetSurface.Tests' = 'net9.0-windows'; 'Shading.Tests' = 'net9.0-windows'
     'PackageReplacement.Tests' = 'net9.0'; 'Editor.Tests' = 'net9.0-windows'; 'Creation.Tests' = 'net9.0-windows'
     'OriginalAsset.Tests' = 'net9.0'; 'Shortcuts.Tests' = 'net9.0-windows'
+    # Solforge Phase 47B: MCP tools over the stdio shim, find_object, attention log, client configs.
+    'Mcp.Tests' = 'net9.0'
 }
 # Solforge Phases 15-19: project system, overlay, interchange packaging, dependencies, integrity audit (no install).
 $studioChecks['ProjectSystem.Tests'] = 'net9.0-windows'

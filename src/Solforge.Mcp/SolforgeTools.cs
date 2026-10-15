@@ -1,0 +1,180 @@
+using System.Globalization;
+using System.Text.Json.Nodes;
+
+namespace Solforge.Mcp;
+
+/** An object on screen with its screen rectangle in viewport pixels. */
+public sealed record VisibleObject(string Id, string Label, string Kind, float X, float Y, float Width, float Height);
+
+/**
+ * What the Solforge editor gives the tools. Snapshot members are read on MCP threads and must be safe
+ * there; the async members marshal to the UI thread themselves.
+ */
+public interface ISolforgeHost
+{
+    /** The privacy toggle: while paused, nothing about the scene is published. */
+    bool Paused { get; }
+    string? ProjectRoot { get; }
+    IReadOnlyList<string> SdkRoots { get; }
+    string? CurrentMap { get; }
+    AttentionLog Attention { get; }
+    /** The latest get_context snapshot, as JSON. */
+    string ContextJson { get; }
+    IReadOnlyList<VisibleObject> Visible { get; }
+    Task<IReadOnlyList<ObjectEntry>> ObjectsAsync(string query, CancellationToken cancel);
+    Task<JsonObject?> GetObjectAsync(string id, CancellationToken cancel);
+    Task<byte[]?> ScreenshotAsync(string? objectId, bool labels, CancellationToken cancel);
+    Task<JsonObject?> GetTagAsync(uint hash, CancellationToken cancel);
+    Task<JsonObject?> GetPackageEntryAsync(string id, CancellationToken cancel);
+    JsonObject LiveState();
+    /** Shows the request in the AI workspace; true once the user clicks Approve. */
+    Task<bool> ApproveAsync(string tool, string summary, CancellationToken cancel);
+    /** Runs an approved action tool on the UI thread and says what happened. */
+    Task<string> RunActionAsync(string tool, JsonObject args, CancellationToken cancel);
+}
+
+public static class SolforgeTools
+{
+    public const string Instructions =
+        "Solforge is the Project Sol game editor. The user's viewport labels (for example " +
+        "'Botza District / Static mesh 7489 - Last city crater [182]') are exact names. When the user says " +
+        "'this', 'that one' or 'the one I just clicked', call get_context or get_attention_log first. Resolve " +
+        "spoken names with find_object, then get_object for details. Action tools need the user's approve click.";
+
+    public static IReadOnlyList<McpTool> Create(ISolforgeHost host)
+    {
+        McpTool Read(string name, string description, JsonObject schema, Func<JsonObject, CancellationToken, Task<McpToolResult>> run) =>
+            new(name, description, schema, false, async (args, cancel) =>
+                host.Paused && name is not ("read_project_file" or "search_project")
+                    ? McpToolResult.Error("The user paused context publishing in Solforge's AI workspace.")
+                    : await run(args, cancel).ConfigureAwait(false));
+        McpTool Act(string name, string description, JsonObject schema, Func<JsonObject, string?> validate, Func<JsonObject, string> summary) =>
+            new(name, description, schema, true, async (args, cancel) =>
+            {
+                if (validate(args) is { } problem) return McpToolResult.Error(problem);
+                if (!await host.ApproveAsync(name, summary(args), cancel).ConfigureAwait(false))
+                    return McpToolResult.Error("The user declined this in Solforge.");
+                return McpToolResult.Text(await host.RunActionAsync(name, args, cancel).ConfigureAwait(false));
+            });
+        static JsonObject Schema(params (string, string, string, bool)[] properties) => McpJson.Schema(properties);
+        string? NeedId(JsonObject args) => string.IsNullOrWhiteSpace(McpJson.String(args, "id")) ? "Give an object id from find_object." : null;
+
+        return
+        [
+            Read("get_context", "What the user is looking at now: hovered and selected objects, camera position and zone, " +
+                "open editor and file, active map and mission, pinned objects.", Schema(),
+                (_, _) => Task.FromResult(McpToolResult.Text(host.ContextJson))),
+            Read("find_object", "Fuzzy-resolve a spoken name ('static mesh 7489', 'last city crater', '[182]', a tag hash) against " +
+                "viewport labels, the Object tree and the asset index of the open map. Returns ranked matches.",
+                Schema(("query", "string", "The name as the user said it", true), ("limit", "integer", "Most matches to return (default 10)", false)),
+                async (args, cancel) =>
+                {
+                    string query = McpJson.String(args, "query") ?? "";
+                    var entries = await host.ObjectsAsync(query, cancel).ConfigureAwait(false);
+                    var matches = ObjectIndex.Find(entries, query, host.CurrentMap, host.Attention.Recency(), Math.Clamp(McpJson.Int(args, "limit", 10), 1, 50));
+                    return McpToolResult.Json(new JsonObject { ["query"] = query, ["map"] = host.CurrentMap, ["matches"] = ObjectIndex.ToJson(matches) });
+                }),
+            Read("get_object", "Full details for an object id: label, type, tag hash, package, transform, bounds, mesh/material/texture " +
+                "references, parent and children, script references.", Schema(("id", "string", "Object id from find_object or get_context", true)),
+                async (args, cancel) => await host.GetObjectAsync(McpJson.String(args, "id") ?? "", cancel).ConfigureAwait(false) is { } found
+                    ? McpToolResult.Json(found) : McpToolResult.Error("No object with that id in the open map.")),
+            Read("get_viewport_screenshot", "The current viewport as a PNG; with id, cropped to that object's screen rectangle.",
+                Schema(("id", "string", "Optional object id to crop to", false), ("labels", "boolean", "Draw object labels (default true)", false)),
+                async (args, cancel) =>
+                {
+                    var png = await host.ScreenshotAsync(McpJson.String(args, "id"), McpJson.Bool(args, "labels", true), cancel).ConfigureAwait(false);
+                    if (png is null) return McpToolResult.Error("No viewport is showing, or the object is off screen.");
+                    var result = McpToolResult.Text($"Viewport screenshot, {png.Length} bytes.");
+                    result.Images.Add(png);
+                    return result;
+                }),
+            Read("list_visible", "Everything on screen with labels and screen rectangles (viewport pixels).",
+                Schema(("filter", "string", "Optional text the label or kind must contain", false), ("limit", "integer", "Most rows (default 200)", false)),
+                (args, _) =>
+                {
+                    string? filter = McpJson.String(args, "filter");
+                    var rows = new JsonArray();
+                    foreach (var item in host.Visible.Where(item => string.IsNullOrEmpty(filter)
+                        || item.Label.Contains(filter, StringComparison.OrdinalIgnoreCase) || item.Kind.Contains(filter, StringComparison.OrdinalIgnoreCase))
+                        .Take(Math.Clamp(McpJson.Int(args, "limit", 200), 1, 2000)))
+                        rows.Add(new JsonObject { ["id"] = item.Id, ["label"] = item.Label, ["kind"] = item.Kind,
+                            ["rect"] = new JsonArray(Math.Round(item.X), Math.Round(item.Y), Math.Round(item.Width), Math.Round(item.Height)) });
+                    return Task.FromResult(McpToolResult.Json(new JsonObject { ["count"] = rows.Count, ["objects"] = rows }));
+                }),
+            Read("get_attention_log", "The last n hovered, selected, focused, pinned or opened items with timestamps, newest first.",
+                Schema(("n", "integer", "How many (default 20)", false)),
+                (args, _) => Task.FromResult(McpToolResult.Json(host.Attention.ToJson(Math.Clamp(McpJson.Int(args, "n", 20), 1, 256))))),
+            Read("read_project_file", "Read a project file (path relative to the project folder) or a Lua SDK doc ('sdk:<path>').",
+                Schema(("path", "string", "Project-relative path or sdk:<path>", true), ("offset", "integer", "First line (default 1)", false),
+                    ("limit", "integer", "Line count (default 400)", false)),
+                (args, _) =>
+                {
+                    string shown = McpJson.String(args, "path") ?? "";
+                    if (ProjectFiles.Resolve(host.ProjectRoot, host.SdkRoots, shown) is not { } path)
+                        return Task.FromResult(McpToolResult.Error("That path is outside the project and the SDK docs."));
+                    return Task.FromResult(McpToolResult.Json(ProjectFiles.Read(path, shown, McpJson.Int(args, "offset", 1), McpJson.Int(args, "limit", 400))));
+                }),
+            Read("search_project", "Case-insensitive text search over project files and the Lua SDK docs.",
+                Schema(("query", "string", "Text to find", true), ("extension", "string", "Optional extension filter, e.g. .lua", false),
+                    ("limit", "integer", "Most hits (default 100)", false)),
+                (args, _) => Task.FromResult(McpToolResult.Json(ProjectFiles.Search(host.ProjectRoot, host.SdkRoots,
+                    McpJson.String(args, "query") ?? "", McpJson.String(args, "extension"), Math.Clamp(McpJson.Int(args, "limit", 100), 1, 1000))))),
+            Read("get_tag", "Raw read-only inspection of a tag by hash (hex like 0x80A1B2C3 or decimal).",
+                Schema(("hash", "string", "Tag hash", true)),
+                async (args, cancel) => ParseHash(McpJson.String(args, "hash")) is not { } hash ? McpToolResult.Error("Give a tag hash such as 0x80A1B2C3.")
+                    : await host.GetTagAsync(hash, cancel).ConfigureAwait(false) is { } tag ? McpToolResult.Json(tag) : McpToolResult.Error("No such tag in the loaded packages.")),
+            Read("get_package_entry", "Read-only package entry by tag hash or 'package/index'.",
+                Schema(("id", "string", "Tag hash, or package name and entry index as 'name/index'", true)),
+                async (args, cancel) => await host.GetPackageEntryAsync(McpJson.String(args, "id") ?? "", cancel).ConfigureAwait(false) is { } entry
+                    ? McpToolResult.Json(entry) : McpToolResult.Error("No such package entry.")),
+            Read("get_live_state", "When the in-game Live link is attached: player position and nearby in-game objects.", Schema(),
+                (_, _) => Task.FromResult(McpToolResult.Json(host.LiveState()))),
+
+            Act("select_object", "Select an object in Solforge.", Schema(("id", "string", "Object id", true)), NeedId,
+                args => $"Select {McpJson.String(args, "id")}"),
+            Act("focus_camera", "Select an object and frame the viewport camera on it.", Schema(("id", "string", "Object id", true)), NeedId,
+                args => $"Focus the camera on {McpJson.String(args, "id")}"),
+            Act("highlight", "Outline objects in the viewport for a few seconds so you can point things out.",
+                new JsonObject
+                {
+                    ["type"] = "object", ["required"] = new JsonArray("ids"),
+                    ["properties"] = new JsonObject
+                    {
+                        ["ids"] = new JsonObject { ["type"] = "array", ["items"] = new JsonObject { ["type"] = "string" }, ["description"] = "Object ids" },
+                        ["seconds"] = new JsonObject { ["type"] = "number", ["description"] = "How long (default 8)" }
+                    }
+                },
+                args => args["ids"] is JsonArray { Count: > 0 } ? null : "Give ids to highlight.",
+                args => $"Highlight {(args["ids"] as JsonArray)?.Count ?? 0} object(s)"),
+            Act("open_file", "Open a project file in Solforge (Lua scripts open in the Mission Graph).",
+                Schema(("path", "string", "Project-relative path", true), ("line", "integer", "Optional line", false)),
+                args => ProjectFiles.Resolve(host.ProjectRoot, host.SdkRoots, McpJson.String(args, "path") ?? "") is { } path && File.Exists(path)
+                    ? null : "No such project file.",
+                args => $"Open {McpJson.String(args, "path")}"),
+            Act("apply_project_edit", "Write a project file (project overlay only, never game packages). Either 'content' replaces the " +
+                "file, or 'find'/'replace' edits one exact occurrence. Shows in Project changes and can be undone.",
+                Schema(("path", "string", "Project-relative path", true), ("content", "string", "New full content", false),
+                    ("find", "string", "Exact text to replace (must occur once)", false), ("replace", "string", "Replacement text", false)),
+                args =>
+                {
+                    if (ProjectFiles.EditablePath(host.ProjectRoot, McpJson.String(args, "path") ?? "", out string? reason) is null) return reason;
+                    bool whole = args["content"] is not null, patch = args["find"] is not null;
+                    return whole == patch ? "Give either content, or find and replace." : null;
+                },
+                args => args["content"] is not null ? $"Write {McpJson.String(args, "path")} ({McpJson.String(args, "content")?.Length ?? 0} chars)"
+                    : $"Edit {McpJson.String(args, "path")}: replace {Quote(McpJson.String(args, "find"))} with {Quote(McpJson.String(args, "replace"))}")
+        ];
+    }
+
+    public static uint? ParseHash(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return null;
+        text = text.Trim();
+        if (text.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+            return uint.TryParse(text[2..], NumberStyles.HexNumber, null, out uint hex) ? hex : null;
+        if (uint.TryParse(text, NumberStyles.None, null, out uint number) && text.Length < 8) return number;
+        return uint.TryParse(text, NumberStyles.HexNumber, null, out uint bare) ? bare : null;
+    }
+
+    private static string Quote(string? text) => text is null ? "\"\"" : "\"" + (text.Length > 60 ? text[..60] + "..." : text) + "\"";
+}

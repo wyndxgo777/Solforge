@@ -134,7 +134,27 @@ user-visible strings are rebranded (Phase 03).
 | Solforge.Content | Partial: investment items/vendors/sockets/stats, CUI, Tome editors in `Formats` | Armor 2.0, subclass trees, combatant/AI squads, raid encounters, seasonal artifact |
 | Solforge.Build (`solc`) | `ProjectBuilder` + `ModInstaller` inside the GUI | CLI compiler, `.solmod` container, rollback snapshots |
 | Solforge.Live | `Live` over shared memory (CUI, pose, world, object, commands/reload) | Teleport/spawn actions, telemetry HUD; spec's TCP `127.0.0.1:30978` does not exist |
-| Solforge.AI | None | All of Phase 47B |
+| Solforge.AI | `src/Solforge.Mcp`, `src/Solforge.Mcp.Shim`, Editor `StudioForm.Ai*.cs` + `Ai/` | Phase 47B (see notes below) |
 | (not in §3) | `Interchange` (Blender), `Authoring`, `Animation`, `Audio`, `Rendering` | Keep as-is; add to §3 |
 
 Real count is 14 libraries (incl. App), not 20.
+
+## Phase 47B notes (AI workspace and MCP)
+
+- **Projects:** `Solforge.Mcp` (net9.0, no Windows/ASP.NET deps): JSON-RPC 2.0 dispatch (`McpDispatcher`), streamable HTTP on
+  `127.0.0.1` with a random port over a plain `TcpListener` (no http.sys URL ACL), bearer token, `Mcp-Session-Id`, Origin check,
+  GET SSE keep-alive; `AttentionLog`, `ObjectIndex` (fuzzy names; numbers exact; map-scoped), `ProjectFiles` (reads, search,
+  overlay-only edit paths), `SolforgeTools` (11 read tools, 5 approve-gated) over `ISolforgeHost`. `Solforge.Mcp.Shim` builds
+  `solforge-mcp.exe`: stdio lines are POSTed to the server found in `%LOCALAPPDATA%\Solforge\mcp\server-<pid>.json`
+  (`--project` picks the Solforge with that project open). `publish.ps1` publishes it beside `Solforge.exe`.
+- **Editor:** `StudioPanelKind.AI` is the AI area in the editor dropdown (Window > AI workspace, Ctrl+Shift+A).
+  `Ai/ConPtyTerminal` (P/Invoke pseudo console), `Ai/VtScreen` (VT subset), `Ai/TerminalView` (ImGui draw; chars from the form
+  KeyPress, terminal focus sets `WantTextInput` so shortcuts stay quiet). `StudioForm.Ai.cs` = header, Context panel, attention
+  tracking; `StudioForm.Ai.Host.cs` = the tool host (UI-thread marshalling via `BeginInvoke`, context snapshot every 250 ms,
+  visible list every 1 s, screenshots from `FrameRendered` + `CapturePng`, approvals, AI edits with Undo, mission-script hot reload).
+  `AssetViewport.Ai.cs` adds `ScreenOrigin`/`ScreenSize`/`ScreenRect`; `LivePage.Ai.cs` adds `AiState`.
+- **Configs:** written when a project is open: `<project>/.mcp.json` (Claude Code), `~/.cline/data/settings/cline_mcp_settings.json`
+  (+ the VS Code Cline extension settings if installed), `~/.gemini/antigravity/mcp_config.json`. Each runs the shim with
+  `--project`; tokens never go into config files.
+- **Checks:** `tests/SunriseStudio.Mcp.Tests` (in `verify.ps1`): stdio round trip through the shim, find_object fixture, attention
+  log, project path rules, config generation.

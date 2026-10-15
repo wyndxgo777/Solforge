@@ -13,6 +13,11 @@ $buildOutput = "$PSScriptRoot/obj/publish/"
     -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true `
     -p:DebugType=embedded -p:SatelliteResourceLanguages=en
 if ($LASTEXITCODE -ne 0) { throw 'Studio publish failed.' }
+# Solforge Phase 47B: solforge-mcp.exe, the MCP stdio shim, sits beside Solforge.exe (trimmed, self-contained).
+& dotnet publish (Join-Path $PSScriptRoot 'src/Solforge.Mcp.Shim/Solforge.Mcp.Shim.csproj') -c Release -r win-x64 `
+    --self-contained true -o $Output -nr:false "-p:OutDir=$PSScriptRoot/obj/publish-shim/" `
+    -p:PublishSingleFile=true -p:PublishTrimmed=true -p:DebugType=embedded
+if ($LASTEXITCODE -ne 0) { throw 'MCP shim publish failed.' }
 # The license notices are embedded; Help > Third-party notices shows them.
 $stale = Join-Path $Output 'THIRD_PARTY.md'
 if (Test-Path $stale) { Remove-Item $stale }

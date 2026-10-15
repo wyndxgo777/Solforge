@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Solforge Phase 47B: the local MCP server, tools, attention log and client configs (Studio.md §3.8).
+       Plain net9.0 with no Windows or ASP.NET dependencies, so the shim and the checks can use it. -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <RootNamespace>Solforge.Mcp</RootNamespace>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+</Project>

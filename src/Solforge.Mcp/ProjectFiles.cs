@@ -1,0 +1,127 @@
+using System.Text;
+using System.Text.Json.Nodes;
+
+namespace Solforge.Mcp;
+
+/**
+ * Project-relative file access for the AI: reads and searches the project and the Lua SDK docs, and keeps
+ * edits inside the project overlay. Paths that leave the root, game packages and build output are refused.
+ */
+public static class ProjectFiles
+{
+    public const string SdkPrefix = "sdk:";
+    private const long MaximumRead = 2 << 20;
+    private static readonly HashSet<string> SkippedFolders = new(StringComparer.OrdinalIgnoreCase)
+        { ".git", "bin", "obj", "node_modules", ".vs", "build", "out" };
+    private static readonly HashSet<string> RefusedExtensions = new(StringComparer.OrdinalIgnoreCase)
+        { ".pkg", ".exe", ".dll", ".pdb", ".bak" };
+
+    /** The full path for a project path ("scripts/a.lua") or SDK doc path ("sdk:api.md"); null when it leaves its root. */
+    public static string? Resolve(string? projectRoot, IReadOnlyList<string> sdkRoots, string relative)
+    {
+        relative = relative.Replace('\\', '/').Trim();
+        if (relative.StartsWith(SdkPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            string rest = relative[SdkPrefix.Length..].TrimStart('/');
+            foreach (string sdk in sdkRoots)
+                if (Inside(sdk, rest) is { } path && File.Exists(path)) return path;
+            return sdkRoots.Count > 0 ? Inside(sdkRoots[0], rest) : null;
+        }
+        return projectRoot is null ? null : Inside(projectRoot, relative);
+    }
+
+    /** Refuses absolute paths, "..", other drives and anything the build writes or the game reads directly. */
+    public static string? EditablePath(string? projectRoot, string relative, out string? reason)
+    {
+        reason = null;
+        if (projectRoot is null) { reason = "No project is open."; return null; }
+        if (Path.IsPathRooted(relative) || relative.StartsWith(SdkPrefix, StringComparison.OrdinalIgnoreCase))
+        { reason = "Give a path relative to the project folder."; return null; }
+        if (Inside(projectRoot, relative) is not { } path) { reason = "The path leaves the project folder."; return null; }
+        string[] parts = Path.GetRelativePath(projectRoot, path).Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        if (parts.Any(part => SkippedFolders.Contains(part))) { reason = "Build output and tool folders are not editable."; return null; }
+        if (RefusedExtensions.Contains(Path.GetExtension(path))) { reason = "Packages and binaries are never edited; edit the project's source files."; return null; }
+        if (string.Equals(Path.GetFileName(path), "sunrise.project.json", StringComparison.OrdinalIgnoreCase))
+        { reason = "The project manifest is edited through Solforge, not by the AI."; return null; }
+        return path;
+    }
+
+    public static JsonObject Read(string path, string shown, int offset, int limit)
+    {
+        var info = new FileInfo(path);
+        if (!info.Exists) throw new FileNotFoundException($"No such file: {shown}");
+        if (info.Length > MaximumRead) throw new IOException($"{shown} is {info.Length} bytes; the limit is {MaximumRead}.");
+        string[] lines = File.ReadAllLines(path);
+        offset = Math.Clamp(offset, 1, Math.Max(1, lines.Length));
+        limit = Math.Clamp(limit, 1, 4000);
+        var text = new StringBuilder();
+        for (int i = offset - 1; i < Math.Min(lines.Length, offset - 1 + limit); i++) text.Append(i + 1).Append('\t').AppendLine(lines[i]);
+        return new JsonObject
+        {
+            ["path"] = shown, ["lines"] = lines.Length, ["from"] = offset,
+            ["to"] = Math.Min(lines.Length, offset - 1 + limit), ["text"] = text.ToString()
+        };
+    }
+
+    public static JsonArray Search(string? projectRoot, IReadOnlyList<string> sdkRoots, string query, string? extension, int limit)
+    {
+        var results = new JsonArray();
+        var roots = new List<(string Root, string Prefix)>();
+        if (projectRoot is not null) roots.Add((projectRoot, ""));
+        roots.AddRange(sdkRoots.Where(Directory.Exists).Select(root => (root, SdkPrefix)));
+        foreach (var (root, prefix) in roots)
+            foreach (string file in Files(root))
+            {
+                if (extension is { Length: > 0 } && !file.EndsWith(extension.StartsWith('.') ? extension : "." + extension, StringComparison.OrdinalIgnoreCase)) continue;
+                string relative = prefix + Path.GetRelativePath(root, file).Replace('\\', '/');
+                if (relative.Contains(query, StringComparison.OrdinalIgnoreCase))
+                    results.Add(new JsonObject { ["path"] = relative, ["line"] = 0, ["text"] = "(file name)" });
+                if (results.Count >= limit) return results;
+                if (new FileInfo(file).Length > MaximumRead || !LooksText(file)) continue;
+                int number = 0;
+                foreach (string line in File.ReadLines(file))
+                {
+                    number++;
+                    if (!line.Contains(query, StringComparison.OrdinalIgnoreCase)) continue;
+                    results.Add(new JsonObject { ["path"] = relative, ["line"] = number, ["text"] = line.Trim() is { Length: > 200 } long_ ? long_[..200] : line.Trim() });
+                    if (results.Count >= limit) return results;
+                }
+            }
+        return results;
+    }
+
+    private static IEnumerable<string> Files(string root)
+    {
+        var pending = new Stack<string>();
+        pending.Push(root);
+        while (pending.Count > 0)
+        {
+            string folder = pending.Pop();
+            string[] files, folders;
+            try { files = Directory.GetFiles(folder); folders = Directory.GetDirectories(folder); }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) { continue; }
+            foreach (string file in files.Order(StringComparer.OrdinalIgnoreCase)) yield return file;
+            foreach (string child in folders.OrderDescending(StringComparer.OrdinalIgnoreCase))
+                if (!SkippedFolders.Contains(Path.GetFileName(child))) pending.Push(child);
+        }
+    }
+
+    private static bool LooksText(string file)
+    {
+        Span<byte> head = stackalloc byte[512];
+        using var stream = File.OpenRead(file);
+        int read = stream.Read(head);
+        return !head[..read].Contains((byte)0);
+    }
+
+    private static string? Inside(string root, string relative)
+    {
+        try
+        {
+            string full = Path.GetFullPath(Path.Combine(root, relative));
+            string baseline = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            return full.StartsWith(baseline, StringComparison.OrdinalIgnoreCase) ? full : null;
+        }
+        catch (Exception exception) when (exception is ArgumentException or NotSupportedException or PathTooLongException) { return null; }
+    }
+}

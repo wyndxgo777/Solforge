@@ -157,6 +157,7 @@ public sealed partial class StudioForm
             case StudioPanelKind.Browser: DrawBrowser(position, size); break;
             case StudioPanelKind.Inspector: DrawInspector(position, size); break;
             case StudioPanelKind.Changes: DrawChanges(position, size); break;
+            case StudioPanelKind.AI: DrawAiWorkspace(position, size); break;
             case StudioPanelKind.MissionGraph:
                 if (focusMissionGraph) ImGui.SetNextWindowFocus();
                 BeginPanel("Mission graph area", position, size);

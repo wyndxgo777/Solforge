@@ -92,7 +92,9 @@ static void SunriseDefaults()
         [SelectTool3D] = [Key("Q")],
         [MoveTool3D] = [Key("W")],
         [RotateTool3D] = [Key("E")],
-        [ScaleTool3D] = [Key("R")]
+        [ScaleTool3D] = [Key("R")],
+        // Phase 47B: the AI workspace.
+        [OpenAiWorkspace] = [Key("A", Ctrl | Shift)]
     };
     foreach (var action in ShortcutActions.All)
         Same(map.Bindings(action.Id), expected.GetValueOrDefault(action.Id) ?? [], $"Sunrise Studio {action.Id}");
