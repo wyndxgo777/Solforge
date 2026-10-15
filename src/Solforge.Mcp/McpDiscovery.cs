@@ -41,6 +41,23 @@ public static class McpDiscovery
         catch (UnauthorizedAccessException) { }
     }
 
+    /** Deletes server-<pid>.json files whose process is gone; returns how many were removed. */
+    public static int CleanStale(string? folder = null, Func<int, bool>? alive = null)
+    {
+        folder ??= Folder;
+        alive ??= Alive;
+        if (!Directory.Exists(folder)) return 0;
+        int removed = 0;
+        foreach (string file in Directory.EnumerateFiles(folder, "server-*.json"))
+        {
+            if (Read(file) is { } entry && alive(entry.Pid)) continue;
+            try { File.Delete(file); removed++; }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+        }
+        return removed;
+    }
+
     /** The newest live server for the project; with no match, the newest live server of any project. */
     public static McpDiscoveryEntry? Find(string? project, string? folder = null, bool checkProcess = true)
     {

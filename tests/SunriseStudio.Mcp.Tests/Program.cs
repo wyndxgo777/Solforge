@@ -180,6 +180,9 @@ async Task StdioRoundTrip()
     server.Start();
     McpDiscovery.Write(new McpDiscoveryEntry(Environment.ProcessId, server.Url, server.Token, project, DateTimeOffset.UtcNow), discovery);
     Expect(McpDiscovery.Find(project, discovery)?.Url == server.Url, "discovery");
+    McpDiscovery.Write(new McpDiscoveryEntry(999999, "http://127.0.0.1:1/", "t", project, DateTimeOffset.UtcNow), discovery);
+    Expect(McpDiscovery.CleanStale(discovery, pid => pid == Environment.ProcessId) == 1
+        && !File.Exists(Path.Combine(discovery, "server-999999.json")) && File.Exists(Path.Combine(discovery, $"server-{Environment.ProcessId}.json")), "stale discovery cleaned");
 
     string shim = FindShim();
     var start = new ProcessStartInfo("dotnet") { RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false };

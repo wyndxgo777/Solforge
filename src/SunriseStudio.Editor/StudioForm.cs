@@ -300,6 +300,7 @@ public sealed partial class StudioForm : Form
             ShortcutInput.BeginFrame(gui.IsInputActive && EditorReady && !workspace.IsBusy);
             lastFrame = now;
             renderer.BeginFrame(StudioTheme.Canvas);
+            if (EditorReady) StartAiForProject();
             long drawStart = Stopwatch.GetTimestamp();
             if (EditorReady && workspace.IsBusy)
             {

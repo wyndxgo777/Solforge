@@ -25,6 +25,7 @@ public sealed class SolforgeMcpService : IAsyncDisposable
         var dispatcher = new McpDispatcher(SolforgeTools.Create(host), version, SolforgeTools.Instructions);
         var server = new McpHttpServer(dispatcher);
         server.Start();
+        McpDiscovery.CleanStale();
         var service = new SolforgeMcpService(server, dispatcher);
         service.Publish(host.ProjectRoot);
         return service;

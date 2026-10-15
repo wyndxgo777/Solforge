@@ -125,14 +125,19 @@ public sealed partial class StudioForm
         workspace.Notice?.Folder, workspace.LastBuild?.OutputDirectory, workspace.LastInstall?.ModDirectory
     ]);
 
+    /** Once a project is open the server runs and the client configs are written, whether or not the AI panel or editor is drawn. */
+    private void StartAiForProject()
+    {
+        if (workspace.Project?.DirectoryPath is { } project && project != aiConfiguredProject) PrepareAiEngine(project);
+    }
+
     /** Runs every frame from HandleAiShortcuts: MCP start, context snapshot, highlight outlines, hot reload. */
     private void PublishAiContext()
     {
         double now = ImGui.GetTime();
         DrawAiHighlights(now);
         if (DateTime.UtcNow >= aiReloadAfter) { aiReloadAfter = DateTime.MaxValue; ReloadAiScript(); }
-        // On launch: once a project is open the server runs and the client configs are written.
-        if (workspace.Project?.DirectoryPath is { } project && project != aiConfiguredProject) PrepareAiEngine(project);
+        StartAiForProject();
         if (aiHost is null || now < aiNextPublish) return;
         aiNextPublish = now + .25;
         aiHost.ContextJson = aiPaused ? "{\"paused\":true}" : BuildAiContext().ToJsonString(McpJson.Indented);
