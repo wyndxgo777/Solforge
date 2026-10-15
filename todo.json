@@ -127,8 +127,8 @@
     {
       "id": "18",
       "title": "Dependency Resolution & Packaging Rules",
-      "status": "upstream_partial",
-      "notes": "ProjectBuilder native/socket dependencies"
+      "status": "done",
+      "notes": "ProjectBuilder native/socket dependency resolution exists (ProjectBuilder.NativeDependencies.cs, PackageNativeDependencies). Added: DependencyCrawler.cs (Projects) walks changed + added tags one level (native refs + structured tag words), DependencyManifest writes build/dependencies.json with MissingReference / InvalidNativeReference / MissingProjectFile issues; PackageIdAllocator.cs allocates 0x0100-0x0CFF skipping installed + project ids. Checks: ProjectSystem.Tests DependencyChecks. Not wired: Studio Build does not yet call DependencyCrawler or PackageIdAllocator (ObjectEditContext.Generated.cs and CollisionImport.cs keep their own id scans)"
     },
     {
       "id": "19",

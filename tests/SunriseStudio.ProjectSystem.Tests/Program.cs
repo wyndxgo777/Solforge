@@ -11,6 +11,7 @@ try
     WatcherChecks.Run(Path.Combine(root, "watcher"), checks);
     OverlayChecks.Run(Path.Combine(root, "overlay"), checks);
     StemChecks.Run(Path.Combine(root, "stems"), checks);
+    DependencyChecks.Run(Path.Combine(root, "dependencies"), checks);
     foreach (string check in checks) Console.WriteLine("ok: " + check);
     Console.WriteLine($"Project system checks passed ({checks.Count}).");
 }

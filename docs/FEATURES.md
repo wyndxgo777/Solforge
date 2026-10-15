@@ -58,6 +58,8 @@ Project facts (TFM, references, sizes) are in ARCHITECTURE.md; this file is abou
   `ProjectWatcher` (checks: `tests/SunriseStudio.ProjectSystem.Tests`).
 - Solforge Phase 16: base-vs-authored word diff `ProjectTagDiff` + Changes "Compare with base..."
   dialog with "Revert to base" (`Editor/StudioForm.TagDiff.cs`).
+- Solforge Phase 18: `DependencyCrawler` + `DependencyManifest` (`build/dependencies.json`, missing
+  texture/audio/script/child references) and `PackageIdAllocator` (0x0100-0x0CFF).
 
 ## Interchange (`SunriseStudio.Interchange`, `Authoring`, Phase 17)
 - (Exists) Blender bundles (`AssetBundle*`, mesh/texture/collision codecs), world scene export

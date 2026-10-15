@@ -23,6 +23,8 @@ internal sealed class Fixture
         {
             byte[] body = new byte[64 + random.Next(0, 512) * 4];
             random.NextBytes(body);
+            // No random word may look like a tag hash, so the dependency crawler only sees planted references.
+            for (int offset = 3; offset < body.Length; offset += 4) if (body[offset] is >= 0x80 and <= 0x84) body[offset] = 0x7F;
             entries.Add(new(0x80800000u + (uint)i + 1, 0x100A, body, $"fixture:{i}"));
         }
         PackageFile = Path.Combine(packages, $"w64_fixture_{PackageId:x4}_0.pkg");
