@@ -72,7 +72,7 @@ internal static class TerminalChecks
         screen.Feed("\r\n\r\nabcde\x1bMX");
         Check(screen.Line(1)[4].Char == 'X' && Row(screen, 2) == "abcde", "Reverse index kept the pending wrap.");
         screen = new VtScreen(5, 3);
-        screen.Feed("abcde\x1bcX");
+        screen.Feed("abcde\u001bcX");
         Check(Row(screen, 0) == "X" && screen.CursorY == 0, "A reset kept the pending wrap.");
     }
 
@@ -91,7 +91,7 @@ internal static class TerminalChecks
             && line[4].Foreground == 0xFFFF0000, "Faint, underline, strikethrough or colon-form colour was not tracked.");
 
         screen = new VtScreen(20, 5);
-        screen.Feed("\x1b[3;3H\x1b[31m\x1b7\x1b[0m\x1b[1;1H\x1b8Z\x1b[4;2rY");
+        screen.Feed("\x1b[3;3H\x1b[31m\u001b7\x1b[0m\x1b[1;1H\u001b8Z\x1b[4;2rY");
         Check(screen.Line(2)[2].Char == 'Z' && screen.Line(2)[2].Foreground != 0 && screen.Line(2)[3].Char == 'Y',
             "DECRC did not restore the pen, or an empty scroll region was applied.");
 
@@ -105,9 +105,9 @@ internal static class TerminalChecks
 
         // A saved cursor below a shrunken screen is clamped instead of indexing past the rows.
         screen = new VtScreen(80, 24);
-        screen.Feed("\x1b[24;80H\x1b7\x1b[?1049h");
+        screen.Feed("\x1b[24;80H\u001b7\x1b[?1049h");
         screen.Resize(40, 10);
-        screen.Feed("\x1b8x\x1b[ux\x1b[?1049lx");
+        screen.Feed("\u001b8x\x1b[ux\x1b[?1049lx");
         Check(screen.CursorY < 10 && screen.CursorX < 40, "A restored cursor was left outside the resized screen.");
     }
 
