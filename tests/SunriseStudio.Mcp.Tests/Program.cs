@@ -1,6 +1,8 @@
 // Solforge Phase 47B checks: MCP tool list and schemas over the stdio shim, find_object resolution of viewport
-// labels, the attention log, project path rules and per-client config generation. No game install needed.
+// labels, the attention log, project path rules, per-client config generation, engine command resolution, the
+// Claude Code launch line, the shim's --context hook output and get_open_documents. No game install needed.
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text.Json.Nodes;
 using Solforge.Mcp;
 
@@ -17,8 +19,16 @@ try
     checks.Add("project files resolve inside the project only; packages, manifest and build output are not editable");
     Configs();
     checks.Add("client configs: .mcp.json, Cline and Antigravity get the solforge stdio entry; other servers survive; rewrite is idempotent");
+    CommandResolution();
+    checks.Add("engine commands resolve on PATH + PATHEXT like cmd: .cmd beats npm's bare script, folders with spaces, missing is null");
+    ClaudeLaunch();
+    checks.Add("Claude launch: --mcp-config, --settings hook, --append-system-prompt and --add-dir survive argv parsing with spaced paths");
+    ContextText();
+    checks.Add("context summary: compact lines under 2 KB with map, hovered, selected values, open documents; nothing when paused");
     await StdioRoundTrip();
-    checks.Add("initialize, tools/list (16 tools with object schemas) and tools/call round trip over the solforge-mcp stdio shim");
+    checks.Add("initialize, tools/list (17 tools with object schemas), tools/call and get_open_documents round trip over the stdio shim");
+    await ContextHook();
+    checks.Add("solforge-mcp --context prints the live context, and nothing (exit 0, fast) when paused or no Solforge runs");
     foreach (string check in checks) Console.WriteLine("PASS " + check);
     Console.WriteLine($"PASS checks={checks.Count}");
     return 0;
@@ -169,7 +179,7 @@ async Task StdioRoundTrip()
         Expect(initialized["serverInfo"]?["name"]?.ToString() == "solforge" && initialized["capabilities"]?["tools"] is not null, "initialize");
         await process.StandardInput.WriteLineAsync("{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}");
         var tools = (await Call(2, "tools/list"))["tools"]!.AsArray();
-        string[] expected = ["get_context", "find_object", "get_object", "get_viewport_screenshot", "list_visible", "get_attention_log",
+        string[] expected = ["get_context", "get_open_documents", "find_object", "get_object", "get_viewport_screenshot", "list_visible", "get_attention_log",
             "read_project_file", "search_project", "get_tag", "get_package_entry", "get_live_state",
             "select_object", "focus_camera", "highlight", "open_file", "apply_project_edit"];
         Expect(tools.Select(tool => tool?["name"]?.ToString()).SequenceEqual(expected), "tool names: " + string.Join(",", tools.Select(tool => tool?["name"])));
@@ -180,7 +190,7 @@ async Task StdioRoundTrip()
             foreach (var required in schema["required"]?.AsArray() ?? new JsonArray())
                 Expect(schema["properties"]![required!.ToString()] is not null, $"{tool["name"]} requires an undeclared {required}");
             bool readOnly = tool["annotations"]?["readOnlyHint"]?.GetValue<bool>() == true;
-            Expect(readOnly == Array.IndexOf(expected, tool["name"]!.ToString()) < 11, "read-only flag of " + tool["name"]);
+            Expect(readOnly == Array.IndexOf(expected, tool["name"]!.ToString()) < 12, "read-only flag of " + tool["name"]);
         }
         var found = await Call(3, "tools/call", new JsonObject { ["name"] = "find_object", ["arguments"] = new JsonObject { ["query"] = "static mesh 7489" } });
         var text = JsonNode.Parse(found["content"]![0]!["text"]!.ToString())!;
@@ -189,6 +199,14 @@ async Task StdioRoundTrip()
         Expect(denied["isError"]?.GetValue<bool>() == true && host.Approvals == 1, "approval gate");
         var unknown = await Call(5, "ping");
         Expect(unknown is JsonObject, "ping");
+        var documents = await Call(6, "tools/call", new JsonObject { ["name"] = "get_open_documents", ["arguments"] = new JsonObject() });
+        var open = JsonNode.Parse(documents["content"]![0]!["text"]!.ToString())!;
+        Expect(open["asset"]?["tag"]?.ToString() == "0x80A1B2C3" && open["script"]?["path"]?.ToString() == "scripts/freeroam.lua"
+            && open["changes"]?["count"]?.GetValue<int>() == 3, "get_open_documents: " + open.ToJsonString());
+        host.Paused = true;
+        var paused = await Call(7, "tools/call", new JsonObject { ["name"] = "get_open_documents", ["arguments"] = new JsonObject() });
+        Expect(paused["isError"]?.GetValue<bool>() == true, "get_open_documents while paused");
+        host.Paused = false;
     }
     finally
     {
@@ -199,6 +217,118 @@ async Task StdioRoundTrip()
     using var http = new HttpClient();
     var wrong = await http.PostAsync(server.Url, new StringContent("{}"));
     Expect((int)wrong.StatusCode == 401, "token check");
+}
+
+void CommandResolution()
+{
+    string bin = Path.Combine(scratch, "fake bin"), other = Path.Combine(scratch, "other");
+    Directory.CreateDirectory(bin);
+    Directory.CreateDirectory(other);
+    File.WriteAllText(Path.Combine(bin, "fakeengine"), "#!/bin/sh\n");
+    File.WriteAllText(Path.Combine(bin, "fakeengine.cmd"), "@echo off\r\n");
+    File.WriteAllText(Path.Combine(other, "fakeengine.exe"), "");
+    string path = $"{Path.Combine(scratch, "missing")};\"{bin}\";{other}";
+    Expect(EngineCommands.Resolve("fakeengine", path, ".COM;.EXE;.BAT;.CMD") == Path.Combine(bin, "fakeengine.cmd"), "PATH order, then PATHEXT");
+    Expect(EngineCommands.Resolve("fakeengine", path, ".EXE") == Path.Combine(other, "fakeengine.exe"), "PATHEXT filter");
+    Expect(EngineCommands.Resolve("fakeengine.cmd", path) == Path.Combine(bin, "fakeengine.cmd"), "name with extension");
+    Expect(EngineCommands.Resolve(Path.Combine(other, "fakeengine"), "") == Path.Combine(other, "fakeengine.exe"), "explicit folder");
+    Expect(EngineCommands.Resolve("agy", path) is null && EngineCommands.Resolve(" ", path) is null, "missing engine");
+    Expect(EngineCommands.Join([$"{bin};{other}", $"{other}\\;{bin}", ""]) == $"{bin};{other}", "PATH join keeps the first of each folder");
+}
+
+void ClaudeLaunch()
+{
+    string top = Path.Combine(scratch, "launch root");
+    string project = Path.Combine(top, "10-Project Sol", "Project Sol");
+    string game = Path.Combine(scratch, "Sunrise Game");
+    Directory.CreateDirectory(Path.Combine(project, "scripts"));
+    Directory.CreateDirectory(game);
+    File.WriteAllText(Path.Combine(top, "10-Project Sol", "CLAUDE.md"), "rules");
+    string shim = Path.Combine(scratch, "Solforge App", "solforge-mcp.exe");
+    var files = EngineLaunch.WriteClaudeFiles(project, shim, Path.Combine(scratch, "mcp"));
+    var config = JsonNode.Parse(File.ReadAllText(files.McpConfig))!["mcpServers"]?["solforge"];
+    Expect(config?["command"]?.ToString() == shim && config?["type"]?.ToString() == "stdio"
+        && config?["args"]?.AsArray().Select(node => node?.ToString()).SequenceEqual(["--project", project]) == true, "mcp-config entry");
+    string? hook = JsonNode.Parse(File.ReadAllText(files.Settings))?["hooks"]?["UserPromptSubmit"]?[0]?["hooks"]?[0]?["command"]?.ToString();
+    Expect(hook == $"\"{shim.Replace('\\', '/')}\" --context --project \"{project.Replace('\\', '/')}\"", "prompt hook: " + hook);
+    // The scratch folder stands in for the user profile: ancestors stop below it.
+    var folders = EngineLaunch.AddDirs(project, [game, Path.Combine(project, "scripts"), Path.Combine(scratch, "gone"), null, game + "\\"], scratch);
+    string ancestor = Path.Combine(top, "10-Project Sol");
+    Expect(folders.SequenceEqual([game, ancestor]), "add-dirs: " + string.Join(" | ", folders));
+    Directory.CreateDirectory(Path.Combine(top, ".claude"));
+    Expect(EngineLaunch.AddDirs(project, [game], scratch).SequenceEqual([game, top]), "a .claude ancestor covers the nearer one");
+    string arguments = EngineLaunch.ClaudeArguments(files, folders);
+    string[] argv = Argv("claude.exe " + arguments);
+    Expect(argv.Skip(1).SequenceEqual(["--mcp-config", files.McpConfig, "--settings", files.Settings, "--append-system-prompt",
+        EngineLaunch.SystemPrompt, "--add-dir", game, "--add-dir", ancestor]), "argv: " + string.Join(" | ", argv));
+    Expect(!EngineLaunch.SystemPrompt.Contains('"') && !EngineLaunch.SystemPrompt.Contains('%'), "prompt is safe through cmd");
+    string line = EngineLaunch.CmdLine(@"C:\Program Files\nodejs\claude.cmd", arguments);
+    Expect(line.StartsWith("cmd.exe /d /s /k \"\"C:\\Program Files\\nodejs\\claude.cmd\" --mcp-config ", StringComparison.Ordinal)
+        && line.EndsWith(ancestor + "\"\"", StringComparison.Ordinal), "cmd line: " + line);
+    Expect(EngineLaunch.Quote(@"C:\a b\") == "\"C:\\a b\\\\\"" && EngineLaunch.Quote("plain") == "plain", "quoting");
+    Expect(EngineLaunch.ClaudeArguments(null, []).StartsWith("--append-system-prompt", StringComparison.Ordinal), "no config files");
+}
+
+static void ContextText()
+{
+    var context = JsonNode.Parse(FixtureHost.Context)!;
+    string text = ContextSummary.Format(context);
+    Expect(text.Length is > 0 and <= ContextSummary.Limit, "length " + text.Length);
+    foreach (string part in new[] { "Map: Botza District", "Hovered: Botza District / Static mesh 7489", "tag 0x80A1B2C3",
+        "Values: Name=Last city crater", "script scripts/freeroam.lua", "Recent: select" })
+        Expect(text.Contains(part, StringComparison.Ordinal), $"missing '{part}' in:\n{text}");
+    Expect(ContextSummary.Format(JsonNode.Parse("{\"paused\":true}")) == "" && ContextSummary.Format(null) == "", "paused prints nothing");
+    var big = context.DeepClone().AsObject();
+    var pinned = new JsonArray();
+    for (int i = 0; i < 400; i++) pinned.Add(new JsonObject { ["id"] = "w:" + i, ["label"] = new string('x', 400) });
+    big["pinned"] = pinned;
+    big["recent"] = null;
+    Expect(ContextSummary.Format(big).Length <= ContextSummary.Limit + 3, "capped");
+}
+
+async Task ContextHook()
+{
+    string project = Path.Combine(scratch, "project");
+    string discovery = Path.Combine(scratch, "hook discovery");
+    var host = new FixtureHost(project);
+    var dispatcher = new McpDispatcher(SolforgeTools.Create(host), "0.1.0", SolforgeTools.Instructions);
+    await using var server = new McpHttpServer(dispatcher);
+    server.Start();
+    McpDiscovery.Write(new McpDiscoveryEntry(Environment.ProcessId, server.Url, server.Token, project, DateTimeOffset.UtcNow), discovery);
+    async Task<(int Code, string Output, TimeSpan Time)> Run(string folder)
+    {
+        var start = new ProcessStartInfo("dotnet") { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false };
+        foreach (string arg in new[] { FindShim(), "--context", "--project", project }) start.ArgumentList.Add(arg);
+        start.Environment["SOLFORGE_MCP_DISCOVERY"] = folder;
+        var clock = Stopwatch.StartNew();
+        using var process = Process.Start(start)!;
+        var output = process.StandardOutput.ReadToEndAsync();
+        if (!process.WaitForExit(20000)) { process.Kill(); Expect(false, "--context hung"); }
+        return (process.ExitCode, await output, clock.Elapsed);
+    }
+    var live = await Run(discovery);
+    Expect(live.Code == 0 && live.Output.Contains("Map: Botza District", StringComparison.Ordinal)
+        && live.Output.Contains("Selected: Botza District / Static mesh 7489", StringComparison.Ordinal)
+        && live.Output.Length <= ContextSummary.Limit + 3, "--context output: " + live.Output);
+    host.Paused = true;
+    var paused = await Run(discovery);
+    Expect(paused.Code == 0 && paused.Output.Length == 0, "--context while paused: " + paused.Output);
+    string empty = Path.Combine(scratch, "no solforge");
+    Directory.CreateDirectory(empty);
+    var none = await Run(empty);
+    Expect(none.Code == 0 && none.Output.Length == 0 && none.Time < TimeSpan.FromSeconds(10), $"--context without Solforge: {none.Output} in {none.Time}");
+}
+
+static string[] Argv(string commandLine)
+{
+    IntPtr list = NativeArgs.CommandLineToArgvW(commandLine, out int count);
+    try
+    {
+        var argv = new string[count];
+        for (int i = 0; i < count; i++) argv[i] = Marshal.PtrToStringUni(Marshal.ReadIntPtr(list, i * IntPtr.Size))!;
+        return argv;
+    }
+    finally { NativeArgs.LocalFree(list); }
 }
 
 static string FindShim()
@@ -215,16 +345,33 @@ static string FindShim()
     throw new DirectoryNotFoundException("Repository root not found above " + AppContext.BaseDirectory);
 }
 
+static class NativeArgs
+{
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    public static extern IntPtr CommandLineToArgvW(string commandLine, out int count);
+    [DllImport("kernel32.dll")]
+    public static extern IntPtr LocalFree(IntPtr memory);
+}
+
 /** A fixed scene: the find_object fixture, no viewport, and an approver that always declines. */
 sealed class FixtureHost(string project) : ISolforgeHost
 {
+    public const string Context = """
+        {"map":"Botza District","mission":"0x80001234","camera":{"position":[1,2,3],"zone":"crater"},
+         "hovered":{"id":"w:1","label":"Botza District / Static mesh 7489 - Last city crater [182]"},
+         "selected":[{"id":"w:1","label":"Botza District / Static mesh 7489 - Last city crater [182]","kind":"Mesh",
+           "tag":"0x80A1B2C3","package":"w64_cosmodrome_0123","values":{"Name":"Last city crater","Scale":"1.5"}}],
+         "open":{"asset":"crater rock 0x80FFEE01 (w64_shared_01)","script":"scripts/freeroam.lua","changes":3,"status":"Ready"},
+         "pinned":[{"id":"w:4","label":"Tube 50"}],
+         "recent":[{"kind":"select","id":"w:1","label":"Static mesh 7489","secondsAgo":2.5}]}
+        """;
     public int Approvals;
-    public bool Paused => false;
+    public bool Paused { get; set; }
     public string? ProjectRoot => project;
     public IReadOnlyList<string> SdkRoots => [];
     public string? CurrentMap => "Botza District";
     public AttentionLog Attention { get; } = new();
-    public string ContextJson => "{\"map\":\"Botza District\"}";
+    public string ContextJson => Context;
     public IReadOnlyList<VisibleObject> Visible => [];
     public Task<IReadOnlyList<ObjectEntry>> ObjectsAsync(string query, CancellationToken cancel) =>
         Task.FromResult<IReadOnlyList<ObjectEntry>>(
@@ -233,6 +380,12 @@ sealed class FixtureHost(string project) : ISolforgeHost
             new("w:3", "Botza District / Static mesh 74890 - Crater rim [183]", "Mesh", ObjectScope.Tree, "Botza District")
         ]);
     public Task<JsonObject?> GetObjectAsync(string id, CancellationToken cancel) => Task.FromResult<JsonObject?>(null);
+    public Task<JsonObject> GetOpenDocumentsAsync(CancellationToken cancel) => Task.FromResult(new JsonObject
+    {
+        ["asset"] = new JsonObject { ["tag"] = "0x80A1B2C3", ["type"] = 8, ["package"] = "w64_cosmodrome_0123", ["name"] = "crater" },
+        ["script"] = new JsonObject { ["path"] = "scripts/freeroam.lua", ["unsaved"] = false },
+        ["changes"] = new JsonObject { ["count"] = 3, ["rows"] = new JsonArray() }
+    });
     public Task<byte[]?> ScreenshotAsync(string? objectId, bool labels, CancellationToken cancel) => Task.FromResult<byte[]?>(null);
     public Task<JsonObject?> GetTagAsync(uint hash, CancellationToken cancel) => Task.FromResult<JsonObject?>(null);
     public Task<JsonObject?> GetPackageEntryAsync(string id, CancellationToken cancel) => Task.FromResult<JsonObject?>(null);

@@ -18,11 +18,11 @@ internal sealed class TerminalView : IDisposable
     public bool Focused { get; private set; }
     public string? Failure { get; private set; }
 
-    public void Start(string commandLine, string folder, int columns, int rows)
+    public void Start(string commandLine, string folder, int columns, int rows, IReadOnlyDictionary<string, string>? environment = null)
     {
         Stop();
         Failure = null;
-        try { Terminal = new ConPtyTerminal(commandLine, folder, Math.Max(20, columns), Math.Max(5, rows)); }
+        try { Terminal = new ConPtyTerminal(commandLine, folder, Math.Max(20, columns), Math.Max(5, rows), environment); }
         catch (Exception exception) when (exception is System.ComponentModel.Win32Exception or DllNotFoundException or EntryPointNotFoundException)
         { Failure = exception.Message; Terminal = null; }
     }

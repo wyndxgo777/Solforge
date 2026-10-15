@@ -1,20 +1,26 @@
 // solforge-mcp: a stdio MCP server for clients that only speak stdio. Each line on stdin is one JSON-RPC
 // message; it is POSTed to the Solforge that has the project open (found through the discovery file in
 // %LOCALAPPDATA%\Solforge\mcp) and the reply is written to stdout as one line. Logs go to stderr.
+// With --context it prints the live context as a few plain lines and exits (the Claude Code prompt hook).
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Solforge.Mcp;
 
 string? project = null;
+bool context = false;
 for (int i = 0; i < args.Length; i++)
     if (args[i] == "--project" && i + 1 < args.Length) project = args[++i];
+    else if (args[i] == "--context") context = true;
     else if (args[i] is "--help" or "-h")
     {
-        Console.Error.WriteLine("solforge-mcp [--project <folder>]  forwards MCP stdio to a running Solforge.");
+        Console.Error.WriteLine("solforge-mcp [--project <folder>] [--context]  forwards MCP stdio to a running Solforge;");
+        Console.Error.WriteLine("  --context prints its live context as plain text and exits.");
         return 0;
     }
+if (context) return await PrintContext(project);
 
 using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
 var stdout = new StreamWriter(Console.OpenStandardOutput(), new UTF8Encoding(false)) { AutoFlush = true, NewLine = "\n" };
@@ -89,4 +95,32 @@ async Task Reply(string? id, string? raw, string? error)
     await writeGate.WaitAsync();
     try { await stdout.WriteLineAsync(raw); }
     finally { writeGate.Release(); }
+}
+
+/** No Solforge, paused context or any failure prints nothing: the hook must never block a prompt. */
+static async Task<int> PrintContext(string? project)
+{
+    try
+    {
+        if (McpDiscovery.Find(project) is not { } server) return 0;
+        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
+        using var request = new HttpRequestMessage(HttpMethod.Post, server.Url)
+        {
+            Content = new StringContent("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"get_context\",\"arguments\":{}}}",
+                Encoding.UTF8, "application/json")
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", server.Token);
+        request.Headers.Accept.ParseAdd("application/json");
+        using var response = await http.SendAsync(request);
+        if (!response.IsSuccessStatusCode) return 0;
+        var result = JsonNode.Parse(await response.Content.ReadAsStringAsync())?["result"];
+        if (result?["isError"]?.GetValueKind() == JsonValueKind.True || result?["content"]?[0]?["text"]?.GetValue<string>() is not { } text) return 0;
+        string summary = ContextSummary.Format(JsonNode.Parse(text));
+        if (summary.Length == 0) return 0;
+        using var stdout = new StreamWriter(Console.OpenStandardOutput(), new UTF8Encoding(false));
+        await stdout.WriteAsync(summary);
+    }
+    catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or JsonException
+        or InvalidOperationException or IOException) { }
+    return 0;
 }

@@ -23,7 +23,9 @@ internal sealed class ConPtyTerminal : IDisposable
     public bool Exited { get; private set; }
     public event Action? Changed;
 
-    public ConPtyTerminal(string commandLine, string workingDirectory, int columns, int rows)
+    /** @param environment Variables set or replaced for the child; the rest are inherited. */
+    public ConPtyTerminal(string commandLine, string workingDirectory, int columns, int rows,
+        IReadOnlyDictionary<string, string>? environment = null)
     {
         CommandLine = commandLine;
         Screen = new VtScreen(columns, rows);
@@ -39,6 +41,7 @@ internal sealed class ConPtyTerminal : IDisposable
         IntPtr size = IntPtr.Zero;
         InitializeProcThreadAttributeList(IntPtr.Zero, 1, 0, ref size);
         startup.lpAttributeList = Marshal.AllocHGlobal(size);
+        IntPtr block = environment is null ? IntPtr.Zero : EnvironmentBlock(environment);
         try
         {
             if (!InitializeProcThreadAttributeList(startup.lpAttributeList, 1, 0, ref size)
@@ -46,7 +49,7 @@ internal sealed class ConPtyTerminal : IDisposable
                 throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not attach the pseudo console.");
             var command = new StringBuilder(commandLine);
             if (!CreateProcessW(null, command, IntPtr.Zero, IntPtr.Zero, false, ExtendedStartupInfoPresent | CreateUnicodeEnvironment,
-                    IntPtr.Zero, workingDirectory, ref startup, out var information))
+                    block, workingDirectory, ref startup, out var information))
                 throw new Win32Exception(Marshal.GetLastWin32Error(), $"Could not start {commandLine}.");
             process = information.hProcess;
             thread = information.hThread;
@@ -55,10 +58,23 @@ internal sealed class ConPtyTerminal : IDisposable
         {
             DeleteProcThreadAttributeList(startup.lpAttributeList);
             Marshal.FreeHGlobal(startup.lpAttributeList);
+            if (block != IntPtr.Zero) Marshal.FreeHGlobal(block);
         }
         writer = new FileStream(input, FileAccess.Write, 1, false);
         reader = new Thread(Read) { IsBackground = true, Name = "Solforge AI terminal" };
         reader.Start();
+    }
+
+    /** This process's variables with the overrides, sorted as Windows expects, as a UTF-16 block. */
+    private static IntPtr EnvironmentBlock(IReadOnlyDictionary<string, string> overrides)
+    {
+        var values = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (System.Collections.DictionaryEntry entry in Environment.GetEnvironmentVariables())
+            if (entry.Key is string key && key.Length > 0) values[key] = entry.Value as string ?? "";
+        foreach (var (key, value) in overrides) values[key] = value;
+        var text = new StringBuilder();
+        foreach (var (key, value) in values) text.Append(key).Append('=').Append(value).Append('\0');
+        return Marshal.StringToHGlobalUni(text.Append('\0').ToString());
     }
 
     public void Send(string text)
