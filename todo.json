@@ -22,8 +22,8 @@
     {
       "id": "02",
       "title": "Baseline Build & Continuous Integration",
-      "status": "partial",
-      "notes": ".gitattributes (LF for .cs/.py/.json/.txt/hooks), CI runs verify.ps1 -SkipBuild (no Blender/game); pending: clean build on a fresh machine, warnings-as-errors"
+      "status": "done",
+      "notes": ".gitattributes LF, CI runs verify.ps1 -SkipBuild, warnings-as-errors for src/ (NuGet audit excluded), Deterministic + ContinuousIntegrationBuild on CI; verify passed locally 2026-10-15"
     },
     {
       "id": "03",

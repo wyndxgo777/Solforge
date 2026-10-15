@@ -11,7 +11,7 @@ namespaces and the exe are still `SunriseStudio.*` / `Sunrise Studio.exe`.
 |---|---|
 | Language | C# 13 (`LangVersion` 13.0), nullable + implicit usings on, `AllowUnsafeBlocks` on |
 | Frameworks | `net9.0` (portable libraries) and `net9.0-windows` (UI, renderer, audio, live link) |
-| Platform | x64 only (`PlatformTarget` x64), deterministic builds, version 0.1.0 |
+| Platform | x64 only (`PlatformTarget` x64), deterministic builds (`ContinuousIntegrationBuild` on CI), warnings are errors in `src/` (not tests, not NuGet audit), version 0.1.0 |
 | Native code in repo | None. No C++ or Rust projects; the solution is 100% C# |
 | UI stack | WinForms host window (`UseWindowsForms`) + Dear ImGui (ImGui.NET) drawn by the D3D11 renderer. No WPF, no docking library |
 | Renderer | Direct3D 11 (feature level 11_0) via Vortice.Direct3D11 / DXGI / D3DCompiler 3.8.3. No D3D12, SharpDX or Veldrid |
