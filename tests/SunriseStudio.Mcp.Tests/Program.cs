@@ -142,6 +142,16 @@ void Configs()
     var stamps = written.Select(item => File.GetLastWriteTimeUtc(item.Path)).ToArray();
     McpClientConfigs.WriteAll(project, shim, home, appData);
     Expect(written.Select(item => File.GetLastWriteTimeUtc(item.Path)).SequenceEqual(stamps), "idempotent");
+    // Whitespace counts as empty; a damaged file is kept as .bak and replaced.
+    var solforge = new JsonObject { ["command"] = shim };
+    string blank = Path.Combine(scratch, "blank.json"), damaged = Path.Combine(scratch, "damaged.json");
+    File.WriteAllText(blank, "  \n");
+    McpClientConfigs.Merge(blank, solforge.DeepClone().AsObject());
+    Expect(!File.Exists(blank + ".bak") && JsonNode.Parse(File.ReadAllText(blank))?["mcpServers"]?["solforge"] is not null, "blank merges");
+    File.WriteAllText(damaged, "{not json");
+    McpClientConfigs.Merge(damaged, solforge.DeepClone().AsObject());
+    Expect(File.Exists(damaged + ".bak") && File.ReadAllText(damaged + ".bak") == "{not json"
+        && JsonNode.Parse(File.ReadAllText(damaged))?["mcpServers"]?["solforge"] is not null, "damaged kept as .bak");
 }
 
 async Task StdioRoundTrip()
