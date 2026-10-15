@@ -28,6 +28,8 @@ public static unsafe class SolTheme
     public static readonly Vector4 Sun2 = Hex(0xff7a2f);
     public static readonly Vector4 SunGradStart = Hex(0xffd88a);
     public static readonly Vector4 SunGradEnd = Hex(0xff9a45);
+    /** The light ends of sun-shimmer (#ffe0a0 -> sun -> sun-2 -> sun -> #ffe0a0). */
+    public static readonly Vector4 SunShimmerEdge = Hex(0xffe0a0);
     public static readonly Vector4 AccentInk = Hex(0x1a1004);
     public static readonly Vector4 Ok = Hex(0x5fd38a);
     public static readonly Vector4 Bad = Hex(0xf07a7a);
@@ -263,6 +265,34 @@ public static unsafe class SolTheme
     }
 
     /**
+     * The launcher's .dl-bar: a pill filled with #ffd88a -> sun -> sun-2 along x, drawn as slices so the middle
+     * stop holds. A sheen in [0, 1) sweeps a pale band across it; a negative sheen leaves it still.
+     */
+    public static void ProgressFill(ImDrawListPtr draw, Vector2 min, Vector2 max, float sheen = -1)
+    {
+        float width = max.X - min.X, height = max.Y - min.Y, radius = height / 2;
+        if (width < 1 || height < 1) return;
+        if (width <= height) { draw.AddRectFilled(min, max, U32(SunGradStart), radius); return; }
+        float band = Math.Max(height * 8, width * .18f), center = min.X - band + (width + band * 2) * sheen;
+        Vector4 At(float x)
+        {
+            float t = (x - min.X) / width, u = (x - center) / band;
+            var color = t < .5f ? Vector4.Lerp(SunGradStart, Sun, t * 2) : Vector4.Lerp(Sun, Sun2, (t - .5f) * 2);
+            return sheen < 0 || u <= -1 || u >= 1 ? color : Vector4.Lerp(color, Text, (1 - u * u) * (1 - u * u) * .45f);
+        }
+        float left = min.X + radius, right = max.X - radius, y = min.Y + radius;
+        draw.AddCircleFilled(new(left, y), radius, U32(At(left)), 12);
+        draw.AddCircleFilled(new(right, y), radius, U32(At(right)), 12);
+        int slices = Math.Clamp((int)((right - left) / (3 * Scale)), 1, 128);
+        for (int i = 0; i < slices; i++)
+        {
+            float x0 = left + (right - left) * i / slices, x1 = left + (right - left) * (i + 1) / slices;
+            uint a = U32(At(x0)), b = U32(At(x1));
+            draw.AddRectFilledMultiColor(new(x0, min.Y), new(x1, max.Y), a, b, b, a);
+        }
+    }
+
+    /**
      * The panel gradient (#13151d -> #0d0e14, top to bottom) behind the current window's content.
      * A window that pushed its own background (a splitter, an overlay) keeps it.
      */
@@ -296,6 +326,33 @@ public static unsafe class SolTheme
             x += ImGui.CalcTextSize(glyph).X + (i + 1 < text.Length ? tracking : 0);
         }
         return x - position.X;
+    }
+
+    /** sun-shimmer at t; the gradient tiles, so moving t sweeps it as the launcher's 6 s shimmer does. */
+    public static Vector4 Shimmer(float t)
+    {
+        t = (t % 1 + 1) % 1 * 4;
+        int stop = Math.Min(3, (int)t);
+        var (from, to) = stop switch { 0 => (SunShimmerEdge, Sun), 1 => (Sun, Sun2), 2 => (Sun2, Sun), _ => (Sun, SunShimmerEdge) };
+        return Vector4.Lerp(from, to, t - stop);
+    }
+
+    /**
+     * Tracked text filled with sun-shimmer, as the launcher's h1 span: the text spans half the gradient
+     * (background-size 200%) and phase in [0, 1) is the sweep. Returns its width.
+     */
+    public static float ShimmerText(ImDrawListPtr draw, Vector2 position, string text, float tracking, float phase)
+    {
+        int first = draw.VtxBuffer.Size;
+        float width = Math.Max(1, TrackedText(draw, position, uint.MaxValue, text, tracking));
+        var vertices = (Vertex*)(void*)draw.VtxBuffer.Data;
+        for (int i = first; i < draw.VtxBuffer.Size; i++)
+        {
+            float t = Math.Clamp((vertices[i].Position.X - position.X) / width, 0, 1);
+            uint rgb = ImGui.ColorConvertFloat4ToU32(Shimmer(t * .5f - phase) with { W = 1 }) & 0x00FFFFFF;
+            vertices[i].Color = (vertices[i].Color & 0xFF000000) | rgb;
+        }
+        return width;
     }
 
     public static float TrackedWidth(string text, float tracking)

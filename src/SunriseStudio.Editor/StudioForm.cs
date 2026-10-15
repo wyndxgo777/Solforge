@@ -171,6 +171,7 @@ public sealed partial class StudioForm : Form
             scale = Math.Max(1, DeviceDpi / 96f);
             renderer = new Dx11Renderer(Handle, ClientSize.Width, ClientSize.Height, options.Warp);
             loadingLogo = StudioBrand.CreateTexture(renderer);
+            backdrop = new LoadingBackdrop(renderer);
             ImGuiController.HostFonts ??= SolTheme.AddFonts;
             gui = new ImGuiController(renderer, this, BodyFontPath, 16 * scale);
             missionGraph.CodeFont = gui.MonospaceFont;
@@ -850,7 +851,7 @@ public sealed partial class StudioForm : Form
         livePage.Dispose();
         foreach (var page in pages.Pages.OfType<IDisposable>()) page.Dispose();
         assetViewport?.Dispose(); viewport?.Dispose(); workspace.Dispose();
-        loadingLogo?.Dispose(); toolbarLogo?.Dispose(); gui?.Dispose(); renderer?.Dispose(); studioIcon.Dispose();
+        loadingLogo?.Dispose(); toolbarLogo?.Dispose(); backdrop?.Dispose(); gui?.Dispose(); renderer?.Dispose(); studioIcon.Dispose();
         if (!options.Smoke)
         {
             try { settings.Save(settingsPath); }
