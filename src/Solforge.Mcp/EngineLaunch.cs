@@ -71,9 +71,11 @@ public static class EngineLaunch
 
     /**
      * Folders the engine may read besides the project: the given ones that exist outside it, then each ancestor of the
-     * project below the user profile holding a .claude folder or CLAUDE.md (~/.claude loads anyway).
+     * project below the user profile holding a .claude folder or CLAUDE.md (~/.claude loads anyway). Without
+     * ancestors only the given folders are kept, so a caller that already scanned them can leave some out.
      */
-    public static IReadOnlyList<string> AddDirs(string projectRoot, IEnumerable<string?> folders, string? home = null)
+    public static IReadOnlyList<string> AddDirs(string projectRoot, IEnumerable<string?> folders, string? home = null,
+        bool ancestors = true)
     {
         string root = Full(projectRoot), profile = Full(home ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
         var result = new List<string>();
@@ -88,6 +90,7 @@ public static class EngineLaunch
             result.Add(full);
         }
         foreach (string? folder in folders) Add(folder);
+        if (!ancestors) return result;
         for (var parent = Directory.GetParent(root); parent is not null && !string.Equals(Full(parent.FullName), profile,
                  StringComparison.OrdinalIgnoreCase); parent = parent.Parent)
             if (Directory.Exists(Path.Combine(parent.FullName, ".claude")) || File.Exists(Path.Combine(parent.FullName, "CLAUDE.md")))

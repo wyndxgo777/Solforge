@@ -32,7 +32,7 @@ public sealed partial class StudioForm
     private double aiNextPublish;
     private FileSystemWatcher? aiWatcher;
     private DateTime aiReloadAfter = DateTime.MaxValue;
-    private (object? Source, JsonObject Facts) aiFacts = (null, new JsonObject());
+    private (object? Source, double At, JsonObject Facts) aiFacts = (null, 0, new JsonObject());
 
     partial void EnsureAiService()
     {
@@ -89,7 +89,7 @@ public sealed partial class StudioForm
         }
         var hidden = settings.AiHiddenFolders.ToHashSet(StringComparer.OrdinalIgnoreCase);
         var folders = AiFoundFolders(folder).Where(found => !hidden.Contains(found)).Concat(settings.AiFolders.Where(Directory.Exists));
-        return EngineLaunch.ClaudeArguments(files, EngineLaunch.AddDirs(folder, folders));
+        return EngineLaunch.ClaudeArguments(files, EngineLaunch.AddDirs(folder, folders, ancestors: false));
     }
 
     /**
@@ -155,10 +155,11 @@ public sealed partial class StudioForm
         return context;
     }
 
-    /** Kind, tag, package and the first inspector values of a selected object; cached per object, as inspecting is not free. */
+    /** Kind, tag, package and the first inspector values of a selected object; cached for a second, as inspecting is not free. */
     private JsonObject AiFacts(object source)
     {
-        if (ReferenceEquals(aiFacts.Source, source)) return aiFacts.Facts;
+        double now = ImGui.GetTime();
+        if (ReferenceEquals(aiFacts.Source, source) && now - aiFacts.At < 1) return aiFacts.Facts;
         var facts = new JsonObject();
         if (inspectionWorld?.Find(source) is { } item)
         {
@@ -174,8 +175,8 @@ public sealed partial class StudioForm
                 }
                 facts["values"] = values;
             }
+            aiFacts = (source, now, facts);
         }
-        aiFacts = (source, facts);
         return facts;
     }
 
