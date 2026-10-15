@@ -23,6 +23,8 @@ try
     checks.Add("engine commands resolve on PATH + PATHEXT like cmd: .cmd beats npm's bare script, folders with spaces, missing is null");
     ClaudeLaunch();
     checks.Add("Claude launch: --mcp-config, --settings hook, --append-system-prompt and --add-dir survive argv parsing with spaced paths; agy gets the same --add-dir folders");
+    ResumeSessions();
+    checks.Add("resume: claude --continue only when ~/.claude/projects/<folder> has a session; agy --conversation and cline --id pick the newest session for the same folder; none means a fresh start");
     ContextText();
     checks.Add("context summary: compact lines under 2 KB with map, hovered, selected values, open documents; nothing when paused");
     await StdioRoundTrip();
@@ -292,6 +294,44 @@ void ClaudeLaunch()
     Expect(agy == $"--add-dir \"{game}\" --add-dir \"{ancestor}\"", "agy arguments: " + agy);
     Expect(Argv("agy.exe " + agy).Skip(1).SequenceEqual(["--add-dir", game, "--add-dir", ancestor]), "agy argv");
     Expect(EngineLaunch.AgyArguments([]).Length == 0, "agy without folders");
+}
+
+static void ResumeSessions()
+{
+    string home = Path.Combine(scratch, "resume home");
+    string folder = @"C:\Users\Seth\Desktop\sol\09-solforge\publish", other = @"C:\Other";
+    string dir = EngineLaunch.ClaudeSessionsDir(folder + "\\", home);
+    Expect(Path.GetFileName(dir) == "C--Users-Seth-Desktop-sol-09-solforge-publish", "claude sessions dir: " + dir);
+    Expect(EngineLaunch.ClaudeSession(folder, home) is null, "no claude session on a first run");
+    Directory.CreateDirectory(dir);
+    File.WriteAllText(Path.Combine(dir, "old.jsonl"), "{}");
+    File.SetLastWriteTimeUtc(Path.Combine(dir, "old.jsonl"), DateTime.UtcNow.AddHours(-1));
+    File.WriteAllText(Path.Combine(dir, "6f24feaa.jsonl"), "{}");
+    Expect(EngineLaunch.ClaudeSession(folder, home) == "6f24feaa", "newest claude session");
+    Expect(EngineLaunch.ResumeArguments("claude", "6f24feaa") == "--continue", "claude resumes with --continue");
+    Expect(EngineLaunch.ResumeArguments("claude", null) == "" && EngineLaunch.ResumeArguments("cline", "") == "", "no session, no flag");
+    Expect(EngineLaunch.JoinArguments("--add-dir x", "", "--continue") == "--add-dir x --continue"
+        && EngineLaunch.JoinArguments("", "--continue") == "--continue", "join");
+    string[] agyLines =
+    [
+        new JsonObject { ["display"] = "a", ["workspace"] = folder, ["conversationId"] = "first" }.ToJsonString(),
+        new JsonObject { ["display"] = "/mcp", ["workspace"] = folder, ["type"] = "slash_command" }.ToJsonString(),
+        "not json",
+        new JsonObject { ["display"] = "b", ["workspace"] = folder.ToLowerInvariant() + "\\", ["conversationId"] = "second" }.ToJsonString(),
+        new JsonObject { ["display"] = "c", ["workspace"] = other, ["conversationId"] = "elsewhere" }.ToJsonString()
+    ];
+    Expect(EngineLaunch.AgySession(folder, agyLines) == "second", "agy: last conversation for this workspace");
+    Expect(EngineLaunch.AgySession(@"C:\Nowhere", agyLines) is null, "agy: none for another folder");
+    Expect(EngineLaunch.AgySession(folder, home) is null, "agy: no history file");
+    Expect(EngineLaunch.ResumeArguments("agy", "second") == "--conversation second", "agy resume flag");
+    string cline = "loading\n" + new JsonArray(
+        new JsonObject { ["sessionId"] = "old", ["cwd"] = folder, ["startedAt"] = "2026-10-14T10:00:00.000Z" },
+        new JsonObject { ["sessionId"] = "sub", ["cwd"] = folder, ["startedAt"] = "2026-10-15T12:00:00.000Z", ["isSubagent"] = true },
+        new JsonObject { ["sessionId"] = "new", ["cwd"] = "x", ["workspaceRoot"] = folder, ["startedAt"] = "2026-10-15T11:00:00.000Z" },
+        new JsonObject { ["sessionId"] = "away", ["cwd"] = other, ["startedAt"] = "2026-10-15T13:00:00.000Z" }).ToJsonString();
+    Expect(EngineLaunch.ClineSession(folder, cline) == "new", "cline: newest top-level session for this folder");
+    Expect(EngineLaunch.ClineSession(@"C:\Nowhere", cline) is null && EngineLaunch.ClineSession(folder, "error: no history") is null, "cline: none");
+    Expect(EngineLaunch.ResumeArguments("cline", "1792083166619_vt4lw") == "--id 1792083166619_vt4lw", "cline resume flag");
 }
 
 static void ContextText()

@@ -32,6 +32,8 @@ public sealed class StudioSettings
     public List<string> AiHiddenFolders { get; set; } = [];
     /** AI workspace: press Enter on an engine's allow prompt when its highlighted choice is a one-time Yes/Allow. */
     public bool AiAutoAllow { get; set; }
+    /** AI workspace: Start/Restart resume the engine's last session for the folder (New session always starts fresh). */
+    public bool AiResumeSessions { get; set; } = true;
     /** Editors shown in their own windows, with each window's screen bounds. */
     public List<StudioPopoutState> Popouts { get; set; } = [];
 

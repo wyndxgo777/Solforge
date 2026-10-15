@@ -102,6 +102,93 @@ public static class EngineLaunch
         return result;
     }
 
+    /**
+     * Arguments that resume an engine's previous session, or "" when there is none (a first run starts fresh):
+     * claude --continue (its latest session in the cwd), agy --conversation &lt;id&gt;, cline --id &lt;id&gt;.
+     */
+    public static string ResumeArguments(string engine, string? session) => session is null or "" ? "" : engine switch
+    {
+        "claude" => "--continue",
+        "agy" => "--conversation " + Quote(session),
+        "cline" => "--id " + Quote(session),
+        _ => ""
+    };
+
+    /** Joins argument strings, skipping empty ones. */
+    public static string JoinArguments(params string[] parts) => string.Join(' ', parts.Where(part => part.Length > 0));
+
+    /** Claude Code keeps a folder's sessions in ~/.claude/projects/&lt;full path, non-alphanumerics as '-'&gt;/*.jsonl. */
+    public static string ClaudeSessionsDir(string folder, string? home = null) => Path.Combine(
+        home ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".claude", "projects",
+        new string(Full(folder).Select(c => char.IsAsciiLetterOrDigit(c) ? c : '-').ToArray()));
+
+    /** The newest Claude Code session id for the folder, or null. */
+    public static string? ClaudeSession(string folder, string? home = null)
+    {
+        try
+        {
+            var dir = new DirectoryInfo(ClaudeSessionsDir(folder, home));
+            return dir.Exists ? dir.EnumerateFiles("*.jsonl").MaxBy(file => file.LastWriteTimeUtc) is { } newest
+                ? Path.GetFileNameWithoutExtension(newest.Name) : null : null;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) { return null; }
+    }
+
+    /** The agy CLI logs each prompt to ~/.gemini/antigravity-cli/history.jsonl with its workspace and conversationId. */
+    public static string? AgySession(string folder, string? home = null)
+    {
+        string root = Path.Combine(home ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".gemini", "antigravity-cli");
+        try
+        {
+            string history = Path.Combine(root, "history.jsonl");
+            if (!File.Exists(history)) return null;
+            string? id = AgySession(folder, File.ReadLines(history));
+            return id is not null && File.Exists(Path.Combine(root, "conversations", id + ".db")) ? id : null;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) { return null; }
+    }
+
+    /** The last conversationId logged for this workspace in agy history lines (oldest first), or null. */
+    public static string? AgySession(string folder, IEnumerable<string> historyLines)
+    {
+        string? found = null;
+        foreach (string line in historyLines)
+        {
+            if (Parse(line) is not JsonObject entry) continue;
+            if (Same(entry["workspace"], folder) && Text(entry["conversationId"]) is { Length: > 0 } id) found = id;
+        }
+        return found;
+    }
+
+    /** The newest top-level session for this folder in `cline history --json` output, or null. */
+    public static string? ClineSession(string folder, string historyJson)
+    {
+        int start = historyJson.IndexOf('[');
+        if (start < 0 || Parse(historyJson[start..]) is not JsonArray sessions) return null;
+        return sessions.OfType<JsonObject>()
+            .Where(session => (Same(session["cwd"], folder) || Same(session["workspaceRoot"], folder))
+                && !(session["isSubagent"] is JsonValue sub && sub.TryGetValue(out bool isSub) && isSub))
+            .Select(session => (Id: Text(session["sessionId"]), Started: Text(session["startedAt"]) ?? ""))
+            .Where(session => session.Id is { Length: > 0 })
+            .OrderByDescending(session => DateTimeOffset.TryParse(session.Started, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal, out var at) ? at : DateTimeOffset.MinValue)
+            .Select(session => session.Id).FirstOrDefault();
+    }
+
+    private static JsonNode? Parse(string json)
+    {
+        try { return JsonNode.Parse(json); }
+        catch (System.Text.Json.JsonException) { return null; }
+    }
+
+    private static string? Text(JsonNode? node) => node is JsonValue value && value.TryGetValue(out string? text) ? text : null;
+
+    private static bool Same(JsonNode? node, string folder)
+    {
+        if (Text(node) is not { Length: > 0 } path) return false;
+        try { return string.Equals(Full(path), Full(folder), StringComparison.OrdinalIgnoreCase); }
+        catch (Exception exception) when (exception is ArgumentException or NotSupportedException or PathTooLongException) { return false; }
+    }
+
     /** The full path without a trailing separator, except on a drive root. */
     private static string Full(string path)
     {
