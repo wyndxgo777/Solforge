@@ -52,8 +52,8 @@
     {
       "id": "05",
       "title": "Package Header Parsing & VFS Architecture",
-      "status": "upstream_partial",
-      "notes": "Packages: PackageFile header/entries, PackageCatalog + disk cache; no memory-mapped indexer"
+      "status": "done",
+      "notes": "(Exists) PackageFile header/entry/block parsing, PackageCatalog, tag-hash lookup. Solforge: PackageCatalog.Index.cs metadata index (package-index-v1/<root hash>.bin beside the data cache; headers for every patch file, tables for current packages, name rows; keyed by file name + length + write time, any change rebuilds; disabled cache = no index), PackageFile I/O split (ReadTables/LoadTables(bytes)), CollectNameRows/ApplyNameRows split, PackageCatalog.Search.cs (FindByClass, FindByType, GetPackageGroup, FindPackagesInGroup, GetPackageEntries). Check: tests/SunriseStudio.Packages.Tests (scratch packages always; --game-root times the warm open: 400+ files must open from the index under 1 s, skipped without -Game). Memory mapping not needed; the index is the profiled answer"
     },
     {
       "id": "06",

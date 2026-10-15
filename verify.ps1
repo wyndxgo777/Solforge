@@ -40,6 +40,8 @@ if ($Game -and -not $SkipBuild) {
 $studioChecks = [ordered]@{
     # Solforge Phase 04: the checkout audit runs first and needs no installation.
     'Architecture.Tests' = 'net9.0'
+    # Solforge Phases 05-06: metadata index, search and parallel block reads; -Game adds the timed warm open.
+    'Packages.Tests' = 'net9.0'
     'Projects.Tests' = 'net9.0'; 'Formats.Tests' = 'net9.0'; 'Missions.Tests' = 'net9.0'; 'Cui.Tests' = 'net9.0'
     'Cui.Gpu.Tests' = 'net9.0-windows'; 'Investment.Tests' = 'net9.0-windows'; 'Live.Tests' = 'net9.0-windows'
     'LiveBinding.Tests' = 'net9.0-windows'; 'LivePose.Tests' = 'net9.0-windows'; 'Audio.Tests' = 'net9.0-windows'
@@ -58,7 +60,7 @@ $gameArgs = @{
     'CollisionView.Tests' = @('--game-root', $Game, '--output', (New-Scratch 'collision'))
     'AssetSurface.Tests' = @('--game-root', $Game, '--output', (Join-Path $Output 'isolated-native-asset.png'))
 }
-foreach ($name in 'Projects', 'Formats', 'Missions', 'Cui', 'Audio', 'Authoring', 'AnimationAuthoring', 'MeshAuthoring',
+foreach ($name in 'Packages', 'Projects', 'Formats', 'Missions', 'Cui', 'Audio', 'Authoring', 'AnimationAuthoring', 'MeshAuthoring',
     'Names', 'World', 'Collision', 'Shading', 'PackageReplacement', 'Editor', 'OriginalAsset') {
     $gameArgs["$name.Tests"] = @('--game-root', $Game)
 }

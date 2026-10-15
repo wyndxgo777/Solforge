@@ -115,12 +115,17 @@ public sealed partial class PackageCatalog : IDisposable
         this.keySourceExecutable = keySourceExecutable;
         if (!Directory.Exists(PackageDirectory))
             throw new DirectoryNotFoundException($"Packages directory missing: {PackageDirectory}");
-        var paths = Directory.EnumerateFiles(PackageDirectory, "*.pkg")
-            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray();
+        // Enumeration fills each FileInfo's length and write time, which the index key needs without opening files.
+        var infos = new DirectoryInfo(PackageDirectory).EnumerateFiles("*.pkg")
+            .OrderBy(x => x.FullName, StringComparer.OrdinalIgnoreCase).ToArray();
+        var paths = infos.Select(x => x.FullName).ToArray();
         if (paths.Length == 0)
             throw new InvalidDataException("The packages directory contains no .pkg files.");
         InitializeDiskCache(paths, cacheOptions ?? new());
-        var files = paths.Select(path => new PackageFile(path)).ToArray();
+        // Solforge Phase 05: a current metadata index replaces every header, table and misc-region read below.
+        IndexPath = ResolveIndexPath();
+        var index = IndexPath is null ? null : PackageIndex.TryLoad(IndexPath, infos);
+        var files = paths.Select(path => index?.Open(path) ?? new PackageFile(path)).ToArray();
         PackageFileCount = files.Length;
         patchFiles = files.GroupBy(x => (x.Id, x.Group, x.Patch))
             .ToDictionary(x => x.Key, x => x.First());
@@ -129,13 +134,16 @@ public sealed partial class PackageCatalog : IDisposable
         var entries = new List<PackageEntry>();
         foreach (var package in packages.Values.OrderBy(x => x.Id))
         {
-            package.LoadTables();
+            if (index is null || !index.LoadTables(package)) package.LoadTables();
             entries.AddRange(package.Entries);
             foreach (var entry in package.Entries) byTag.Add(entry.TagHash, entry);
         }
         Entries = entries.AsReadOnly();
-        LoadNames(files);
+        var nameRows = index?.Names ?? CollectNameRows(files);
+        ApplyNameRows(nameRows);
         Names = new ReadOnlyDictionary<uint, string>(names);
+        OpenedFromIndex = index is not null;
+        if (index is null && IndexPath is not null) PackageIndex.TryWrite(IndexPath, infos, files, packages.Values, nameRows);
         if (openedPackageIdentity is not null) RequireCurrentOriginalPackages();
     }
 
@@ -498,9 +506,11 @@ public sealed partial class PackageCatalog : IDisposable
     }
 
     /** Names keep class-compatible sources; wide hashes use current packages only. */
-    private void LoadNames(IReadOnlyList<PackageFile> sources)
+    private NameRows CollectNameRows(IReadOnlyList<PackageFile> sources)
     {
-        var nameRows = new HashSet<NamedTag>();
+        var nameRows = new List<NamedTag>();
+        var seenRows = new HashSet<NamedTag>();
+        var claims = new HashSet<ulong>();
         var wideCandidates = new Dictionary<ulong, HashSet<uint>>();
         foreach (var package in sources)
         {
@@ -530,7 +540,7 @@ public sealed partial class PackageCatalog : IDisposable
                     uint classHash = U32(data, row + (elementClass == 0x80809EEC ? 4 : 12));
                     if (elementClass == 0x80809D02)
                     {
-                        installedWideHashClaims.Add(U64(data, row));
+                        claims.Add(U64(data, row));
                         if (!isCurrent) continue;
                     }
                     if (!byTag.TryGetValue(tag, out var entry) || entry.Reference != classHash) continue;
@@ -542,7 +552,7 @@ public sealed partial class PackageCatalog : IDisposable
                         int length = data.AsSpan((int)nameOffset, available).IndexOf((byte)0);
                         if (length <= 0) continue;
                         string name = Encoding.UTF8.GetString(data, (int)nameOffset, length);
-                        nameRows.Add(new NamedTag(tag, classHash, name)
+                        AddNameRow(nameRows, seenRows, new NamedTag(tag, classHash, name)
                         {
                             SourcePackage = package.Name,
                             SourcePackageId = package.Id,
@@ -562,6 +572,15 @@ public sealed partial class PackageCatalog : IDisposable
                 }
             }
         }
+        return new(nameRows, wideCandidates, claims);
+    }
+
+    /** Solforge Phase 05: applies collected or indexed rows; the grouping below is the upstream logic. */
+    private void ApplyNameRows(NameRows rows)
+    {
+        var nameRows = rows.Rows;
+        var wideCandidates = rows.WideCandidates;
+        installedWideHashClaims.UnionWith(rows.Claims);
         NamedTags = Array.AsReadOnly(nameRows.OrderBy(x => x.Name, StringComparer.Ordinal)
             .ThenBy(x => x.TagHash).ThenBy(x => x.SourcePackage, StringComparer.Ordinal).ToArray());
         foreach (var group in nameRows.GroupBy(x => x.TagHash))

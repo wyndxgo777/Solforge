@@ -20,11 +20,17 @@ internal sealed class PackageFile
     internal PackageEntry[] Entries { get; private set; } = [];
     internal BlockRecord[] Blocks { get; private set; } = [];
 
+    /** The 0x180 header bytes, kept so the metadata index (Solforge Phase 05) can store them. */
+    internal byte[] Header { get; }
+
+    internal PackageFile(string path) : this(path, ReadAt(path, 0, 0x180)) { }
+
     /** Variant 1 sizes the entry region with its own count, not the logical entry count. */
-    internal PackageFile(string path)
+    internal PackageFile(string path, byte[] header)
     {
         Path = path;
-        byte[] header = ReadAt(path, 0, 0x180);
+        Header = header;
+        if (header.Length != 0x180) throw new InvalidDataException($"Package header size mismatch: {path}");
         if (U16(header, 0) != 38 || U16(header, 2) != 2)
             throw new InvalidDataException($"Unsupported package format: {path}");
         Id = U16(header, 4);
@@ -50,8 +56,21 @@ internal sealed class PackageFile
             throw new InvalidDataException($"Unsupported package variant: {Variant}");
     }
 
-    /** Tag hashes use addition because the package bits overlap the fixed tag base. */
     internal void LoadTables()
+    {
+        var (entries, blocks) = ReadTables();
+        LoadTables(entries, blocks);
+    }
+
+    /** Solforge Phase 05: parses tables the metadata index stored, with the block offset ReadTables found. */
+    internal void LoadTables(byte[] entries, byte[] blocks, long blockOffset)
+    {
+        BlockOffset = blockOffset;
+        LoadTables(entries, blocks);
+    }
+
+    /** Validates variant 1 regions, fixes BlockOffset and returns both tables as stored in the file. */
+    internal (byte[] Entries, byte[] Blocks) ReadTables()
     {
         if (Variant == 1)
         {
@@ -66,7 +85,14 @@ internal sealed class PackageFile
                 || U64(prefix, 4) < (ulong)BlockCount || U64(prefix, 4) > 16384)
                 throw new InvalidDataException($"Invalid block region: {Path}");
         }
-        byte[] entries = ReadAt(Path, EntryOffset, checked(EntryCount * 16));
+        return (ReadAt(Path, EntryOffset, checked(EntryCount * 16)), ReadAt(Path, BlockOffset, checked(BlockCount * 48)));
+    }
+
+    /** Tag hashes use addition because the package bits overlap the fixed tag base. */
+    internal void LoadTables(byte[] entries, byte[] blocks)
+    {
+        if (entries.Length != checked(EntryCount * 16) || blocks.Length != checked(BlockCount * 48))
+            throw new InvalidDataException($"Package table size mismatch: {Path}");
         Entries = new PackageEntry[EntryCount];
         string name = Name;
         for (int i = 0; i < EntryCount; i++)
@@ -83,7 +109,6 @@ internal sealed class PackageFile
                 StartOffset = (int)(((blockInfo >> 14) & 0x3FFF) << 4)
             };
         }
-        byte[] blocks = ReadAt(Path, BlockOffset, checked(BlockCount * 48));
         Blocks = new BlockRecord[BlockCount];
         for (int i = 0; i < BlockCount; i++)
         {
