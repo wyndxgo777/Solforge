@@ -12,7 +12,7 @@ public sealed partial class AssetViewport
     // Handle length and pick distance in screen pixels.
     private const float GizmoPixels = 90, GizmoPickPixels = 9;
     private const int RingSegments = 48;
-    private static readonly Vector3[] GizmoAxes = [Vector3.UnitX, Vector3.UnitY, Vector3.UnitZ];
+    private readonly Vector3[] GizmoAxes = [Vector3.UnitX, Vector3.UnitY, Vector3.UnitZ];
     private static readonly Vector4[] GizmoColors = [new(.93f, .3f, .3f, 1), new(.4f, .85f, .35f, 1), new(.35f, .55f, .98f, 1)];
     // -1 is no drag; 0 to 2 drag one axis; 3 drags the uniform scale centre.
     private int gizmoAxis = -1;
@@ -42,6 +42,7 @@ public sealed partial class AssetViewport
     private bool ProcessGizmo(bool hovered, Vector2 origin, Vector2 size)
     {
         if (!GizmoVisible) { gizmoAxis = -1; return false; }
+        UpdateGizmoAxes();
         var io = ImGui.GetIO();
         var pivot = GizmoPivot!.Value;
         var pixel = io.MousePos - origin;
@@ -86,6 +87,7 @@ public sealed partial class AssetViewport
             // Up and right grow; one handle length of drag doubles the scale.
             gizmoChange = TransformChange.Identity with { Scale = new(MathF.Max(.01f,
                 MathF.Pow(2, (io.MousePos.X - gizmoPress.X - io.MousePos.Y + gizmoPress.Y) / GizmoPixels))) };
+        SnapGizmoChange(pivot, pixel, size);
         if (ImGui.IsMouseDown(ImGuiMouseButton.Left)) return true;
         gizmoAxis = -1;
         if (!gizmoChange.IsIdentity) GizmoCommitted?.Invoke(gizmoChange);
@@ -177,13 +179,11 @@ public sealed partial class AssetViewport
     }
 
     /** A point on the ring around an axis; segment counts round the full circle. */
-    private static Vector3 RingPoint(Vector3 pivot, int axis, float radius, int segment)
+    private Vector3 RingPoint(Vector3 pivot, int axis, float radius, int segment)
     {
         float angle = MathF.Tau * segment / RingSegments;
-        var offset = Vector3.Zero;
-        offset[(axis + 1) % 3] = MathF.Cos(angle) * radius;
-        offset[(axis + 2) % 3] = MathF.Sin(angle) * radius;
-        return pivot + offset;
+        // Solforge Phase 13: the ring follows the handle axes, which turn with the selection in local mode.
+        return pivot + GizmoAxes[(axis + 1) % 3] * (MathF.Cos(angle) * radius) + GizmoAxes[(axis + 2) % 3] * (MathF.Sin(angle) * radius);
     }
 
     /** World length that projects to the handle length at the pivot. */

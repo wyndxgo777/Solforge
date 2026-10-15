@@ -82,31 +82,32 @@
     {
       "id": "10",
       "title": "Direct3D Viewport Pipeline",
-      "status": "upstream_partial",
-      "notes": "Rendering: D3D11 via Vortice (no D3D12)"
+      "status": "partial",
+      "notes": "(Exists) D3D11 swapchain via Vortice (Rendering/Dx11Renderer.cs), orbit + fly (Viewport/ViewerCamera.cs, AssetViewport.Fly.cs), perspective/orthographic toggle (AssetViewport.cs toolbar), pivot-following decade grid (AssetViewport.DrawGrid). Solforge: the grid draws nested decade levels until it reaches the far plane (perspective) or covers the view (orthographic), so it has no visible edge (no distance fade); Top/Bottom/Front/Back/Right/Left axis views (Viewport/CameraViews.cs; View toolbar menu + Numpad 7/1/3, Ctrl opposite, Numpad 5 ortho in AssetViewport.ViewOverlay.cs), corner world-axis gizmo, FPS/draw call/triangle overlay (ViewportStatistics; Rendering/Dx11Renderer.Statistics.cs counts triangles). Checks: tests/SunriseStudio.ViewportPipeline.Tests (CameraChecks), in verify.ps1. Manual: View menu, Numpad keys, corner gizmo, statistics overlay and the grid toward the horizon and in Top view. Unbuilt: stays partial until the main session's build and verify.ps1 pass and the manual checks are done."
     },
     {
       "id": "11",
       "title": "Mesh Decoding & Vertex Buffers",
-      "status": "upstream_partial",
-      "notes": "Scene: StaticMeshDecoder, EntityMeshDecoder, TerrainDecoder"
+      "status": "partial",
+      "notes": "(Exists) preview decoders give Position and UV0 only and regenerate normals (Scene/StaticMeshDecoder.cs, EntityMeshDecoder.cs, TerrainDecoder.cs); NORMAL/TANGENT are CPU-decoded only for the declaration-123 static profile when its shader consumes them (Formats/NativeMeshBasis.cs); UV1 detail UVs only for entity parts on export, from half2/float2 TEXCOORD2 streams (Interchange/AssetBundle.DetailUvs.cs); the game-shader path uploads raw streams with NativeMeshReader.cs input layouts incl. terrain half2 UVs; D3D index/vertex buffers (Rendering/RenderTypes.cs GpuMesh) and per-part multi-submesh draws (Viewport/NativeSceneRenderer.cs). Solforge: CPU decoder for half floats, SNORM/UNORM/SINT streams, SNORM16 normal+tangent frames (handedness in tangent W), quaternion tangent frames and octahedral normals (Scene/VertexAttributeDecoding.cs). Not wired: referenced only by ViewportPipeline.Tests GeometryChecks; export decodes half/SNORM itself (NativeMeshReader.ApplyNativeTexcoords, Interchange/BundleMeshCodec, Formats/NativeMeshBasis.cs) and picking uses the preview MeshData. Done needs NativeMeshBasis/NativeMeshReader routed through it. Checks: ViewportPipeline.Tests GeometryChecks. Unbuilt: stays partial until the main session's build and verify.ps1 pass and the manual checks are done."
     },
     {
       "id": "12",
       "title": "Shader & Material Pipeline",
-      "status": "upstream_partial",
-      "notes": "Rendering game shaders, NativeRenderStates86657.json, MaterialInspector"
+      "status": "partial",
+      "notes": "(Exists) game-material shading instead of a stand-in PBR shader: GameMaterialReader + NativeMaterialPipeline execute the original Tiger pixel shaders (Rendering/NativeRendering.cs, NativeDeferredShading.cs); BC1-BC5 CPU decode (Formats/TexturePixels.cs), BC7 via BCnEncoder.Net BcDecoder (Interchange/BundleTextureCodec.cs), all BCn on the GPU (Rendering/TextureUploads.cs incl. cube textures); authored cubemap probes and ambient diffuse in the game-shader path (Rendering/NativeCubemapLighting.cs, NativeAmbientLighting.cs). Solforge: CPU cubemap -> SH9 irradiance projection, box probe weights/nesting and box-projected (parallax) lookups (Rendering/ProbeLighting.cs) as standalone CPU math: nothing outside ViewportPipeline.Tests ProbeChecks references it, so the geometry preview, export and fallback MeshShader do not use it. The cubemap-probe and ambient-diffuse requirement is met by the game-shader path above. Checks: ViewportPipeline.Tests ProbeChecks. Unbuilt: stays partial until the main session's build and verify.ps1 pass and the manual checks are done."
     },
     {
       "id": "13",
       "title": "Object Picking, Transform Gizmos & Selection",
-      "status": "upstream_partial",
-      "notes": "Viewport selection, gizmos, shortcuts"
+      "status": "partial",
+      "notes": "(Exists) BVH-style ray picking through the spatial grid and drawn faces (Viewport/AssetViewport.Interaction.cs Pick, SceneGrid.cs, SceneSelection.cs, PickFaces), translate/rotate/scale handles (AssetViewport.Gizmo.cs), multi-object group transforms about one pivot (Authoring/GroupTransforms.cs, Editor/StudioForm.Gizmo.cs). Solforge: World/Local handle axes (AssetViewport.TransformOptions.cs + Editor/StudioForm.GizmoSpace.cs; Scale stays world), grid/angle/scale snapping (toolbar Snap, right-click for steps, Ctrl inverts) and surface snapping (Shift while moving; Alt turns the selection's own up axis onto the normal in World or Local mode; perspective only; the selection is left out of the surface picks, and hits are measured from the near-plane ray origin) in Viewport/TransformSnapping.cs. Checks: ViewportPipeline.Tests SnapChecks. Manual: try local axes and Shift surface snap in a world view. Unbuilt: stays partial until the main session's build and verify.ps1 pass and the manual checks are done."
     },
     {
       "id": "14",
       "title": "Checker Phase: Viewport & Geometry Pipeline Audit",
-      "status": "todo"
+      "status": "partial",
+      "notes": "Audit check written: tests/SunriseStudio.ViewportPipeline.Tests/AuditChecks.cs, run by verify.ps1 -Game (prints 'skipped:' and passes without --game or a hardware adapter; WARP never benchmarks). It checks 1,002,528 triangles at 1920x1080 >= 60 FPS (120 frames, one sync), map 80EDC19B (Leviathan) in the viewport, and 50 load/unload cycles with < 96 MiB private-byte growth and < 64 MiB DXGI local video-memory growth after warm-up (video skipped when the adapter has no IDXGIAdapter3). The destination and every cycle re-read the map with WorldLoader and render it with game shaders (PrepareNativeScene + SetNativeScene, asserting UseGameShaders and no NativeError), then Clear. Limits: the million-triangle benchmark is a synthetic flat grid on the geometry path, not a game-shader map; the private-byte bound is about 2 MiB a cycle; one map only; 50 full map loads make the run long. Manual steps: (1) run .\\verify.ps1 -Game <install> on a machine with a GPU and record the 'audit' lines; (2) look up the Trostland church and Tower plaza map tags and add them to AuditChecks.DestinationMap (or a list) - not known here; (3) open both destinations in Solforge, check 60+ FPS in the View > Statistics overlay"
     },
     {
       "id": "15",

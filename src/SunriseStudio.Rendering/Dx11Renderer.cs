@@ -381,6 +381,7 @@ public sealed unsafe partial class Dx11Renderer : IDisposable
         Context.OMSetBlendState(null);
         Context.DrawIndexed(mesh.IndexCount, 0, 0);
         DrawCalls++;
+        CountTriangles(mesh.IndexCount);
     }
 
     /**
@@ -429,6 +430,7 @@ public sealed unsafe partial class Dx11Renderer : IDisposable
         Context.OMSetBlendState(null);
         Context.DrawIndexedInstanced(mesh.IndexCount, (uint)transforms.Length, 0, 0, 0);
         DrawCalls++;
+        CountTriangles(mesh.IndexCount, transforms.Length);
     }
 
     /** Lines arrive as pairs and can either respect depth or form a visible overlay. */

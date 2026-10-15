@@ -98,6 +98,10 @@ Invoke-Dotnet 'Viewport checks failed.' $viewportArgs
 $selectionArgs = @(Get-Check 'Selection.Tests' 'net9.0-windows')
 if ($Game) { $selectionArgs += @('--game', $Game) }
 Invoke-Dotnet 'Selection checks failed.' $selectionArgs
+# Solforge Phases 10-14: viewport pipeline checks; -Game adds the Phase 14 audit (skips without a hardware adapter).
+$pipelineArgs = @(Get-Check 'ViewportPipeline.Tests' 'net9.0-windows')
+if ($Game) { $pipelineArgs += @('--game', $Game) }
+Invoke-Dotnet 'Viewport pipeline checks failed.' $pipelineArgs
 Invoke-Dotnet 'Editor smoke check failed.' @((Join-Path $PSScriptRoot 'src/SunriseStudio.App/bin/Release/net9.0-windows/Solforge.dll'),
     '--smoke', '--warp', '--settings', (Join-Path $Output 'verify-settings.json'), '--capture', (Join-Path $Output 'studio-setup.png'))
 
