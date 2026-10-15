@@ -60,10 +60,17 @@ public static class EngineCommands
             string stem;
             try { stem = Path.GetFullPath(placed ? command : Path.Combine(folder, command)); }
             catch (Exception exception) when (exception is ArgumentException or NotSupportedException or PathTooLongException) { continue; }
-            if (named && File.Exists(stem)) return stem;
+            if (named && File.Exists(stem)) return OnDisk(stem);
             foreach (string extension in extensions)
-                if (File.Exists(stem + extension)) return stem + extension;
+                if (File.Exists(stem + extension)) return OnDisk(stem + extension);
         }
         return null;
+    }
+
+    /** The file as the folder spells it (claude.cmd, not PATHEXT's claude.CMD). */
+    private static string OnDisk(string file)
+    {
+        try { return Directory.EnumerateFiles(Path.GetDirectoryName(file)!, Path.GetFileName(file)).FirstOrDefault() ?? file; }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException) { return file; }
     }
 }
