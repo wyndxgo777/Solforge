@@ -82,4 +82,8 @@ Project facts (TFM, references, sizes) are in ARCHITECTURE.md; this file is abou
 ## Checks (`tests/*.Tests`, run by verify.ps1)
 - (Exists) 36 console check programs (no test framework); `-Game` adds installation checks,
   `-Blender` the add-on checks; CI runs the install-free set on WARP.
-- Solforge: `Architecture.Tests` (Phase 04), `Packages.Tests` (Phases 05-08).
+- Solforge: `Architecture.Tests` (Phase 04), `Packages.Tests` (Phases 05-08), `PackageAudit.Tests`
+  (Phase 09: `Packages/PackageDigests.cs` verifies writer SHA-1s at 0xF8, 0x118 and block +0x0C; full
+  catalog search peak working set under 1.5 GB with `-Game`).
+- Manual: `verify.ps1 -Game <install> -Stress` runs the 115 GB full-install stress test (cold parse of
+  every package file, every entry read, 1.5 GB budget); without it the check prints a `skipped:` line.

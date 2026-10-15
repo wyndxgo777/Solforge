@@ -1,6 +1,7 @@
 # Builds Studio and runs its checks. -Game adds the checks that read an installation. -Blender adds
 # the Blender checks and needs -Plugin, a checkout of the Blender add-on. Output holds captures and scratch.
-param([string]$Game, [string]$Blender, [switch]$SkipBuild,
+# Manual step: -Game -Stress adds the 115 GB full-install package stress test (hours).
+param([string]$Game, [string]$Blender, [switch]$SkipBuild, [switch]$Stress,
     [string]$Output = (Join-Path ([IO.Path]::GetTempPath()) 'SunriseStudio-verify'),
     [string]$Plugin)
 $ErrorActionPreference = 'Stop'
@@ -42,6 +43,9 @@ $studioChecks = [ordered]@{
     'Architecture.Tests' = 'net9.0'
     # Solforge Phases 05-08: metadata index, search, parallel block reads, tag headers and DAG, delta allocator; -Game adds installed checks.
     'Packages.Tests' = 'net9.0'
+    # Solforge Phase 09: writer SHA-1 digests and the 1.5 GB catalog search budget; -Game -Stress adds the
+    # manual 115 GB full-install stress test (hours), which otherwise prints a skipped: line.
+    'PackageAudit.Tests' = 'net9.0'
     'Projects.Tests' = 'net9.0'; 'Formats.Tests' = 'net9.0'; 'Missions.Tests' = 'net9.0'; 'Cui.Tests' = 'net9.0'
     'Cui.Gpu.Tests' = 'net9.0-windows'; 'Investment.Tests' = 'net9.0-windows'; 'Live.Tests' = 'net9.0-windows'
     'LiveBinding.Tests' = 'net9.0-windows'; 'LivePose.Tests' = 'net9.0-windows'; 'Audio.Tests' = 'net9.0-windows'
@@ -60,7 +64,7 @@ $gameArgs = @{
     'CollisionView.Tests' = @('--game-root', $Game, '--output', (New-Scratch 'collision'))
     'AssetSurface.Tests' = @('--game-root', $Game, '--output', (Join-Path $Output 'isolated-native-asset.png'))
 }
-foreach ($name in 'Packages', 'Projects', 'Formats', 'Missions', 'Cui', 'Audio', 'Authoring', 'AnimationAuthoring', 'MeshAuthoring',
+foreach ($name in 'Packages', 'PackageAudit', 'Projects', 'Formats', 'Missions', 'Cui', 'Audio', 'Authoring', 'AnimationAuthoring', 'MeshAuthoring',
     'Names', 'World', 'Collision', 'Shading', 'PackageReplacement', 'Editor', 'OriginalAsset') {
     $gameArgs["$name.Tests"] = @('--game-root', $Game)
 }
@@ -69,6 +73,7 @@ if ($Blender) { $gameArgs.Remove('Interchange.Tests') } else { $gameArgs['Interc
 foreach ($name in $studioChecks.Keys) {
     $checkArgs = @(Get-Check $name $studioChecks[$name])
     if ($Game -and $gameArgs.Contains($name)) { $checkArgs += $gameArgs[$name] }
+    if ($Game -and $Stress -and $name -eq 'PackageAudit.Tests') { $checkArgs += @('--stress') }
     if ($Game -and $Blender -and $name -eq 'CollisionView.Tests') { $checkArgs += @('--blender', $Blender) }
     if ($Blender -and $name -eq 'AnimationAuthoring.Tests') { $checkArgs += @('--blender', $Blender) }
     Invoke-Dotnet "Check failed: $name" $checkArgs

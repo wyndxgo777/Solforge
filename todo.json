@@ -76,7 +76,8 @@
     {
       "id": "09",
       "title": "Checker Phase: Package & File System Engine Audit",
-      "status": "todo"
+      "status": "done",
+      "notes": "Solforge: Packages/PackageDigests.cs (Verify: misc SHA-1 at header 0xF8, metadata SHA-1 at 0x118, each block's stored-byte SHA-1 at record +0x0C; inherited blocks checked in the sibling patch file when ownBlocksOnly is false). Check: tests/SunriseStudio.PackageAudit.Tests (new, in the sln and verify.ps1): WriteNew and WritePatch output verify, damaged misc/metadata/block copies fail, full catalog search (every class, type/subtype, name row) peak working set under 1.5 GB on scratch packages and with -Game on the install. Manual: verify.ps1 -Game <install> -Stress = 115 GB stress (cold parse without the index, every entry read in 256-tag ReadOriginalAll batches, failures counted, 1.5 GB peak); otherwise prints skipped: lines"
     },
     {
       "id": "10",
