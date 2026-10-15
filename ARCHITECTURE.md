@@ -155,6 +155,8 @@ Real count is 14 libraries (incl. App), not 20.
   `AssetViewport.Ai.cs` adds `ScreenOrigin`/`ScreenSize`/`ScreenRect`; `LivePage.Ai.cs` adds `AiState`.
   The header's Auto-allow toggle (right of Folders, `AiAutoAllow` setting) runs on its own 100 ms UI timer, reads `VtScreen.Snapshot(30)` when the screen changed and sends Enter
   once per prompt (after 250 ms stable, 550 ms for Claude Code, which may get one retry after a redraw) when `Solforge.Mcp.ApprovalPrompts` sees a claude/agy/cline allow prompt at the bottom with a one-time Yes/Allow highlighted.
+  Start/Restart resume the engine's last session for the folder when `AiResumeSessions` is on (default; right-click New session): claude `--continue` if `~/.claude/projects/<folder>/*.jsonl` exists,
+  agy `--conversation <id>` from `~/.gemini/antigravity-cli/history.jsonl`, cline `--id <id>` from `cline history --json` (3 s cap); helpers in `EngineLaunch`. New session always starts fresh.
 - **Configs:** written when a project is open: `<project>/.mcp.json` (Claude Code), `~/.cline/data/settings/cline_mcp_settings.json`
   (+ the VS Code Cline extension settings if installed), `~/.gemini/antigravity/mcp_config.json` (Antigravity desktop) and
   `~/.gemini/config/mcp_config.json` (the `agy` CLI, which also gets the open folders as `--add-dir`). Each runs the shim with

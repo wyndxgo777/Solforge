@@ -133,13 +133,25 @@ public sealed partial class StudioForm
         string start = aiTerminal.Terminal is { HasExited: false } && aiInstalling is null ? "Restart##ai-start" : "Start##ai-start";
         AiFlow(ref x, SolTheme.PrimaryButtonWidth(start) + spacing + ButtonWidth("Stop"), room);
         ImGui.BeginDisabled(command.Length == 0 || missing);
-        if (SolTheme.PrimaryButton(start)) StartAiEngine(engine, command);
+        if (SolTheme.PrimaryButton(start)) StartAiEngine(engine, command, settings.AiResumeSessions);
         ImGui.EndDisabled();
         if (missing) StudioUi.Tip($"{engine.Name} is not installed; the panel below shows how.");
         ImGui.SameLine();
         ImGui.BeginDisabled(aiTerminal.Terminal is not { HasExited: false });
         if (ImGui.Button("Stop")) aiTerminal.Stop();
         ImGui.EndDisabled();
+        AiFlow(ref x, ButtonWidth("New session"), room);
+        ImGui.BeginDisabled(command.Length == 0 || missing);
+        if (ImGui.Button("New session###ai-new-session")) StartAiEngine(engine, command, resume: false);
+        ImGui.EndDisabled();
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) StudioUi.Tip("Starts the engine with a fresh conversation. "
+            + $"Start/Restart {(settings.AiResumeSessions ? "resume" : "do not resume")} the engine's last session for this folder; right-click to change.");
+        if (ImGui.BeginPopupContextItem("ai-new-session-menu"))
+        {
+            bool resume = settings.AiResumeSessions;
+            if (ImGui.MenuItem("Resume last session on Start/Restart", "", ref resume)) { settings.AiResumeSessions = resume; SaveSettings(); }
+            ImGui.EndPopup();
+        }
 
         // The Context button gives up width so Folders, Auto-allow and the status dot still fit beside it.
         float folders = ButtonWidth("Folders"), autoAllow = ButtonWidth("Auto-allow"), dot = ImGui.GetFrameHeight();
@@ -270,7 +282,7 @@ public sealed partial class StudioForm
     }
 
     /** Engines run by full path with the refreshed PATH, so an install made after Solforge started works at once. */
-    private void StartAiEngine(AiEngine engine, string command)
+    private void StartAiEngine(AiEngine engine, string command, bool resume)
     {
         string folder = workspace.Project?.DirectoryPath ?? Environment.CurrentDirectory;
         PrepareAiEngine(folder);
@@ -288,7 +300,39 @@ public sealed partial class StudioForm
             "agy" => AiAgyArguments(folder),
             _ => ""
         };
+        if (resume) arguments = EngineLaunch.JoinArguments(arguments, EngineLaunch.ResumeArguments(engine.Command, AiLastSession(engine.Command, executable, folder)));
         aiTerminal.Start(EngineLaunch.CmdLine(executable, arguments), folder, 120, 32, environment);
+    }
+
+    /** The engine's newest session for the folder, or null (first run, or the lookup failed: start fresh). */
+    private string? AiLastSession(string command, string executable, string folder) => command switch
+    {
+        "claude" => EngineLaunch.ClaudeSession(folder),
+        "agy" => EngineLaunch.AgySession(folder),
+        "cline" => AiClineSession(executable, folder),
+        _ => null
+    };
+
+    /** Runs `cline history --json` (read-only) with a 3 s cap, so a hung CLI only delays the start. */
+    private string? AiClineSession(string executable, string folder)
+    {
+        try
+        {
+            string line = EngineLaunch.CmdLine(executable, "history --json --limit 30", keep: false);
+            var info = new ProcessStartInfo("cmd.exe", line["cmd.exe ".Length..])
+            {
+                WorkingDirectory = folder, UseShellExecute = false, CreateNoWindow = true,
+                RedirectStandardOutput = true, RedirectStandardError = true
+            };
+            info.Environment["PATH"] = aiFreshPath;
+            using var process = Process.Start(info);
+            if (process is null) return null;
+            var output = process.StandardOutput.ReadToEndAsync();
+            _ = process.StandardError.ReadToEndAsync();
+            if (!process.WaitForExit(3000)) { try { process.Kill(true); } catch (InvalidOperationException) { } return null; }
+            return output.Wait(500) ? EngineLaunch.ClineSession(folder, output.Result) : null;
+        }
+        catch (Exception exception) when (exception is System.ComponentModel.Win32Exception or InvalidOperationException or IOException) { return null; }
     }
 
     private void DrawAiInstallCard(AiEngine engine)
