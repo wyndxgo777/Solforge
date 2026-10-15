@@ -28,7 +28,8 @@
     {
       "id": "03",
       "title": "Product Identity & Application Shell",
-      "status": "todo"
+      "status": "done",
+      "notes": "Solforge.exe + user-visible strings, credit in Help/tooltip/THIRD_PARTY.md, status bar (profile/packages/keys/cache/mem), UI-thread I/O audit; ImGui docking skipped: Studio has its own split-tree layout"
     },
     {
       "id": "04",

@@ -12,7 +12,7 @@ internal static class Program
         {
             if (args.Contains("--help"))
             {
-                Console.WriteLine("Sunrise Studio [--game PATH] [--project PATH] [--tag HEX] [--keys PATH] [--warp]");
+                Console.WriteLine("Solforge [--game PATH] [--project PATH] [--tag HEX] [--keys PATH] [--warp]");
                 Console.WriteLine("Keys: automatic from the installation; --keys accepts a Sunrise key export or unpacked executable.");
                 Console.WriteLine("Open: --map HEX --mission HEX --script PATH --mission-view");
                 Console.WriteLine("Preview: --native --animation HEX --category NAME --page NAME");
@@ -30,7 +30,7 @@ internal static class Program
         catch (Exception error)
         {
             Console.Error.WriteLine(error);
-            if (!args.Contains("--smoke")) MessageBox.Show(error.Message, "Sunrise Studio");
+            if (!args.Contains("--smoke")) MessageBox.Show(error.Message, "Solforge");
             return 1;
         }
     }

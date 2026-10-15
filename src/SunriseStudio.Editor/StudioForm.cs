@@ -96,7 +96,7 @@ public sealed partial class StudioForm : Form
         keySource = options.KeySource ?? settings.KeySource;
         if (StartupCategory() is { } named) category = named.Name;
         else if (options.Category is { } kind) (category, assetType) = SplitFilter(kind);
-        Text = $"Sunrise Studio {StudioVersion.Text}";
+        Text = $"Solforge {StudioVersion.Text}";
         chrome = new(this);
         Icon = studioIcon = StudioBrand.CreateIcon();
         ClientSize = new Size(1540, 960);
@@ -493,7 +493,7 @@ public sealed partial class StudioForm : Form
             }
         }
         catch (Exception error) { workspace.Error = error.Message; }
-        Text = workspace.Project is { } project ? $"{project.Name} - Sunrise Studio" : "Sunrise Studio";
+        Text = workspace.Project is { } project ? $"{project.Name} - Solforge" : "Solforge";
     }
 
     private static string? SceneObjectName(object source) => source switch
@@ -790,6 +790,7 @@ public sealed partial class StudioForm : Form
             ImGui.TextColored(StudioTheme.Accent, $"{workspace.Status}: {progress.Stage}");
             ImGui.SameLine();
             DrawProgressBar(progress, 160 * scale, ImGui.GetTextLineHeight() * .5f);
+            DrawStatusFacts();
             ImGui.End(); ImGui.PopStyleVar();
             return;
         }
@@ -797,7 +798,7 @@ public sealed partial class StudioForm : Form
         {
             ImGui.TextColored(notice.Failed ? new Vector4(1, .45f, .35f, 1) : StudioTheme.Accent, notice.Text);
             StudioUi.Tip(notice.Details ?? notice.Text);
-            if (notice.Folder is { } folder && Directory.Exists(folder))
+            if (notice.Folder is { } folder && StatusFolderExists(folder))
             {
                 ImGui.SameLine();
                 if (ImGuiIcons.Button("status-folder", StudioIcon.Folder, "Open folder", size: ImGui.GetTextLineHeight()))
@@ -805,6 +806,7 @@ public sealed partial class StudioForm : Form
             }
             ImGui.SameLine();
             if (ImGui.SmallButton("Dismiss")) workspace.DismissNotice();
+            DrawStatusFacts();
             ImGui.End(); ImGui.PopStyleVar();
             return;
         }
@@ -814,6 +816,7 @@ public sealed partial class StudioForm : Form
         ImGui.TextColored(workspace.Error.Length != 0 ? new Vector4(1, .45f, .35f, 1)
             : StudioTheme.Muted, message);
         StudioUi.Tip(message);
+        DrawStatusFacts();
         ImGui.End(); ImGui.PopStyleVar();
     }
 

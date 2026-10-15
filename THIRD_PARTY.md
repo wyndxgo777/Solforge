@@ -1,6 +1,10 @@
 # Third-party notices
 
-`Sunrise Studio.exe` contains the libraries below and the .NET runtime. Its audio decoder also
+Solforge is built on Sunrise Studio by stan (https://github.com/stanuwu/SunriseStudio) and its
+contributors. The Sunrise client and its research are stan's work too
+(https://github.com/stanuwu/Sunrise).
+
+`Solforge.exe` contains the libraries below and the .NET runtime. Its audio decoder also
 holds code ported from four projects. Studio shows this file under **Help > Third-party notices**.
 Each license text is copied from the project's own license file.
 

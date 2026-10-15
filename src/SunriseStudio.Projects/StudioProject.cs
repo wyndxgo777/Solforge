@@ -54,7 +54,7 @@ public sealed partial class StudioProject
         if (new FileInfo(path).Length > MaximumManifestBytes) throw new InvalidDataException("Project manifest is too large.");
         var data = JsonSerializer.Deserialize<ProjectManifest>(File.ReadAllBytes(path), ProjectJson.Options)
             ?? throw new InvalidDataException("Project manifest is empty.");
-        if (data.Version > ManifestVersion) throw new InvalidDataException("This project needs a newer Sunrise Studio.");
+        if (data.Version > ManifestVersion) throw new InvalidDataException("This project needs a newer Solforge.");
         if (data.Version < 1 || string.IsNullOrWhiteSpace(data.Name) || data.Changes is null || data.AddedAssets is null
             || data.Version == 1 && data.ObjectEdits is not null || data.Version == 2 && data.ObjectEdits is null)
             throw new InvalidDataException("Unsupported project manifest.");

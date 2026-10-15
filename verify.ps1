@@ -89,7 +89,7 @@ Invoke-Dotnet 'Viewport checks failed.' $viewportArgs
 $selectionArgs = @(Get-Check 'Selection.Tests' 'net9.0-windows')
 if ($Game) { $selectionArgs += @('--game', $Game) }
 Invoke-Dotnet 'Selection checks failed.' $selectionArgs
-Invoke-Dotnet 'Editor smoke check failed.' @((Join-Path $PSScriptRoot 'src/SunriseStudio.App/bin/Release/net9.0-windows/Sunrise Studio.dll'),
+Invoke-Dotnet 'Editor smoke check failed.' @((Join-Path $PSScriptRoot 'src/SunriseStudio.App/bin/Release/net9.0-windows/Solforge.dll'),
     '--smoke', '--warp', '--settings', (Join-Path $Output 'verify-settings.json'), '--capture', (Join-Path $Output 'studio-setup.png'))
 
 if ($Blender) {

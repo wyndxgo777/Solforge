@@ -226,7 +226,7 @@ public sealed partial class StudioProject
     }
 
     private IObjectEditCompiler RequireCompiler() => ObjectEditCompiler
-        ?? throw new InvalidOperationException("This project has object edits. Open it in Sunrise Studio to read or build it.");
+        ?? throw new InvalidOperationException("This project has object edits. Open it in Solforge to read or build it.");
 
     /** The display name is not part of the edit. */
     private static bool Same(ObjectEdit? left, ObjectEdit? right) =>

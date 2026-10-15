@@ -25,7 +25,7 @@ internal sealed class StudioPopout : Form
     {
         Panel = panel;
         Chrome = new(this);
-        Text = $"{title} - Sunrise Studio";
+        Text = $"{title} - Solforge";
         Icon = icon;
         MinimumSize = new Size(320, 240);
         KeyPreview = true;

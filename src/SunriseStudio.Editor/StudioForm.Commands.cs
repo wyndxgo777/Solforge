@@ -127,6 +127,10 @@ public sealed partial class StudioForm
         {
             if (ImGui.MenuItem("Third-party notices")) noticesDialog = true;
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("Licenses of the libraries and code Studio includes");
+            // About: Solforge is a fork; the upstream author keeps the credit.
+            ImGui.Separator();
+            ImGui.TextDisabled($"Solforge {StudioVersion.Text}");
+            ImGui.TextDisabled(AboutCredit);
             ImGui.EndMenu();
         }
         chrome.DrawButtons(ImGui.GetFrameHeight());
@@ -160,14 +164,15 @@ public sealed partial class StudioForm
         float titleTop = (height - ImGui.GetTextLineHeight()) / 2;
         float baseline = titleTop + FontAscent();
         ImGui.SetCursorPosY(titleTop);
-        ImGui.TextColored(StudioTheme.Accent, "SUNRISE");
-        ImGui.SameLine(0, ImGui.CalcTextSize(" ").X);
+        ImGui.TextColored(StudioTheme.Accent, "SOL");
+        ImGui.SameLine(0, 0);
         ImGui.SetCursorPosY(titleTop);
-        ImGui.TextUnformatted("STUDIO");
+        ImGui.TextUnformatted("FORGE");
         ImGui.PopFont();
         ImGui.SameLine(0, 6 * scale);
         ImGui.SetCursorPosY(baseline - FontAscent());
         ImGui.TextDisabled(StudioVersion.Text);
+        if (ImGui.IsItemHovered()) ImGui.SetTooltip(AboutCredit);
         float brandEnd = ImGui.GetItemRectMax().X - ImGui.GetWindowPos().X;
         ImGui.SameLine(brandEnd + 16 * scale);
         ImGui.SetCursorPosY((height - ImGui.GetFrameHeight()) / 2);
@@ -428,7 +433,7 @@ public sealed partial class StudioForm
     {
         settings.RememberProject(workspace.Project!.ManifestPath);
         SaveSettings();
-        Text = $"{workspace.Project.Name} - Sunrise Studio";
+        Text = $"{workspace.Project.Name} - Solforge";
     }
 
     private void PickFolder(string title, Action<string> selected)

@@ -46,6 +46,6 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Sunrise-Studio
-          path: publish/Sunrise Studio.exe
+          name: Solforge
+          path: publish/Solforge.exe
           if-no-files-found: error
