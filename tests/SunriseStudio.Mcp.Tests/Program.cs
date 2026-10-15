@@ -396,6 +396,12 @@ static void Approvals()
     Expect(ApprovalPrompts.Find("agy", screen("Run this command?", "> 1. Yes, run command", "  2. Yes, and always allow in this conversation for commands",
         "     that start with 'dotnet'", "  3. Yes, and always allow for commands that start with 'dotnet' (Persist to settings.json)", "  4. No, cancel", Nav, Esc))?.Choice
         == "Yes, run command", "agy command, wrapped option");
+    // Seth's screen: the terminal hard-wraps option 2 back to column 0, and the footer carries ctrl+g.
+    Expect(ApprovalPrompts.Find("agy", screen("Requesting permission for:", "   dotnet run", "", "Run this command?", "> 1. Yes, run command",
+        "  2. Yes, and always allow in this conversation for commands that start with 'dotnet", "run'",
+        "  3. Yes, and always allow for commands that start with 'dotnet run' (Persist to", "settings.json)", "  4. No, cancel", "",
+        "  ↑/↓ Navigate · tab Amend · ctrl+g edit/expand command", "esc to cancel                         accept-edits · Gemini 3.8 Flash · high"))?.Choice
+        == "Yes, run command", "agy command, hard-wrapped options and ctrl+g footer");
     foreach (var (asked, allow, decline) in new[]
     {
         ("Allow access to this URL?", "Yes, allow access", "No, deny access"), ("Allow access to this file?", "Yes, allow access", "No, deny access"),

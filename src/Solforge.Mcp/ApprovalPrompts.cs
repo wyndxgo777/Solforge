@@ -137,7 +137,8 @@ public static partial class ApprovalPrompts
         for (int i = Math.Max(0, top - 2); i < hint; i++)
             if (i != question && i != top && Unsafe().IsMatch(lines[i].Text)) return null;
 
-        // Option 1 sits right under the question; every row after it is the next option or a deeper-indented wrap.
+        // Option 1 sits right under the question; every row after it is the next option or a wrap of the one before:
+        // deeper-indented when the engine wraps, at any column when the terminal hard-wraps a numbered row.
         var options = new List<(bool Pointed, string Label)>();
         var first = Option(rows[lines[question + 1].Row]);
         bool numbered = first.Number >= 0;
@@ -146,7 +147,7 @@ public static partial class ApprovalPrompts
         {
             var row = Option(rows[lines[i].Row]);
             if (row.Column == first.Column && row.Number == (numbered ? options.Count + 1 : -1)) options.Add((row.Pointed, row.Label));
-            else if (row.Column > first.Column && !row.Pointed) options[^1] = (options[^1].Pointed, options[^1].Label + " " + Clean(rows[lines[i].Row]));
+            else if (!row.Pointed && (row.Column > first.Column || numbered && row.Number < 0)) options[^1] = (options[^1].Pointed, options[^1].Label + " " + Clean(rows[lines[i].Row]));
             else return null;
         }
         if (options.Count(option => option.Pointed) != 1 || !options.Any(option => Decline().IsMatch(option.Label))) return null;
