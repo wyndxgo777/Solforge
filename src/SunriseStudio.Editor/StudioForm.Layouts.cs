@@ -15,7 +15,7 @@ public sealed partial class StudioForm
      */
     private void UseFirstRunLayout()
     {
-        if (!options.Smoke && settings.Layout is null && !File.Exists(settingsPath)) ApplyLayoutPreset(StudioLayout.Ue5Preset);
+        if (!options.Smoke && settings.Layout is null && !File.Exists(settingsPath)) ApplyLayoutPreset(StudioLayout.SolforgePreset);
     }
 
     public void ApplyLayoutPreset(string name)
@@ -26,9 +26,9 @@ public sealed partial class StudioForm
         browserSlot = null;
         settings.BrowserWidth = settings.InspectorWidth = 300;
         settings.ChangesHeight = 190;
-        // UE5 docks the object tree as its own Outliner area, so the copy inside the scene view starts hidden.
-        settings.ShowSceneTree = name != StudioLayout.Ue5Preset;
-        settings.SceneTreeWidth = name == StudioLayout.SolforgePreset ? 160 : 280;
+        // The Solforge layout docks the object tree as its own area, so the copy inside the scene view starts hidden.
+        settings.ShowSceneTree = name != StudioLayout.SolforgePreset;
+        settings.SceneTreeWidth = name == StudioLayout.ClassicPreset ? 160 : 280;
         layoutDirty = true;
     }
 

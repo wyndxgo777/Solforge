@@ -95,8 +95,8 @@ internal static class LayoutChecks
                     }
                     else if (phase == 4)
                     {
-                        Check(form.EditorLayout.Save().GetRawText() == StudioLayout.Preset(StudioLayout.Ue5Preset).Save().GetRawText(),
-                            "Reset did not restore the full UE5 preset tree.");
+                        Check(form.EditorLayout.Save().GetRawText() == StudioLayout.Preset(StudioLayout.SolforgePreset).Save().GetRawText(),
+                            "Reset did not restore the full Solforge preset tree.");
                         var tree = form.EditorLayout.Split(form.EditorLayout.Find(StudioPanelKind.Browser)!.Id, StudioSplitAxis.Rows)!;
                         form.EditorLayout.SetPanel(tree.Id, StudioPanelKind.ObjectTree);
                         phase++;

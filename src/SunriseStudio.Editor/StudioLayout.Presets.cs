@@ -6,21 +6,21 @@ public sealed record StudioLayoutSlot(int SiblingId, StudioSplitAxis Axis, bool 
 /** Solforge Phase 03B: named layout presets (Studio.md §3.9) built from the same split tree. */
 public sealed partial class StudioLayout
 {
-    public const string Ue5Preset = "UE5";
-    public const string SolforgePreset = "Solforge (current)";
+    public const string SolforgePreset = "Solforge";
+    public const string ClassicPreset = "Solforge (classic)";
     public const string SunrisePreset = "Sunrise Studio";
-    public static IReadOnlyList<string> PresetNames { get; } = [Ue5Preset, SolforgePreset, SunrisePreset];
+    public static IReadOnlyList<string> PresetNames { get; } = [SolforgePreset, ClassicPreset, SunrisePreset];
 
     /** An unknown name gives the upstream Sunrise Studio layout. */
     public static StudioLayout Preset(string name) => name switch
     {
-        Ue5Preset => Ue5(),
         SolforgePreset => Solforge(),
+        ClassicPreset => Classic(),
         _ => Default()
     };
 
-    /** Place column left, viewport centre, Outliner over Details right, and a bottom drawer under all three. */
-    private static StudioLayout Ue5() => new(new()
+    /** Solforge's default: Asset browser left, Workspace centre, Object tree over Inspector right, and a bottom row. */
+    private static StudioLayout Solforge() => new(new()
     {
         Id = 1, Axis = StudioSplitAxis.Rows, Ratio = .74f,
         First = new()
@@ -39,7 +39,7 @@ public sealed partial class StudioLayout
                 }
             }
         },
-        // One editor per area: the drawer splits Project changes and the Mission Graph instead of tabbing them.
+        // One editor per area: the bottom row splits Project changes and the Mission Graph.
         Second = new()
         {
             Id = 9, Axis = StudioSplitAxis.Columns, Ratio = .5f,
@@ -48,8 +48,8 @@ public sealed partial class StudioLayout
         }
     });
 
-    /** Seth's working layout on 2026-10-15: Asset browser and Workspace, then Inspector over Project changes. */
-    private static StudioLayout Solforge() => new(new()
+    /** The classic Solforge layout (Seth's, 2026-10-15): Asset browser and Workspace, then Inspector over Project changes. */
+    private static StudioLayout Classic() => new(new()
     {
         Id = 1, Axis = StudioSplitAxis.Columns, Ratio = .765f,
         First = new()

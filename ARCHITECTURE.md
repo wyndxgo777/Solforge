@@ -75,11 +75,12 @@ user-visible strings are rebranded (Phase 03).
 
 ## Phase 03B notes (layout presets)
 
-- **Presets** (`Editor/StudioLayout.Presets.cs`, new partial): `UE5`, `Solforge (current)` and the upstream
-  `Sunrise Studio` default, all plain split trees. `Remove`/`Reinsert` take an area out and put it back beside
-  the same neighbour (the Ctrl+Space Asset browser drawer). Window > Layouts lists the presets; Reset layout is UE5.
-- **First run:** UE5 applies only when there is no settings file and no saved layout, and never in smoke runs, so
-  saved layouts and the UI checks keep their trees.
+- **Presets** (`Editor/StudioLayout.Presets.cs`, new partial): `Solforge` (the default: Asset browser left,
+  Workspace centre, Object tree over Inspector right, Project changes | Mission Graph bottom row),
+  `Solforge (classic)` and the upstream `Sunrise Studio` tree. `Remove`/`Reinsert` take an area out and put it
+  back beside the same neighbour (the Ctrl+Space Asset browser drawer). Reset layout gives `Solforge`.
+- **First run:** `Solforge` applies only when there is no settings file and no saved layout, and never in smoke
+  runs: the UI checks were written against the upstream default and have not been re-baselined.
 - **Viewport** (`Viewport/AssetViewport.Fly.cs`, new partial): right drag + W/A/S/D/Q/E flies the orbit camera,
   the wheel sets fly speed meanwhile; an unbound right drag is a fly look. Q/W/E/R pick the transform tool,
   never while flying, dragging or in the player camera (which owns W/A/S/D, Space and Ctrl).

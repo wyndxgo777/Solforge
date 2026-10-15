@@ -35,7 +35,7 @@
       "id": "03B",
       "title": "Layout Presets & UE5 Shortcuts",
       "status": "done",
-      "notes": "StudioLayout.Presets.cs: UE5 (Place | Viewport | Outliner/Details, bottom Changes | Mission Graph), Solforge (current) (Seth 2026-10-15 tree) and upstream Sunrise Studio; Window > Layouts / Panels / Restore areas / Reset layout (Reset = UE5); UE5 only on a fresh install (no settings file, not smoke runs). Shortcuts: Ctrl+Space Asset browser drawer (Remove/Reinsert area), Q/W/E/R tool keys, RMB+WASD/QE fly + wheel fly speed (AssetViewport.Fly.cs). Not done: Ctrl+Shift+A (AI workspace is 47B); drawer tabs (one editor per area, so the drawer is a split). Tests updated, not run"
+      "notes": "Presets (StudioLayout.Presets.cs): Solforge = default (Asset browser left, Workspace centre, Object tree over Inspector right, Changes | Mission Graph bottom row) for first run and Window > Reset layout; Solforge (classic) = Seth's 2026-10-15 arrangement; upstream Sunrise Studio. UE5 preset name dropped (a true UE5 preset - viewport-dominant, bottom-bar drawers - may come later). Window > Layouts / Panels / Restore areas / Reset layout. Smoke runs keep the upstream default (UI checks not re-baselined). UE5 shortcuts: Ctrl+Space Asset browser drawer, Q/W/E/R tool keys, RMB+WASD/QE fly + wheel fly speed (AssetViewport.Fly.cs). Not done: Ctrl+Shift+A (AI is 47B)"
     },
     {
       "id": "03C",

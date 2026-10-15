@@ -12,8 +12,8 @@ public sealed partial class StudioForm
     private bool layoutDirty;
     public StudioLayout EditorLayout => layout;
 
-    // Solforge: Reset layout uses the UE5 preset (Studio.md §3.9); Window > Layouts keeps the upstream one.
-    public void ResetLayout() => ApplyLayoutPreset(StudioLayout.Ue5Preset);
+    // Solforge: Reset layout uses the Solforge preset; Window > Layouts keeps the classic and upstream ones.
+    public void ResetLayout() => ApplyLayoutPreset(StudioLayout.SolforgePreset);
 
     private static string PanelTitle(StudioPanelKind kind) => kind switch
     {
