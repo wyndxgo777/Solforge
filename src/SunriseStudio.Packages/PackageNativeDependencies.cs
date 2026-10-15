@@ -2,15 +2,21 @@ using System.Buffers.Binary;
 
 namespace SunriseStudio.Packages;
 
-/** A native link whose target is absent or of the wrong kind; ExpectedCategory is what the target should be. */
-public sealed class NativeDependencyException(uint tag, uint target, string role, string expectedCategory)
-    : InvalidDataException($"Asset {tag:X8} has an invalid {role} dependency {target:X8}.")
+/** A native link whose target is absent or of the wrong kind; ExpectedCategory is what the target should be.
+    InvalidDataException is sealed, so the details ride in Exception.Data and callers keep catching InvalidDataException. */
+public sealed record NativeDependencyFailure(uint Tag, uint Target, string Role, string ExpectedCategory)
 {
-    public uint Tag { get; } = tag;
-    public uint Target { get; } = target;
-    public string Role { get; } = role;
-    /** An AssetCategories name (Texture, Audio, Buffer, Shader, Material, ...) or "Unknown". */
-    public string ExpectedCategory { get; } = expectedCategory;
+    private const string Key = "Solforge.NativeDependency";
+
+    /** An AssetCategories name (Texture, Audio, Buffer, Shader, Material, ...) or "Unknown" is ExpectedCategory. */
+    public InvalidDataException ToException()
+    {
+        var error = new InvalidDataException($"Asset {Tag:X8} has an invalid {Role} dependency {Target:X8}.");
+        error.Data[Key] = this;
+        return error;
+    }
+
+    public static NativeDependencyFailure? From(Exception error) => error.Data[Key] as NativeDependencyFailure;
 }
 
 /** Resident graphics dependencies exclude mip payloads managed by texture streaming. */
@@ -46,7 +52,7 @@ public static class PackageNativeDependencies
         {
             if (target is 0 or uint.MaxValue) return;
             if (Entry(target) is not { } entry || !valid(entry))
-                throw new NativeDependencyException(tag, target, role, ExpectedCategory(role, type, subtype));
+                throw new NativeDependencyFailure(tag, target, role, ExpectedCategory(role, type, subtype)).ToException();
             if (target != tag && IsResident(entry.TypeInfo)) result.Add(target);
         }
 

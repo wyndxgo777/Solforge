@@ -24,7 +24,8 @@ function Test-Excluded([string]$Relative) {
     return $false
 }
 
-$files = @(Get-ChildItem -LiteralPath $Source -Recurse -File | ForEach-Object {
+# [string[]]: pipeline strings arrive wrapped in PSObject, which StringComparer.Ordinal would compare by culture.
+$files = [string[]]@(Get-ChildItem -LiteralPath $Source -Recurse -File | ForEach-Object {
     $_.FullName.Substring($Source.Length).TrimStart('\', '/').Replace('\', '/')
 } | Where-Object { -not (Test-Excluded $_) })
 # Ordinal order, manifest first, so the entry list never depends on the machine's culture.

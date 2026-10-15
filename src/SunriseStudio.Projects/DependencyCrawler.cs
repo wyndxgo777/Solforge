@@ -95,13 +95,13 @@ public static class DependencyCrawler
                 foreach (uint target in PackageNativeDependencies.Read(catalog, tag, entry.Reference, entry.TypeInfo, data, Resolve))
                     references.Add(target);
             }
-            catch (NativeDependencyException error)
+            catch (InvalidDataException error) when (NativeDependencyFailure.From(error) is { } failure)
             {
-                bool absent = Resolve(error.Target) is null;
-                reported = error.Target;
+                bool absent = Resolve(failure.Target) is null;
+                reported = failure.Target;
                 issues.Add(new(absent ? DependencyIssueKind.MissingReference : DependencyIssueKind.InvalidNativeReference,
-                    tag, error.Target, error.ExpectedCategory, absent
-                        ? $"{tag:X8} needs {error.Target:X8} as its {error.Role} ({error.ExpectedCategory}), which neither the installation nor the project holds."
+                    tag, failure.Target, failure.ExpectedCategory, absent
+                        ? $"{tag:X8} needs {failure.Target:X8} as its {failure.Role} ({failure.ExpectedCategory}), which neither the installation nor the project holds."
                         : error.Message));
             }
             catch (InvalidDataException error)
