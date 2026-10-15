@@ -101,8 +101,9 @@ Project facts (TFM, references, sizes) are in ARCHITECTURE.md; this file is abou
 - (Exists) `ExoticWeaponWorkflow`, `ExoticWeaponDefinition`, `PreparedWeapon*` compilers
   (archetype, art entity, attachments, clips, firing effects, HUD icon, materials, particles,
   presentation, reticle, rigid model, tuning), `WeaponAssetReimport`.
-- Gaps: Parhelion domain (`src/Solforge.Weapons`, Phase 20), recipe DSL/schema (21), stat/recoil
-  sandbox (23).
+- (Phase 20) `src/Solforge.Weapons`: `WeaponRecipe` (.weapon.json), `WeaponRecipeJson`, `WeaponRecipeValidator`,
+  `WeaponDonorProfile` (from `InvestmentItemDetail`), tuning via `WeaponTuning`; audit in `docs/PARHELION_AUDIT.md`.
+- Gaps: recipe DSL versioning/compat (21), stat/recoil sandbox (23), Editor UI for recipes.
 
 ## Missions, Live, Audio (Phases 30-33, 45-47)
 - (Exists) `LuaScript` AST + Loretta conversion, `MissionScriptGraph`, `MissionApiSchema`,

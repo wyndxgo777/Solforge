@@ -80,6 +80,9 @@ foreach ($name in $studioChecks.Keys) {
     if ($Blender -and $name -eq 'AnimationAuthoring.Tests') { $checkArgs += @('--blender', $Blender) }
     Invoke-Dotnet "Check failed: $name" $checkArgs
 }
+# Solforge checks (Solforge.*.Tests); none needs the game.
+Invoke-Dotnet 'Check failed: Solforge.Weapons.Tests' @(
+    (Join-Path $PSScriptRoot 'tests/Solforge.Weapons.Tests/bin/Release/net9.0/Solforge.Weapons.Tests.dll'))
 
 if ($Game) {
     $missionUi = Get-Check 'Missions.UiTests' 'net9.0-windows'

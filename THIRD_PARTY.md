@@ -214,6 +214,21 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ```
 
+## Parhelion-derived weapon code
+
+`src/Solforge.Weapons` (the `.weapon.json` recipe schema, its validation rules and the namespace and
+hash rules) is a C# rewrite of the weapon-recipe parts of Parhelion, from the Sundial workspace by
+KyleThmpsn and contributors (https://github.com/KyleThmpsn/sundial, `crates/parhelion`, version 0.5.2, checked at
+0bda0c5). Parhelion is licensed GPL-3.0-only. Field names, rules and error wording follow
+`crates/parhelion/src/recipe.rs` and `crates/parhelion/src/weapon/validation.rs`; the module map is in
+`docs/PARHELION_AUDIT.md`.
+
+GPL-3.0-only note: a program that includes code derived from GPL-3.0-only code may only be distributed
+as a whole under GPL-3.0-only, with its complete source. Solforge's license is not changed by this
+commit. Until the license question (upstream Sunrise Studio has no license; see Provenance) is
+settled, `Solforge.Weapons` must not be linked into a released `Solforge.exe`. The full license text
+is in the Sundial repository's `LICENSE` file (GNU General Public License, version 3).
+
 ## Repository components outside the exe
 
 These are part of the Solforge repository but not of `Sunrise Studio.exe`.
@@ -221,7 +236,7 @@ These are part of the Solforge repository but not of `Sunrise Studio.exe`.
 | component | version | license | where | notes |
 |---|---|---|---|---|
 | Sunrise Blender add-on (stanuwu/SunriseBlenderPlugin) | 1.13.19, upstream e0b5bc6 | GPL-3.0 | `blender/` | Full text in `blender/LICENSE`. A separate Blender add-on that exchanges files with Studio; no add-on code is compiled into the exe. Changes to `blender/` stay GPL-3.0 and must keep that file. |
-| Parhelion (KyleThmpsn/sundial, crates/parhelion) | 0.5.2, checked at 0bda0c5 | GPL-3.0-only | not in the repository | Consulted as a reference. Porting its code into Solforge would make the combined program GPL-3.0-only and needs its notices here. Its dependencies include tiger-pkg 0.21, egui 0.31 and image 0.25. |
+| Parhelion (KyleThmpsn/sundial, crates/parhelion) | 0.5.2, checked at 0bda0c5 | GPL-3.0-only | `src/Solforge.Weapons` (C# rewrite, see below) | Its weapon-recipe domain is rewritten in C# in `src/Solforge.Weapons`; no Rust source is copied. Its dependencies (tiger-pkg 0.21, egui 0.31, image 0.25) are not used. |
 
 ## Provenance
 

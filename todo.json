@@ -142,23 +142,26 @@
     {
       "id": "20",
       "title": "Parhelion Source Audit & Domain Extraction",
-      "status": "todo"
+      "status": "partial",
+      "notes": "docs/PARHELION_AUDIT.md (module map, kept vs dropped, licence); src/Solforge.Weapons (WeaponRecipe, WeaponRecipeEnums, WeaponRecipeJson, WeaponRecipeValidator incl. validate_for_donor identity rules, WeaponIdentityHashes (from_namespace derivation), WeaponCollections + WeaponCollectionNodeBudget (collection.rs), WeaponDonorProfile, WeaponNamespace, HexHash) built on Formats InvestmentItemDetail + Authoring WeaponTuning; check tests/Solforge.Weapons.Tests (sample.weapon.json round-trip + 26 rejection cases + identity/node-budget/donor/catalog checks, no game needed) in .sln and verify.ps1; THIRD_PARTY.md Parhelion GPL-3.0-only section. Left: licence decision (Studio.md 2.1) before shipping; RPN stack-depth check (Phase 21); filling WeaponDonorProfile's catalog sets (PlugSetCount, KnownSocketTypes, WeaponPatternIndices, StatGroupIndices) from installed tables (Phase 21/23); NodeBudget wired into a build and the recipe-to-Studio compiler (Phase 21)."
     },
     {
       "id": "21",
       "title": "Weapon Recipe DSL & Schema Implementation",
-      "status": "todo"
+      "status": "todo",
+      "notes": "From Phase 20: RPN stack-depth check (validation.rs validate_numeric_instructions: exactly one value left, needs the progression opcode table); recipe-to-Studio compiler (recipe -> InvestmentItemClone/InvestmentSocketEdits/WeaponTuningAuthoring/WeaponArchetypeAuthoring project edits, Parhelion weapon.rs + weapon/build/), which Phase 24 needs; WeaponCollectionNodeBudget checked over a build's recipes; decode the installed reusable plug-set count, socket-type table and weapon-pattern indices into WeaponDonorProfile; importing full .parhelion.json recipes."
     },
     {
       "id": "22",
       "title": "Weapon Workbench UI & 3D Weapon Preview",
       "status": "upstream_partial",
-      "notes": "Editor/Creation ExoticWeaponWorkflow + Authoring Weapon* compilers; no Parhelion"
+      "notes": "Editor/Creation ExoticWeaponWorkflow + Authoring Weapon* compilers; no Parhelion; from Phase 20: the workbench lists WeaponRecipeValidator issues and runs the Phase 21 compiler, it does not own it"
     },
     {
       "id": "23",
       "title": "Weapon Stat & Recoil Sandbox Engine",
-      "status": "todo"
+      "status": "todo",
+      "notes": "From Phase 20: installed stat-group indices (WeaponDonorProfile.StatGroupIndices) and stat-group curve bounds for stats a donor lacks (FromInvestment leaves AddableStats Minimum/Maximum null, so their values are not range-checked)."
     },
     {
       "id": "24",
