@@ -16,13 +16,14 @@
     {
       "id": "01",
       "title": "License, Provenance & Repository Hygiene",
-      "status": "partial",
-      "notes": "THIRD_PARTY.md repo section, .gitignore game-data rules; pre-commit hook not added yet"
+      "status": "done",
+      "notes": "THIRD_PARTY.md repo section, .gitignore game-data rules, .githooks/pre-commit (core.hooksPath, see UPSTREAM.md)"
     },
     {
       "id": "02",
       "title": "Baseline Build & Continuous Integration",
-      "status": "todo"
+      "status": "partial",
+      "notes": ".gitattributes (LF for .cs/.py/.json/.txt/hooks), CI runs verify.ps1 -SkipBuild (no Blender/game); pending: clean build on a fresh machine, warnings-as-errors"
     },
     {
       "id": "03",
@@ -175,7 +176,7 @@
     },
     {
       "id": "30",
-      "title": "Lua 5.3 Code Editor & Language Server",
+      "title": "Lua 5.4 Code Editor & Language Server",
       "status": "todo"
     },
     {

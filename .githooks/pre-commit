@@ -1,0 +1,14 @@
+#!/bin/sh
+# Solforge pre-commit hook: refuses game data. Enable once per clone with
+#   git config core.hooksPath .githooks
+# Studio's own generated Vorbis codebook table is the one allowed .bin file.
+allow='^src/SunriseStudio\.Audio/Resources/wwise-vorbis-codebooks\.bin$'
+deny='\.(pkg|bin|bik|wem|bnk|pck|usm)$|(^|/)oo2core[^/]*\.dll$|(^|/)package_keys[^/]*$|(^|/)destiny[^/]*\.exe$|^(dumps|extracted|unpacked|rip|exports)/'
+bad=$(git diff --cached --name-only --diff-filter=ACMR | grep -iE "$deny" | grep -vE "$allow")
+if [ -n "$bad" ]; then
+    echo "pre-commit: game data is not allowed in Solforge:" >&2
+    echo "$bad" | sed 's/^/  /' >&2
+    echo "Game files are read from the user's installation at runtime (see .gitignore)." >&2
+    exit 1
+fi
+exit 0

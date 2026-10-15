@@ -1,0 +1,15 @@
+# Line endings. The check programs compare multi-line strings from source (raw string literals,
+# fixtures) against text joined with "\n", so these must check out as LF on every OS.
+* text=auto
+*.cs text eol=lf
+*.py text eol=lf
+*.json text eol=lf
+*.txt text eol=lf
+*.toml text eol=lf
+*.sh text eol=lf
+.githooks/* text eol=lf
+
+# Binary files.
+*.png binary
+*.ico binary
+*.bin binary

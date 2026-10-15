@@ -28,6 +28,19 @@ The Blender add-on has no remote; it is pulled by URL. To make an accidental ups
 git remote set-url --push upstream DISABLED
 ```
 
+## Clone setup
+
+Once per clone, turn on the tracked hooks. `.githooks/pre-commit` refuses staged game data
+(`.pkg`, `.bin`, `.bik`, `.wem`, `.bnk`, `.pck`, `.usm`, Oodle DLLs, package keys, game exes, dump
+folders); Studio's generated `wwise-vorbis-codebooks.bin` is the one allowed `.bin`.
+
+```powershell
+git config core.hooksPath .githooks
+```
+
+`.gitattributes` checks `.cs`, `.py`, `.json`, `.txt` and hook files out as LF; the check programs
+compare source text joined with `\n` and fail on CRLF.
+
 ## Syncing
 
 Studio:

@@ -19,7 +19,7 @@ namespaces and the exe are still `SunriseStudio.*` / `Sunrise Studio.exe`.
 | Texture encode | BCnEncoder.Net 2.3.0 |
 | Package restore | `.nuget/packages` inside the repo (`RestorePackagesPath`) |
 | Tests | 35 console check programs (`OutputType` Exe), no xUnit/NUnit. 33 are in the .sln; the two weapon checks build from `verify.ps1` |
-| CI | `.github/workflows/build.yml`: windows-latest, .NET 9.0.x, `build.ps1` then `publish.ps1` (no tests run in CI) |
+| CI | `.github/workflows/build.yml`: windows-latest, .NET 9.0.x, `build.ps1`, `verify.ps1 -SkipBuild` (no game, no Blender), then `publish.ps1` |
 | Blender add-on | `blender/` (Python, Blender 5.2+, `sunrise_blender_plugin` 1.13.19, GPLv3), git subtree |
 
 ## Scripts

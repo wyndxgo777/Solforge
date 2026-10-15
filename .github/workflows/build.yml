@@ -34,6 +34,12 @@ jobs:
         shell: powershell
         run: .\build.ps1
 
+      # Every check that needs no game installation. No -Blender, so the Blender checks are skipped;
+      # the renderer falls back to WARP on the GPU-less runner.
+      - name: Run checks
+        shell: powershell
+        run: .\verify.ps1 -SkipBuild -Output "$env:RUNNER_TEMP\verify"
+
       - name: Publish executable
         shell: powershell
         run: .\publish.ps1
