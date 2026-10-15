@@ -216,7 +216,12 @@ public sealed partial class StudioForm
         // cmd /k keeps a prompt after the engine exits.
         if (engine.Command.Length == 0) { aiTerminal.Start($"cmd.exe /d /k {command}", folder, 120, 32, environment); return; }
         if (AiResolved(engine.Command) is not { } executable) return;
-        string arguments = engine.Command == "claude" && workspace.Project is not null ? AiClaudeArguments(folder) : "";
+        string arguments = workspace.Project is null ? "" : engine.Command switch
+        {
+            "claude" => AiClaudeArguments(folder),
+            "agy" => AiAgyArguments(folder),
+            _ => ""
+        };
         aiTerminal.Start(EngineLaunch.CmdLine(executable, arguments), folder, 120, 32, environment);
     }
 

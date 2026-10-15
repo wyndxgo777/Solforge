@@ -18,11 +18,11 @@ try
     ProjectPaths();
     checks.Add("project files resolve inside the project only; packages, manifest and build output are not editable");
     Configs();
-    checks.Add("client configs: .mcp.json, Cline and Antigravity get the solforge stdio entry; other servers survive; rewrite is idempotent");
+    checks.Add("client configs: .mcp.json, Cline, Antigravity desktop and CLI get the solforge stdio entry; an empty agy file merges without .bak; other servers survive; rewrite is idempotent");
     CommandResolution();
     checks.Add("engine commands resolve on PATH + PATHEXT like cmd: .cmd beats npm's bare script, folders with spaces, missing is null");
     ClaudeLaunch();
-    checks.Add("Claude launch: --mcp-config, --settings hook, --append-system-prompt and --add-dir survive argv parsing with spaced paths");
+    checks.Add("Claude launch: --mcp-config, --settings hook, --append-system-prompt and --add-dir survive argv parsing with spaced paths; agy gets the same --add-dir folders");
     ContextText();
     checks.Add("context summary: compact lines under 2 KB with map, hovered, selected values, open documents; nothing when paused");
     await StdioRoundTrip();
@@ -121,9 +121,17 @@ void Configs()
     Directory.CreateDirectory(project);
     File.WriteAllText(Path.Combine(project, ".mcp.json"), "{\"mcpServers\":{\"other\":{\"command\":\"x\"}},\"keep\":1}");
     Directory.CreateDirectory(Path.Combine(appData, "Code", "User", "globalStorage", "saoudrizwan.claude-dev"));
+    // The agy installer leaves its config empty: it must merge as {} with no .bak.
+    string agy = Path.Combine(home, ".gemini", "config", "mcp_config.json");
+    Directory.CreateDirectory(Path.GetDirectoryName(agy)!);
+    File.WriteAllText(agy, "");
     string shim = @"C:\Solforge\solforge-mcp.exe";
     var written = McpClientConfigs.WriteAll(project, shim, home, appData);
-    Expect(written.Select(item => item.Client).SequenceEqual(["Claude Code", "Cline", "Cline (VS Code)", "Antigravity"]), "clients");
+    Expect(written.Select(item => item.Client).SequenceEqual(
+        ["Claude Code", "Cline", "Cline (VS Code)", "Antigravity (desktop)", "Antigravity CLI"]), "clients");
+    Expect(written[^1].Path == agy && !File.Exists(agy + ".bak"), "agy file without .bak");
+    var agyEntry = new JsonObject { ["args"] = new JsonArray("--project", project), ["command"] = shim, ["disabled"] = false };
+    Expect(JsonNode.DeepEquals(JsonNode.Parse(File.ReadAllText(agy))?["mcpServers"]?["solforge"], agyEntry), "agy entry");
     var claude = JsonNode.Parse(File.ReadAllText(Path.Combine(project, ".mcp.json")))!;
     Expect(claude["mcpServers"]?["other"]?["command"]?.ToString() == "x" && claude["keep"]?.GetValue<int>() == 1, "kept other entries");
     var entry = claude["mcpServers"]?["solforge"];
@@ -131,9 +139,9 @@ void Configs()
     Expect(entry?["args"]?.AsArray().Select(node => node?.ToString()).SequenceEqual(["--project", project]) == true, "project scope");
     foreach (var item in written.Skip(1))
         Expect(JsonNode.Parse(File.ReadAllText(item.Path))?["mcpServers"]?["solforge"]?["command"]?.ToString() == shim, item.Client);
-    var stamp = File.GetLastWriteTimeUtc(Path.Combine(project, ".mcp.json"));
+    var stamps = written.Select(item => File.GetLastWriteTimeUtc(item.Path)).ToArray();
     McpClientConfigs.WriteAll(project, shim, home, appData);
-    Expect(File.GetLastWriteTimeUtc(Path.Combine(project, ".mcp.json")) == stamp, "idempotent");
+    Expect(written.Select(item => File.GetLastWriteTimeUtc(item.Path)).SequenceEqual(stamps), "idempotent");
 }
 
 async Task StdioRoundTrip()
@@ -267,6 +275,11 @@ void ClaudeLaunch()
         && line.EndsWith(ancestor + "\"\"", StringComparison.Ordinal), "cmd line: " + line);
     Expect(EngineLaunch.Quote(@"C:\a b\") == "\"C:\\a b\\\\\"" && EngineLaunch.Quote("plain") == "plain", "quoting");
     Expect(EngineLaunch.ClaudeArguments(null, []).StartsWith("--append-system-prompt", StringComparison.Ordinal), "no config files");
+    // agy gets the same folders, quoted: both scratch paths hold spaces.
+    string agy = EngineLaunch.AgyArguments(folders);
+    Expect(agy == $"--add-dir \"{game}\" --add-dir \"{ancestor}\"", "agy arguments: " + agy);
+    Expect(Argv("agy.exe " + agy).Skip(1).SequenceEqual(["--add-dir", game, "--add-dir", ancestor]), "agy argv");
+    Expect(EngineLaunch.AgyArguments([]).Length == 0, "agy without folders");
 }
 
 static void ContextText()

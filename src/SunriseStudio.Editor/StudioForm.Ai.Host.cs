@@ -87,9 +87,18 @@ public sealed partial class StudioForm
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             { aiServiceError = "config: " + exception.Message; }
         }
+        return EngineLaunch.ClaudeArguments(files, AiAddDirs(folder));
+    }
+
+    /** The Antigravity CLI's --add-dir folders; its MCP entry was written by PrepareAiEngine. */
+    private string AiAgyArguments(string folder) => EngineLaunch.AgyArguments(AiAddDirs(folder));
+
+    /** The found folders the user has not hidden, plus the ones they added. */
+    private IReadOnlyList<string> AiAddDirs(string folder)
+    {
         var hidden = settings.AiHiddenFolders.ToHashSet(StringComparer.OrdinalIgnoreCase);
         var folders = AiFoundFolders(folder).Where(found => !hidden.Contains(found)).Concat(settings.AiFolders.Where(Directory.Exists));
-        return EngineLaunch.ClaudeArguments(files, EngineLaunch.AddDirs(folder, folders, ancestors: false));
+        return EngineLaunch.AddDirs(folder, folders, ancestors: false);
     }
 
     /**
