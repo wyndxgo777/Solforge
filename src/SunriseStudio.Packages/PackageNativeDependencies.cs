@@ -2,6 +2,17 @@ using System.Buffers.Binary;
 
 namespace SunriseStudio.Packages;
 
+/** A native link whose target is absent or of the wrong kind; ExpectedCategory is what the target should be. */
+public sealed class NativeDependencyException(uint tag, uint target, string role, string expectedCategory)
+    : InvalidDataException($"Asset {tag:X8} has an invalid {role} dependency {target:X8}.")
+{
+    public uint Tag { get; } = tag;
+    public uint Target { get; } = target;
+    public string Role { get; } = role;
+    /** An AssetCategories name (Texture, Audio, Buffer, Shader, Material, ...) or "Unknown". */
+    public string ExpectedCategory { get; } = expectedCategory;
+}
+
 /** Resident graphics dependencies exclude mip payloads managed by texture streaming. */
 public static class PackageNativeDependencies
 {
@@ -35,7 +46,7 @@ public static class PackageNativeDependencies
         {
             if (target is 0 or uint.MaxValue) return;
             if (Entry(target) is not { } entry || !valid(entry))
-                throw new InvalidDataException($"Asset {tag:X8} has an invalid {role} dependency {target:X8}.");
+                throw new NativeDependencyException(tag, target, role, ExpectedCategory(role, type, subtype));
             if (target != tag && IsResident(entry.TypeInfo)) result.Add(target);
         }
 
@@ -131,6 +142,21 @@ public static class PackageNativeDependencies
         }
         return result.Order().ToArray();
     }
+
+    /** The kind of asset a link role points at, in AssetCategories names. */
+    private static string ExpectedCategory(string role, int type, int subtype) => role switch
+    {
+        "payload" or "paired header" => type is 32 or 40 && subtype is >= 1 and <= 3 ? "Texture" : "Buffer",
+        "streamed mip" or "icon bitmap" or "library bitmap" or "bitmap texture" or "texture" => "Texture",
+        "sound bank" => "Audio",
+        "model buffer" or "constant buffer" => "Buffer",
+        "shader" => "Shader",
+        "particle material" or "model material" => "Material",
+        "particle emitter" or "particle mesh" => "Effect",
+        "particle model" => "Entity model",
+        "entity config" or "config schema" => "Entity / Definition",
+        _ => "Unknown"
+    };
 
     /** Typed arrays must retain their marker, repeated count and row class. */
     private static IReadOnlyList<int> Rows(ReadOnlyMemory<byte> data, int field, uint rowClass, int stride)

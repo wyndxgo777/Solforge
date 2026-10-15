@@ -76,11 +76,26 @@ Project facts (TFM, references, sizes) are in ARCHITECTURE.md; this file is abou
   (native/socket dependency resolution, `BuiltProjectAsset`), `ModInstaller` + `ModManifest`
   (`mod.json`, mods under `bin/x64/Sunrise/mods`), `MergeSidecarArtifact`, `ModUpdatePlan`.
 - Gaps: `.solproj` naming (spec), rollback snapshots (Phase 43), `.solmod` container (Phase 42).
+- (Exists) AppData preferences, window layouts and recent projects: `Editor/StudioSettings.cs`
+  (`%LocalAppData%/Sunrise Studio/settings.json`); revert-to-base per tag: `StudioProject.Revert`
+  + Changes panel "Revert" (`Editor/StudioForm.Browser.cs`); overlay reads: `StudioProject.ReadAsset`
+  over `PackageCatalog.ReadOriginal` + `PackageOverlayEntry`.
+- Solforge Phase 15: `docs/sunrise.project.schema.json` + `ProjectSchema`, external edit watcher
+  `ProjectWatcher` (checks: `tests/SunriseStudio.ProjectSystem.Tests`).
+- Solforge Phase 16: base-vs-authored word diff `ProjectTagDiff` + Changes "Compare with base..."
+  dialog with "Revert to base" (`Editor/StudioForm.TagDiff.cs`).
+- Solforge Phase 18: `DependencyCrawler` + `DependencyManifest` (`build/dependencies.json`, missing
+  texture/audio/script/child references) and `PackageIdAllocator` (0x0100-0x0CFF).
+- Solforge Phase 19: `ProjectSystem.Tests/IntegrityChecks` audits a generated 50-edit / 20-asset
+  project: base packages untouched, save/reload byte-identical.
 
 ## Interchange (`SunriseStudio.Interchange`, `Authoring`, Phase 17)
 - (Exists) Blender bundles (`AssetBundle*`, mesh/texture/collision codecs), world scene export
   (`WorldSceneExport`), effect export, `MeshAssetImporter`, `AnimationAssetImporter`,
   `OriginalAssetImporter`, `CollisionImport`, `HavokPackfileBuilder`, `CompressedMeshEncoder`.
+- Solforge Phase 17: `package-blender.ps1` ships `blender/` as an extension zip with publish builds
+  (check: `tests/blender_package_check.ps1`); WAV stem export `Audio/AudioStemExport.cs`.
+- Gaps: FBX export; a Studio menu item for stem export.
 
 ## Weapons (`Authoring` + `Editor/Creation`, Phases 20-23)
 - (Exists) `ExoticWeaponWorkflow`, `ExoticWeaponDefinition`, `PreparedWeapon*` compilers

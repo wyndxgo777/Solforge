@@ -47,5 +47,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: Solforge
-          path: publish/Solforge.exe
+          path: |
+            publish/Solforge.exe
+            publish/*.zip
           if-no-files-found: error

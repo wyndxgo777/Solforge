@@ -71,7 +71,9 @@ lists the command-line options.
 ### Blender add-on
 
 Opening Studio's exports in Blender, and making files Studio imports from Blender, needs the
-[Sunrise Blender add-on](https://github.com/stanuwu/SunriseBlenderPlugin). This is not included!
+Sunrise Blender add-on. It lives in `blender/` and ships with every build as
+`sunrise_blender_plugin-<version>.zip` next to `Solforge.exe`. Install it in Blender through
+Edit > Preferences > Get Extensions > Install from Disk, and pick the zip.
 
 ### Layout
 

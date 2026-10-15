@@ -112,31 +112,32 @@
     {
       "id": "15",
       "title": "Project System & Workspace Architecture",
-      "status": "upstream_partial",
-      "notes": "Projects: sunrise.project.json (spec says .solproj)"
+      "status": "partial",
+      "notes": "sunrise.project.json exists (StudioProject.cs); schema documented in docs/sunrise.project.schema.json + ProjectSchema.cs (Projects); external edit watcher ProjectWatcher.cs (Projects); AppData prefs/layouts/recent projects exist (Editor/StudioSettings.cs, %LocalAppData%/Sunrise Studio/settings.json). Checks: tests/SunriseStudio.ProjectSystem.Tests (SchemaChecks, WatcherChecks) in verify.ps1. Left: Studio owns no ProjectWatcher yet (one per open project, poll Pending each frame, Scan(), prompt to reload/revalidate, MarkClean() after Studio saves); done until then: schema doc + AppData prefs"
     },
     {
       "id": "16",
       "title": "Non-Destructive Delta Overlay Engine",
-      "status": "upstream_partial",
-      "notes": "Projects: BinaryDelta, ObjectEdits, transactions"
+      "status": "partial",
+      "notes": "Overlay VFS exists (StudioProject.ReadAsset over PackageCatalog.ReadOriginal + PackageOverlayEntry; BinaryDelta, ObjectEdits, transactions); revert per tag exists (StudioProject.Revert, Changes > Revert). Added: ProjectTagDiff.cs (Projects) + Changes > 'Compare with base...' dialog with 'Revert to base' (Editor/StudioForm.TagDiff.cs). Checks: ProjectSystem.Tests OverlayChecks. Left: build.ps1 + verify.ps1 -SkipBuild green, then open the dialog in Studio on a real changed tag (UI not covered by checks)"
     },
     {
       "id": "17",
       "title": "Asset Interchange & Export",
-      "status": "upstream_partial",
-      "notes": "glTF/OBJ/DDS/PNG interchange + Blender bundles"
+      "status": "partial",
+      "notes": "glTF/OBJ/DDS/PNG export + Blender bundles exist (Interchange AssetBundle*, WorldSceneExport, Authoring importers); FBX still planned. Added: package-blender.ps1 packs blender/ as <id>-<version>.zip (manifest exclude rules, reproducible), called by publish.ps1; tests/blender_package_check.ps1 in verify.ps1. WAV stems: Audio/AudioStemExport.cs (mix + mono stem per channel, any channel count) with ProjectSystem.Tests StemChecks (raw PCM WEM). Manual: export a compressed Vorbis WEM from the install via AudioStemExport.ExportWem; no Audio page menu item for stems yet; FBX"
     },
     {
       "id": "18",
       "title": "Dependency Resolution & Packaging Rules",
-      "status": "upstream_partial",
-      "notes": "ProjectBuilder native/socket dependencies"
+      "status": "partial",
+      "notes": "ProjectBuilder native/socket dependency resolution exists (ProjectBuilder.NativeDependencies.cs, PackageNativeDependencies). Added: DependencyCrawler.cs (Projects) walks changed + added tags one level (native refs + structured tag words), DependencyManifest writes build/dependencies.json with MissingReference / InvalidNativeReference / MissingProjectFile issues; PackageIdAllocator.cs allocates 0x0100-0x0CFF skipping installed + project ids. Checks: ProjectSystem.Tests DependencyChecks. Crawl now walks the build tag set (raw changes, compiled object edits, config bindings, added, generated) on the bytes the build writes; native-link issues carry the missing child kind (Texture, Audio, Buffer, ...), bare structured words stay Unknown; script references are not classified. Left: Studio Build does not call DependencyCrawler.Crawl(...).Write(...), PackageIdAllocator.For is unused by new-asset id flows (ObjectEditContext.Generated.cs, CollisionImport.cs, Authoring/Creation keep their own scans); no check plants a missing reference through an object edit (needs a registered ObjectEdit compiler in ProjectSystem.Tests)"
     },
     {
       "id": "19",
       "title": "Checker Phase: Project & Overlay Engine Audit",
-      "status": "todo"
+      "status": "partial",
+      "notes": "tests/SunriseStudio.ProjectSystem.Tests/IntegrityChecks.cs (run by verify.ps1, no install): generated install (60 tags) + project with 50 modified tags and 20 new assets (15 native in an allocated package); base package SHA-256s unchanged, every authored byte reads back after reload with a fresh catalog, re-save byte-identical, dependency manifest complete. Left: build.ps1 + verify.ps1 -SkipBuild green (main session), then flip to done"
     },
     {
       "id": "20",
