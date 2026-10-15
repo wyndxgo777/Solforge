@@ -204,23 +204,30 @@ public sealed partial class StudioForm
         { settings.GameShaders = shading; PrepareGameShaders(); }
         ImGui.SameLine();
         bool fullDetail = settings.FullDetail;
-        if (ImGui.Checkbox("Full detail", ref fullDetail))
+        if (ImGuiIcons.Toggle("tb-detail", StudioIcon.Detail,
+            "Full detail: draw static objects at full detail at every distance, with no far cull.\nOff switches detail and culls with distance, as the game does.",
+            ref fullDetail))
         {
             settings.FullDetail = fullDetail;
             if (viewport is not null) viewport.FullDetail = fullDetail;
             if (assetViewport is not null) assetViewport.FullDetail = fullDetail;
         }
-        if (ImGui.IsItemHovered()) ImGui.SetTooltip(
-            "Draw static objects at full detail at every distance, with no far cull.\nOff switches detail and culls with distance, as the game does.");
         ImGui.SameLine();
         ImGui.BeginDisabled(!settings.GameShaders);
-        ImGui.SetNextItemWidth(90 * scale);
-        int lighting = (int)settings.LightingMode;
-        if (ImGui.Combo("##lighting", ref lighting, LightingNames, LightingNames.Length))
+        int lighting = Math.Clamp((int)settings.LightingMode, 0, LightingNames.Length - 1);
+        // The preview names the setting so a bare "Studio" doesn't read as the app or layout name.
+        ImGui.SetNextItemWidth(ImGui.CalcTextSize("Lighting: Ambient").X + ImGui.GetFrameHeight() + ImGui.GetStyle().FramePadding.X * 2);
+        if (ImGui.BeginCombo("##lighting", "Lighting: " + LightingNames[lighting]))
         {
-            settings.LightingMode = (SunriseStudio.Rendering.NativeLightingMode)lighting;
-            if (viewport?.NativeRenderer is { } scene) scene.LightingMode = settings.LightingMode;
-            if (assetViewport?.NativeRenderer is { } asset) asset.LightingMode = settings.LightingMode;
+            for (int i = 0; i < LightingNames.Length; i++)
+                if (ImGui.Selectable(LightingNames[i], i == lighting) && i != lighting)
+                {
+                    lighting = i;
+                    settings.LightingMode = (SunriseStudio.Rendering.NativeLightingMode)lighting;
+                    if (viewport?.NativeRenderer is { } scene) scene.LightingMode = settings.LightingMode;
+                    if (assetViewport?.NativeRenderer is { } asset) asset.LightingMode = settings.LightingMode;
+                }
+            ImGui.EndCombo();
         }
         if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.SetTooltip(lighting == 1
             ? "Lighting: atmosphere preview\nLocal probes and shadows are not drawn"

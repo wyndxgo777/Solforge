@@ -95,6 +95,7 @@ try
     LayoutChecks.Run(root);
     IsolatedObjectWorkflowChecks.Run(root);
     NoticesUiChecks.Run(root);
+    TerminalChecks.Run();
     const uint first = 0x80A00000, second = first + 1;
     string install = Path.Combine(root, "install");
     Directory.CreateDirectory(Path.Combine(install, "packages"));

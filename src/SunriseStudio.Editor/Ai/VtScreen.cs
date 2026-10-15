@@ -1,8 +1,12 @@
+using System.Globalization;
 using System.Text;
 
 namespace SunriseStudio.Editor.Ai;
 
-/** One terminal cell: a UTF-16 character and its colours (0xAARRGGBB; 0 = default). */
+/**
+ * One terminal cell: a UTF-16 character and its colours (0xAARRGGBB; 0 = default). The right half of a
+ * wide character holds VtScreen.Continuation.
+ */
 internal struct VtCell
 {
     public char Char;
@@ -27,6 +31,7 @@ internal sealed class VtScreen(int columns, int rows)
     private readonly StringBuilder parameters = new();
     private int top, bottom = rows - 1, savedX, savedY;
     private bool pendingWrap;
+    private char high;
     private VtCell pen = new() { Char = ' ' };
 
     public object Gate { get; } = new();
@@ -40,6 +45,10 @@ internal sealed class VtScreen(int columns, int rows)
     public long Revision { get; private set; }
     public IReadOnlyList<VtCell[]> Scrollback => scrollback;
     public VtCell[] Line(int row) => lines[row];
+    /** The right half of a wide character; drawn as nothing. */
+    public const char Continuation = '\0';
+    /** Stands in for characters outside the BMP (emoji), which the 16-bit font atlas cannot hold. */
+    public const char Placeholder = '□';
     /** Answers device queries (cursor position) back to the program. */
     public Action<string>? Reply { get; set; }
 
@@ -80,7 +89,8 @@ internal sealed class VtScreen(int columns, int rows)
     public string Text()
     {
         lock (Gate)
-            return string.Join('\n', lines.Select(line => new string(line.Select(cell => cell.Char).ToArray()).TrimEnd()));
+            return string.Join('\n', lines.Select(line =>
+                new string(line.Where(cell => cell.Char != Continuation).Select(cell => cell.Char).ToArray()).TrimEnd()));
     }
 
     public void Feed(ReadOnlySpan<char> text)
@@ -147,13 +157,61 @@ internal sealed class VtScreen(int columns, int rows)
 
     private void Print(char c)
     {
+        if (char.IsHighSurrogate(c)) { high = c; return; }
+        int code = c;
+        if (char.IsLowSurrogate(c))
+        {
+            if (high == 0) return;
+            code = char.ConvertToUtf32(high, c);
+        }
+        high = '\0';
+        int width = Columns < 2 ? Math.Min(1, Width(code)) : Width(code);
+        if (width == 0) return;
+        // A wide character never straddles the edge: blank the last column and wrap first.
+        if (width == 2 && CursorX == Columns - 1 && !pendingWrap) { Put(CursorX, BlankPen()); pendingWrap = true; }
         if (pendingWrap) { CursorX = 0; LineFeed(); pendingWrap = false; }
         var cell = pen;
-        cell.Char = char.IsSurrogate(c) ? (char.IsHighSurrogate(c) ? '?' : '\0') : c;
-        if (cell.Char == '\0') return;
-        lines[CursorY][CursorX] = cell;
-        if (CursorX == Columns - 1) pendingWrap = true;
-        else CursorX++;
+        cell.Char = code > 0xFFFF ? Placeholder : (char)code;
+        Put(CursorX, cell);
+        if (width == 2) { cell.Char = Continuation; Put(CursorX + 1, cell); }
+        if (CursorX + width >= Columns) { CursorX = Columns - 1; pendingWrap = true; }
+        else CursorX += width;
+    }
+
+    /** Writes one cell, blanking the other half of any wide character it splits. */
+    private void Put(int x, VtCell cell)
+    {
+        var line = lines[CursorY];
+        if (line[x].Char == Continuation && x > 0) line[x - 1].Char = ' ';
+        if (x + 1 < line.Length && line[x + 1].Char == Continuation) line[x + 1].Char = ' ';
+        line[x] = cell;
+    }
+
+    /** Start and end pairs of the East Asian Wide/Fullwidth and emoji-presentation blocks. */
+    private static readonly int[] Wide =
+    [
+        0x1100, 0x115F, 0x231A, 0x231B, 0x2329, 0x232A, 0x23E9, 0x23EC, 0x23F0, 0x23F0, 0x23F3, 0x23F3,
+        0x25FD, 0x25FE, 0x2614, 0x2615, 0x2648, 0x2653, 0x267F, 0x267F, 0x2693, 0x2693, 0x26A1, 0x26A1,
+        0x26AA, 0x26AB, 0x26BD, 0x26BE, 0x26C4, 0x26C5, 0x26CE, 0x26CE, 0x26D4, 0x26D4, 0x26EA, 0x26EA,
+        0x26F2, 0x26F3, 0x26F5, 0x26F5, 0x26FA, 0x26FA, 0x26FD, 0x26FD, 0x2705, 0x2705, 0x270A, 0x270B,
+        0x2728, 0x2728, 0x274C, 0x274C, 0x274E, 0x274E, 0x2753, 0x2755, 0x2757, 0x2757, 0x2795, 0x2797,
+        0x27B0, 0x27B0, 0x27BF, 0x27BF, 0x2B1B, 0x2B1C, 0x2B50, 0x2B50, 0x2B55, 0x2B55,
+        0x2E80, 0x303E, 0x3041, 0x33FF, 0x3400, 0x4DBF, 0x4E00, 0xA4CF, 0xA960, 0xA97F, 0xAC00, 0xD7A3,
+        0xF900, 0xFAFF, 0xFE10, 0xFE19, 0xFE30, 0xFE6F, 0xFF00, 0xFF60, 0xFFE0, 0xFFE6,
+        0x1B000, 0x1B2FF, 0x1F004, 0x1F004, 0x1F0CF, 0x1F0CF, 0x1F18E, 0x1F18E, 0x1F191, 0x1F19A,
+        0x1F200, 0x1F2FF, 0x1F300, 0x1F64F, 0x1F680, 0x1F6FF, 0x1F7E0, 0x1F7EB, 0x1F900, 0x1F9FF,
+        0x1FA70, 0x1FAFF, 0x20000, 0x3FFFD
+    ];
+
+    /** Columns a code point takes in ConPTY's layout: 0 for combining and format marks, 2 for wide and emoji. */
+    public static int Width(int code)
+    {
+        if (code < 0x300) return 1;
+        var category = CharUnicodeInfo.GetUnicodeCategory(code);
+        if (category is UnicodeCategory.NonSpacingMark or UnicodeCategory.EnclosingMark or UnicodeCategory.Format) return 0;
+        int index = Array.BinarySearch(Wide, code);
+        // An exact hit is a range bound; otherwise an odd insertion point lies inside a range.
+        return index >= 0 || (~index & 1) == 1 ? 2 : 1;
     }
 
     private void LineFeed()
