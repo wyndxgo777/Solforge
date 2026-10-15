@@ -16,18 +16,25 @@ public static class StudioBrand
     /** The logo draws at many sizes; a mip chain keeps its thin rays whole when it is small. */
     public static GpuTexture CreateTexture(Dx11Renderer renderer)
     {
-        using var stream = Open("SunriseStudio.Logo");
+        var levels = ReadMips("SunriseStudio.Logo", out int width, out int height);
+        return renderer.CreateMippedTexture(width, height, levels);
+    }
+
+    /** An embedded PNG and its mip chain, largest level first; level n is max(1, size >> n) on each side. */
+    public static List<byte[]> ReadMips(string name, out int width, out int height)
+    {
+        using var stream = Open(name);
         using var bytes = new MemoryStream();
         stream.CopyTo(bytes);
         var image = PngInterchange.Read(bytes.ToArray());
         var levels = new List<byte[]> { image.Pixels.ToArray() };
-        int width = image.Width, height = image.Height;
-        while (width > 1 || height > 1)
+        int w = width = image.Width, h = height = image.Height;
+        while (w > 1 || h > 1)
         {
-            levels.Add(HalveRgba(levels[^1], width, height));
-            width = Math.Max(1, width / 2); height = Math.Max(1, height / 2);
+            levels.Add(HalveRgba(levels[^1], w, h));
+            w = Math.Max(1, w / 2); h = Math.Max(1, h / 2);
         }
-        return renderer.CreateMippedTexture(image.Width, image.Height, levels);
+        return levels;
     }
 
     /** The logo resampled once to a square drawn at exactly this many pixels, so it stays sharp when small. */
@@ -83,5 +90,5 @@ public static class StudioBrand
     }
 
     private static Stream Open(string name) => typeof(StudioBrand).Assembly.GetManifestResourceStream(name)
-        ?? throw new InvalidDataException("The Sunrise icon is missing.");
+        ?? throw new InvalidDataException($"The embedded {name} artwork is missing.");
 }

@@ -6,7 +6,7 @@ namespace SunriseStudio.Editor;
 
 public sealed partial class StudioForm
 {
-    private static readonly Vector4 LogoColor = SolTheme.Sun;
+    private LoadingBackdrop? backdrop;
     private bool loadingCaptured;
 
     /** Resource upload callbacks may present loading frames only outside an active ImGui frame. */
@@ -45,26 +45,48 @@ public sealed partial class StudioForm
     /** Editor controls stay absent until the scene and its graphics resources are ready. */
     private void DrawLoading()
     {
-        BeginPanel("Loading", Vector2.Zero, new(ClientSize.Width, ClientSize.Height), ImGuiWindowFlags.NoScrollbar);
+        var client = new Vector2(ClientSize.Width, ClientSize.Height);
+        BeginPanel("Loading", Vector2.Zero, client, ImGuiWindowFlags.NoScrollbar);
+        double now = clock.Elapsed.TotalSeconds;
+        var draw = ImGui.GetWindowDrawList();
+        backdrop?.Draw(draw, client, scale, now);
         // Without a menu bar the top strip is the caption, so the window can move and close while loading.
         chrome.Scale = scale;
         chrome.CaptionHeight = 32 * scale;
         chrome.DrawButtons(32 * scale);
-        float width = Math.Min(440 * scale, ClientSize.Width - 64 * scale);
-        var origin = new Vector2((ClientSize.Width - width) / 2, ClientSize.Height * .42f);
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.BeginGroup();
-        DrawSunSpinner(origin, 32 * scale, !setup && workspace.Error.Length == 0);
-        ImGui.Dummy(new Vector2(32, 32) * scale);
-        ImGui.SameLine(0, 12 * scale);
-        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 6 * scale);
-        ImGui.TextColored(LogoColor, "SOLFORGE");
-        ImGui.SetCursorScreenPos(origin + new Vector2(0, 50) * scale);
+        DrawLoadingCard(draw, client, now);
+        ImGui.End();
+        if (setup || settingsDialog) DrawDialogs();
+    }
+
+    /** The launcher's hero side: the Sol mark and wordmark, the stage and count and the bar, in a card left of the emblem. */
+    private void DrawLoadingCard(ImDrawListPtr draw, Vector2 client, double now)
+    {
+        bool failed = workspace.Error.Length != 0, working = !setup && !failed;
         var progress = presentationProgress ?? (workspace.IsBusy ? workspace.LoadingProgress
             : new StudioLoadProgress(viewport?.Animation?.IsLoading == true || assetViewport?.Animation?.IsLoading == true
                 ? "Loading animation" : browserPreparing ? "Preparing asset browser" : "Preparing editor"));
-        ImGui.TextUnformatted(setup ? "Sunrise location" : workspace.Error.Length != 0 ? "Unable to load" : progress.Stage);
-        if (!setup && workspace.Error.Length == 0)
+        float pad = 24 * scale, width = Math.Max(200 * scale, Math.Min(400 * scale, client.X - 128 * scale - pad * 2));
+        bool font = SolTheme.PushFont(SolTheme.TitleFont);
+        float title = ImGui.GetTextLineHeight(), tracking = ImGui.GetFontSize() * .2f;
+        if (font) ImGui.PopFont();
+        // Centred on the emblem's line for the usual card; an error grows it downwards.
+        float height = title + 14 * scale + ImGui.GetTextLineHeight() * 2 + 4 * scale;
+        var origin = new Vector2(64 * scale + pad, MathF.Round((client.Y - height) / 2));
+        draw.ChannelsSplit(2);
+        draw.ChannelsSetCurrent(1);
+        ImGui.SetCursorScreenPos(origin);
+        ImGui.BeginGroup();
+        float markEdge = backdrop is null ? 0 : MathF.Round(title);
+        backdrop?.DrawMark(draw, origin, markEdge);
+        font = SolTheme.PushFont(SolTheme.TitleFont);
+        SolTheme.ShimmerText(draw, origin + new Vector2(markEdge > 0 ? markEdge + 10 * scale : 0, 0), "SOLFORGE", tracking,
+            LoadingBackdrop.ReducedMotion ? 0 : (float)(now % 6 / 6));
+        if (font) ImGui.PopFont();
+        ImGui.Dummy(new Vector2(width, title + 10 * scale));
+        if (failed) ImGui.TextColored(SolTheme.Bad, "Unable to load");
+        else ImGui.TextUnformatted(setup ? "Sunrise location" : progress.Stage);
+        if (working)
         {
             string count = progress.Total > 0 ? $"{progress.Completed:N0} / {progress.Total:N0}"
                 : progress.Completed > 0 ? $"{progress.Completed:N0}" : "";
@@ -74,57 +96,47 @@ public sealed partial class StudioForm
                 ImGui.SameLine(); ImGui.SetCursorScreenPos(new(origin.X + width - countWidth, ImGui.GetCursorScreenPos().Y));
                 ImGui.TextDisabled(count);
             }
-            ImGui.Spacing();
-            DrawProgressBar(progress, width, 7 * scale);
+            ImGui.Dummy(new Vector2(0, 4 * scale));
+            DrawProgressBar(progress, width, 6 * scale);
         }
-        if (workspace.Error.Length != 0)
+        if (failed)
         {
             ImGui.PushTextWrapPos(ImGui.GetCursorPosX() + width);
             ImGui.TextWrapped(workspace.Error);
             ImGui.PopTextWrapPos();
             // A drive that dropped out comes back, so the same location can open again.
             bool retry = !workspace.IsBusy && workspace.Catalog is null && location.Length != 0;
-            if (retry && ImGui.Button("Retry"))
+            if (retry && SolTheme.PrimaryButton("Retry"))
                 workspace.Run(() => workspace.OpenInstallation(location, keySource));
             if (retry) ImGui.SameLine();
-            if (!workspace.IsBusy && ImGui.Button("Choose Sunrise location")) setup = true;
+            if (!workspace.IsBusy && (retry ? ImGui.Button("Choose Sunrise location") : SolTheme.PrimaryButton("Choose Sunrise location")))
+                setup = true;
         }
         ImGui.EndGroup();
-        ImGui.End();
-        if (setup || settingsDialog) DrawDialogs();
+        draw.ChannelsSetCurrent(0);
+        SolTheme.ChamferFrame(draw, ImGui.GetItemRectMin() - new Vector2(pad), ImGui.GetItemRectMax() + new Vector2(pad),
+            SolTheme.Cut, SolTheme.U32(SolTheme.Alpha(SolTheme.Panel, .72f)), SolTheme.U32(SolTheme.Line));
+        draw.ChannelsMerge();
     }
 
-    /** An unknown total draws a moving segment instead of a fill. */
+    /** The launcher's .dl-progress: a sun-grad pill on a faint track with a sheen sweeping it; an unknown total moves a short segment. */
     private void DrawProgressBar(StudioLoadProgress progress, float width, float height)
     {
         var bar = ImGui.GetCursorScreenPos();
         if (height < ImGui.GetTextLineHeight()) bar.Y += (ImGui.GetTextLineHeight() - height) / 2;
-        var size = new Vector2(width, height);
         var draw = ImGui.GetWindowDrawList();
-        draw.AddRectFilled(bar, bar + size, ImGui.GetColorU32(ImGuiCol.FrameBg), 3 * scale);
+        draw.AddRectFilled(bar, bar + new Vector2(width, height), SolTheme.U32(SolTheme.Surface2), height / 2);
+        bool still = LoadingBackdrop.ReducedMotion;
+        double now = clock.Elapsed.TotalSeconds;
         if (progress.Fraction is { } fraction)
-            SolTheme.ChamferGradient(draw, bar, bar + new Vector2(size.X * fraction, size.Y), 0);
+            SolTheme.ProgressFill(draw, bar, bar + new Vector2(width * Math.Clamp(fraction, 0, 1), height),
+                still ? -1 : (float)(now % 2.4 / 2.4));
         else
         {
-            float offset = (float)(clock.Elapsed.TotalSeconds % 1.6 / 1.6) * (width + width * .22f) - width * .22f;
-            draw.PushClipRect(bar, bar + size, true);
-            draw.AddRectFilled(bar + new Vector2(offset, 0), bar + new Vector2(offset + width * .22f, size.Y),
-                ImGui.GetColorU32(LogoColor), 3 * scale);
-            draw.PopClipRect();
+            float segment = width * .22f;
+            float start = still ? (width - segment) / 2 : (float)(now % 1.6 / 1.6) * (width + segment) - segment;
+            SolTheme.ProgressFill(draw, bar + new Vector2(Math.Max(0, start), 0), bar + new Vector2(Math.Min(width, start + segment), height));
         }
         ImGui.Dummy(new Vector2(width, MathF.Max(height, ImGui.GetTextLineHeight())));
-    }
-
-    /** Rotation transforms only the displayed quad; the supplied artwork remains unchanged. */
-    private void DrawSunSpinner(Vector2 origin, float size, bool spin)
-    {
-        if (loadingLogo is null) return;
-        var center = origin + new Vector2(size / 2);
-        float angle = spin ? (float)(clock.Elapsed.TotalSeconds % 6 / 6 * Math.Tau) : 0;
-        float sine = MathF.Sin(angle), cosine = MathF.Cos(angle);
-        Vector2 Corner(float x, float y) => center + new Vector2(x * cosine - y * sine, x * sine + y * cosine) * (size / 2);
-        ImGui.GetWindowDrawList().AddImageQuad(loadingLogo.ImGuiId,
-            Corner(-1, -1), Corner(1, -1), Corner(1, 1), Corner(-1, 1),
-            Vector2.Zero, Vector2.UnitX, Vector2.One, Vector2.UnitY, uint.MaxValue);
     }
 }

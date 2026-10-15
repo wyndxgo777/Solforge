@@ -6,6 +6,8 @@
   <ItemGroup>
     <EmbeddedResource Include="Assets/Sunrise.png" LogicalName="SunriseStudio.Logo" />
     <EmbeddedResource Include="Assets/Sunrise.ico" LogicalName="SunriseStudio.Icon" />
+    <EmbeddedResource Include="Assets/Sol/emblem-gold-mask.png" LogicalName="Solforge.EmblemGold" />
+    <EmbeddedResource Include="Assets/Sol/emblem-mark.png" LogicalName="Solforge.EmblemMark" />
     <EmbeddedResource Include="../../THIRD_PARTY.md" LogicalName="SunriseStudio.Notices.Studio" />
     <EmbeddedResource Include="../../licenses/dotnet-runtime.txt" LogicalName="SunriseStudio.Notices.DotNet" />
     <EmbeddedResource Include="../../licenses/community-toolkit.txt" LogicalName="SunriseStudio.Notices.Toolkit" />

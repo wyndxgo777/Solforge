@@ -39,7 +39,9 @@ internal static class CreationSafetyChecks
         Check(workflow.Problems(workspace).Any(problem => problem.Contains("fixture material unavailable")),
             "Material read failure did not remain a workflow problem.");
         catalog.ReadOverride = reader;
+        // As the Retry material button: forget the described tag and clear the kept read failure.
         typeof(MaterialWorkflow).GetField("describedTag", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(workflow, null);
+        workflow.Retry();
         workflow.Update(workspace);
         Check(workflow.Problems(workspace).Count == 0, "Retry did not recover the same material after its read recovered.");
         Picker();
