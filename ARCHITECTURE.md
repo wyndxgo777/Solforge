@@ -56,7 +56,7 @@ user-visible strings are rebranded (Phase 03).
 ## Phase 03 notes (shell)
 
 - **Branding:** window, pop-out and toolbar titles, `--help`, error boxes and two project messages say
-  Solforge; the exe is `Solforge.exe`. Help menu and the toolbar version tooltip credit Sunrise Studio
+  Solforge, as do the loading screen and the empty workspace title (SOLFORGE); the exe is `Solforge.exe`. Help menu and the toolbar version tooltip credit Sunrise Studio
   by stan; `THIRD_PARTY.md` opens with the same credit. Kept on purpose: AppData folders
   (`%LOCALAPPDATA%\Sunrise Studio\...` for settings, cache, live reports, so existing users keep them),
   glTF/OBJ `generator` strings and bundle readmes (the Blender add-on checks them), the "Sunrise Studio"

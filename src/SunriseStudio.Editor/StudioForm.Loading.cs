@@ -57,7 +57,7 @@ public sealed partial class StudioForm
         ImGui.Dummy(new Vector2(32, 32) * scale);
         ImGui.SameLine(0, 12 * scale);
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 6 * scale);
-        ImGui.TextColored(LogoColor, "SUNRISE STUDIO");
+        ImGui.TextColored(LogoColor, "SOLFORGE");
         ImGui.SetCursorScreenPos(origin + new Vector2(0, 50) * scale);
         var progress = presentationProgress ?? (workspace.IsBusy ? workspace.LoadingProgress
             : new StudioLoadProgress(viewport?.Animation?.IsLoading == true || assetViewport?.Animation?.IsLoading == true

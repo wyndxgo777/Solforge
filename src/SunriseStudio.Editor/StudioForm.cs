@@ -672,7 +672,7 @@ public sealed partial class StudioForm : Form
                 ImGui.SetCursorPosX(28 * scale);
             }
             ImGui.PushFont(gui!.TitleFont);
-            ImGui.TextColored(StudioTheme.Accent, "SUNRISE STUDIO");
+            ImGui.TextColored(StudioTheme.Accent, "SOLFORGE");
             ImGui.PopFont();
             ImGui.SetCursorPosX(28 * scale); ImGui.TextDisabled("Select an asset to begin");
             ImGui.Spacing();
