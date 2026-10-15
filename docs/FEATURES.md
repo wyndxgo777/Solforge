@@ -36,6 +36,8 @@ Project facts (TFM, references, sizes) are in ARCHITECTURE.md; this file is abou
 - Solforge (Phase 10): axis views Top/Bottom/Front/Back/Right/Left (`CameraViews.cs`, View menu, Numpad 7/1/3/5),
   corner world-axis gizmo and FPS/draw call/triangle overlay (`AssetViewport.ViewOverlay.cs`, `ViewportStatistics`,
   `Dx11Renderer.Statistics.cs`). The grid follows the pivot in decade steps, so it never ends (upstream `DrawGrid`).
+- Solforge (Phase 13): World/Local handle axes, grid/angle/scale snapping and Shift surface snapping
+  (`TransformSnapping.cs`, `AssetViewport.TransformOptions.cs`); group transforms are upstream (`GroupTransforms`).
 - Gaps: D3D12 (not planned; D3D11 stays), 1M-triangle FPS benchmark check (Phase 14).
 
 ## Meshes and world (`SunriseStudio.Scene`, Phase 11)

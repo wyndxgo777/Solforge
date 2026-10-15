@@ -98,8 +98,8 @@
     {
       "id": "13",
       "title": "Object Picking, Transform Gizmos & Selection",
-      "status": "upstream_partial",
-      "notes": "Viewport selection, gizmos, shortcuts"
+      "status": "done",
+      "notes": "(Exists) BVH-style ray picking through the spatial grid and drawn faces (Viewport/AssetViewport.Interaction.cs Pick, SceneGrid.cs, SceneSelection.cs, PickFaces), translate/rotate/scale handles (AssetViewport.Gizmo.cs), multi-object group transforms about one pivot (Authoring/GroupTransforms.cs, Editor/StudioForm.Gizmo.cs). Solforge: World/Local handle axes (AssetViewport.TransformOptions.cs + Editor/StudioForm.GizmoSpace.cs; Scale stays world), grid/angle/scale snapping (toolbar Snap, right-click for steps, Ctrl inverts) and surface snapping (Shift while moving; Alt aligns up to the normal; perspective only) in Viewport/TransformSnapping.cs. Checks: ViewportPipeline.Tests SnapChecks. Manual: try local axes and Shift surface snap in a world view"
     },
     {
       "id": "14",

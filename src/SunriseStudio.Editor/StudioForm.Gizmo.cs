@@ -48,6 +48,7 @@ public sealed partial class StudioForm
             : gizmoReason;
         view.GizmoUnavailableReason = reason;
         view.GizmoPivot = reason.Length == 0 ? groupFrame?.Pivot ?? gizmoFrame?.Pivot : null;
+        UpdateGizmoOrientation(view, selectedObject, group is not null);
     }
 
     private void CommitGizmo(TransformChange change)

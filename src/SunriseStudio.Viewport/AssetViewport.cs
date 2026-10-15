@@ -671,6 +671,7 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
                     Next(button);
                     if (ImGuiIcons.Button("tool-" + tool, icon, tip, Tool == tool)) Tool = tool;
                 }
+                DrawTransformOptions(Next);
             }
             ImGui.BeginDisabled(SelectedObject is null && SelectedCollision < 0 || locked);
             Next(button);
