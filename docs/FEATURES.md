@@ -38,7 +38,8 @@ Project facts (TFM, references, sizes) are in ARCHITECTURE.md; this file is abou
   `Dx11Renderer.Statistics.cs`). The grid follows the pivot in decade steps, so it never ends (upstream `DrawGrid`).
 - Solforge (Phase 13): World/Local handle axes, grid/angle/scale snapping and Shift surface snapping
   (`TransformSnapping.cs`, `AssetViewport.TransformOptions.cs`); group transforms are upstream (`GroupTransforms`).
-- Gaps: D3D12 (not planned; D3D11 stays), 1M-triangle FPS benchmark check (Phase 14).
+- Gaps: D3D12 (not planned; D3D11 stays). Phase 14 audit (`ViewportPipeline.Tests` `AuditChecks`: 1M triangles at
+  1080p, a destination map, 50 load/unload cycles) runs with `-Game` on a hardware adapter; its results are a manual step.
 
 ## Meshes and world (`SunriseStudio.Scene`, Phase 11)
 - (Exists) `StaticMeshDecoder`, `EntityMeshDecoder`, `TerrainDecoder`, `CompressedMesh`,

@@ -104,7 +104,8 @@
     {
       "id": "14",
       "title": "Checker Phase: Viewport & Geometry Pipeline Audit",
-      "status": "todo"
+      "status": "partial",
+      "notes": "Audit check written: tests/SunriseStudio.ViewportPipeline.Tests/AuditChecks.cs, run by verify.ps1 -Game (prints 'skipped:' and passes without --game or a hardware adapter; WARP never benchmarks). It checks 1,002,528 triangles at 1920x1080 >= 60 FPS (120 frames, one sync), map 80EDC19B (Leviathan) in the viewport, and 50 load/unload cycles with < 96 MiB private-byte growth after warm-up. Manual steps: (1) run .\\verify.ps1 -Game <install> on a machine with a GPU and record the 'audit' lines; (2) look up the Trostland church and Tower plaza map tags and add them to AuditChecks.DestinationMap (or a list) - not known here; (3) open both destinations in Solforge, check 60+ FPS in the View > Statistics overlay"
     },
     {
       "id": "15",

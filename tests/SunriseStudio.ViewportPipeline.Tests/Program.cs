@@ -17,6 +17,7 @@ try
     GeometryChecks.Run(checks);
     ProbeChecks.Run(checks);
     SnapChecks.Run(checks);
+    AuditChecks.Run(game, checks);
     foreach (string check in checks) Console.WriteLine("PASS " + check);
     Console.WriteLine($"PASS checks={checks.Count}");
     return 0;
