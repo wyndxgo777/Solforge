@@ -40,6 +40,7 @@ public sealed partial class StudioForm
     private void HandleAiShortcuts()
     {
         TrackAiAttention();
+        PublishAiContext();
         if (!ShortcutInput.Pressed(ShortcutActions.OpenAiWorkspace) || aiShortcutFrame == ShortcutInput.Frame) return;
         aiShortcutFrame = ShortcutInput.Frame;
         OpenAiWorkspace();

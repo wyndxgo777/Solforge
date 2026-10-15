@@ -609,6 +609,7 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
             var image = RenderImage(Math.Max(1, (int)size.X), Math.Max(1, (int)size.Y), simulationSeconds);
             draw.AddImage(image.ImGuiId, origin, origin + size);
             Animation?.DrawImGuiBones(draw, origin, size, Camera.ViewProjection(size.X / size.Y));
+            ScreenOrigin = origin; ScreenSize = size;
             DrawObjectNames(draw, origin, size, hovered);
             DrawGizmo(draw, origin, size, hovered);
         }
