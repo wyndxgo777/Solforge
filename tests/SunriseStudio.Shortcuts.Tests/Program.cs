@@ -94,7 +94,10 @@ static void SunriseDefaults()
         [RotateTool3D] = [Key("E")],
         [ScaleTool3D] = [Key("R")],
         // Phase 47B: the AI workspace.
-        [OpenAiWorkspace] = [Key("A", Ctrl | Shift)]
+        [OpenAiWorkspace] = [Key("A", Ctrl | Shift)],
+        // The 3D viewport render switch and the Settings window.
+        [ToggleViewportRendering] = [Key("R", Ctrl | Shift)],
+        [OpenSettings] = [Key(",", Ctrl)]
     };
     foreach (var action in ShortcutActions.All)
         Same(map.Bindings(action.Id), expected.GetValueOrDefault(action.Id) ?? [], $"Sunrise Studio {action.Id}");
@@ -121,6 +124,9 @@ static void SunriseDefaults()
     Resolves(map.ResolveKey("Z", Ctrl | Shift, null), "Ctrl+Shift+Z", Undo);
     Resolves(map.ResolveKey("S", Ctrl | Shift, null), "Ctrl+Shift+S", SaveProject);
     Resolves(map.ResolveKey("Z", None, null), "Z alone");
+    Resolves(map.ResolveKey("R", Ctrl | Shift, ShortcutSection.View3D), "Ctrl+Shift+R over the 3D view", ToggleViewportRendering);
+    Resolves(map.ResolveKey("R", None, ShortcutSection.View3D), "R over the 3D view", ScaleTool3D);
+    Resolves(map.ResolveKey(",", Ctrl, null), "Ctrl+,", OpenSettings);
     Resolves(map.ResolveKey("B", Ctrl, null), "Ctrl+B");
     Resolves(map.ResolveKey("B", Ctrl | Shift, null), "Ctrl+Shift+B", BuildPackages);
     Resolves(map.ResolveKey("F", None, ShortcutSection.View3D), "F over the 3D view", FrameSelection3D);

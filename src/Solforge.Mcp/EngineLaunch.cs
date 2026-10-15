@@ -14,7 +14,9 @@ public static class EngineLaunch
     public const string SystemPrompt =
         "You are running inside Solforge's AI workspace (the Project Sol game editor). When the user says 'this', 'that', " +
         "'here' or 'what I'm looking at', they mean Solforge's live context: call the solforge MCP tools get_context and " +
-        "get_open_documents before searching files.";
+        "get_open_documents before searching files. .solforge/SESSION.md in the project holds the session context, and the " +
+        "solforge-* skills are playbooks for common jobs (new weapon or armor, map bounds, patrol content, enemies, missions): " +
+        "read the matching one first.";
 
     public sealed record ClaudeFiles(string McpConfig, string Settings);
 

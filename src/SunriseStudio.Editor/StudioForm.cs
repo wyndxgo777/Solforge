@@ -154,7 +154,7 @@ public sealed partial class StudioForm : Form
     private void ApplyPendingDpi()
     {
         if (pendingDpi == 0 || gui is null) return;
-        float next = Math.Max(1, pendingDpi / 96f);
+        float next = Math.Max(1, pendingDpi / 96f) * settings.UiScale;
         pendingDpi = 0;
         if (next == scale) return;
         scale = next;
@@ -171,7 +171,7 @@ public sealed partial class StudioForm : Form
         base.OnShown(e);
         try
         {
-            scale = Math.Max(1, DeviceDpi / 96f);
+            scale = Math.Max(1, DeviceDpi / 96f) * settings.UiScale;
             renderer = new Dx11Renderer(Handle, ClientSize.Width, ClientSize.Height, options.Warp);
             loadingLogo = StudioBrand.CreateTexture(renderer);
             backdrop = new LoadingBackdrop(renderer);
@@ -230,32 +230,26 @@ public sealed partial class StudioForm : Form
         }
 
         bool shouldSuspend = settings.PauseRenderWhenGameRunning && destiny2Detected && !livePage.IsAttached;
-        viewport.SuspendRendering = shouldSuspend;
-        viewport.SuspendReason = destiny2Detected
-            ? "Destiny 2 is running. 3D rendering is suspended to conserve GPU & RAM." : "";
-
-        if (assetViewport is not null)
+        string suspendReason = destiny2Detected ? "Destiny 2 is running. 3D rendering is suspended to conserve GPU & RAM." : "";
+        bool renderingOff = !settings.ViewportRendering;
+        foreach (var each in new[] { viewport, assetViewport })
         {
-            assetViewport.SuspendRendering = shouldSuspend;
-            assetViewport.SuspendReason = destiny2Detected
-                ? "Destiny 2 is running. 3D rendering is suspended to conserve GPU & RAM." : "";
+            if (each is null) continue;
+            each.SuspendRendering = shouldSuspend;
+            each.SuspendReason = suspendReason;
+            // Resume overrides one game session; the next Destiny 2 launch suspends again.
+            if (!shouldSuspend) each.ForceResumeRendering = false;
+            each.RenderingOff = renderingOff;
+            each.TurnOnRendering ??= () => SetViewportRendering(true);
         }
 
         workspace.LowMemoryMode = settings.LowMemoryMode || destiny2Detected || livePage.IsAttached;
+        workspace.LowMemoryTextureBudget = settings.TextureBudgetMiB * 1024L * 1024;
 
         // An attached game shares this GPU; Studio draws at most 30 frames a second, and 10 in the background.
         // When Destiny 2 is running detached, throttle to 15 / 5 FPS to yield resources completely to the game.
-        if (!options.Smoke)
-        {
-            if (livePage.IsAttached)
-            {
-                if (clock.Elapsed.TotalSeconds - lastFrame < (ContainsFocus ? 1 / 30.0 : 1 / 10.0)) return;
-            }
-            else if (shouldSuspend)
-            {
-                if (clock.Elapsed.TotalSeconds - lastFrame < (ContainsFocus ? 1 / 15.0 : 1 / 5.0)) return;
-            }
-        }
+        // With the 3D viewport off only panels draw, so 30 / 10 is plenty; Settings > Rendering caps can go lower.
+        if (!options.Smoke && clock.Elapsed.TotalSeconds - lastFrame < FrameInterval(shouldSuspend, renderingOff)) return;
         drawing = true;
         long profileStart = Stopwatch.GetTimestamp();
         long profileBytes = options.ProfileFrames is null ? 0 : GC.GetAllocatedBytesForCurrentThread();
@@ -576,6 +570,7 @@ public sealed partial class StudioForm : Form
         if (ShortcutInput.Pressed(ShortcutActions.SaveProject)) SaveActiveDocument();
         HandleNavigationShortcuts();
         HandleLayoutShortcuts();
+        HandleRenderingShortcuts();
         HandleAiShortcuts();
         if (!workspace.CanEdit) return;
         if (ShortcutInput.Pressed(ShortcutActions.BuildPackages)) workspace.Run(() => workspace.Build());

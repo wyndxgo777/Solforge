@@ -15,7 +15,13 @@ public sealed class StudioLayoutNode
     public float Ratio { get; set; } = .5f;
     public StudioLayoutNode? First { get; set; }
     public StudioLayoutNode? Second { get; set; }
+    /** Side panels only: true collapsed to a strip, false always open, null collapsed while the panel has nothing to show. */
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public bool? Collapsed { get; set; }
     [JsonIgnore] public bool IsLeaf => First is null && Second is null;
+
+    /** Panels that fold to a strip; the editor, the AI workspace and empty areas never do. */
+    public static bool Collapsible(StudioPanelKind kind) => kind is StudioPanelKind.Browser or StudioPanelKind.MissionGraph
+        or StudioPanelKind.Changes or StudioPanelKind.ObjectTree or StudioPanelKind.Inspector;
 }
 
 public sealed partial class StudioLayout

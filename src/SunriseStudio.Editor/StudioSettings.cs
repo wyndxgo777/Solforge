@@ -21,6 +21,25 @@ public sealed class StudioSettings
     public bool LowMemoryMode { get; set; } = true;
     /** Suspends viewport rendering while Destiny 2 is running unless attached via Live link. */
     public bool PauseRenderWhenGameRunning { get; set; } = true;
+    /** The user's 3D viewport switch (View > 3D viewport rendering, Ctrl+Shift+R); off draws no 3D at all. */
+    public bool ViewportRendering { get; set; } = true;
+    /** Frame caps while Solforge has focus and while it is in the background; 0 means no cap (vsync). */
+    public int FpsFocused { get; set; }
+    public int FpsBackground { get; set; }
+    /** World texture budget in MiB while Low memory mode is on. */
+    public int TextureBudgetMiB { get; set; } = 256;
+    /** Interface size multiplier on top of the monitor DPI (0.8 to 1.5). */
+    public float UiScale { get; set; } = 1;
+    /** AI workspace: the engine picked last (Claude Code, Cline, Antigravity or Custom command), and its custom command line. */
+    public string AiEngine { get; set; } = "";
+    public string AiCustomCommand { get; set; } = "";
+    /** AI workspace: run the MCP server for AI engines (off stops it; engines then see no Solforge tools). */
+    public bool AiMcpEnabled { get; set; } = true;
+    /** Folders the tools and playbooks use: the server's mission scripts, and Blender (blank = found automatically). */
+    public string ScriptsPath { get; set; } = "";
+    public string BlenderPath { get; set; } = "";
+    /** Layouts remembered per project folder (full path, upper case), so each workspace opens the way it was left. */
+    public Dictionary<string, JsonElement> ProjectLayouts { get; set; } = [];
     public bool ShowSceneTree { get; set; } = true;
     public float SceneTreeWidth { get; set; } = 280;
     public bool ShowSceneCursor { get; set; } = true;
@@ -57,6 +76,15 @@ public sealed class StudioSettings
             settings.KeySource ??= "";
             settings.AiFolders ??= [];
             settings.AiHiddenFolders ??= [];
+            settings.AiEngine ??= "";
+            settings.AiCustomCommand ??= "";
+            settings.ScriptsPath ??= "";
+            settings.BlenderPath ??= "";
+            settings.ProjectLayouts ??= [];
+            settings.FpsFocused = Math.Clamp(settings.FpsFocused, 0, 240);
+            settings.FpsBackground = Math.Clamp(settings.FpsBackground, 0, 240);
+            settings.TextureBudgetMiB = Math.Clamp(settings.TextureBudgetMiB, 64, 4096);
+            settings.UiScale = float.IsFinite(settings.UiScale) ? Math.Clamp(settings.UiScale, .8f, 1.5f) : 1;
             settings.Popouts = settings.Popouts?.Where(popout => popout is not null && Enum.IsDefined(popout.Panel)
                 && popout.Panel != StudioPanelKind.Empty).DistinctBy(popout => popout.Panel).ToList() ?? [];
             if (!Enum.IsDefined(settings.LightingMode)) settings.LightingMode = NativeLightingMode.Studio;

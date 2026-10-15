@@ -10,12 +10,14 @@ public sealed partial class StudioLayout
     public const string ScenePreset = "Solforge (scene)";
     public const string ClassicPreset = "Solforge (classic)";
     public const string SunrisePreset = "Sunrise Studio";
-    public static IReadOnlyList<string> PresetNames { get; } = [SolforgePreset, ScenePreset, ClassicPreset, SunrisePreset];
+    public const string AiPreset = "Solforge (AI)";
+    public static IReadOnlyList<string> PresetNames { get; } = [SolforgePreset, AiPreset, ScenePreset, ClassicPreset, SunrisePreset];
 
     /** An unknown name gives the upstream Sunrise Studio layout. */
     public static StudioLayout Preset(string name) => name switch
     {
         SolforgePreset => Solforge(),
+        AiPreset => Ai(),
         ScenePreset => Scene(),
         ClassicPreset => Classic(),
         _ => Default()
@@ -41,6 +43,19 @@ public sealed partial class StudioLayout
             Id = 7, Axis = StudioSplitAxis.Columns, Ratio = .5f,
             First = new() { Id = 8, Panel = StudioPanelKind.Changes },
             Second = new() { Id = 9, Panel = StudioPanelKind.MissionGraph }
+        }
+    });
+
+    /** AI first: the AI workspace in the middle, the Asset browser and Mission Graph as side panels that fold away while empty. */
+    private static StudioLayout Ai() => new(new()
+    {
+        Id = 1, Axis = StudioSplitAxis.Columns, Ratio = .2f,
+        First = new() { Id = 2, Panel = StudioPanelKind.Browser },
+        Second = new()
+        {
+            Id = 3, Axis = StudioSplitAxis.Columns, Ratio = .7f,
+            First = new() { Id = 4, Panel = StudioPanelKind.AI },
+            Second = new() { Id = 5, Panel = StudioPanelKind.MissionGraph }
         }
     });
 

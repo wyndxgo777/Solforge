@@ -33,15 +33,27 @@ public sealed partial class StudioForm
     private FileSystemWatcher? aiWatcher;
     private DateTime aiReloadAfter = DateTime.MaxValue;
     private (object? Source, double At, JsonObject Facts) aiFacts = (null, 0, new JsonObject());
+    private bool aiFrameHooked;
+
+    /** Settings > AI: the MCP server switch; off stops it now, on starts it and rewrites the engine configs. */
+    private void SetAiMcp(bool on)
+    {
+        settings.AiMcpEnabled = on;
+        SaveSettings();
+        aiServiceError = null;
+        aiConfiguredProject = null;
+        if (!on) StopAiService();
+        else EnsureAiService();
+    }
 
     partial void EnsureAiService()
     {
-        if (aiService is not null || aiServiceError is not null) return;
+        if (!settings.AiMcpEnabled || aiService is not null || aiServiceError is not null) return;
         try
         {
-            aiHost = new AiHost(this);
+            aiHost ??= new AiHost(this);
+            if (!aiFrameHooked) { FrameRendered += CaptureAiScreenshot; aiFrameHooked = true; }
             aiService = SolforgeMcpService.Start(aiHost, typeof(StudioForm).Assembly.GetName().Version?.ToString(3) ?? "0");
-            FrameRendered += CaptureAiScreenshot;
         }
         catch (Exception exception) when (exception is IOException or System.Net.Sockets.SocketException or UnauthorizedAccessException)
         { aiServiceError = exception.Message; }
@@ -56,7 +68,8 @@ public sealed partial class StudioForm
 
     partial void AiServiceStatus(ref string status)
     {
-        if (aiServiceError is not null) status = "MCP error: " + aiServiceError;
+        if (!settings.AiMcpEnabled) status = "MCP off (Settings > AI)";
+        else if (aiServiceError is not null) status = "MCP error: " + aiServiceError;
         else if (aiService is { } service) status = $"MCP :{service.Port}  {service.Requests} calls" + (aiPaused ? "  (paused)" : "");
     }
 
@@ -553,7 +566,7 @@ public sealed partial class StudioForm
                 aiAttention.Record(AttentionKind.Open, "file:" + relative, "AI edited " + relative);
                 return $"Wrote {relative} ({next.Length} chars). It is listed under AI edits in the AI workspace, where Undo restores it.";
             default:
-                return "Unknown action.";
+                return RunAiProjectAction(tool, args) ?? "Unknown action.";
         }
     }
 
@@ -609,6 +622,8 @@ public sealed partial class StudioForm
 
         public async Task<byte[]?> ScreenshotAsync(string? objectId, bool labels, CancellationToken cancel)
         {
+            // Nothing is drawn while the 3D viewport is off or paused for the game.
+            if (!await form.OnUi(() => form.viewport is { IsRendering: true }).ConfigureAwait(false)) return null;
             var pending = await form.OnUi(() =>
             {
                 form.aiScreenshotRequest = (objectId, labels, false);
@@ -629,5 +644,7 @@ public sealed partial class StudioForm
 
         public Task<string> RunActionAsync(string tool, JsonObject args, CancellationToken cancel) =>
             form.OnUi(() => form.RunAiAction(tool, args)).WaitAsync(cancel);
+
+        public Task<JsonObject> QueryAsync(string tool, JsonObject args, CancellationToken cancel) => form.AiQueryAsync(tool, args, cancel);
     }
 }

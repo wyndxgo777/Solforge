@@ -33,6 +33,8 @@ public static class ShortcutActions
     public const string NavigateForward = "menu.navigate_forward";
     public const string ToggleBrowser = "menu.toggle_browser";
     public const string OpenAiWorkspace = "menu.open_ai_workspace";
+    public const string ToggleViewportRendering = "menu.toggle_viewport_rendering";
+    public const string OpenSettings = "menu.open_settings";
 
     public const string Pan2D = "2d.pan";
     public const string Zoom2D = "2d.zoom";
@@ -87,6 +89,8 @@ public static class ShortcutActions
         new(NavigateForward, "Navigate forward", ShortcutSection.Menus, KeyOrClick),
         new(ToggleBrowser, "Show or hide the Asset browser", ShortcutSection.Menus, KeyOnly),
         new(OpenAiWorkspace, "Open the AI workspace", ShortcutSection.Menus, KeyOnly),
+        new(ToggleViewportRendering, "Turn 3D viewport rendering on or off", ShortcutSection.Menus, KeyOnly),
+        new(OpenSettings, "Open Settings", ShortcutSection.Menus, KeyOnly),
 
         new(Pan2D, "Pan", ShortcutSection.View2D, DragOnly),
         new(Zoom2D, "Zoom", ShortcutSection.View2D, WheelOrDrag),
@@ -189,6 +193,8 @@ public static class ShortcutPresets
         (ShortcutActions.NavigateForward, "Forward click or Alt+Right Arrow"),
         (ShortcutActions.ToggleBrowser, "Ctrl+Space"),
         (ShortcutActions.OpenAiWorkspace, "Ctrl+Shift+A"),
+        (ShortcutActions.ToggleViewportRendering, "Ctrl+Shift+R"),
+        (ShortcutActions.OpenSettings, "Ctrl+,"),
         (ShortcutActions.Pan2D, "Middle drag or Right drag"),
         (ShortcutActions.Zoom2D, "Wheel"),
         (ShortcutActions.FrameSelection2D, "F or Numpad ."),
@@ -236,6 +242,8 @@ public static class ShortcutPresets
         (ShortcutActions.NavigateForward, "Forward click"),
         (ShortcutActions.ToggleBrowser, ""),
         (ShortcutActions.OpenAiWorkspace, ""),
+        (ShortcutActions.ToggleViewportRendering, ""),
+        (ShortcutActions.OpenSettings, ""),
         (ShortcutActions.Pan2D, "Middle drag"),
         (ShortcutActions.Zoom2D, "Wheel or Ctrl+Middle drag"),
         (ShortcutActions.FrameSelection2D, "Numpad ."),
@@ -283,6 +291,8 @@ public static class ShortcutPresets
         (ShortcutActions.NavigateForward, "Forward click"),
         (ShortcutActions.ToggleBrowser, ""),
         (ShortcutActions.OpenAiWorkspace, ""),
+        (ShortcutActions.ToggleViewportRendering, ""),
+        (ShortcutActions.OpenSettings, ""),
         (ShortcutActions.Pan2D, "Middle drag"),
         (ShortcutActions.Zoom2D, "Wheel"),
         (ShortcutActions.FrameSelection2D, "F"),
@@ -330,6 +340,8 @@ public static class ShortcutPresets
         (ShortcutActions.NavigateForward, "Forward click"),
         (ShortcutActions.ToggleBrowser, ""),
         (ShortcutActions.OpenAiWorkspace, ""),
+        (ShortcutActions.ToggleViewportRendering, ""),
+        (ShortcutActions.OpenSettings, ""),
         (ShortcutActions.Pan2D, "Alt+Middle drag"),
         (ShortcutActions.Zoom2D, "Alt+Right drag or Wheel"),
         (ShortcutActions.FrameSelection2D, "F"),
@@ -377,6 +389,8 @@ public static class ShortcutPresets
         (ShortcutActions.NavigateForward, "Forward click"),
         (ShortcutActions.ToggleBrowser, "Ctrl+Space"),
         (ShortcutActions.OpenAiWorkspace, "Ctrl+Shift+A"),
+        (ShortcutActions.ToggleViewportRendering, "Ctrl+Shift+R"),
+        (ShortcutActions.OpenSettings, "Ctrl+,"),
         (ShortcutActions.Pan2D, "Right drag"),
         (ShortcutActions.Zoom2D, "Wheel"),
         (ShortcutActions.FrameSelection2D, ""),

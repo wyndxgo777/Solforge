@@ -27,6 +27,7 @@ public sealed partial class StudioForm
 
     private void DrawLayout(Vector2 position, Vector2 size)
     {
+        UseProjectLayout();
         if (!workspace.IsBusy && workspace.World is null)
         { focusWorldScene = focusMissionPage = false; }
         // A focus request shows a popped-out editor's window instead of docking a second copy.
@@ -78,6 +79,18 @@ public sealed partial class StudioForm
         float a = columns ? firstMin.X : firstMin.Y, b = columns ? secondMin.X : secondMin.Y;
         float shrink = Math.Min(1, span / (a + b));
         float cut = Math.Clamp(span * node.Ratio, a * shrink, Math.Max(a * shrink, span - b * shrink));
+        // A folded side panel keeps its ratio for when it opens again and takes only a strip now.
+        bool firstFolded = IsFolded(node.First!), secondFolded = IsFolded(node.Second!);
+        if (firstFolded != secondFolded)
+        {
+            float whole = columns ? size.X : size.Y, strip = Math.Min(whole, FoldStrip(columns));
+            cut = firstFolded ? strip : whole - strip;
+            var firstPart = columns ? new Vector2(cut, size.Y) : new Vector2(size.X, cut);
+            var rest = columns ? new Vector2(cut, 0) : new Vector2(0, cut);
+            DrawLayoutNode(node.First!, position, firstPart);
+            DrawLayoutNode(node.Second!, position + rest, Vector2.Max(Vector2.One, size - rest));
+            return;
+        }
         var firstSize = columns ? new Vector2(cut, size.Y) : new Vector2(size.X, cut);
         var offset = columns ? new Vector2(cut, 0) : new Vector2(0, cut);
         var splitterSize = columns ? new Vector2(divider, size.Y) : new Vector2(size.X, divider);
@@ -94,6 +107,7 @@ public sealed partial class StudioForm
 
     private void DrawLayoutPanel(StudioLayoutNode node, Vector2 position, Vector2 size)
     {
+        if (IsFolded(node) && maximizedPanel != node.Id) { DrawFoldedPanel(node, position, size); return; }
         float header = Math.Min(size.Y, ImGui.GetFrameHeight() + 8 * scale);
         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(4 * scale));
         ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, Vector2.One);
@@ -135,6 +149,14 @@ public sealed partial class StudioForm
                 pendingLayoutChange = () => maximizedPanel = maximizedPanel is null ? node.Id : null;
             if (ImGui.MenuItem("Pop out window", "", false, node.Panel != StudioPanelKind.Empty && renderer is not null))
                 pendingLayoutChange = () => PopOut(node);
+            if (StudioLayoutNode.Collapsible(node.Panel))
+            {
+                ImGui.Separator();
+                if (ImGui.MenuItem("Collapse to a strip", "", node.Collapsed == true))
+                    pendingLayoutChange = () => node.Collapsed = node.Collapsed == true ? false : true;
+                if (ImGui.MenuItem("Collapse while empty", "", node.Collapsed is null))
+                    pendingLayoutChange = () => node.Collapsed = node.Collapsed is null ? false : null;
+            }
             if (ImGui.MenuItem("Close area", "", false, node != layout.Root))
                 pendingLayoutChange = () => { layout.Close(node.Id); maximizedPanel = null; };
             ImGui.EndPopup();
@@ -201,8 +223,75 @@ public sealed partial class StudioForm
     private void SaveLayout()
     {
         settings.Layout = layout.Save();
+        if (workspace.Project?.DirectoryPath is { } project) settings.ProjectLayouts[ProjectLayoutKey(project)] = settings.Layout.Value;
         layoutDirty = false;
         SaveSettings();
+    }
+
+    private string? layoutProject;
+
+    private static string ProjectLayoutKey(string folder) => Path.GetFullPath(folder).TrimEnd('\\', '/').ToUpperInvariant();
+
+    /** Each project keeps its own layout; opening one restores what it had, else keeps the current layout for it. */
+    private void UseProjectLayout()
+    {
+        string? project = workspace.Project?.DirectoryPath;
+        if (project == layoutProject) return;
+        layoutProject = project;
+        if (project is null || options.Smoke) return;
+        if (settings.ProjectLayouts.TryGetValue(ProjectLayoutKey(project), out var saved))
+        {
+            foreach (var popout in popouts.ToArray()) ClosePopout(popout.Panel);
+            layout = StudioLayout.Restore(saved, settings.BrowserWidth, settings.InspectorWidth, settings.ChangesHeight);
+            maximizedPanel = null;
+            browserSlot = null;
+        }
+        else layoutDirty = true;
+    }
+
+    /** A side panel shows as a strip when the user folded it, or while it is empty unless the user pinned it open. */
+    private bool IsFolded(StudioLayoutNode node) => node.IsLeaf && StudioLayoutNode.Collapsible(node.Panel)
+        && (node.Collapsed ?? PanelEmpty(node.Panel)) && !options.Smoke;
+
+    private bool PanelEmpty(StudioPanelKind kind) => kind switch
+    {
+        StudioPanelKind.MissionGraph => missionGraph.ScriptPath is null && !missionGraph.IsDirty,
+        StudioPanelKind.Browser => workspace.Assets.Length == 0 && workspace.Catalog is null,
+        StudioPanelKind.Changes => workspace.Project is null,
+        StudioPanelKind.ObjectTree => sceneTree is null,
+        StudioPanelKind.Inspector => workspace.Document is null && selectedObject is null,
+        _ => false
+    };
+
+    private float FoldStrip(bool columns) => ImGui.GetFrameHeight() + (columns ? 10 : 8) * scale;
+
+    /** The strip: an expand button and the panel's name; clicking anywhere on it opens the panel. */
+    private void DrawFoldedPanel(StudioLayoutNode node, Vector2 position, Vector2 size)
+    {
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(4 * scale));
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, Vector2.One);
+        BeginPanel($"area-{node.Id}-folded", position, size, ImGuiWindowFlags.NoScrollbar);
+        bool open = ImGui.Button("+", new(ImGui.GetFrameHeight(), 0));
+        string title = PanelTitle(node.Panel);
+        StudioUi.Tip($"Open {title}" + (node.Collapsed is null ? " (folded while empty; its area menu can keep it open)" : ""));
+        if (size.X < size.Y)
+        {
+            // Columns: the name runs down the strip, one letter per line.
+            var draw = ImGui.GetWindowDrawList();
+            uint color = ImGui.GetColorU32(ImGuiCol.TextDisabled);
+            var at = ImGui.GetCursorScreenPos() + new Vector2((ImGui.GetFrameHeight() - ImGui.CalcTextSize("M").X) / 2, 4 * scale);
+            foreach (char letter in title.ToUpperInvariant())
+            {
+                if (at.Y + ImGui.GetTextLineHeight() > position.Y + size.Y - 4 * scale) break;
+                if (letter != ' ') draw.AddText(at, color, letter.ToString());
+                at.Y += ImGui.GetTextLineHeight() * (letter == ' ' ? .5f : .95f);
+            }
+        }
+        else { ImGui.SameLine(); ImGui.AlignTextToFramePadding(); ImGui.TextDisabled(title); }
+        if (!open && ImGui.IsWindowHovered() && ImGui.IsMouseClicked(ImGuiMouseButton.Left)) open = true;
+        if (open) pendingLayoutChange = () => node.Collapsed = false;
+        ImGui.End();
+        ImGui.PopStyleVar(2);
     }
 
     private void TrackAreaFocus(bool mission = false)

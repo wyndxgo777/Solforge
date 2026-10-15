@@ -36,7 +36,10 @@ try
     ReferenceCheck();
     checks.Add("reference library: found above the project, index.json plus unindexed front matter, ranked search with tag filter, read by path or url with paging, half-written index and path escapes are safe");
     await StdioRoundTrip();
-    checks.Add("initialize, tools/list (22 tools with object schemas), tools/call, get_open_documents, mission, read_panel and reference tools round trip over the stdio shim");
+    checks.Add("initialize, tools/list (54 tools with object schemas), tools/call, get_open_documents, mission, read_panel and reference tools round trip over the stdio shim");
+    checks.Add("project tools: list_maps and other catalog reads reach the host and work while paused, find_world_objects stops while paused, host errors become tool errors, edit_bounds validates before asking, edit_placement waits for approval");
+    SessionChecks(scratch);
+    checks.Add("session context: SESSION.md lists project, map, skills and tools; the AGENTS.md block is appended once, replaced in place and keeps the user's text; skills copy only when they differ");
     await ContextHook();
     checks.Add("solforge-mcp --context prints the live context, and nothing (exit 0, fast) when paused or no Solforge runs");
     Approvals();
@@ -213,7 +216,16 @@ async Task StdioRoundTrip()
         string[] expected = ["get_context", "get_open_documents", "find_object", "get_object", "get_viewport_screenshot", "list_visible", "get_attention_log",
             "read_project_file", "search_project", "search_reference", "read_reference", "get_tag", "get_package_entry", "get_live_state",
             "list_mission_objects", "get_mission_object", "read_panel",
-            "select_object", "focus_camera", "highlight", "open_file", "apply_project_edit"];
+            "select_object", "focus_camera", "highlight", "open_file", "apply_project_edit",
+            "get_editor_state", "get_project", "list_project_files", "list_project_changes", "get_build_status", "get_settings",
+            "list_maps", "list_missions", "list_packages", "list_package_entries", "search_assets", "list_mission_scripts",
+            "find_world_objects", "get_placement", "search_items", "get_item", "search_perks", "list_vendors", "get_vendor",
+            "list_creation_types", "describe_creation",
+            "open_map", "open_asset", "set_viewport_rendering", "edit_placement", "edit_bounds", "revert_object_edit",
+            "apply_item_edit", "apply_vendor_edit", "start_creation", "replace_texture_pixels", "build_project"];
+        string[] actions = ["select_object", "focus_camera", "highlight", "open_file", "apply_project_edit", "open_map", "open_asset",
+            "set_viewport_rendering", "edit_placement", "edit_bounds", "revert_object_edit", "apply_item_edit", "apply_vendor_edit",
+            "start_creation", "replace_texture_pixels", "build_project"];
         Expect(tools.Select(tool => tool?["name"]?.ToString()).SequenceEqual(expected), "tool names: " + string.Join(",", tools.Select(tool => tool?["name"])));
         foreach (var tool in tools)
         {
@@ -222,7 +234,9 @@ async Task StdioRoundTrip()
             foreach (var required in schema["required"]?.AsArray() ?? new JsonArray())
                 Expect(schema["properties"]![required!.ToString()] is not null, $"{tool["name"]} requires an undeclared {required}");
             bool readOnly = tool["annotations"]?["readOnlyHint"]?.GetValue<bool>() == true;
-            Expect(readOnly == Array.IndexOf(expected, tool["name"]!.ToString()) < 17, "read-only flag of " + tool["name"]);
+            Expect(readOnly != actions.Contains(tool["name"]!.ToString()), "read-only flag of " + tool["name"]);
+            foreach (var (name, property) in schema["properties"]!.AsObject())
+                Expect((string?)property?["type"] != "array" || property?["items"] is JsonObject, $"{tool["name"]}.{name} array has items");
         }
         var found = await Call(3, "tools/call", new JsonObject { ["name"] = "find_object", ["arguments"] = new JsonObject { ["query"] = "static mesh 7489" } });
         var text = JsonNode.Parse(found["content"]![0]!["text"]!.ToString())!;
@@ -251,7 +265,22 @@ async Task StdioRoundTrip()
         Expect(badPanel["isError"]?.GetValue<bool>() == true, "unknown panel");
         var reference = Body(await Call(25, "tools/call", new JsonObject { ["name"] = "search_reference", ["arguments"] = new JsonObject { ["query"] = "replication" } }));
         Expect(reference["hits"]?[0]?["path"]?.ToString() == "unreal/replication.md", "search_reference: " + reference.ToJsonString());
+        var maps = Body(await Call(30, "tools/call", new JsonObject { ["name"] = "list_maps", ["arguments"] = new JsonObject { ["filter"] = "dark forest" } }));
+        Expect(maps["rows"]?[0]?["name"]?.ToString() == "The EDZ" && host.Queries.Contains("list_maps"), "list_maps reaches the host: " + maps.ToJsonString());
+        var failed = await Call(31, "tools/call", new JsonObject { ["name"] = "get_item", ["arguments"] = new JsonObject { ["item"] = "0x1" } });
+        Expect(failed["isError"]?.GetValue<bool>() == true && failed["content"]![0]!["text"]!.ToString().Contains("loading", StringComparison.Ordinal), "host errors are tool errors");
+        int asked = host.Approvals;
+        var badBounds = await Call(32, "tools/call", new JsonObject { ["name"] = "edit_bounds", ["arguments"] = new JsonObject { ["id"] = "w:9", ["minimum"] = new JsonArray(1, 2) } });
+        Expect(badBounds["isError"]?.GetValue<bool>() == true && host.Approvals == asked, "edit_bounds validates before asking");
+        var move = await Call(33, "tools/call", new JsonObject { ["name"] = "edit_placement",
+            ["arguments"] = new JsonObject { ["id"] = "w:9", ["position"] = new JsonArray(1, 2, 3) } });
+        Expect(move["isError"]?.GetValue<bool>() == true && host.Approvals == asked + 1 && host.LastSummary?.Contains("[1,2,3]") == true,
+            "edit_placement waits for approval: " + host.LastSummary);
         host.Paused = true;
+        var pausedMaps = await Call(34, "tools/call", new JsonObject { ["name"] = "list_maps", ["arguments"] = new JsonObject() });
+        Expect(pausedMaps["isError"]?.GetValue<bool>() != true, "catalog reads work while paused");
+        var pausedWorld = await Call(35, "tools/call", new JsonObject { ["name"] = "find_world_objects", ["arguments"] = new JsonObject() });
+        Expect(pausedWorld["isError"]?.GetValue<bool>() == true, "world reads stop while paused");
         var pausedReference = await Call(26, "tools/call", new JsonObject { ["name"] = "read_reference", ["arguments"] = new JsonObject { ["path"] = "unreal/replication.md" } });
         Expect(pausedReference["isError"]?.GetValue<bool>() != true, "the reference library stays readable while paused");
         var pausedMission = await Call(27, "tools/call", new JsonObject { ["name"] = "list_mission_objects", ["arguments"] = new JsonObject() });
@@ -412,6 +441,33 @@ async Task ContextHook()
     Directory.CreateDirectory(empty);
     var none = await Run(empty);
     Expect(none.Code == 0 && none.Output.Length == 0 && none.Time < TimeSpan.FromSeconds(10), $"--context without Solforge: {none.Output} in {none.Time}");
+}
+
+static void SessionChecks(string scratch)
+{
+    string project = Path.Combine(scratch, "session project");
+    Directory.CreateDirectory(project);
+    var facts = new SessionFacts("Dark Forest", @"D:\Destiny 2", "The EDZ", "0x80001234", null, "scripts/edz.lua", true,
+        ["solforge-map-bounds", "solforge-new-weapon"], ["get_editor_state", "list_maps"]);
+    string session = SessionContext.Write(project, facts);
+    string text = File.ReadAllText(session);
+    Expect(text.Contains("Project: Dark Forest") && text.Contains("Open map: The EDZ (mission 0x80001234)") && text.Contains("- solforge-map-bounds")
+        && text.Contains("get_editor_state, list_maps"), "SESSION.md: " + text);
+    string agents = Path.Combine(project, "AGENTS.md");
+    File.WriteAllText(agents, "# My rules\n\nKeep this.\n");
+    SessionContext.Write(project, facts);
+    SessionContext.Write(project, facts with { Skills = ["solforge-new-armor"] });
+    string merged = File.ReadAllText(agents);
+    Expect(merged.StartsWith("# My rules\n\nKeep this.", StringComparison.Ordinal) && merged.Split(SessionContext.Begin).Length == 2
+        && merged.Contains("- solforge-new-armor") && !merged.Contains("- solforge-new-weapon"), "AGENTS.md block: " + merged);
+    string bundled = Path.Combine(scratch, "bundled"), target = Path.Combine(scratch, "skills");
+    Directory.CreateDirectory(Path.Combine(bundled, "solforge-new-weapon"));
+    Directory.CreateDirectory(Path.Combine(bundled, "other-skill"));
+    File.WriteAllText(Path.Combine(bundled, "solforge-new-weapon", "SKILL.md"), "---\nname: solforge-new-weapon\n---\n");
+    File.WriteAllText(Path.Combine(bundled, "other-skill", "SKILL.md"), "x");
+    Expect(SkillSync.Sync(bundled, target).SequenceEqual(["solforge-new-weapon"]), "first sync copies");
+    Expect(SkillSync.Sync(bundled, target).Count == 0, "unchanged skills are not copied again");
+    Expect(SkillSync.Names(target).SequenceEqual(["solforge-new-weapon"]) && !Directory.Exists(Path.Combine(target, "other-skill")), "only solforge-* skills");
 }
 
 static string[] Argv(string commandLine)
@@ -775,6 +831,18 @@ sealed class FixtureHost(string project) : ISolforgeHost
         Panels = panel;
         return Task.FromResult(new JsonObject { ["total"] = 0, ["rows"] = new JsonArray() });
     }
-    public Task<bool> ApproveAsync(string tool, string summary, CancellationToken cancel) { Interlocked.Increment(ref Approvals); return Task.FromResult(false); }
+    public Task<bool> ApproveAsync(string tool, string summary, CancellationToken cancel) { LastSummary = summary; Interlocked.Increment(ref Approvals); return Task.FromResult(false); }
     public Task<string> RunActionAsync(string tool, JsonObject args, CancellationToken cancel) => Task.FromResult("ran");
+    public readonly List<string> Queries = [];
+    public string? LastSummary;
+    public Task<JsonObject> QueryAsync(string tool, JsonObject args, CancellationToken cancel)
+    {
+        lock (Queries) Queries.Add(tool);
+        return Task.FromResult(tool switch
+        {
+            "list_maps" => new JsonObject { ["total"] = 1, ["rows"] = new JsonArray(new JsonObject { ["name"] = "The EDZ", ["zones"] = new JsonArray("Dark Forest") }) },
+            "get_item" => new JsonObject { ["error"] = "Solforge is reading the item catalog (loading); call again shortly." },
+            _ => new JsonObject { ["total"] = 0, ["rows"] = new JsonArray() }
+        });
+    }
 }

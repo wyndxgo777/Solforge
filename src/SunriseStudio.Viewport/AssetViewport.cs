@@ -580,8 +580,15 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
     public bool SuspendRendering { get; set; }
     /** Reason displayed on the suspended viewport placeholder. */
     public string SuspendReason { get; set; } = "";
-    /** User override to force 3D viewport rendering even while suspended. */
+    /** User override to force 3D viewport rendering even while suspended; the host clears it when the reason goes away. */
     public bool ForceResumeRendering { get; set; }
+    /** The user's 3D viewport switch (View > 3D viewport rendering): off draws nothing 3D, whatever else is true. */
+    public bool RenderingOff { get; set; }
+    /** Called by the placeholder's Turn on button while RenderingOff is set; the host flips its saved setting. */
+    public Action? TurnOnRendering { get; set; }
+    /** True while the 3D scene is drawn this frame (a 2D texture preview always draws). */
+    public bool IsRendering => texture is not null || !RenderingOff && !(SuspendRendering && !ForceResumeRendering);
+    private bool targetsReleased = true;
 
     /** Draw inside an ImGui window after NewFrame and before the host renders ImGui. */
     public void DrawImGui(Vector2 size)
@@ -589,18 +596,33 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
         ObjectDisposedException.ThrowIf(disposed, this);
         if (size.X < 1 || size.Y < 1) return;
         var start = ImGui.GetCursorPosY();
-        Animation?.Tick(ImGui.GetIO().DeltaTime);
+        bool rendering = IsRendering;
+        if (rendering) Animation?.Tick(ImGui.GetIO().DeltaTime);
         DrawToolbar();
-        Animation?.DrawImGui();
+        if (rendering) Animation?.DrawImGui();
         size.Y = MathF.Max(1, size.Y - (ImGui.GetCursorPosY() - start));
         var origin = ImGui.GetCursorScreenPos();
+        var draw = ImGui.GetWindowDrawList();
+        if (!rendering)
+        {
+            // Nothing 3D runs: no visibility, streaming, effects or input picking; size-dependent GPU targets are shrunk once.
+            ReleaseFrameTargets();
+            ScreenOrigin = origin; ScreenSize = size;
+            draw.AddRectFilled(origin, origin + size, ImGui.GetColorU32(new Vector4(.055f, .065f, .08f, 1)));
+            draw.PushClipRect(origin, origin + size, true);
+            DrawSuspendedBanner(draw, origin, size);
+            draw.PopClipRect();
+            ImGui.SetCursorScreenPos(origin);
+            ImGui.Dummy(size);
+            return;
+        }
+        targetsReleased = false;
         ImGui.InvisibleButton("##asset-viewport", size,
             ImGuiButtonFlags.MouseButtonLeft | ImGuiButtonFlags.MouseButtonRight |
             ImGuiButtonFlags.MouseButtonMiddle);
         bool hovered = ImGui.IsItemHovered();
         // A handle drag owns the mouse, so it neither selects nor moves the camera.
         if (!ProcessGizmo(hovered, origin, size)) ProcessInput(hovered, origin, size);
-        var draw = ImGui.GetWindowDrawList();
         draw.AddRectFilled(origin, origin + size, ImGui.GetColorU32(new Vector4(.055f, .065f, .08f, 1)));
         draw.PushClipRect(origin, origin + size, true);
         if (texture is not null)
@@ -609,11 +631,6 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
             var imageSize = new Vector2(texture.Width, texture.Height) * fit;
             var imageStart = origin + (size - imageSize) / 2 + imageOffset;
             draw.AddImage(texture.ImGuiId, imageStart, imageStart + imageSize);
-        }
-        else if (SuspendRendering && !ForceResumeRendering)
-        {
-            ScreenOrigin = origin; ScreenSize = size;
-            DrawSuspendedBanner(draw, origin, size);
         }
         else
         {
@@ -631,13 +648,23 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
         draw.PopClipRect();
     }
 
+    /** Shrinks the native scene's size-dependent targets while nothing is drawn; RenderImage grows them back on resume. */
+    private void ReleaseFrameTargets()
+    {
+        if (targetsReleased) return;
+        targetsReleased = true;
+        try { nativeScene?.Resize(64, 64); }
+        catch (Exception error) when (error is InvalidOperationException or ArgumentException or SharpGen.Runtime.SharpGenException) { }
+    }
+
     private void DrawSuspendedBanner(ImDrawListPtr draw, Vector2 origin, Vector2 size)
     {
-        string title = "3D Viewport Rendering Suspended";
-        string subtitle = string.IsNullOrEmpty(SuspendReason)
-            ? "Destiny 2 is running. Viewport rendering is suspended to preserve RAM & GPU."
-            : SuspendReason;
-        string detail = "Connect via the Live tab to sync with the active game, or click below to resume rendering.";
+        bool user = RenderingOff;
+        string title = user ? "3D Viewport Off" : "3D Viewport Rendering Suspended";
+        string subtitle = user ? "Rendering is switched off to save GPU and memory. Every other panel and the AI tools keep working."
+            : string.IsNullOrEmpty(SuspendReason) ? "Destiny 2 is running. Viewport rendering is suspended to preserve RAM & GPU." : SuspendReason;
+        string detail = user ? "Turn it back on here, with the toolbar's viewport button or from View > 3D viewport rendering."
+            : "Connect via the Live tab to sync with the active game, or click below to resume rendering.";
 
         var titleSize = ImGui.CalcTextSize(title);
         var subtitleSize = ImGui.CalcTextSize(subtitle);
@@ -653,9 +680,10 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
 
         float buttonWidth = 200;
         ImGui.SetCursorScreenPos(new Vector2(origin.X + MathF.Max(10, (size.X - buttonWidth) * 0.5f), centerY + 90));
-        if (ImGui.Button("Resume 3D Viewport##resume-render", new Vector2(buttonWidth, 32)))
+        if (ImGui.Button(user ? "Turn on 3D viewport##resume-render" : "Resume 3D Viewport##resume-render", new Vector2(buttonWidth, 32)))
         {
-            ForceResumeRendering = true;
+            if (user) TurnOnRendering?.Invoke();
+            else ForceResumeRendering = true;
         }
     }
 

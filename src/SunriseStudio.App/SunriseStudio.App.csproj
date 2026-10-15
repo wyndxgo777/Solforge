@@ -9,6 +9,8 @@
     <ApplicationIcon>../SunriseStudio.Editor/Assets/Sunrise.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <!-- The solforge-* playbooks; the AI workspace copies them into ~/.claude/skills when an engine starts. -->
+    <Content Include="../../skills/**/*" LinkBase="skills" CopyToOutputDirectory="PreserveNewest" />
     <ProjectReference Include="../SunriseStudio.Editor/SunriseStudio.Editor.csproj" />
   </ItemGroup>
   <ItemGroup>

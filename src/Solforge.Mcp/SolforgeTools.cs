@@ -41,12 +41,14 @@ public interface ISolforgeHost
     Task<bool> ApproveAsync(string tool, string summary, CancellationToken cancel);
     /** Runs an approved action tool on the UI thread and says what happened. */
     Task<string> RunActionAsync(string tool, JsonObject args, CancellationToken cancel);
+    /** A project-wide read (SolforgeTools.CatalogTools and WorldTools); an "error" member makes it a tool error. */
+    Task<JsonObject> QueryAsync(string tool, JsonObject args, CancellationToken cancel);
 }
 
 /** A page of a panel: path picks a node or section, filter narrows rows. */
 public sealed record PanelQuery(string? Path, string? Filter, int Offset, int Limit);
 
-public static class SolforgeTools
+public static partial class SolforgeTools
 {
     public const string Instructions =
         "Solforge is the Project Sol game editor. The user's viewport labels (for example " +
@@ -56,7 +58,12 @@ public static class SolforgeTools
         "status, before searching files. Resolve spoken names with find_object, then get_object for details. Mission objects " +
         "('this event point', 'that generator') have slot ids (slot/...): get_mission_object gives their transform, prefab, " +
         "children and the SDK and server Lua lines naming them. read_panel reads any panel (hierarchy, inspector, assets, " +
-        "mission graph, report, changes, live) a page at a time. Action tools need the user's approve click.";
+        "mission graph, report, changes, live) a page at a time. No map needs to be open for get_editor_state, list_maps, " +
+        "list_missions, list_packages, search_assets, search_items, get_item, list_vendors or list_creation_types; find map " +
+        "content by name with list_maps (zones) and search_assets, open it with open_map, then find_world_objects (layer volumes " +
+        "or collision) and get_placement before edit_placement or edit_bounds. Playbooks for common jobs are skills named " +
+        "solforge-new-weapon, solforge-new-armor, solforge-map-bounds, solforge-patrol-content, solforge-new-enemy and " +
+        "solforge-new-mission; read the matching one first. Action tools need the user's approve click.";
 
     /** read_panel names; each pages with offset/limit. */
     public static readonly string[] Panels =
@@ -66,7 +73,7 @@ public static class SolforgeTools
     {
         McpTool Read(string name, string description, JsonObject schema, Func<JsonObject, CancellationToken, Task<McpToolResult>> run) =>
             new(name, description, schema, false, async (args, cancel) =>
-                host.Paused && name is not ("read_project_file" or "search_project" or "search_reference" or "read_reference")
+                host.Paused && name is not ("read_project_file" or "search_project" or "search_reference" or "read_reference") && !CatalogTools.Contains(name)
                     ? McpToolResult.Error("The user paused context publishing in Solforge's AI workspace.")
                     : await run(args, cancel).ConfigureAwait(false));
         McpTool Act(string name, string description, JsonObject schema, Func<JsonObject, string?> validate, Func<JsonObject, string> summary) =>
@@ -122,7 +129,8 @@ public static class SolforgeTools
                 async (args, cancel) =>
                 {
                     var png = await host.ScreenshotAsync(McpJson.String(args, "id"), McpJson.Bool(args, "labels", true), cancel).ConfigureAwait(false);
-                    if (png is null) return McpToolResult.Error("No viewport is showing, or the object is off screen.");
+                    if (png is null) return McpToolResult.Error("No viewport is showing (3D rendering may be off: get_editor_state, " +
+                        "set_viewport_rendering), or the object is off screen.");
                     var result = McpToolResult.Text($"Viewport screenshot, {png.Length} bytes.");
                     result.Images.Add(png);
                     return result;
@@ -279,7 +287,8 @@ public static class SolforgeTools
                     return whole == patch ? "Give either content, or find and replace." : null;
                 },
                 args => args["content"] is not null ? $"Write {McpJson.String(args, "path")} ({McpJson.String(args, "content")?.Length ?? 0} chars)"
-                    : $"Edit {McpJson.String(args, "path")}: replace {Quote(McpJson.String(args, "find"))} with {Quote(McpJson.String(args, "replace"))}")
+                    : $"Edit {McpJson.String(args, "path")}: replace {Quote(McpJson.String(args, "find"))} with {Quote(McpJson.String(args, "replace"))}"),
+            .. ProjectTools(host, Read, Act)
         ];
     }
 

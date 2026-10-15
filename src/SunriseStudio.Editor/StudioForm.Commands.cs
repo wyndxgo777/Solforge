@@ -48,6 +48,7 @@ public sealed partial class StudioForm
             ImGui.Separator();
             if (ImGui.MenuItem("Sunrise location...", "", false, !workspace.IsBusy)) settingsDialog = true;
             if (ImGui.MenuItem("Cache...", "", false, !workspace.IsBusy)) cacheDialog = true;
+            if (ImGui.MenuItem("Settings...", ShortcutInput.Text(ShortcutActions.OpenSettings))) preferencesOpen = true;
             ImGui.Separator();
             if (ImGui.MenuItem("Exit")) BeginInvoke(Close);
             ImGui.EndMenu();
@@ -62,6 +63,7 @@ public sealed partial class StudioForm
                 workspace.Run(() => workspace.ConvertPlacementDeltas());
             ImGui.Separator();
             if (ImGui.MenuItem("Shortcuts...")) shortcutsDialog = true;
+            if (ImGui.MenuItem("Settings...", ShortcutInput.Text(ShortcutActions.OpenSettings))) preferencesOpen = true;
             ImGui.EndMenu();
         }
         if (ImGui.BeginMenu("Assets"))
@@ -120,6 +122,8 @@ public sealed partial class StudioForm
             bool wire = viewport?.Wireframe ?? false, grid = viewport?.ShowGrid ?? true;
             if (ImGui.MenuItem("Wireframe", "", ref wire)) viewport!.Wireframe = wire;
             if (ImGui.MenuItem("Grid", "", ref grid)) viewport!.ShowGrid = grid;
+            ImGui.Separator();
+            DrawRenderingMenuItem();
             ImGui.EndMenu();
         }
         DrawWindowMenu();
@@ -202,6 +206,8 @@ public sealed partial class StudioForm
             ImGui.EndDisabled();
         }
         ToolbarNext(row);
+        DrawRenderingToolbarButton();
+        ToolbarNext(row);
         bool shading = settings.GameShaders;
         if (ImGuiIcons.Toggle("tb-shaders", StudioIcon.Shader, "Game shaders", ref shading))
         { settings.GameShaders = shading; PrepareGameShaders(); }
@@ -236,6 +242,10 @@ public sealed partial class StudioForm
             ? "Lighting: atmosphere preview\nLocal probes and shadows are not drawn"
             : "Lighting: editor lights with game materials");
         ImGui.EndDisabled();
+        ToolbarNext(row);
+        string settingsKeys = ShortcutInput.Text(ShortcutActions.OpenSettings);
+        if (ImGuiIcons.Button("tb-settings", StudioIcon.Gear, settingsKeys.Length > 0 ? $"Settings ({settingsKeys})" : "Settings"))
+            preferencesOpen = true;
         if (workspace.IsBusy) { ToolbarNext(row); ImGui.AlignTextToFramePadding(); ImGui.TextDisabled("Working"); }
         ImGui.End();
     }
@@ -262,7 +272,7 @@ public sealed partial class StudioForm
         if (shortcutsDialog) { ImGui.OpenPopup("Shortcuts"); shortcutsDialog = false; }
         if (noticesDialog) { ImGui.OpenPopup("Third-party notices"); noticesDialog = false; }
         DrawLocationDialog(); DrawProjectDialog(); DrawAddDialog(); DrawCacheDialog(); DrawBundleDialogs(); DrawModDialog();
-        DrawShortcutsDialog(); DrawNoticesDialog();
+        DrawShortcutsDialog(); DrawNoticesDialog(); DrawPreferences();
         DrawCreation();
     }
 

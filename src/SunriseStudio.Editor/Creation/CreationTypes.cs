@@ -58,6 +58,11 @@ public static partial class CreationTypes
         if (!Types.TryAdd((key, mode), type)) throw new InvalidOperationException($"{key} has two {mode} types.");
     }
 
+    /** Every registered key and mode, for the AI tools' list_creation_types. */
+    public static IEnumerable<(string Key, CreationMode Mode, CreationType Type)> All =>
+        Types.OrderBy(pair => pair.Key.Key, StringComparer.OrdinalIgnoreCase).ThenBy(pair => pair.Key.Mode)
+            .Select(pair => (pair.Key.Key, pair.Key.Mode, pair.Value));
+
     /** Never null; a key with no registered type gives a disabled type. */
     public static CreationType For(string key, CreationMode mode) =>
         Types.GetValueOrDefault((key, mode)) ?? new(key, "", NotBuilt);

@@ -81,6 +81,7 @@ public sealed partial class StudioForm
             aiKeyHooked = true;
         }
         EnsureAiService();
+        LoadAiEngineChoice();
         if (aiResolved.Count == 0) ResolveAiEngines(true);
         if (aiInstalling is not null && aiTerminal.Terminal is not { HasExited: false }) FinishAiInstall();
         var engine = AiEngines[aiEngine];
@@ -103,31 +104,33 @@ public sealed partial class StudioForm
     }
 
     /**
-     * Engine picker, Start/Stop, the Context and Folders dropdowns and the MCP status. Items flow onto a second row
-     * when the panel is narrow, and the status shrinks to a coloured dot.
+     * One compact toolbar row: engine picker, Start/Restart, Stop, the context chip (what the AI sees; click for details,
+     * right-click to ask about it), the MCP status dot and a "..." menu holding the secondary controls. Items flow onto a
+     * second row only when the panel is very narrow.
      */
     private void DrawAiHeader(AiEngine engine, bool missing)
     {
         var style = ImGui.GetStyle();
         float room = ImGui.GetContentRegionAvail().X, spacing = style.ItemSpacing.X, x = 0;
-        float comboWidth = Math.Clamp(room * .45f, Math.Min(room, 90 * scale), 170 * scale);
+        float comboWidth = Math.Clamp(room * .3f, Math.Min(room, 90 * scale), 150 * scale);
         AiFlow(ref x, comboWidth, room);
         ImGui.SetNextItemWidth(comboWidth);
         if (ImGui.BeginCombo("##ai-engine", AiEngineLabel(engine)))
         {
             if (ImGui.IsWindowAppearing()) ResolveAiEngines(true);
             for (int i = 0; i < AiEngines.Length; i++)
-                if (ImGui.Selectable(AiEngineLabel(AiEngines[i]), i == aiEngine) && i != aiEngine) { aiEngine = i; aiInstallNote = null; }
+                if (ImGui.Selectable(AiEngineLabel(AiEngines[i]), i == aiEngine) && i != aiEngine) SelectAiEngine(i);
             ImGui.EndCombo();
         }
         StudioUi.Tip("Runs your own install and login; Solforge never stores API keys.");
         bool custom = engine.Command.Length == 0;
         if (custom)
         {
-            float inputWidth = Math.Clamp(room - x - spacing, Math.Min(room, 120 * scale), 260 * scale);
+            float inputWidth = Math.Clamp(room - x - spacing, Math.Min(room, 120 * scale), 220 * scale);
             AiFlow(ref x, inputWidth, room);
             ImGui.SetNextItemWidth(inputWidth);
-            ImGui.InputTextWithHint("##ai-custom", "command line", ref aiCustomCommand, 512);
+            if (ImGui.InputTextWithHint("##ai-custom", "command line", ref aiCustomCommand, 512)) settings.AiCustomCommand = aiCustomCommand;
+            if (ImGui.IsItemDeactivatedAfterEdit()) SaveSettings();
         }
         string command = custom ? aiCustomCommand.Trim() : engine.Command;
         string start = aiTerminal.Terminal is { HasExited: false } && aiInstalling is null ? "Restart##ai-start" : "Start##ai-start";
@@ -135,57 +138,122 @@ public sealed partial class StudioForm
         ImGui.BeginDisabled(command.Length == 0 || missing);
         if (SolTheme.PrimaryButton(start)) StartAiEngine(engine, command, settings.AiResumeSessions);
         ImGui.EndDisabled();
-        if (missing) StudioUi.Tip($"{engine.Name} is not installed; the panel below shows how.");
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            StudioUi.Tip(missing ? $"{engine.Name} is not installed; the panel below shows how."
+                : $"Start/Restart {(settings.AiResumeSessions ? "resumes" : "does not resume")} the engine's last session for this folder.");
         ImGui.SameLine();
         ImGui.BeginDisabled(aiTerminal.Terminal is not { HasExited: false });
         if (ImGui.Button("Stop")) aiTerminal.Stop();
         ImGui.EndDisabled();
-        AiFlow(ref x, ButtonWidth("New session"), room);
-        ImGui.BeginDisabled(command.Length == 0 || missing);
-        if (ImGui.Button("New session###ai-new-session")) StartAiEngine(engine, command, resume: false);
-        ImGui.EndDisabled();
-        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) StudioUi.Tip("Starts the engine with a fresh conversation. "
-            + $"Start/Restart {(settings.AiResumeSessions ? "resume" : "do not resume")} the engine's last session for this folder; right-click to change.");
-        if (ImGui.BeginPopupContextItem("ai-new-session-menu"))
+
+        // The chip takes what is left beside the status dot and the "..." button, with a sensible minimum.
+        float more = ButtonWidth("..."), dot = ImGui.GetFrameHeight(), badge = settings.AiAutoAllow ? ButtonWidth("AUTO") : 0;
+        float chipRoom = room - x - more - dot - badge - 4 * spacing;
+        if (chipRoom < 120 * scale) chipRoom = Math.Max(120 * scale, room - more - dot - badge - 3 * spacing);
+        chipRoom = Math.Min(chipRoom, 420 * scale);
+        string chip = StudioUi.Fit(AiContextChip(), chipRoom - style.FramePadding.X * 2);
+        AiFlow(ref x, ButtonWidth(chip), room);
+        ImGui.PushStyleColor(ImGuiCol.Button, ImGui.GetStyle().Colors[(int)ImGuiCol.FrameBg]);
+        bool openContext = ImGui.Button(chip + "###ai-context");
+        ImGui.PopStyleColor();
+        if (openContext) ImGui.OpenPopup(AiContextPopup);
+        StudioUi.Tip("What the AI sees now. Click for details, pins and screenshots; right-click to ask the AI about it.");
+        if (ImGui.BeginPopupContextItem("ai-context-ask"))
         {
-            bool resume = settings.AiResumeSessions;
-            if (ImGui.MenuItem("Resume last session on Start/Restart", "", ref resume)) { settings.AiResumeSessions = resume; SaveSettings(); }
+            ImGui.BeginDisabled(!CanAskAi);
+            if (ImGui.MenuItem("Ask about this")) AskAiAboutContext();
+            ImGui.EndDisabled();
             ImGui.EndPopup();
         }
-
-        // The Context button gives up width so Folders, Auto-allow and the status dot still fit beside it.
-        float folders = ButtonWidth("Folders"), autoAllow = ButtonWidth("Auto-allow"), dot = ImGui.GetFrameHeight();
-        float contextRoom = Math.Min(300 * scale, Math.Max(60 * scale, room - folders - autoAllow - dot - 3 * spacing)) - style.FramePadding.X * 2;
-        string context = StudioUi.Fit("Context: " + AiContextShort(), contextRoom);
-        AiFlow(ref x, ButtonWidth(context) + spacing + folders, room);
-        if (ImGui.Button(context + "###ai-context")) ImGui.OpenPopup(AiContextPopup);
-        StudioUi.Tip("What the AI sees now: hovered, selected, camera, open file, pins and the attention log.");
         DrawAiContextPopup();
+        DrawAiStatusDot();
+        if (settings.AiAutoAllow)
+        {
+            ImGui.SameLine();
+            ImGui.AlignTextToFramePadding();
+            ImGui.TextColored(SolTheme.Sun, "AUTO");
+            StudioUi.Tip($"Auto-allow is on ({aiAllowCount} allowed this session). Turn it off in the ... menu.");
+        }
         ImGui.SameLine();
-        if (ImGui.Button("Folders")) ImGui.OpenPopup(AiFoldersPopup);
-        StudioUi.Tip("Folders outside the project the engine may read (Claude Code --add-dir).");
+        if (ImGui.Button("...###ai-more")) ImGui.OpenPopup("ai-more");
+        StudioUi.Tip("New session, auto-allow, folders, screenshots and AI settings");
+        bool openFolders = false;
+        if (ImGui.BeginPopup("ai-more"))
+        {
+            ImGui.BeginDisabled(command.Length == 0 || missing);
+            if (ImGui.MenuItem("New session")) StartAiEngine(engine, command, resume: false);
+            ImGui.EndDisabled();
+            bool resume = settings.AiResumeSessions;
+            if (ImGui.MenuItem("Resume last session on Start/Restart", "", ref resume)) { settings.AiResumeSessions = resume; SaveSettings(); }
+            bool allow = settings.AiAutoAllow;
+            if (ImGui.MenuItem("Auto-allow one-time prompts", "", ref allow)) { settings.AiAutoAllow = allow; aiAllowSeen = null; SaveSettings(); }
+            if (ImGui.IsItemHovered()) ImGui.SetTooltip(AutoAllowTip);
+            ImGui.Separator();
+            ImGui.BeginDisabled(!CanAskAi);
+            if (ImGui.MenuItem("Ask about this")) AskAiAboutContext();
+            ImGui.EndDisabled();
+            if (ImGui.MenuItem("Send screenshot", "", false, workspace.Project is not null && viewport is { IsRendering: true })) SendAiScreenshot();
+            bool publish = !aiPaused;
+            if (ImGui.MenuItem("Publish context", "", ref publish)) aiPaused = !publish;
+            if (ImGui.MenuItem("Folders...")) openFolders = true;
+            ImGui.Separator();
+            if (ImGui.MenuItem("AI settings...")) preferencesOpen = true;
+            ImGui.EndPopup();
+        }
+        if (openFolders) ImGui.OpenPopup(AiFoldersPopup);
         DrawAiFoldersPopup();
-        AiFlow(ref x, autoAllow, room);
-        DrawAiAutoAllowToggle();
-        DrawAiStatus(x, room);
     }
 
-    /** Auto-allow on/off, sun-filled while on like the Start button. */
-    private void DrawAiAutoAllowToggle()
+    private const string AutoAllowTip = "When on, Solforge presses Enter when the engine asks to allow something and the highlighted "
+        + "choice is a one-time Yes/Allow (never \"always allow\", No or trust prompts). Claude Code, Cline and Antigravity only.";
+
+    private void SelectAiEngine(int index)
     {
-        bool on = settings.AiAutoAllow;
-        if (on)
-        {
-            ImGui.PushStyleColor(ImGuiCol.Button, SolTheme.Sun);
-            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, SolTheme.SunGradStart);
-            ImGui.PushStyleColor(ImGuiCol.ButtonActive, SolTheme.Sun2);
-            ImGui.PushStyleColor(ImGuiCol.Text, SolTheme.AccentInk);
-        }
-        if (ImGui.Button("Auto-allow###ai-auto-allow")) { settings.AiAutoAllow = !on; aiAllowSeen = null; SaveSettings(); }
-        if (on) ImGui.PopStyleColor(4);
-        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) StudioUi.Tip($"Auto-allow is {(on ? "on" : "off")}. When on, Solforge presses Enter when the engine asks to allow "
-            + "something and the highlighted choice is a one-time Yes/Allow (never \"always allow\", No or trust prompts). "
-            + $"Claude Code, Cline and Antigravity only. Allowed this session: {aiAllowCount}.");
+        aiEngine = Math.Clamp(index, 0, AiEngines.Length - 1);
+        aiInstallNote = null;
+        settings.AiEngine = AiEngines[aiEngine].Name;
+        SaveSettings();
+    }
+
+    /** The saved engine and custom command, read once when the AI workspace first draws. */
+    private void LoadAiEngineChoice()
+    {
+        if (aiEngineLoaded) return;
+        aiEngineLoaded = true;
+        int saved = Array.FindIndex(AiEngines, item => item.Name == settings.AiEngine);
+        if (saved >= 0) aiEngine = saved;
+        aiCustomCommand = settings.AiCustomCommand;
+    }
+
+    private bool aiEngineLoaded;
+
+    /** The chip: the hovered or selected object, else the open script, asset or map. */
+    private string AiContextChip()
+    {
+        if (aiPaused) return "Context paused";
+        if ((viewport?.HoveredObject ?? viewport?.SelectedObject) is not null) return "Selected: " + AiContextShort();
+        if (missionGraph.ScriptPath is { } script) return "Script: " + Path.GetFileName(script);
+        if (workspace.Document is { } document) return "Asset: " + document.Name;
+        if (workspace.World?.Map.Name is { } map) return "Map: " + map;
+        return "Context: nothing selected";
+    }
+
+    private bool CanAskAi => !aiPaused && aiTerminal.Terminal is { HasExited: false }
+        && (viewport?.SelectedObject is not null || missionGraph.ScriptPath is not null || workspace.Document is not null || workspace.World is not null);
+
+    /** Types a question about the current focus into the engine's prompt; the user presses Enter to send it. */
+    private void AskAiAboutContext()
+    {
+        string subject;
+        if (viewport?.SelectedObject is { } selected)
+            subject = $"the object I selected in Solforge, {AiLabel(selected)} (id {AiId(selected)}). Use get_context and get_object";
+        else if (missionGraph.ScriptPath is { } script)
+            subject = $"the mission script I have open, {AiShownPath(script)}. Use get_open_documents and read_panel mission_graph";
+        else if (workspace.Document is { } document)
+            subject = $"the asset I have open, {document.Name} (tag 0x{document.Entry.TagHash:X8}). Use get_open_documents and read_panel inspector";
+        else subject = $"the map I have open, {workspace.World?.Map.Name}. Use get_context and read_panel report";
+        aiTerminal.Paste($"Tell me about {subject}, then say what I could change about it. ");
+        aiAttention.Record(AttentionKind.Open, "ask", "Asked the AI about " + subject);
     }
 
     /**
@@ -224,23 +292,15 @@ public sealed partial class StudioForm
         aiAllowSentRevision = revision;
     }
 
-    /** The full status text right-aligned when it fits; otherwise a coloured dot carrying it as a tooltip. */
-    private void DrawAiStatus(float x, float room)
+    /** The MCP status as a coloured dot; the text is its tooltip. */
+    private void DrawAiStatusDot()
     {
         string status = "MCP off";
         AiServiceStatus(ref status);
         var color = status.StartsWith("MCP :", StringComparison.Ordinal) ? SolTheme.Ok
             : status.StartsWith("MCP error", StringComparison.Ordinal) ? SolTheme.Bad : SolTheme.Dim;
-        float spacing = ImGui.GetStyle().ItemSpacing.X, left = room - x - spacing;
-        float width = ImGui.CalcTextSize(status).X, dot = ImGui.GetFrameHeight();
-        if (left >= width)
-        {
-            ImGui.SameLine();
-            ImGui.SetCursorPosX(ImGui.GetCursorPosX() + left - width);
-            ImGui.TextColored(color, status);
-            return;
-        }
-        if (left >= dot) { ImGui.SameLine(); ImGui.SetCursorPosX(ImGui.GetCursorPosX() + left - dot); }
+        float dot = ImGui.GetFrameHeight();
+        ImGui.SameLine();
         ImGui.Dummy(new(dot));
         var center = (ImGui.GetItemRectMin() + ImGui.GetItemRectMax()) / 2;
         ImGui.GetWindowDrawList().AddCircleFilled(center, dot * .22f, SolTheme.U32(color));
@@ -289,6 +349,7 @@ public sealed partial class StudioForm
         ResolveAiEngines(true);
         aiInstalling = null;
         aiInstallNote = null;
+        if (workspace.Project is not null) AiWriteSession(folder);
         aiRunEngine = engine.Command;
         var environment = new Dictionary<string, string> { ["PATH"] = aiFreshPath };
         // cmd /k keeps a prompt after the engine exits.
@@ -472,6 +533,13 @@ public sealed partial class StudioForm
         ImGui.SetNextWindowSize(new(width, 0));
         ImGui.SetNextWindowSizeConstraints(new(width, 0), new(width, Math.Max(160 * scale, display.Y * .75f)));
         if (!ImGui.BeginPopup(AiFoldersPopup)) return;
+        DrawAiFolders();
+        ImGui.EndPopup();
+    }
+
+    /** The Folders list, shared by the AI workspace's popup and Settings > AI. */
+    private void DrawAiFolders()
+    {
         ImGui.TextWrapped("Claude Code may also read these folders (--add-dir). Changes apply the next time an engine starts.");
         SolTheme.SectionHeader("FOUND");
         if (workspace.Project?.DirectoryPath is not { } project) ImGui.TextDisabled("Open a project first.");
@@ -511,7 +579,6 @@ public sealed partial class StudioForm
         ImGui.BeginDisabled(!Directory.Exists(add) || settings.AiFolders.Contains(add, StringComparer.OrdinalIgnoreCase));
         if (ImGui.Button("Add")) { settings.AiFolders.Add(Path.GetFullPath(add)); aiNewFolder = ""; SaveSettings(); }
         ImGui.EndDisabled();
-        ImGui.EndPopup();
     }
 
     private string AiLabel(object source) =>

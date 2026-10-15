@@ -881,6 +881,8 @@ public sealed partial class StudioWorkspace : IDisposable
     private readonly System.Collections.Concurrent.ConcurrentDictionary<uint, TextureData> worldTextures = new();
     /** Low memory optimization (16GB RAM profile): bounds texture budget and avoids pinning uncompressed pixel buffers in CPU heap. */
     public bool LowMemoryMode { get; set; } = true;
+    /** The world texture budget Low memory mode uses (Settings > Rendering); applies to the next map or shader load. */
+    public long LowMemoryTextureBudget { get; set; } = 256L * 1024 * 1024;
     public void TrimTextureCache() { worldTextures.Clear(); }
 
     /** Unsupported shader inputs retain geometry with a completed diagnostic. */
@@ -891,7 +893,7 @@ public sealed partial class StudioWorkspace : IDisposable
             || !scene.Instances.Any(instance => instance.Mesh.Native is not null)) return null;
         try
         {
-            long textureBudget = LowMemoryMode ? 256L * 1024 * 1024 : NativeScenePlan.DefaultTextureBudgetBytes;
+            long textureBudget = LowMemoryMode ? LowMemoryTextureBudget : NativeScenePlan.DefaultTextureBudgetBytes;
             return AssetViewport.PrepareNativeScene(catalog, scene, OperationToken,
                 ReportProgress, textureBudgetBytes: textureBudget, assetPreview: assetPreview,
                 textureCache: assetPreview || LowMemoryMode ? null : worldTextures);

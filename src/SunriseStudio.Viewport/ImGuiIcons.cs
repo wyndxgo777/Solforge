@@ -9,7 +9,7 @@ public enum StudioIcon
     Back, Forward, Expand, Collapse, Folder, Map, Cube, Pin, Light, Group,
     Play, Pause, Reset, Loop, Import, Export, Build, Plus, Open, Shader, Player, PopOut, PopIn,
     Select, Move, Rotate, Scale,
-    Spark, Warning, Remove, Up, Down, Undo, Redo, Check, Copy, Edit, Detail
+    Spark, Warning, Remove, Up, Down, Undo, Redo, Check, Copy, Edit, Detail, Gear
 }
 
 /** Vector icons share the current font scale and need no external font or texture. */
@@ -224,6 +224,15 @@ public static class ImGuiIcons
             case StudioIcon.Detail: // a subdivided triangle: mesh drawn at full detail
                 Line(.5f, .05f, 1, .92f); Line(1, .92f, 0, .92f); Line(0, .92f, .5f, .05f);
                 Line(.25f, .49f, .75f, .49f); Line(.75f, .49f, .5f, .92f); Line(.5f, .92f, .25f, .49f);
+                break;
+            case StudioIcon.Gear: // a ring with eight teeth: settings
+                draw.AddCircle(P(.5f, .5f), size * .3f, color, 16, stroke);
+                draw.AddCircle(P(.5f, .5f), size * .1f, color, 10, stroke);
+                for (int tooth = 0; tooth < 8; tooth++)
+                {
+                    float angle = tooth * MathF.PI / 4, cos = MathF.Cos(angle), sin = MathF.Sin(angle);
+                    Line(.5f + cos * .3f, .5f + sin * .3f, .5f + cos * .46f, .5f + sin * .46f);
+                }
                 break;
         }
     }
