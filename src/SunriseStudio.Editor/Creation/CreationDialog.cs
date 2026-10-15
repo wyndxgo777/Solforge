@@ -46,12 +46,24 @@ public sealed class CreationDialog
         if (!ImGui.BeginPopupModal(workflow.Title + PopupId, ImGuiWindowFlags.NoSavedSettings)) { open = true; return; }
         Finish(workspace);
         if (closing) { closing = false; workflow = null; ImGui.CloseCurrentPopup(); ImGui.EndPopup(); return; }
-        workflow.Update(workspace);
-        var problems = workflow.Problems(workspace);
+        // A failed read waits for Retry instead of rereading every frame.
+        IReadOnlyList<string> problems;
+        try
+        {
+            if (workflow.LoadError.Length == 0) workflow.Update(workspace);
+            problems = workflow.Problems(workspace);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        { workflow.LoadError = error.Message; problems = [error.Message]; }
+        string loadError = workflow.LoadError;
+        // Lists are empty while their data loads or after it failed; say which.
+        string? emptyList = loadError.Length != 0 ? "Could not read this list. Press Retry below."
+            : workflow.IsLoading(workspace) ? "Loading..." : null;
+        bool showError = workspace.Error.Length != 0 && workspace.Error != loadError;
         int empty = problems.Count(IsEmptyRequired);
         string? first = problems.FirstOrDefault(problem => !IsEmptyRequired(problem));
         string allProblems = string.Join("\n", problems);
-        float footer = ((first is null ? 0 : 2) + (empty != 0 ? 1 : 0) + (workspace.Error.Length != 0 ? 2 : 0) + 3)
+        float footer = ((first is null ? 0 : 2) + (loadError.Length != 0 ? 1 : 0) + (empty != 0 ? 1 : 0) + (showError ? 2 : 0) + 3)
             * ImGui.GetTextLineHeightWithSpacing();
         ImGui.BeginChild("##creation-fields", new Vector2(0, -footer), ImGuiChildFlags.None);
         ImGui.PushTextWrapPos(0);
@@ -62,13 +74,13 @@ public sealed class CreationDialog
         foreach (var field in workflow.Fields.Where(field => field.Visible && field.Required))
         {
             if (!any) { ImGui.SeparatorText("REQUIRED"); any = true; }
-            DrawField(workspace, field, pickFile);
+            DrawField(workspace, field, pickFile, emptyList);
         }
         any = false;
         foreach (var field in workflow.Fields.Where(field => field.Visible && !field.Required))
         {
             if (!any) { ImGui.SeparatorText("OPTIONAL"); any = true; }
-            DrawField(workspace, field, pickFile);
+            DrawField(workspace, field, pickFile, emptyList);
         }
         ImGui.PopTextWrapPos();
         ImGui.EndChild();
@@ -80,12 +92,19 @@ public sealed class CreationDialog
             ImGui.TextColored(StudioTheme.Accent, more > 0 ? $"{first} (+{more})" : first);
             StudioUi.Tip(allProblems);
         }
+        if (loadError.Length != 0)
+        {
+            ImGui.BeginDisabled(workspace.IsBusy);
+            if (ImGui.Button("Retry", new Vector2(120 * scale, 0)))
+            { if (workspace.Error == loadError) workspace.Error = ""; workflow.Retry(); }
+            ImGui.EndDisabled();
+        }
         if (empty != 0)
         {
             ImGui.TextDisabled(empty == 1 ? "1 required field empty" : $"{empty} required fields empty");
             StudioUi.Tip(allProblems);
         }
-        if (workspace.Error.Length != 0) ImGui.TextUnformatted(workspace.Error);
+        if (showError) ImGui.TextUnformatted(workspace.Error);
         ImGui.PopTextWrapPos();
         ImGui.BeginDisabled(problems.Count != 0 || workspace.IsBusy || anchoring || working);
         if (ImGui.Button(workflow.CreateLabel, new Vector2(170 * scale, 0))) Start(workspace);
@@ -143,7 +162,9 @@ public sealed class CreationDialog
         }
     }
 
-    private static void DrawField(StudioWorkspace workspace, CreationField field, Action<string, Action<string>> pickFile)
+    /** @param emptyList What an empty list says instead of No matches; null when its data is loaded. */
+    private static void DrawField(StudioWorkspace workspace, CreationField field, Action<string, Action<string>> pickFile,
+        string? emptyList)
     {
         ImGui.PushID(field.Label);
         CreationWidgets.Label(field);
@@ -154,7 +175,7 @@ public sealed class CreationDialog
             if (field.MakeNew)
             {
                 ImGui.Indent();
-                foreach (var input in part.NewFields.Where(input => input.Visible)) DrawField(workspace, input, pickFile);
+                foreach (var input in part.NewFields.Where(input => input.Visible)) DrawField(workspace, input, pickFile, emptyList);
                 ImGui.Unindent();
                 ImGui.PopID();
                 return;
@@ -167,12 +188,12 @@ public sealed class CreationDialog
             case CreationFieldKind.Tag when field.Rows is { } rows:
                 uint? row = field.Tag; string rowLabel = field.TagLabel;
                 if (CreationWidgets.RowPicker(field.Label, ref row, ref rowLabel, rows(), field.RowFilter, revision,
-                    workspace.IsProjectTag))
+                    workspace.IsProjectTag, empty: emptyList))
                 { field.Tag = row; field.TagLabel = rowLabel; }
                 break;
             case CreationFieldKind.Tag when field.Search is { } search:
                 uint? tag = field.Tag; string label = field.TagLabel;
-                if (CreationWidgets.Picker(field.Label, ref tag, ref label, search, revision))
+                if (CreationWidgets.Picker(field.Label, ref tag, ref label, search, revision, empty: emptyList))
                 { field.Tag = tag; field.TagLabel = label; }
                 break;
             case CreationFieldKind.File:

@@ -70,6 +70,7 @@ public sealed partial class InvestmentPage : IPreparedStudioPage
                 requestedCatalog = source; requestedOverlayRevision = source.OverlayRevision;
                 workspace.Run(workspace.LoadInvestment);
             }
+            if (!workspace.IsBusy && workspace.Error.Length != 0) ImGui.TextWrapped(workspace.Error);
             ImGui.BeginDisabled(workspace.IsBusy);
             if (ImGui.Button("Load investment")) workspace.Run(workspace.LoadInvestment);
             ImGui.EndDisabled();

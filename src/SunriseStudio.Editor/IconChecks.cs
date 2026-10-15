@@ -33,6 +33,9 @@ internal static class IconChecks
         return Stamps[path] = (now + StampInterval, stamp, exists);
     }
 
+    /** Forgets every remembered problem, so a Retry after a failed read checks again. */
+    public static void Forget() => Problems.Clear();
+
     /** Runs the check only when the key is new; the key must name every input of the check. */
     public static string? Cached(string key, Func<string?> check)
     {

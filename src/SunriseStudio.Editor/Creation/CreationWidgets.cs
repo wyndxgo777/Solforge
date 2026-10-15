@@ -48,10 +48,11 @@ public static class CreationWidgets
      * A searchable list of candidates.
      * @param id ImGui identity of this picker; state is kept per full ID stack.
      * @param revision Data revision; a change reruns the search.
+     * @param empty What an empty list says, such as why its data is missing; null tells no data from no matches.
      * @return True when the user chose a row.
      */
     public static bool Picker(string id, ref uint? value, ref string label, Func<string, IEnumerable<CreationChoice>> search,
-        int revision, float height = 130)
+        int revision, float height = 130, string? empty = null)
     {
         // Keyed by the full ImGui ID stack, so pickers that share an id under different parents keep their own search.
         uint key = ImGui.GetID(id);
@@ -88,7 +89,7 @@ public static class CreationWidgets
             ImGui.TextWrapped(state.Error);
             if (ImGui.SmallButton("Retry search")) state.Revision = -1;
         }
-        else if (state.Results.Length == 0) ImGui.TextDisabled("No matches");
+        else if (state.Results.Length == 0) ImGui.TextDisabled(Empty(empty, state.Search));
         else if (state.Results.Length == PickerRows) ImGui.TextDisabled("Search to see more");
         ImGui.EndChild();
         ImGui.PopID();
@@ -101,10 +102,12 @@ public static class CreationWidgets
      * @param revision Data revision; a change refilters at once.
      * @param isProject True for a project row; called only for drawn rows. Other rows show their tag.
      * @param clearable False hides Clear, for a value that cannot be empty.
+     * @param empty What an empty list says, such as why its data is missing; null tells no data from no matches.
      * @return True when the user chose a row.
      */
     public static unsafe bool RowPicker(string id, ref uint? value, ref string label, IReadOnlyList<BrowserAsset> rows,
-        Func<BrowserAsset, bool>? filter, int revision, Func<uint, bool> isProject, float height = 130, bool clearable = true)
+        Func<BrowserAsset, bool>? filter, int revision, Func<uint, bool> isProject, float height = 130, bool clearable = true,
+        string? empty = null)
     {
         uint key = ImGui.GetID(id);
         if (!RowPickers.TryGetValue(key, out var state)) RowPickers.Add(key, state = new());
@@ -156,11 +159,14 @@ public static class CreationWidgets
         clipper.End(); clipper.Destroy();
         if (state.Error.Length != 0) ImGui.TextWrapped(state.Error);
         else if (state.Work is not null) ImGui.TextDisabled("Searching");
-        else if (state.Results.Length == 0) ImGui.TextDisabled("No matches");
+        else if (state.Results.Length == 0) ImGui.TextDisabled(Empty(empty, state.Search));
         ImGui.EndChild();
         ImGui.PopID();
         return changed;
     }
+
+    private static string Empty(string? reason, string search) =>
+        reason ?? (search.Trim().Length == 0 ? "None available" : "No matches");
 
     /** Adopts a finished worker filter; a cancelled one is dropped. */
     private static void TakeRows(RowPickerState state)

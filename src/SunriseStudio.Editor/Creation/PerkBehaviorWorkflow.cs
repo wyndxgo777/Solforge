@@ -16,6 +16,8 @@ public sealed class PerkBehaviorWorkflow : CreationWorkflow
     /** Tag of the program the editor holds; null for a blank graph. */
     private uint? loaded;
     private string sourceProblem = "";
+    /** Set by Retry; the source is read again even though it did not change. */
+    private bool reload;
     /** The name Studio last filled in; a name equal to it is replaced on a source change. */
     private string autoName = "";
     public PerkBehaviorEditor Editor { get; } = new();
@@ -54,8 +56,8 @@ public sealed class PerkBehaviorWorkflow : CreationWorkflow
     public override void Update(StudioWorkspace workspace)
     {
         uint? wanted = start.MakeNew ? null : start.Tag;
-        if (wanted == loaded || !start.MakeNew && wanted is null || workspace.Catalog is not { } catalog) return;
-        loaded = wanted; sourceProblem = "";
+        if (wanted == loaded && !reload || !start.MakeNew && wanted is null || workspace.Catalog is not { } catalog) return;
+        loaded = wanted; sourceProblem = ""; reload = false;
         if (wanted is not { } tag)
         {
             Editor.Load(Blank());
@@ -68,7 +70,7 @@ public sealed class PerkBehaviorWorkflow : CreationWorkflow
             try { graph = OpenProgram(catalog.Read(tag), tag, out sourceProblem); }
             catch (Exception error) when (error is IOException or InvalidDataException or KeyNotFoundException
                 or UnauthorizedAccessException)
-            { sourceProblem = error.Message; }
+            { sourceProblem = Unreadable(error); }
         }
         if (graph is null && sourceProblem.Length == 0) sourceProblem = "Choose an installed or project perk program.";
         Editor.Load(graph ?? Blank());
@@ -76,6 +78,9 @@ public sealed class PerkBehaviorWorkflow : CreationWorkflow
         if (name.Text.Trim().Length == 0 || name.Text == autoName)
             name.Text = autoName = graph is null ? "" : start.TagLabel + " copy";
     }
+
+    /** A blank graph is never reread; that would drop the user's draft. */
+    protected override void Reload() => reload = loaded is not null;
 
     /** A blank draft names itself with PendingTag, so a new owner damage multiplier validates. */
     private static PerkBehaviorGraph Blank()

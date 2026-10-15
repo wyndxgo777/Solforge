@@ -82,6 +82,11 @@ public sealed partial class StudioForm
             ImGui.PushTextWrapPos(ImGui.GetCursorPosX() + width);
             ImGui.TextWrapped(workspace.Error);
             ImGui.PopTextWrapPos();
+            // A drive that dropped out comes back, so the same location can open again.
+            bool retry = !workspace.IsBusy && workspace.Catalog is null && location.Length != 0;
+            if (retry && ImGui.Button("Retry"))
+                workspace.Run(() => workspace.OpenInstallation(location, keySource));
+            if (retry) ImGui.SameLine();
             if (!workspace.IsBusy && ImGui.Button("Choose Sunrise location")) setup = true;
         }
         ImGui.EndGroup();

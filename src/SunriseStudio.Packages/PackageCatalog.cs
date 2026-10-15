@@ -113,7 +113,7 @@ public sealed partial class PackageCatalog : IDisposable
         GameRoot = Path.GetFullPath(gameRoot);
         PackageDirectory = Path.Combine(GameRoot, "packages");
         this.keySourceExecutable = keySourceExecutable;
-        if (!Directory.Exists(PackageDirectory))
+        if (!PackageIo.WaitForFolder(PackageDirectory))
             throw new DirectoryNotFoundException($"Packages directory missing: {PackageDirectory}");
         // Enumeration fills each FileInfo's length and write time, which the index key needs without opening files.
         var infos = new DirectoryInfo(PackageDirectory).EnumerateFiles("*.pkg")
@@ -318,7 +318,7 @@ public sealed partial class PackageCatalog : IDisposable
         {
             PendingBlock pending;
             PackageFile source;
-            ReadHandle handle;
+            ReadHandle? handle;
             PackageKeys? blockKeys;
             OodleDecoder? decoder;
             long generation;
@@ -342,7 +342,7 @@ public sealed partial class PackageCatalog : IDisposable
                 source = BlockSource(package, block.Patch);
                 blockKeys = (block.Flags & 2) != 0 ? (keys ??= PackageKeys.Load(GameRoot, keySourceExecutable)) : null;
                 decoder = (block.Flags & 1) != 0 ? (oodle ??= new OodleDecoder(GameRoot)) : null;
-                handle = AcquireHandle(source.Path);
+                handle = TryAcquireHandle(source.Path);
                 pendingBlocks.Add(cacheKey, pending = new());
                 activeDecodes++;
                 generation = cacheGeneration;
@@ -354,7 +354,7 @@ public sealed partial class PackageCatalog : IDisposable
             try
             {
                 long startRead = Stopwatch.GetTimestamp();
-                byte[] bytes = ReadStored(handle.Handle, source.Path, block.Offset, block.Size);
+                byte[] bytes = ReadStored(ref handle, source.Path, block.Offset, block.Size);
                 readTime = Stopwatch.GetTimestamp() - startRead;
                 stored = bytes.Length;
                 long startDecode = Stopwatch.GetTimestamp();
@@ -367,7 +367,7 @@ public sealed partial class PackageCatalog : IDisposable
             {
                 lock (readLock)
                 {
-                    ReleaseHandle(handle);
+                    if (handle is not null) ReleaseHandle(handle);
                     pendingBlocks.Remove(cacheKey);
                     pending.Done = true;
                     activeDecodes--;
@@ -448,8 +448,35 @@ public sealed partial class PackageCatalog : IDisposable
         return plaintext;
     }
 
+    /** The positional read under every block read; a check swaps it to fail like a drive that drops out. */
+    internal delegate int PositionalRead(SafeFileHandle handle, Span<byte> buffer, long offset);
+    internal PositionalRead BlockRead { get; set; } = RandomAccess.Read;
+
+    /**
+     * Reads through the cached handle; a device error drops it and retries on a reopened handle with backoff.
+     * @param handle The acquired handle, or null to acquire one; the caller releases what it holds on return.
+     */
+    private byte[] ReadStored(ref ReadHandle? handle, string path, long offset, int count)
+    {
+        long started = 0;
+        for (int attempt = 0; ; attempt++)
+        {
+            try
+            {
+                if (handle is null)
+                    lock (readLock) { ObjectDisposedException.ThrowIf(disposed, this); handle = AcquireHandle(path); }
+                return ReadStored(handle.Handle, path, offset, count);
+            }
+            catch (IOException error) when (PackageIo.IsDeviceError(error))
+            {
+                if (handle is not null) lock (readLock) { DropHandle(path, handle); handle = null; }
+                if (!PackageIo.Backoff(ref started, attempt)) throw new PackageDeviceException(path, error);
+            }
+        }
+    }
+
     /** Every requested byte must exist; a short read cannot become a valid block. */
-    private static byte[] ReadStored(SafeFileHandle handle, string path, long offset, int count)
+    private byte[] ReadStored(SafeFileHandle handle, string path, long offset, int count)
     {
         long length = RandomAccess.GetLength(handle);
         if (offset < 0 || count < 0 || offset > length - count)
@@ -458,11 +485,18 @@ public sealed partial class PackageCatalog : IDisposable
         int read = 0;
         while (read < count)
         {
-            int received = RandomAccess.Read(handle, result.AsSpan(read), offset + read);
+            int received = BlockRead(handle, result.AsSpan(read), offset + read);
             if (received == 0) throw new EndOfStreamException(path);
             read += received;
         }
         return result;
+    }
+
+    /** Call under readLock; null when the drive is not ready, so the read retries outside the lock. */
+    private ReadHandle? TryAcquireHandle(string path)
+    {
+        try { return AcquireHandle(path); }
+        catch (IOException error) when (PackageIo.IsDeviceError(error)) { return null; }
     }
 
     /** Call under readLock; the caller releases the handle with ReleaseHandle. Invalidation reopens files. */
@@ -476,6 +510,7 @@ public sealed partial class PackageCatalog : IDisposable
                 readHandles.Remove(oldest, out var closed);
                 RetireHandle(closed!);
             }
+            // A failed open throws before anything is cached.
             handle = new(File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete,
                 FileOptions.RandomAccess));
             readHandles.Add(path, handle);
@@ -484,6 +519,22 @@ public sealed partial class PackageCatalog : IDisposable
         }
         handle.Users++;
         return handle;
+    }
+
+    /** Call under readLock; forgets a handle that hit a device error and releases the caller's use of it. */
+    private void DropHandle(string path, ReadHandle handle)
+    {
+        if (readHandles.TryGetValue(path, out var cached) && ReferenceEquals(cached, handle))
+        {
+            readHandles.Remove(path);
+            for (int i = handleOrder.Count; i > 0; i--)
+            {
+                string queued = handleOrder.Dequeue();
+                if (!string.Equals(queued, path, StringComparison.OrdinalIgnoreCase)) handleOrder.Enqueue(queued);
+            }
+            RetireHandle(handle);
+        }
+        ReleaseHandle(handle);
     }
 
     private static void ReleaseHandle(ReadHandle handle)

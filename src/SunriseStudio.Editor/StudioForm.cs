@@ -728,6 +728,9 @@ public sealed partial class StudioForm : Form
         {
             ImGui.TextDisabled("Model"); ImGui.SameLine(); ImGui.TextDisabled("not readable");
             StudioUi.Tip(document.PreviewError);
+            // Select rereads the asset, so a drive that came back gives the model.
+            ImGui.SameLine();
+            if (ImGui.SmallButton("Retry")) workspace.Run(() => workspace.Select(document.Entry.TagHash, retainHistory: true));
         }
         var tabs = StudioCategories.Tabs(category, pages.Pages, document, modelView);
         if (category.Sections.Length != 0 && !tabs.Any(page => page.Id == category.Sections[0]))

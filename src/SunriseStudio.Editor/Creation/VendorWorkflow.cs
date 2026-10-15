@@ -28,7 +28,6 @@ public sealed partial class VendorWorkflow : CreationWorkflow
     private StringBankTemplate? stringTemplate;
     private string originalSubtitle = "", error = "", interactionError = "", textError = "";
     private uint? loadedBase, loadedInteraction;
-    private long requestedOverlay = -1;
     private (int Assets, int Names, BrowserAsset[] Rows) interactions = (-1, -1, []);
 
     public VendorWorkflow(StudioWorkspace workspace, InvestmentVendor? editing = null, InvestmentSources? sources = null)
@@ -82,12 +81,8 @@ public sealed partial class VendorWorkflow : CreationWorkflow
     {
         RefreshInteractions();
         if (!Current()) return;
-        if (workspace.Investment is not { } investment)
-        {
-            if (!workspace.IsBusy && requestedOverlay != overlay)
-            { requestedOverlay = overlay; workspace.Run(workspace.LoadInvestment); }
-            return;
-        }
+        if (!InvestmentReady(workspace)) return;
+        var investment = workspace.Investment!;
         // A clone source may be the vendor's display record; the base must be the vendor record.
         if (baseVendor.Tag is { } picked && picked != loadedBase && investment.FindVendor(picked) is { } owner && owner.Tag != picked)
         { baseVendor.Tag = owner.Tag; baseVendor.TagLabel = owner.Name; }
@@ -97,7 +92,7 @@ public sealed partial class VendorWorkflow : CreationWorkflow
         {
             try { stringTemplate = StringBankWriter.FindTemplate(packages!, BankCandidates(),
                 [new(StringBankWriter.Hash("Sunrise vendor"), "Sunrise vendor")]); }
-            catch (Exception failure) when (Failure(failure)) { textError = failure.Message; }
+            catch (Exception failure) when (Failure(failure)) { textError = Unreadable(failure); }
         }
         package.Visible = editing is null || TextChanged;
     }
@@ -118,6 +113,9 @@ public sealed partial class VendorWorkflow : CreationWorkflow
     private bool NameChanged => editing is null || name.Text.Trim() != source?.Name;
     private bool SubtitleChanged => editing is null ? subtitle.Text.Trim().Length != 0 : subtitle.Text.Trim() != originalSubtitle;
     private bool TextChanged => NameChanged || SubtitleChanged && subtitle.Text.Trim().Length != 0;
+
+    /** A failed base or interaction read clears its marker, so Update reads it again; the template is tried again. */
+    protected override void Reload() => textError = "";
 
     private void LoadBase()
     {
@@ -140,7 +138,8 @@ public sealed partial class VendorWorkflow : CreationWorkflow
             if (editing is not null) subtitle.Text = originalSubtitle;
             foreach (var row in detail.Sales) sales.Add(new(row));
         }
-        catch (Exception failure) when (Failure(failure)) { error = failure.Message; detail = null; }
+        catch (Exception failure) when (Failure(failure))
+        { error = Unreadable(failure); detail = null; if (LoadError.Length != 0) loadedBase = null; }
     }
 
     private void LoadInteraction()
@@ -155,7 +154,8 @@ public sealed partial class VendorWorkflow : CreationWorkflow
             if (previous is null) throw new InvalidDataException("The interaction does not name a current vendor.");
             interaction.TagLabel = $"{workspace.DisplayName(tag)} ({previous.Name})";
         }
-        catch (Exception failure) when (Failure(failure)) { interactionError = failure.Message; interactionSite = null; }
+        catch (Exception failure) when (Failure(failure))
+        { interactionError = Unreadable(failure); interactionSite = null; if (LoadError.Length != 0) loadedInteraction = null; }
     }
 
     protected override IEnumerable<string> Validate(StudioWorkspace workspace)

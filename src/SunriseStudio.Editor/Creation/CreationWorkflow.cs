@@ -36,12 +36,60 @@ public abstract class CreationWorkflow
     /** Refreshes cached data between frames; runs before the fields are drawn. */
     public virtual void Update(StudioWorkspace workspace) { }
 
+    /** Why a read the fields need failed; the dialog shows it with Retry and skips Update until then. */
+    public string LoadError { get; protected internal set; } = "";
+
+    private long investmentRequest = -1;
+    private bool usesInvestment;
+
+    /** True while the item catalog the fields list is still being read. */
+    public bool IsLoading(StudioWorkspace workspace) => usesInvestment && LoadError.Length == 0 && workspace.Investment is null;
+
+    /** Clears the failure and cached checks so the next Update reads again. */
+    public void Retry()
+    {
+        LoadError = ""; investmentRequest = -1;
+        IconChecks.Forget();
+        Reload();
+    }
+
+    /** Forgets what Update loaded; a workflow that remembers its loaded source resets that here. */
+    protected virtual void Reload() { }
+
+    /**
+     * Starts the item catalog read once per overlay; a read that ends without it sets LoadError.
+     * @return True when the catalog is loaded.
+     */
+    protected bool InvestmentReady(StudioWorkspace workspace)
+    {
+        usesInvestment = true;
+        if (workspace.Investment is not null) return true;
+        if (workspace.IsBusy || workspace.Catalog is not { } catalog) return false;
+        if (investmentRequest == catalog.OverlayRevision)
+            LoadError = workspace.Error.Length != 0 ? workspace.Error : "The item catalog did not load.";
+        else { investmentRequest = catalog.OverlayRevision; workspace.Run(workspace.LoadInvestment); }
+        return false;
+    }
+
+    /**
+     * Keeps a file or drive failure as LoadError, which Retry clears.
+     * @param deviceOnly Keeps only a drive that dropped out, for checks that also read the user's own files.
+     * @return The message, for the caller's own problem text.
+     */
+    protected string Unreadable(Exception error, bool deviceOnly = false)
+    {
+        if (deviceOnly ? PackageIo.IsDeviceError(error) : error is IOException or UnauthorizedAccessException)
+            LoadError = error.Message;
+        return error.Message;
+    }
+
     /** Problems beyond single fields; Create stays disabled while any remain. */
     protected virtual IEnumerable<string> Validate(StudioWorkspace workspace) => [];
 
     public IReadOnlyList<string> Problems(StudioWorkspace workspace)
     {
         var problems = new List<string>();
+        if (LoadError.Length != 0) problems.Add(LoadError);
         if (RequiresProject && workspace.Project is null) problems.Add("Create or open a project first.");
         if (workspace.Catalog is null) problems.Add("Open your Sunrise installation first.");
         foreach (var field in Fields) problems.AddRange(field.Problems());
