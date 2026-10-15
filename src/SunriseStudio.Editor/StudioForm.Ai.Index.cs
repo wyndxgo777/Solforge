@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Solforge.Mcp;
+using McpPages = Solforge.Mcp.Pages;
 using SunriseStudio.Formats;
 using SunriseStudio.Missions;
 using SunriseStudio.Packages;
@@ -276,7 +277,7 @@ public sealed partial class StudioForm
             "changes" => await OnUi(() =>
             {
                 ChangeRow[] rows = workspace.Project is { } project ? ChangeRows(project) : [];
-                return (Func<JsonObject>)(() => Pages.Page(rows.Where(row => Matches(query.Filter, row.Label, row.Change, row.Value)), query.Offset, query.Limit,
+                return (Func<JsonObject>)(() => McpPages.Page(rows.Where(row => Matches(query.Filter, row.Label, row.Change, row.Value)), query.Offset, query.Limit,
                     row => new JsonObject { ["id"] = row.Id, ["label"] = row.Label, ["change"] = row.Change, ["value"] = row.Value, ["tooltip"] = row.Tooltip }));
             }).ConfigureAwait(false),
             "live" => await OnUi(() => { var state = livePage.AiState(); return (Func<JsonObject>)(() => state); }).ConfigureAwait(false),
@@ -300,13 +301,13 @@ public sealed partial class StudioForm
         if (query.Path is { Length: > 0 } path)
         {
             if (tree.Find(path) is not { } node) return new JsonObject { ["error"] = "No tree node with that id." };
-            var page = Pages.Page(node.Children.Where(child => Matches(query.Filter, child.Name, child.Kind.ToString())), query.Offset, query.Limit, Row);
+            var page = McpPages.Page(node.Children.Where(child => Matches(query.Filter, child.Name, child.Kind.ToString())), query.Offset, query.Limit, Row);
             page["node"] = Row(node);
             return page;
         }
         if (query.Filter is { Length: > 0 })
-            return Pages.Page(tree.Nodes.Where(node => Matches(query.Filter, node.Name, node.Kind.ToString(), node.Id)), query.Offset, query.Limit, Row);
-        var top = Pages.Page(tree.Root.Children, query.Offset, query.Limit, Row);
+            return McpPages.Page(tree.Nodes.Where(node => Matches(query.Filter, node.Name, node.Kind.ToString(), node.Id)), query.Offset, query.Limit, Row);
+        var top = McpPages.Page(tree.Root.Children, query.Offset, query.Limit, Row);
         top["node"] = Row(tree.Root);
         top["nodeCount"] = tree.Nodes.Count;
         return top;
@@ -318,10 +319,10 @@ public sealed partial class StudioForm
         var inspection = document.Inspection;
         JsonObject page;
         if (query.Path is "references")
-            page = Pages.Page(inspection.References.Where(reference => Matches(query.Filter, reference.Name, $"{reference.TagHash:X8}")), query.Offset, query.Limit,
+            page = McpPages.Page(inspection.References.Where(reference => Matches(query.Filter, reference.Name, $"{reference.TagHash:X8}")), query.Offset, query.Limit,
                 reference => new JsonObject { ["name"] = reference.Name, ["tag"] = $"0x{reference.TagHash:X8}", ["offset"] = reference.Offset, ["candidate"] = reference.IsCandidate });
         else if (query.Path is "diagnostics")
-            page = Pages.Page(inspection.Diagnostics.Where(line => Matches(query.Filter, line)), query.Offset, query.Limit, line => JsonValue.Create(line));
+            page = McpPages.Page(inspection.Diagnostics.Where(line => Matches(query.Filter, line)), query.Offset, query.Limit, line => JsonValue.Create(line));
         else
         {
             var rows = new List<(string Section, AssetProperty Property)>();
@@ -335,7 +336,7 @@ public sealed partial class StudioForm
                 }
             }
             Walk(inspection.Sections, "");
-            page = Pages.Page(rows.Where(row => (query.Path is not { Length: > 0 } section || row.Section.StartsWith(section, StringComparison.OrdinalIgnoreCase))
+            page = McpPages.Page(rows.Where(row => (query.Path is not { Length: > 0 } section || row.Section.StartsWith(section, StringComparison.OrdinalIgnoreCase))
                 && Matches(query.Filter, row.Section, row.Property.Name, row.Property.Value)), query.Offset, query.Limit,
                 row => new JsonObject
                 {
@@ -369,7 +370,7 @@ public sealed partial class StudioForm
             foreach (var reference in inspection.References)
                 rows.Add(new JsonObject { ["object"] = item.Id, ["group"] = "Reference", ["name"] = reference.Name, ["value"] = $"0x{reference.TagHash:X8}" });
         }
-        var page = Pages.Page(rows.Where(row => Matches(query.Filter, row["group"]?.ToString(), row["name"]?.ToString(), row["value"]?.ToString())),
+        var page = McpPages.Page(rows.Where(row => Matches(query.Filter, row["group"]?.ToString(), row["name"]?.ToString(), row["value"]?.ToString())),
             query.Offset, query.Limit, row => row);
         page["selected"] = objects;
         return page;
@@ -378,7 +379,7 @@ public sealed partial class StudioForm
     private static JsonObject AiAssetsPage(BrowserAsset[] assets, PanelQuery query)
     {
         string[] words = (query.Filter ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        return Pages.Page(assets.Where(asset => (query.Path is not { Length: > 0 } kind || asset.Kind.Contains(kind, StringComparison.OrdinalIgnoreCase))
+        return McpPages.Page(assets.Where(asset => (query.Path is not { Length: > 0 } kind || asset.Kind.Contains(kind, StringComparison.OrdinalIgnoreCase))
             && (words.Length == 0 || words.All(word => asset.SearchText.Contains(word, StringComparison.OrdinalIgnoreCase)))), query.Offset, query.Limit,
             asset => new JsonObject
             {
@@ -392,13 +393,13 @@ public sealed partial class StudioForm
         if (graph is null) return new JsonObject { ["error"] = "No mission script is open in the Mission Graph.", ["script"] = script };
         JsonObject page = query.Path switch
         {
-            "edges" => Pages.Page(graph.Edges.Where(edge => Matches(query.Filter, edge.Source, edge.Target, edge.Kind)), query.Offset, query.Limit,
+            "edges" => McpPages.Page(graph.Edges.Where(edge => Matches(query.Filter, edge.Source, edge.Target, edge.Kind)), query.Offset, query.Limit,
                 edge => new JsonObject { ["source"] = edge.Source, ["target"] = edge.Target, ["kind"] = edge.Kind }),
-            "diagnostics" => Pages.Page(graph.Diagnostics.Where(item => Matches(query.Filter, item.Message, item.Node)), query.Offset, query.Limit,
+            "diagnostics" => McpPages.Page(graph.Diagnostics.Where(item => Matches(query.Filter, item.Message, item.Node)), query.Offset, query.Limit,
                 item => new JsonObject { ["message"] = item.Message, ["node"] = item.Node }),
-            "groups" => Pages.Page(graph.Groups.Where(group => Matches(query.Filter, group.Title, group.Key, group.Collection)), query.Offset, query.Limit,
+            "groups" => McpPages.Page(graph.Groups.Where(group => Matches(query.Filter, group.Title, group.Key, group.Collection)), query.Offset, query.Limit,
                 group => new JsonObject { ["key"] = group.Key, ["title"] = group.Title, ["kind"] = group.Kind.ToString(), ["collection"] = group.Collection, ["nodes"] = group.Nodes.Count }),
-            _ => Pages.Page(graph.Nodes.Where(node => Matches(query.Filter, node.Key, node.Id, node.Kind, node.GroupKey)), query.Offset, query.Limit,
+            _ => McpPages.Page(graph.Nodes.Where(node => Matches(query.Filter, node.Key, node.Id, node.Kind, node.GroupKey)), query.Offset, query.Limit,
                 node => new JsonObject
                 {
                     ["key"] = node.Key, ["id"] = node.Id, ["group"] = node.GroupKey, ["kind"] = node.Kind,
@@ -440,7 +441,7 @@ public sealed partial class StudioForm
         var copy = lines.ToArray();
         return () =>
         {
-            var page = Pages.Page(copy.Where(line => (query.Path is not { Length: > 0 } section || line.Section.Equals(section, StringComparison.OrdinalIgnoreCase))
+            var page = McpPages.Page(copy.Where(line => (query.Path is not { Length: > 0 } section || line.Section.Equals(section, StringComparison.OrdinalIgnoreCase))
                 && Matches(query.Filter, line.Text)), query.Offset, query.Limit, line => new JsonObject { ["section"] = line.Section, ["text"] = line.Text });
             page["summary"] = summary;
             page["paths"] = "path: Load report, Names or Shader report";

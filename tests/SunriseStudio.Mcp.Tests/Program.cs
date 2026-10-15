@@ -241,7 +241,7 @@ async Task StdioRoundTrip()
         Expect(slot["slotId"]?.ToString() == "slot/80be5d9b/000014/0014/0004" && slot["prefab"]?.ToString() == "0x80BE5DA0"
             && slot["transform"]?["position"]?[0]?.GetValue<double>() == 1 && slot["code"]?["count"]?.GetValue<int>() == 3, "get_mission_object: " + slot.ToJsonString());
         var spoken = Body(await Call(21, "tools/call", new JsonObject { ["name"] = "find_object", ["arguments"] = new JsonObject { ["query"] = "o_generator" } }));
-        Expect(spoken["matches"]?[0]?["id"]?.ToString()?.StartsWith("slot/80be5d9b/") == true && spoken["matches"]?[0]?["next"]?.ToString() == "get_mission_object",
+        Expect(spoken["matches"]?.AsArray().Count > 0 && spoken["matches"]?[0]?["id"]?.ToString()?.StartsWith("slot/80be5d9b/") == true && spoken["matches"]?[0]?["next"]?.ToString() == "get_mission_object",
             "find_object reaches slots: " + spoken.ToJsonString());
         var listed = Body(await Call(22, "tools/call", new JsonObject { ["name"] = "list_mission_objects", ["arguments"] = new JsonObject { ["limit"] = 2 } }));
         Expect(listed["total"]?.GetValue<int>() == 5 && listed["count"]?.GetValue<int>() == 2 && listed["next"]?.GetValue<int>() == 2, "list_mission_objects paging");
@@ -675,7 +675,7 @@ void ReferenceCheck()
 /** A small EDZ-like mission and the Lua folders that name its slots. */
 static class MissionFixtures
 {
-    public static MissionSnapshot Snapshot() => new("EDZ", 0x80B2F00A, "edz_freeroam",
+    public static MissionSnapshot Snapshot(string map = "EDZ") => new(map, 0x80B2F00A, "edz_freeroam",
     [
         new MissionSlot(MissionSlots.SlotId(0x80BE5D9B, 4, 20), "pf_event_multipoint.pf_placement[0].o_generator", 0x80BE5D9B, 4, 20, 0x80BE5DA0)
         {
@@ -769,7 +769,7 @@ sealed class FixtureHost(string project) : ISolforgeHost
     public IReadOnlyList<CodeRoot> CodeRoots { get; set; } = [];
     public string? ReferenceFolder { get; set; }
     public string? Panels;
-    public Task<MissionSnapshot?> MissionAsync(CancellationToken cancel) => Task.FromResult<MissionSnapshot?>(MissionFixtures.Snapshot());
+    public Task<MissionSnapshot?> MissionAsync(CancellationToken cancel) => Task.FromResult<MissionSnapshot?>(MissionFixtures.Snapshot(CurrentMap!));
     public Task<JsonObject> ReadPanelAsync(string panel, PanelQuery query, CancellationToken cancel)
     {
         Panels = panel;
