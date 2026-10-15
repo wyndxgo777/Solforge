@@ -75,6 +75,33 @@ try
         Check(catalog.OpenedFromIndex, "the rebuilt index serves the next open");
     using (var catalog = PackageCatalog.Open(install, cacheOptions: new() { Enabled = false, DirectoryPath = cache }))
         Check(!catalog.OpenedFromIndex && catalog.IndexPath is null, "a disabled disk cache uses no index");
+
+    // Phase 06: parallel block reads return the serial bytes. Separate catalogs keep each path's decoded cache cold.
+    uint[] tags;
+    byte[][] serial;
+    using (var catalog = PackageCatalog.Open(install, cacheOptions: options))
+    {
+        tags = catalog.Entries.Select(x => x.TagHash).ToArray();
+        serial = tags.Select(catalog.ReadOriginal).ToArray();
+    }
+    Check(serial.Any(x => x.Length > 0x40000 * 4), "the parallel check covers a tag spanning several blocks");
+    using (var catalog = PackageCatalog.Open(install, cacheOptions: options))
+    {
+        catalog.MaximumParallelDecodes = 4;
+        Check(tags.Select(t => catalog.ReadOriginalParallel(t)).Zip(serial).All(x => x.First.AsSpan().SequenceEqual(x.Second)),
+            "ReadOriginalParallel is byte-identical to the serial path (Phase 06)");
+    }
+    using (var catalog = PackageCatalog.Open(install, cacheOptions: options))
+    {
+        var all = catalog.ReadOriginalAll(tags, 4);
+        Check(all.Zip(serial).All(x => x.First.AsSpan().SequenceEqual(x.Second)),
+            "ReadOriginalAll returns the serial bytes in input order (Phase 06)");
+        Check(catalog.ReadOriginalAsync(tags[^1]).GetAwaiter().GetResult().AsSpan().SequenceEqual(serial[^1]),
+            "ReadOriginalAsync returns the serial bytes (Phase 06)");
+        catalog.MaximumParallelDecodes = 0;
+        Check(catalog.MaximumParallelDecodes == 1 && catalog.ReadOriginalAll(tags).Zip(serial).All(x => x.First.AsSpan().SequenceEqual(x.Second)),
+            "a parallel bound of 1 falls back to serial reads (Phase 06)");
+    }
 }
 finally
 {
@@ -83,7 +110,7 @@ finally
 
 if (gameRoot is null)
 {
-    Console.WriteLine("No --game-root: installed package timing and comparison skipped.");
+    Console.WriteLine("skipped: installed package timing and serial/parallel comparison (no --game-root).");
 }
 else
 {
@@ -99,6 +126,22 @@ else
         Check(watch.Elapsed < TimeSpan.FromSeconds(1), "warm open of 400+ package files takes under 1 s");
     else
         Console.WriteLine("Note: fewer than 400 package files, so the 1 s budget is reported only.");
+
+    // Phase 06 on installed (Oodle-compressed, AES-GCM) blocks: the largest multi-block tags, read cold both ways.
+    uint[] sample = catalog.Entries.Where(x => x.Size > 0x40000).OrderByDescending(x => x.Size).ThenBy(x => x.TagHash)
+        .Take(32).Select(x => x.TagHash).ToArray();
+    using var serialCatalog = PackageCatalog.Open(gameRoot);
+    using var parallelCatalog = PackageCatalog.Open(gameRoot);
+    var serialTime = Stopwatch.StartNew();
+    byte[][] serialBytes = sample.Select(serialCatalog.ReadOriginal).ToArray();
+    serialTime.Stop();
+    var parallelTime = Stopwatch.StartNew();
+    byte[][] parallelBytes = sample.Select(t => parallelCatalog.ReadOriginalParallel(t)).ToArray();
+    parallelTime.Stop();
+    Console.WriteLine($"Installed multi-block tags: {sample.Length}, serial {serialTime.Elapsed.TotalMilliseconds:F0} ms, "
+        + $"parallel {parallelTime.Elapsed.TotalMilliseconds:F0} ms ({parallelCatalog.MaximumParallelDecodes} decodes).");
+    Check(sample.Length > 0 && serialBytes.Zip(parallelBytes).All(x => x.First.AsSpan().SequenceEqual(x.Second)),
+        "installed parallel block reads are byte-identical to serial reads (Phase 06)");
 }
 
 if (failures != 0)

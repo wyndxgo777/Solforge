@@ -58,8 +58,8 @@
     {
       "id": "06",
       "title": "Block Decompression & Oodle Integration",
-      "status": "upstream_partial",
-      "notes": "OodleDecoder loads oo2core_3_win64.dll from the game install"
+      "status": "done",
+      "notes": "(Exists) OodleDecoder (oo2core_3_win64.dll from the install, thread-safe pooled buffers), PackageKeys AES-128-GCM, raw blocks; no zlib path. Solforge: PackageCatalog.Parallel.cs (MaximumParallelDecodes bound, default min(cores, 8); ReadOriginalParallel warms a tag's blocks through the serial CopyBlock path on a bounded Parallel.For, capped at half the LRU, then assembles serially; ReadOriginalAsync; ReadOriginalAll bounded multi-tag reads in input order). Check: Packages.Tests compares serial vs parallel/all/async/bound-1 on PackageWriter scratch packages (a 1.6 MB 7-block tag); --game-root compares the 32 largest installed multi-block (Oodle + AES) tags on cold catalogs and prints both timings. Synthetic Oodle round trip not possible (no compressor binding); installed blocks cover the Oodle path"
     },
     {
       "id": "07",
