@@ -12,6 +12,7 @@ public sealed partial class AssetViewport
 {
     private const float SurfaceProbePixels = 3;
     private SnapSettings snap = SnapSettings.Default;
+    private Func<object, PickFaces>? surfaceFaces;
 
     public SnapSettings Snap { get => snap; set => snap = value; }
     /** Handles follow GizmoOrientation for Move and Rotate; Scale always uses world axes. */
@@ -37,7 +38,7 @@ public sealed partial class AssetViewport
         var io = ImGui.GetIO();
         if (Tool == TransformTool.Move && io.KeyShift && SurfaceUnder(pixel, size) is { } surface)
         {
-            gizmoChange = TransformSnapping.AlignToSurface(pivot, GizmoAxes[2], surface.Point, surface.Normal, io.KeyAlt);
+            gizmoChange = TransformSnapping.AlignToSurface(pivot, SelectionUp(), surface.Point, surface.Normal, io.KeyAlt);
             return;
         }
         if (snap.Enabled == io.KeyCtrl || gizmoChange.IsIdentity) return;
@@ -45,15 +46,28 @@ public sealed partial class AssetViewport
         gizmoChange = TransformSnapping.Apply(gizmoChange, pivot, axis, gizmoAngle, snap);
     }
 
-    /** The surface under a viewport pixel and its normal, from the hit and two neighbouring hits. */
+    /** The selection's own up axis in world space, whether the handles are local or world. */
+    private Vector3 SelectionUp()
+    {
+        var rotation = GizmoOrientation;
+        return float.IsFinite(rotation.LengthSquared()) && rotation.LengthSquared() > 1e-8f
+            ? Vector3.Transform(Vector3.UnitZ, Quaternion.Normalize(rotation)) : Vector3.UnitZ;
+    }
+
+    /**
+     * The surface under a viewport pixel and its normal, from the hit and two neighbouring hits. The selection is
+     * left out of these picks: it stays where it was until the drag ends, so it would otherwise snap onto itself.
+     */
     private (Vector3 Point, Vector3 Normal)? SurfaceUnder(Vector2 pixel, Vector2 size)
     {
+        Func<object, PickFaces> faces = surfaceFaces ??= item => selectedMemberSet.Contains(item) ? PickFaces.None : DrawnFaces(item);
         Vector3? Hit(Vector2 at)
         {
-            if (Pick(at, size, out float distance) is null || !float.IsFinite(distance)) return null;
-            return Camera.Position + PickDirection(at, size) * distance;
+            if (Pick(at, size, faces, out float distance) is null || !float.IsFinite(distance)) return null;
+            var (origin, direction) = PickRay(at, size);
+            return origin + direction * distance;
         }
-        // A perspective pick ray starts at the eye; orthographic picks have no single origin, so they do not snap.
+        // The normal is oriented toward the eye; orthographic views have none, so they do not snap.
         if (Camera.Orthographic || Hit(pixel) is not { } point) return null;
         var right = Hit(pixel + new Vector2(SurfaceProbePixels, 0));
         var down = Hit(pixel + new Vector2(0, SurfaceProbePixels));
@@ -61,15 +75,19 @@ public sealed partial class AssetViewport
         return (point, normal ?? Vector3.UnitZ);
     }
 
-    /** World direction of the pick ray through a viewport pixel. */
-    private Vector3 PickDirection(Vector2 pixel, Vector2 size)
+    /**
+     * The pick ray through a viewport pixel exactly as SceneSelection.Pick builds it: it starts on the near plane,
+     * which is where its hit distance is measured from.
+     */
+    private (Vector3 Origin, Vector3 Direction) PickRay(Vector2 pixel, Vector2 size)
     {
         var ndc = new Vector2(pixel.X / size.X * 2 - 1, 1 - pixel.Y / size.Y * 2);
-        if (!Matrix4x4.Invert(Camera.ViewProjection(size.X / size.Y), out var inverse)) return Camera.Forward;
+        if (!Matrix4x4.Invert(Camera.ViewProjection(size.X / size.Y), out var inverse)) return (Camera.Position, Camera.Forward);
         var near = Vector4.Transform(new Vector4(ndc, 0, 1), inverse);
-        var far = Vector4.Transform(new Vector4(ndc, 1, 1), inverse);
-        var direction = new Vector3(far.X, far.Y, far.Z) / far.W - new Vector3(near.X, near.Y, near.Z) / near.W;
-        return direction.LengthSquared() > 1e-12f ? Vector3.Normalize(direction) : Camera.Forward;
+        var far = Vector4.Transform(new Vector4(ndc, .5f, 1), inverse);
+        var origin = new Vector3(near.X, near.Y, near.Z) / near.W;
+        var direction = new Vector3(far.X, far.Y, far.Z) / far.W - origin;
+        return (origin, direction.LengthSquared() > 1e-12f ? Vector3.Normalize(direction) : Camera.Forward);
     }
 
     /** Toolbar: world/local axes and the snap toggle with its steps. */

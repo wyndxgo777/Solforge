@@ -1473,21 +1473,33 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
     }
 
     /** Grid spacing follows camera distance so both props and maps stay readable. */
+    /**
+     * Nested grids: the finest step suits the orbit distance, and each coarser level (ten times the step) reaches
+     * ten times further, until the grid covers the far plane (perspective) or the whole view (orthographic).
+     */
     private void DrawGrid(Matrix4x4 view)
     {
+        const int Half = 20, MaxLevels = 8;
         float step = MathF.Pow(10, MathF.Floor(MathF.Log10(MathF.Max(.01f, Camera.Distance / 8))));
-        float x = MathF.Floor(Camera.Pivot.X / step) * step;
-        float y = MathF.Floor(Camera.Pivot.Y / step) * step;
-        float extent = step * 20;
+        float needed = Camera.Orthographic ? Camera.ViewHeight * 4 : Camera.FarPlane + Camera.Distance;
+        var color = new Vector4(.19f, .22f, .27f, 1);
         overlayLines.Clear();
-        for (int i = -20; i <= 20; i++)
+        for (int level = 0; level < MaxLevels; level++, step *= 10)
         {
-            float px = x + i * step, py = y + i * step;
-            var color = new Vector4(.19f, .22f, .27f, 1);
-            overlayLines.Add(new(new(px, y - extent, 0), px == 0 ? new(.35f, .62f, .38f, 1) : color));
-            overlayLines.Add(new(new(px, y + extent, 0), overlayLines[^1].Color));
-            overlayLines.Add(new(new(x - extent, py, 0), py == 0 ? new(.7f, .3f, .27f, 1) : color));
-            overlayLines.Add(new(new(x + extent, py, 0), overlayLines[^1].Color));
+            float x = MathF.Floor(Camera.Pivot.X / step) * step;
+            float y = MathF.Floor(Camera.Pivot.Y / step) * step;
+            float extent = step * Half;
+            for (int i = -Half; i <= Half; i++)
+            {
+                float px = x + i * step, py = y + i * step;
+                var xColor = MathF.Abs(px) < step * .5f ? new Vector4(.35f, .62f, .38f, 1) : color;
+                var yColor = MathF.Abs(py) < step * .5f ? new Vector4(.7f, .3f, .27f, 1) : color;
+                overlayLines.Add(new(new(px, y - extent, 0), xColor));
+                overlayLines.Add(new(new(px, y + extent, 0), xColor));
+                overlayLines.Add(new(new(x - extent, py, 0), yColor));
+                overlayLines.Add(new(new(x + extent, py, 0), yColor));
+            }
+            if (extent >= needed) break;
         }
         DrawOverlayLines(LineStream.Grid, CollectionsMarshal.AsSpan(overlayLines), view);
     }

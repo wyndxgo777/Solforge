@@ -29,7 +29,11 @@ public sealed partial class AssetViewport
      * are not hit. Collision and the outliner select by their own rules.
      * @param distance World distance of the hit along the pick ray; infinity when nothing is hit.
      */
-    public object? Pick(Vector2 viewportPixel, Vector2 size, out float distance)
+    public object? Pick(Vector2 viewportPixel, Vector2 size, out float distance) =>
+        Pick(viewportPixel, size, pickFaces ??= DrawnFaces, out distance);
+
+    /** @param faces The faces each candidate can be hit on; None leaves it out of the pick. */
+    private object? Pick(Vector2 viewportPixel, Vector2 size, Func<object, PickFaces> faces, out float distance)
     {
         distance = float.PositiveInfinity;
         if (size.X <= 0 || size.Y <= 0 || viewportPixel.X < 0 || viewportPixel.Y < 0 ||
@@ -58,7 +62,7 @@ public sealed partial class AssetViewport
         QueryRuntime(planes, pickTransient, pickCandidates);
         QueryLivePose(planes, pickTransient, pickCandidates);
         pickCandidates.Sort();
-        return selection.Pick(Camera, viewportPixel, size, pickFaces ??= DrawnFaces, out distance, pickCandidates,
+        return selection.Pick(Camera, viewportPixel, size, faces, out distance, pickCandidates,
             selectedMemberSet, OccludeOverlays);
     }
 

@@ -35,25 +35,29 @@ Project facts (TFM, references, sizes) are in ARCHITECTURE.md; this file is abou
   `ViewportFrameTimings`, `NativeSceneRenderer`.
 - Solforge (Phase 10): axis views Top/Bottom/Front/Back/Right/Left (`CameraViews.cs`, View menu, Numpad 7/1/3/5),
   corner world-axis gizmo and FPS/draw call/triangle overlay (`AssetViewport.ViewOverlay.cs`, `ViewportStatistics`,
-  `Dx11Renderer.Statistics.cs`). The grid follows the pivot in decade steps, so it never ends (upstream `DrawGrid`).
+  `Dx11Renderer.Statistics.cs`). The grid follows the pivot in decade steps and adds
+  coarser decade levels until it reaches the far plane or covers the orthographic view (`DrawGrid`; no distance fade).
 - Solforge (Phase 13): World/Local handle axes, grid/angle/scale snapping and Shift surface snapping
-  (`TransformSnapping.cs`, `AssetViewport.TransformOptions.cs`); group transforms are upstream (`GroupTransforms`).
+  (`TransformSnapping.cs`, `AssetViewport.TransformOptions.cs`; the selection is left out of the surface picks); group transforms are upstream (`GroupTransforms`).
 - Gaps: D3D12 (not planned; D3D11 stays). Phase 14 audit (`ViewportPipeline.Tests` `AuditChecks`: 1M triangles at
-  1080p, a destination map, 50 load/unload cycles) runs with `-Game` on a hardware adapter; its results are a manual step.
+  1080p, a destination map, 50 load/unload cycles) runs with `-Game` on a hardware adapter; the map and cycles use game shaders and also bound video memory, the
+  triangle benchmark is a synthetic grid on the geometry path; its results are a manual step.
 
 ## Meshes and world (`SunriseStudio.Scene`, Phase 11)
 - (Exists) `StaticMeshDecoder`, `EntityMeshDecoder`, `TerrainDecoder`, `CompressedMesh`,
   decorators, collision scenes (`CollisionScene`, shapes, connectivity), spawns/squads, effects,
   guardian appearance, map/scenario loading (`AssetSceneLoader`).
 - Solforge (Phase 11): `VertexAttributeDecoding` decodes half floats, SNORM/UNORM streams, SNORM16 normal/tangent
-  frames, quaternion tangent frames and octahedral normals on the CPU (export, picking, checks).
+  frames, quaternion tangent frames and octahedral normals on the CPU (checks only; nothing in `src` uses it yet).
+  Export decodes its own: `NativeMeshBasis` (declaration-123 static normals/tangents), `AssetBundle.DetailUvs` (entity UV1).
 
 ## Materials and shaders (`SunriseStudio.Rendering` + `Formats`, Phase 12)
 - (Exists) `GameMaterialReader`, `MaterialSampler`, `MaterialStageData`, DXBC text/checksum,
   `Data/NativeRenderStates86657.json`, Editor `MaterialsPage`/`ShadersPage`/`MaterialWorkflow`.
 - (Exists) BCn: BC1-BC5 CPU decode (`TexturePixels`), BC7 via BCnEncoder.Net (`BundleTextureCodec`), GPU upload of all BCn.
 - Solforge (Phase 12): `ProbeLighting` projects cubemaps to SH9 ambient irradiance and weighs/parallax-corrects box
-  reflection probes on the CPU; the game-shader path keeps the authored probes (`NativeCubemapLighting`).
+  reflection probes on the CPU as standalone math (checks only; the preview, export and fallback `MeshShader` do not
+  use it). Probe and ambient lighting come from the game-shader path (`NativeCubemapLighting`, `NativeAmbientLighting`).
 
 ## Project system and overlay (`SunriseStudio.Projects`, Phases 15-16, 18, 43)
 - (Exists) `StudioProject` (`sunrise.project.json`), `ProjectManifest`, `ProjectAssetEdits`,
