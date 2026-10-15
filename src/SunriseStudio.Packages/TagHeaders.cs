@@ -70,7 +70,7 @@ public static class TagHeaders
         BinaryPrimitives.WriteUInt32LittleEndian(record, reference);
         BinaryPrimitives.WriteUInt32LittleEndian(record[4..], typeInfo);
         BinaryPrimitives.WriteUInt64LittleEndian(record[8..],
-            ((ulong)size << 28) | ((ulong)(startOffset >> 4) << 14) | (ulong)startBlock);
+            ((ulong)(uint)size << 28) | ((ulong)(uint)(startOffset >> 4) << 14) | (uint)startBlock);
     }
 }
 

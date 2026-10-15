@@ -34,13 +34,14 @@ public sealed partial class PackageCatalog
 /** Serialized headers, current-patch tables and name rows; a stale or damaged file is a miss, never an error. */
 internal sealed class PackageIndex
 {
-    private static readonly byte[] Magic = "SFPKIDX1"u8.ToArray(), Trailer = "SFPKEND1"u8.ToArray();
+    private static readonly byte[] Magic = "SFPKIDX2"u8.ToArray(), Trailer = "SFPKEND1"u8.ToArray();
     private sealed record Record(byte[] Header, long BlockOffset, byte[]? Entries, byte[]? Blocks);
     private readonly Dictionary<string, Record> records = new(StringComparer.OrdinalIgnoreCase);
 
     internal PackageCatalog.NameRows? Names { get; private set; }
 
-    /** Returns null unless every file's name, length and write time matches the index, in the same order. */
+    /** Returns null unless every file's name, length, write time and change identity match the index, in the same order.
+        The change identity (CacheFileIdentity) catches same-size edits whose write time was restored. */
     internal static PackageIndex? TryLoad(string path, FileInfo[] files)
     {
         try
@@ -56,9 +57,11 @@ internal sealed class PackageIndex
             {
                 string name = reader.ReadString();
                 long length = reader.ReadInt64(), written = reader.ReadInt64();
+                string identity = reader.ReadString();
                 var file = files[i];
                 if (!name.Equals(file.Name, StringComparison.OrdinalIgnoreCase) || length != file.Length
-                    || written != file.LastWriteTimeUtc.Ticks) return null;
+                    || written != file.LastWriteTimeUtc.Ticks
+                    || identity != CacheFileIdentity.Compute([file.FullName], CancellationToken.None)) return null;
                 byte[] header = ReadExact(reader, 0x180);
                 long blockOffset = reader.ReadInt64();
                 int entryLength = reader.ReadInt32();
@@ -106,6 +109,7 @@ internal sealed class PackageIndex
                     writer.Write(file.Name);
                     writer.Write(file.Length);
                     writer.Write(file.LastWriteTimeUtc.Ticks);
+                    writer.Write(CacheFileIdentity.Compute([file.FullName], CancellationToken.None));
                     writer.Write(package.Header);
                     if (withTables.Contains(package))
                     {

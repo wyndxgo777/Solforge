@@ -126,7 +126,7 @@ try
         "the delta file returns the replaced and appended bytes (Phase 08)");
     var table = TagHeaders.ParseEntryTable(0x100, "w64_test_0100_1", delta.BuildEntryTable(first));
     Check(table.Length == 3 && table[0].Size == edited.Length && table[1].Size == medium.Length
-        && table[1].Reference == 0x80800001 && table[2].Size == added.Length && table[2].TypeInfo == 0x100A,
+        && table[1].Reference == 0x80800002 && table[2].Size == added.Length && table[2].TypeInfo == 0x100A,
         "the updated entry table redirects entry 0, keeps entry 1 and appends entry 2 (Phase 08)");
     Check(Sha256(first) == sourceHash && new FileInfo(first).Length == sourceLength
         && File.GetLastWriteTimeUtc(first) == sourceTime && delta.Matches(first),
