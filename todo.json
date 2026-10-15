@@ -286,7 +286,8 @@
     {
       "id": "47B",
       "title": "AI CLI Vibecoding Integration (Cline, Claude Code, Antigravity)",
-      "status": "todo"
+      "status": "partial",
+      "notes": "AI editor area (StudioPanelKind.AI, Window > AI workspace, Ctrl+Shift+A in Sunrise/Unreal presets): ConPTY terminal (Ai/ConPtyTerminal + VtScreen + TerminalView), engine picker claude/cline/agy/custom via cmd /k at the project folder, Context panel (hovered, selected, camera+zone, open file, pinned, attention log; Pin, Send screenshot, Publish toggle), approval queue + AI edits with Undo. src/Solforge.Mcp: TcpListener streamable HTTP on 127.0.0.1 random port, bearer token, Mcp-Session-Id, SSE GET keep-alive, discovery %LOCALAPPDATA%/Solforge/mcp/server-<pid>.json; src/Solforge.Mcp.Shim = solforge-mcp.exe (publish.ps1). Configs: <project>/.mcp.json, ~/.cline/data/settings/cline_mcp_settings.json (+ VS Code Cline if installed), ~/.gemini/antigravity/mcp_config.json. 11 read tools + 5 approve-gated. Checks: tests/SunriseStudio.Mcp.Tests (verify.ps1). Not built or run yet. Left: build + fix, live acceptance test (static mesh 7489 in Claude Code), apply_project_edit into Project changes proper (now AI-edits list), terminal glyph coverage (box drawing), AI pop-out window keyboard input, confirm Cline CLI and Antigravity config paths"
     },
     {
       "id": "48",
