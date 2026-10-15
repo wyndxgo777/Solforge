@@ -40,7 +40,7 @@ if ($Game -and -not $SkipBuild) {
 $studioChecks = [ordered]@{
     # Solforge Phase 04: the checkout audit runs first and needs no installation.
     'Architecture.Tests' = 'net9.0'
-    # Solforge Phases 05-06: metadata index, search and parallel block reads; -Game adds the timed warm open.
+    # Solforge Phases 05-07: metadata index, search, parallel block reads, tag headers and DAG; -Game adds installed checks.
     'Packages.Tests' = 'net9.0'
     'Projects.Tests' = 'net9.0'; 'Formats.Tests' = 'net9.0'; 'Missions.Tests' = 'net9.0'; 'Cui.Tests' = 'net9.0'
     'Cui.Gpu.Tests' = 'net9.0-windows'; 'Investment.Tests' = 'net9.0-windows'; 'Live.Tests' = 'net9.0-windows'

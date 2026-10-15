@@ -93,22 +93,7 @@ internal sealed class PackageFile
     {
         if (entries.Length != checked(EntryCount * 16) || blocks.Length != checked(BlockCount * 48))
             throw new InvalidDataException($"Package table size mismatch: {Path}");
-        Entries = new PackageEntry[EntryCount];
-        string name = Name;
-        for (int i = 0; i < EntryCount; i++)
-        {
-            int offset = i * 16;
-            uint typeInfo = U32(entries, offset + 4);
-            ulong blockInfo = U64(entries, offset + 8);
-            Entries[i] = new PackageEntry(checked(0x80800000U + ((uint)Id << 13) + (uint)i),
-                U32(entries, offset), (int)((typeInfo >> 9) & 127),
-                (int)((typeInfo >> 6) & 7), checked((int)(blockInfo >> 28)), name, Id, i)
-            {
-                TypeInfo = typeInfo,
-                StartBlock = (int)(blockInfo & 0x3FFF),
-                StartOffset = (int)(((blockInfo >> 14) & 0x3FFF) << 4)
-            };
-        }
+        Entries = TagHeaders.ParseEntryTable(Id, Name, entries);
         Blocks = new BlockRecord[BlockCount];
         for (int i = 0; i < BlockCount; i++)
         {

@@ -64,8 +64,8 @@
     {
       "id": "07",
       "title": "Tag Deserialization & Structural Memory Mapping",
-      "status": "upstream_partial",
-      "notes": "Formats.TagReader and typed readers"
+      "status": "done",
+      "notes": "(Exists) typed deserializers: Strings = Packages/LocalizedStrings.cs, Entity Templates = ComponentIndex.EntityConfigs + ComponentRoles.ReadConfig (EntityComponents.cs), Sound Banks = Audio/AudioCatalog.ReadBank + WwiseSoundBank.Nodes; Formats.TagReader. Solforge: Packages/TagHeaders.cs (Compose/TryDecompose per §5.4, ParseEntryTable/ParseEntryRecord/WriteEntryRecord per §5.2; PackageFile.LoadTables now parses through it), PackageCatalog.TryLocate, Packages/TagDependencyGraph.cs (TryAdd/Add reject cycle and self edges, RejectedEdges, Reaches, Closure, TopologicalOrder, bounded Build walk). Check: Packages.Tests (hash mapping, record round trip, 10,000-header parse best of 5 under 100 ms, DAG cycle rejection/order/Build); --game-root maps every installed hash and builds a native-dependency DAG from 200 entity templates. Memory mapping still not needed (Phase 05 index)"
     },
     {
       "id": "08",

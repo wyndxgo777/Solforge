@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using SunriseStudio.Packages;
 
-// Solforge Phase 05 (metadata index, search) and Phase 06 (parallel block reads) checks.
+// Solforge Phase 05 (metadata index, search), Phase 06 (parallel block reads) and Phase 07 (tag headers, DAG) checks.
 // The install-free sections open packages PackageWriter writes into a scratch install (uncompressed,
 // unencrypted blocks, so no Oodle or keys are needed). --game-root <path> adds the timed warm open of
 // the installation and a serial/parallel comparison over installed (compressed, encrypted) tags.
@@ -108,6 +108,54 @@ finally
     try { Directory.Delete(root, true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
 }
 
+// Phase 07: tag hash mapping (§5.4), the entry-record parse path PackageFile uses, the dependency DAG.
+Check(TagHeaders.Compose(0x100, 0) == 0x80A00000 && TagHeaders.Compose(0x0CFF, 0x1FFF) == 0x821FFFFF
+    && TagHeaders.TryDecompose(0x821FFFFF, out ushort mappedPackage, out int mappedEntry)
+    && mappedPackage == 0x0CFF && mappedEntry == 0x1FFF && !TagHeaders.TryDecompose(0x12345678, out _, out _),
+    "tag hashes map to package id and entry index (Phase 07)");
+{
+    byte[] row = new byte[TagHeaders.EntryRecordSize];
+    TagHeaders.WriteEntryRecord(row, 0x80809C0F, (8u << 9) | (2u << 6), 17, 0x1230, 70_000);
+    var parsed = TagHeaders.ParseEntryRecord(0x101, "test", 5, row);
+    Check(parsed.TagHash == TagHeaders.Compose(0x101, 5) && parsed.Reference == 0x80809C0F && parsed.Type == 8
+        && parsed.SubType == 2 && parsed.Size == 70_000 && parsed.PackageId == 0x101 && parsed.EntryIndex == 5,
+        "entry records round-trip reference, type, subtype and size (Phase 07)");
+
+    // 10,000 headers: one full 8192-entry table and one of 1808, parsed through the catalog's parse path.
+    var random = new Random(7);
+    byte[] full = new byte[8192 * 16], rest = new byte[1808 * 16];
+    foreach (byte[] table in new[] { full, rest })
+        for (int i = 0; i < table.Length / 16; i++)
+            TagHeaders.WriteEntryRecord(table.AsSpan(i * 16), (uint)random.Next(), (uint)random.Next(),
+                random.Next(0x4000), random.Next(0x4000) * 16, random.Next(1 << 24));
+    TagHeaders.ParseEntryTable(0x100, "warmup", full);
+    var best = TimeSpan.MaxValue;
+    int parsedCount = 0;
+    for (int run = 0; run < 5; run++)
+    {
+        var watch = Stopwatch.StartNew();
+        parsedCount = TagHeaders.ParseEntryTable(0x100, "a", full).Length + TagHeaders.ParseEntryTable(0x101, "b", rest).Length;
+        watch.Stop();
+        if (watch.Elapsed < best) best = watch.Elapsed;
+    }
+    Console.WriteLine($"Parsed {parsedCount} tag headers in {best.TotalMilliseconds:F2} ms (best of 5).");
+    Check(parsedCount == 10_000 && best < TimeSpan.FromMilliseconds(100), "10,000 tag headers parse in under 100 ms (Phase 07)");
+
+    var graph = new TagDependencyGraph();
+    graph.Add(1, 2); graph.Add(2, 3); graph.Add(1, 3); graph.Add(4, 3);
+    Check(!graph.TryAdd(3, 1) && !graph.TryAdd(5, 5) && graph.RejectedEdges.Count == 2 && graph.EdgeCount == 4,
+        "the dependency graph rejects cycles and self references (Phase 07)");
+    bool threw = false;
+    try { graph.Add(3, 2); } catch (InvalidOperationException) { threw = true; }
+    var order = graph.TopologicalOrder().ToList();
+    Check(threw && order.Count == 4 && order.IndexOf(3) < order.IndexOf(2) && order.IndexOf(2) < order.IndexOf(1)
+        && order.IndexOf(3) < order.IndexOf(4), "Add throws on a cycle; the topological order puts dependencies first (Phase 07)");
+    var refs = new Dictionary<uint, uint[]> { [10] = [11, 12], [11] = [12, 10], [12] = [13], [13] = [] };
+    var built = TagDependencyGraph.Build([10], tag => refs.GetValueOrDefault(tag) ?? [], maximumNodes: 3);
+    Check(built.NodeCount == 3 && built.RejectedEdges.Contains((11u, 10u)) && built.Closure(10).SequenceEqual(new uint[] { 10, 11, 12 }),
+        "Build walks references, rejects the back edge and stops at maximumNodes (Phase 07)");
+}
+
 if (gameRoot is null)
 {
     Console.WriteLine("skipped: installed package timing and serial/parallel comparison (no --game-root).");
@@ -142,6 +190,23 @@ else
         + $"parallel {parallelTime.Elapsed.TotalMilliseconds:F0} ms ({parallelCatalog.MaximumParallelDecodes} decodes).");
     Check(sample.Length > 0 && serialBytes.Zip(parallelBytes).All(x => x.First.AsSpan().SequenceEqual(x.Second)),
         "installed parallel block reads are byte-identical to serial reads (Phase 06)");
+
+    // Phase 07 on the installation: every entry locates by its hash, and a native-dependency DAG over entities.
+    Check(catalog.Entries.All(e => catalog.TryLocate(e.TagHash, out var id, out int index) && id == e.PackageId && index == e.EntryIndex),
+        $"all {catalog.Entries.Count} installed tag hashes map to their package id and entry index (Phase 07)");
+    uint[] entities = catalog.Entries.Where(e => e.Reference == 0x80809C0F).Select(e => e.TagHash).Take(200).ToArray();
+    int withConfigs = entities.Count(t => ComponentIndex.EntityConfigs(catalog.ReadOriginal(t)).Length > 0);
+    IEnumerable<uint> NativeReferences(uint tag)
+    {
+        if (!catalog.TryGetEntry(tag, out var entry)) return [];
+        try { return PackageNativeDependencies.Read(catalog, tag, entry.Reference, entry.TypeInfo, catalog.ReadOriginal(tag)); }
+        catch (InvalidDataException) { return []; }
+    }
+    var dag = TagDependencyGraph.Build(entities, NativeReferences, maximumNodes: 5000);
+    Console.WriteLine($"Entity DAG: {entities.Length} roots ({withConfigs} with configs), {dag.NodeCount} tags, "
+        + $"{dag.EdgeCount} edges, {dag.RejectedEdges.Count} cycle edges rejected.");
+    Check(entities.Length > 0 && withConfigs > 0 && dag.TopologicalOrder().Count == dag.NodeCount,
+        "installed entity templates parse and their dependency graph is acyclic (Phase 07)");
 }
 
 if (failures != 0)

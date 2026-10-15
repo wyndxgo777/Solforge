@@ -24,7 +24,13 @@ Project facts (TFM, references, sizes) are in ARCHITECTURE.md; this file is abou
 - (Exists) `TagReader` and typed readers: investment (items, sockets, stats, vendors, lore,
   collections), perk behavior graphs (`BehaviorInspector`, `BehaviorInstruction`), CUI documents and
   bindings, `AssetGraph`/`AssetInspection`, `AssetConnections`, glTF/OBJ/DDS/PNG interchange.
-- Gaps: a generic class-hash -> struct schema registry and field-level validation (Phase 07).
+- (Exists) Phase 07 typed metadata deserializers: Strings (`Packages/LocalizedStrings.cs`), Entity
+  Templates (`Packages/EntityComponents.cs` `ComponentIndex.EntityConfigs`, `ComponentRoles.ReadConfig`),
+  Sound Banks (`Audio/AudioCatalog.cs` `ReadBank`, `Audio/WwiseSoundBank.cs` `Nodes`).
+- Solforge (Phase 07): `TagHeaders` (§5.4 hash <-> package id + entry index, the §5.2 record parse
+  `PackageFile` now uses), `PackageCatalog.TryLocate`, `TagDependencyGraph` (DAG that rejects cycle edges,
+  topological order, bounded `Build` walk), all in `SunriseStudio.Packages`.
+- Gaps: a generic class-hash -> struct schema registry and field-level validation.
 
 ## Viewport and rendering (`SunriseStudio.Rendering`, `SunriseStudio.Viewport`, Phases 10, 13)
 - (Exists) `Dx11Renderer` (Vortice D3D11, WARP fallback), `ImGuiController`, `GpuMesh`/`GpuTexture`,
@@ -71,4 +77,4 @@ Project facts (TFM, references, sizes) are in ARCHITECTURE.md; this file is abou
 ## Checks (`tests/*.Tests`, run by verify.ps1)
 - (Exists) 36 console check programs (no test framework); `-Game` adds installation checks,
   `-Blender` the add-on checks; CI runs the install-free set on WARP.
-- Solforge: `Architecture.Tests` (Phase 04), `Packages.Tests` (Phases 05-06).
+- Solforge: `Architecture.Tests` (Phase 04), `Packages.Tests` (Phases 05-07).
