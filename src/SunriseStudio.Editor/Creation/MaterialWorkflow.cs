@@ -66,7 +66,7 @@ public sealed class MaterialWorkflow : CreationWorkflow
             if (target is null && name.Text.Length == 0) name.Text = template.TagLabel + " copy";
         }
         catch (Exception error) when (error is InvalidDataException or IOException or UnauthorizedAccessException or NotSupportedException or KeyNotFoundException)
-        { describeError = error.Message; }
+        { describeError = Unreadable(error); if (LoadError.Length != 0) describedTag = null; }
     }
 
     protected override IEnumerable<string> Validate(StudioWorkspace workspace)
@@ -92,7 +92,7 @@ public sealed class MaterialWorkflow : CreationWorkflow
         if (described is null)
         {
             ImGui.TextWrapped(describeError.Length != 0 ? describeError : "Choose a template material");
-            if (describeError.Length != 0 && ImGui.Button("Retry material")) describedTag = null;
+            if (describeError.Length != 0 && ImGui.Button("Retry material")) { describedTag = null; Retry(); }
             return;
         }
         if (described.Slots.Count == 0) { ImGui.TextDisabled("The material binds no textures"); return; }

@@ -64,7 +64,6 @@ public sealed class ItemWorkflow : CreationWorkflow
     private string detailError = "", preflightProblem = "", preflightKey = "";
     private StringBankTemplate? stringTemplate;
     private readonly List<string> notes = [];
-    private long requestedOverlay = -1;
     private uint newStat;
     private int newStatValue;
     private uint? newPerk;
@@ -309,13 +308,8 @@ public sealed class ItemWorkflow : CreationWorkflow
 
     public override void Update(StudioWorkspace workspace)
     {
-        if (workspace.Investment is null)
-        {
-            if (!workspace.IsBusy && workspace.Catalog is { } packages && requestedOverlay != packages.OverlayRevision)
-            { requestedOverlay = packages.OverlayRevision; workspace.Run(workspace.LoadInvestment); }
-            return;
-        }
-        if (baseItem.Tag != loadedBase) LoadBase(workspace.Investment);
+        if (!InvestmentReady(workspace)) return;
+        if (baseItem.Tag != loadedBase) LoadBase(workspace.Investment!);
         Preflight(workspace);
     }
 
@@ -370,6 +364,9 @@ public sealed class ItemWorkflow : CreationWorkflow
         }
         catch (Exception error) when (error is InvalidDataException or KeyNotFoundException or ArgumentException or OverflowException)
         { detailError = error.Message; detail = null; }
+        // Retry reads the base again.
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        { detailError = Unreadable(error); detail = null; loadedBase = null; }
     }
 
     /**
@@ -572,7 +569,7 @@ public sealed class ItemWorkflow : CreationWorkflow
             if (image.Width != 137 || image.Height != 76) return "The HUD silhouette must be 137 x 76 pixels.";
         }
         catch (Exception error) when (error is IOException or InvalidDataException or NotSupportedException
-            or KeyNotFoundException or ArgumentException or OverflowException) { return error.Message; }
+            or KeyNotFoundException or ArgumentException or OverflowException) { return Unreadable(error, deviceOnly: true); }
         return null;
     }
 
@@ -592,7 +589,7 @@ public sealed class ItemWorkflow : CreationWorkflow
                 return $"The perk icon must be {profile.Texture.Width} x {profile.Texture.Height} pixels.";
         }
         catch (Exception error) when (error is IOException or InvalidDataException or NotSupportedException
-            or KeyNotFoundException or ArgumentException or OverflowException) { return error.Message; }
+            or KeyNotFoundException or ArgumentException or OverflowException) { return Unreadable(error, deviceOnly: true); }
         return null;
     }
 
@@ -611,7 +608,7 @@ public sealed class ItemWorkflow : CreationWorkflow
         }
         catch (Exception error) when (error is IOException or InvalidDataException or NotSupportedException
             or KeyNotFoundException or ArgumentException or OverflowException)
-        { return error.Message; }
+        { return Unreadable(error, deviceOnly: true); }
         return null;
     }
 

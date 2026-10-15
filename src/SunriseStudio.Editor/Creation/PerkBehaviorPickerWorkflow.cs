@@ -9,7 +9,7 @@ public sealed class PerkBehaviorPickerWorkflow : CreationWorkflow
     private readonly StudioWorkspace workspace;
     private readonly CreationField perk, details;
     private uint? selected;
-    private long loadedOverlay = -1, requestedOverlay = -1;
+    private long loadedOverlay = -1;
     private SandboxPerkSource? source;
     private PerkBehaviorGraph? graph;
     private string problem = "";
@@ -34,12 +34,7 @@ public sealed class PerkBehaviorPickerWorkflow : CreationWorkflow
     /** Display-only perks stay selectable so the picker can explain their missing program. */
     public override void Update(StudioWorkspace workspace)
     {
-        if (workspace.Investment is null)
-        {
-            if (!workspace.IsBusy && workspace.Catalog is { } catalog && requestedOverlay != catalog.OverlayRevision)
-            { requestedOverlay = catalog.OverlayRevision; workspace.Run(workspace.LoadInvestment); }
-            return;
-        }
+        if (!InvestmentReady(workspace)) return;
         if (perk.Tag == selected && workspace.Catalog!.OverlayRevision == loadedOverlay) return;
         selected = perk.Tag; loadedOverlay = workspace.Catalog!.OverlayRevision;
         source = null; graph = null; problem = "";
@@ -50,6 +45,8 @@ public sealed class PerkBehaviorPickerWorkflow : CreationWorkflow
         { problem = error.Message; return; }
         graph = PerkBehaviorWorkflow.OpenProgram(source.Gameplay, source.GameplayTag, out problem);
     }
+
+    protected override void Reload() => loadedOverlay = -1;
 
     protected override IEnumerable<string> Validate(StudioWorkspace workspace)
     {

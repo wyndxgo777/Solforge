@@ -37,7 +37,6 @@ public sealed class ExoticWeaponWorkflow : CreationWorkflow
     private IReadOnlyList<WeaponArtVariant> variants = [];
     private uint? loadedBase;
     private long loadedOverlay = -1;
-    private long requestedOverlay = -1;
     private string sourceError = "", inspectedKey = "", inspectionError = "", stampedPath = "";
     private long nextStamp;
     private bool inspecting;
@@ -130,13 +129,8 @@ public sealed class ExoticWeaponWorkflow : CreationWorkflow
             inspecting = false;
             inspectionError = workspace.Error.Length != 0 ? workspace.Error : "Read stopped. Export again to retry.";
         }
-        if (workspace.Investment is null)
-        {
-            if (!workspace.IsBusy && workspace.Catalog is { } catalog && requestedOverlay != catalog.OverlayRevision)
-            { requestedOverlay = catalog.OverlayRevision; workspace.Run(workspace.LoadInvestment); }
-            return;
-        }
-        if (baseWeapon.Tag is null && workspace.Investment.FindItem(CheckedBaseItem) is { } supported)
+        if (!InvestmentReady(workspace)) return;
+        if (baseWeapon.Tag is null && workspace.Investment!.FindItem(CheckedBaseItem) is { } supported)
         { baseWeapon.Tag = supported.Tag; baseWeapon.TagLabel = supported.Name; }
         if (baseWeapon.Tag != loadedBase || loadedOverlay != workspace.Catalog?.OverlayRevision) LoadBase();
         InspectSource();
@@ -180,6 +174,9 @@ public sealed class ExoticWeaponWorkflow : CreationWorkflow
         }
         catch (Exception error) when (error is InvalidDataException or NotSupportedException or KeyNotFoundException or OverflowException)
         { sourceError = error.Message; }
+        // Retry reads the base again.
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        { sourceError = Unreadable(error); loadedOverlay = -1; }
     }
 
     /** Changes when Blender rewrites the scene, its sidecars or its arms scene. */
