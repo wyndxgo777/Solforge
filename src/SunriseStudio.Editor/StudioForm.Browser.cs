@@ -598,6 +598,7 @@ public sealed partial class StudioForm
                 if (ImGui.MenuItem("Revert", "", false, workspace.CanEdit)) workspace.Run(() => workspace.RevertObjectEdit(edit.Key));
                 break;
             case ProjectAssetChange change:
+                if (ImGui.MenuItem("Compare with base...", "", false, workspace.Catalog is not null)) BeginTagDiff(change.TagHash);
                 if (ImGui.MenuItem("Revert", "", false, workspace.CanEdit)) workspace.Run(() => workspace.Revert(change.TagHash));
                 break;
             case AddedProjectAsset addition:

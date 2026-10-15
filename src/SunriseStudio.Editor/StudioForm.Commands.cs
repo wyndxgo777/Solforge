@@ -235,6 +235,7 @@ public sealed partial class StudioForm
     private void DrawDialogs()
     {
         DrawWideHashes();
+        DrawTagDiff();
         DrawConfigBindings();
         if (setup || settingsDialog) ImGui.OpenPopup("Sunrise location");
         if (projectDialog) { ImGui.OpenPopup("New project"); projectDialog = false; }

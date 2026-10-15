@@ -115,8 +115,8 @@
     {
       "id": "16",
       "title": "Non-Destructive Delta Overlay Engine",
-      "status": "upstream_partial",
-      "notes": "Projects: BinaryDelta, ObjectEdits, transactions"
+      "status": "done",
+      "notes": "Overlay VFS exists (StudioProject.ReadAsset over PackageCatalog.ReadOriginal + PackageOverlayEntry; BinaryDelta, ObjectEdits, transactions); revert per tag exists (StudioProject.Revert, Changes > Revert). Added: ProjectTagDiff.cs (Projects) + Changes > 'Compare with base...' dialog with 'Revert to base' (Editor/StudioForm.TagDiff.cs). Checks: ProjectSystem.Tests OverlayChecks. Manual: open the dialog in Studio on a real changed tag (UI not covered by checks)"
     },
     {
       "id": "17",
