@@ -94,22 +94,34 @@ internal sealed class VtScreen(int columns, int rows)
     }
 
     /**
-     * The visible rows as text, with a flag per character for cells drawn highlighted (a background colour or
-     * inverse), for ApprovalPrompts. Wide characters' right halves are left out of both, so indexes line up.
+     * The bottom lastRows rows as text, with each character's drawn background (the background colour, or the
+     * complemented foreground for inverse cells; 0 is the default), for ApprovalPrompts. Wide characters' right
+     * halves are left out of both, so indexes line up.
      */
-    public (string[] Rows, bool[][] Marked) Snapshot()
+    public (string[] Rows, uint[][] Shade) Snapshot(int lastRows)
     {
         lock (Gate)
         {
-            var rows = new string[lines.Length];
-            var marked = new bool[lines.Length][];
-            for (int row = 0; row < lines.Length; row++)
+            int first = Math.Max(0, lines.Length - lastRows);
+            var rows = new string[lines.Length - first];
+            var shade = new uint[rows.Length][];
+            var text = new char[lines.Length == 0 ? 0 : lines[0].Length];
+            for (int row = 0; row < rows.Length; row++)
             {
-                var cells = lines[row].Where(cell => cell.Char != Continuation).ToArray();
-                rows[row] = new string(cells.Select(cell => cell.Char).ToArray());
-                marked[row] = cells.Select(cell => cell.Background != 0 || cell.Inverse).ToArray();
+                var line = lines[first + row];
+                if (text.Length < line.Length) text = new char[line.Length];
+                var shades = new uint[line.Length];
+                int count = 0;
+                for (int i = 0; i < line.Length; i++)
+                {
+                    if (line[i].Char == Continuation) continue;
+                    text[count] = line[i].Char;
+                    shades[count++] = line[i].Inverse ? ~line[i].Foreground : line[i].Background;
+                }
+                rows[row] = new string(text, 0, count);
+                shade[row] = count == shades.Length ? shades : shades[..count];
             }
-            return (rows, marked);
+            return (rows, shade);
         }
     }
 

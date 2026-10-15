@@ -370,6 +370,134 @@ static string FindShim()
     throw new DirectoryNotFoundException("Repository root not found above " + AppContext.BaseDirectory);
 }
 
+static void Approvals()
+{
+    string[] screen(params string[] bottom) => [.. Enumerable.Repeat("", 6), .. bottom];
+    const string Nav = "   ↑/↓ Navigate · tab Amend", Esc = "  esc to cancel                                   accept-edits · Gemini 3.8 Flash · high";
+    string[] agy(int pointed = 1, string tool = "solforge/get_viewport_screenshot")
+    {
+        string[] options =
+        [
+            "Yes, allow tool call", $"Yes, and always allow tool '{tool}' in this conversation", $"Yes, and always allow tool '{tool}' (Persist to settings.json)",
+            "No, deny tool call", $"No, and always deny tool '{tool}' in this conversation", $"No, and always deny tool '{tool}' (Persist to settings.json)"
+        ];
+        return screen([
+            "  " + tool, "  Allow calling this tool?",
+            .. options.Select((label, i) => (i + 1 == pointed ? "> " : "  ") + $"{i + 1}. {label}"),
+            Nav, Esc]);
+    }
+    var first = ApprovalPrompts.Find("agy", agy());
+    Expect(first is { Choice: "Yes, allow tool call", Question: "Allow calling this tool?" }, "agy tool call");
+    Expect(ApprovalPrompts.Find("agy", agy())?.Signature == first!.Signature, "agy: same prompt, same signature");
+    Expect(ApprovalPrompts.Find("agy", agy(tool: "solforge/find_object"))?.Signature is { } next && next != first.Signature, "agy: next prompt differs");
+    Expect(ApprovalPrompts.Find("agy", agy(4)) is null, "agy: No highlighted");
+    Expect(ApprovalPrompts.Find("agy", agy(2)) is null, "agy: always-allow highlighted");
+    Expect(ApprovalPrompts.Find("claude", agy()) is null && ApprovalPrompts.Find("custom", agy()) is null, "other engines' layouts");
+    Expect(ApprovalPrompts.Find("agy", screen("Run this command?", "> 1. Yes, run command", "  2. Yes, and always allow in this conversation for commands",
+        "     that start with 'dotnet'", "  3. Yes, and always allow for commands that start with 'dotnet' (Persist to settings.json)", "  4. No, cancel", Nav, Esc))?.Choice
+        == "Yes, run command", "agy command, wrapped option");
+    foreach (var (asked, allow, decline) in new[]
+    {
+        ("Allow access to this URL?", "Yes, allow access", "No, deny access"), ("Allow access to this file?", "Yes, allow access", "No, deny access"),
+        ("Allow creation of this file?", "Yes, allow creation", "No, deny creation"), ("Grant requested permission?", "Yes, grant permission", "No, deny permission"),
+        ("Do you want to proceed?", "Yes, proceed", "No, cancel")
+    })
+        Expect(ApprovalPrompts.Find("agy", screen("Requesting permission for:", "  target", asked, "> 1. " + allow, "  2. " + decline, Nav, Esc)) is { } found
+            && found.Question == asked && found.Choice == allow, "agy " + asked);
+    Expect(ApprovalPrompts.Find("agy", screen("Accept this file edit?", "> 1. Yes, accept this change", "  2. No, reject this change",
+        "Esc disabled during file edits — press 1 to accept or 2 to reject.")) is { Choice: "Yes, accept this change" }, "agy file edit");
+    Expect(ApprovalPrompts.Find("agy", screen("Allow administrator elevation?", "> 1. Yes, elevate", "  2. No, deny", Esc)) is null, "agy elevation stays manual");
+    Expect(ApprovalPrompts.Find("agy", screen("Run this command?", "  dotnet test", " 🔓 Allow sandbox bypass for command execution?",
+        "⚠️ Confirm the command is safe to run outside of the sandbox with full network and disk access.", "> 1. Yes, run command", "  2. No, cancel", Nav, Esc)) is null,
+        "agy sandbox bypass under a stale question");
+    Expect(ApprovalPrompts.Find("agy", screen("Do you trust the contents of this project?", "> 1. Yes, I trust this folder", "  2. No, exit", "enter Confirm · esc to cancel")) is null, "agy trust");
+    Expect(ApprovalPrompts.Find("agy", screen("Question 1/1:", "Do you want to proceed?", "> 1. Yes, proceed", "  2. No, cancel", "  3. Write-in", Nav)) is null, "agy model question");
+    Expect(ApprovalPrompts.Find("agy", screen("Allow calling this tool?", "> 1. Yes, allow tool call", "  2. No, deny tool call", Esc, "", "> ")) is null, "agy: options not at the bottom");
+    Expect(ApprovalPrompts.Find("agy", screen("Allow calling this tool?", Nav, Esc)) is null, "agy: question without options");
+    Expect(ApprovalPrompts.Find("agy", [.. agy(), "", "Done, the screenshot is attached.", "> "]) is null, "agy: prompt in scrollback, output below");
+    Expect(ApprovalPrompts.Find("agy", screen("Allow calling this tool?", "> 1. Yes, allow tool call", "  3. No, deny tool call", Nav, Esc)) is null, "agy: numbers out of order");
+
+    string[] claude(string pointed = "❯ 1. Yes", string question = "Do you want to proceed?", string command = "dotnet build Solforge.sln",
+        string footer = "   Esc to cancel · Tab to amend") => screen(
+        "╭──────────────────────────────────────────╮",
+        "│ Bash command                              │",
+        "│   " + command,
+        "│ " + question,
+        "│ " + pointed,
+        "│   2. Yes, and don’t ask again for dotnet commands in C:/work",
+        "│   3. No",
+        "╰──────────────────────────────────────────╯",
+        footer);
+    var bash = ApprovalPrompts.Find("claude", claude());
+    Expect(bash is { Choice: "Yes" }, "claude bash");
+    Expect(ApprovalPrompts.Find("claude", claude())?.Signature == bash!.Signature, "claude: same prompt, same signature");
+    Expect(ApprovalPrompts.Find("claude", claude(command: "git status"))?.Signature is { } status
+        && ApprovalPrompts.Find("claude", claude(command: "git diff"))?.Signature is { } diff && status != diff, "claude: next command differs");
+    Expect(ApprovalPrompts.Find("claude", claude("> 1. Yes")) is { Choice: "Yes" }, "claude ASCII pointer");
+    Expect(ApprovalPrompts.Find("claude", claude(footer: "Esc to cancel · Tab to amend · ctrl+e to explain")) is { Choice: "Yes" }, "claude explain footer");
+    foreach (string asked in new[] { "make this edit to", "create", "overwrite", "write to" })
+        Expect(ApprovalPrompts.Find("claude", claude(question: $"Do you want to {asked} Foo.cs?")) is { Choice: "Yes" }, "claude " + asked);
+    Expect(ApprovalPrompts.Find("claude", claude(question: "Do you want to allow Claude to fetch this content?")) is { Choice: "Yes" }, "claude fetch");
+    Expect(ApprovalPrompts.Find("claude", screen("Do you want to make this edit to", "a/long/path/Foo.cs?", "❯ 1. Yes", "  2. No", "Esc to cancel"))
+        is { Question: "Do you want to make this edit to a/long/path/Foo.cs?" }, "claude wrapped question");
+    Expect(ApprovalPrompts.Find("claude", screen("Allow Claude in Chrome to click on example.com?", "❯ 1. Allow", "  2. Deny (esc)", "Esc to cancel")) is { Choice: "Allow" }, "claude chrome");
+    Expect(ApprovalPrompts.Find("claude", screen("Do you want to proceed?", "  1. Yes", "  2. Yes, and don’t ask again for: git", "❯ 3. No", "Esc to cancel")) is null, "claude: No highlighted");
+    Expect(ApprovalPrompts.Find("claude", screen("Do you want to proceed?", "❯ No", "  Yes", "Esc to cancel")) is null, "claude default-to-no");
+    Expect(ApprovalPrompts.Find("claude", screen("Do you want to proceed?", "❯ 1. Yes", "  2. Maybe", "Esc to cancel")) is null, "claude: no decline sibling");
+    Expect(ApprovalPrompts.Find("claude", screen("Do you want to proceed?", "❯ 1. Yes", "❯ 2. No", "Esc to cancel")) is null, "claude: two pointers");
+    Expect(ApprovalPrompts.Find("claude", screen("Allow this read outside the working directories?", "❯ 1. Yes, and keep allowing any reads outside the working directories",
+        "  2. No, and ask again next time", "Esc to cancel")) is null, "claude persistent first row");
+    Expect(ApprovalPrompts.Find("claude", screen("Network request outside of sandbox", "Do you want to allow this connection?", "❯ 1. Yes", "  2. No", "Esc to cancel")) is null,
+        "claude sandbox network stays manual");
+    Expect(ApprovalPrompts.Find("claude", screen("Quick safety check: Is this a project you created or one you trust?", "❯ No, exit", "  Yes, I trust this folder",
+        "Enter to confirm · Esc to cancel")) is null, "claude trust");
+    Expect(ApprovalPrompts.Find("claude", screen("Do you want to create a new branch?", "❯ 1. Yes", "  2. No", "Enter to select · ↑/↓ to navigate · Esc to cancel")) is null,
+        "claude model question, navigate footer");
+    Expect(ApprovalPrompts.Find("claude", screen("Do you want to create a new branch?", "❯ 1. Yes", "  2. No", "Esc to cancel")) is null, "claude model question, not a file");
+    Expect(ApprovalPrompts.Find("claude", screen("Do you want to proceed?", "❯ 1. Yes", "  2. No", "  3. Type something.", "  4. Chat about this", "Esc to cancel")) is null,
+        "claude AskUserQuestion rows");
+    Expect(ApprovalPrompts.Find("claude", screen("Do you want to proceed?", "Esc to cancel")) is null, "claude: question without options");
+    Expect(ApprovalPrompts.Find("claude", screen("Do you want to proceed?", "Bash ran: dotnet test", "❯ 1. Yes", "  2. No", "Esc to cancel")) is null, "claude: text between question and options");
+    Expect(ApprovalPrompts.Find("claude", screen("● The dialog asks: Do you want to proceed?", "  ❯ 1. Yes", "  2. No", "Esc to cancel then pick one")) is null, "claude: quoted question");
+    Expect(ApprovalPrompts.Find("claude", screen("Do you want to proceed?", "❯ 1. Yes", "  2. No", "Esc to cancel", "",
+        "● Done. The build passed.", "", "> Yes", "  ? for shortcuts")) is null, "claude: question in scrollback, output below");
+    Expect(ApprovalPrompts.Find("claude", screen("● Should I go on?", "", "> Yes", "  ? for shortcuts")) is null, "claude: free-text input line");
+    Expect(ApprovalPrompts.Find("claude", screen("● Should I go on?", "> Yes", "Esc to cancel")) is null, "claude: typed Yes above a footer");
+    Expect(ApprovalPrompts.Find("claude", screen("Do you want to proceed?", "  1. Yes", "  2. No", "> Yes", "Esc to cancel")) is null, "claude: typed Yes under options");
+
+    const uint Selected = 0x79b8ff;
+    string[] cline(params string[] panel) => [.. screen([.. panel, "", " Auto-approve all disabled (Shift+Tab)"]).Select(line => line.PadRight(80))];
+    uint[][] shades(string[] rows, uint fill, params string[] marked)
+    {
+        var cells = rows.Select(line => Enumerable.Repeat(fill, line.Length).ToArray()).ToArray();
+        int row = Array.FindIndex(rows, line => line.Contains("[y] Approve"));
+        foreach (string button in marked)
+        {
+            int start = rows[row].IndexOf(button, StringComparison.Ordinal) - 1;
+            for (int i = start; i < start + (button == "[y]" ? 13 : 10); i++) cells[row][i] = Selected;
+        }
+        return cells;
+    }
+    const string Buttons = " [y] Approve   [n] Deny ";
+    string[] asks = cline(" Cline needs permission", " Approve tool call?", " run_commands", "   $ dotnet test", Buttons);
+    string[] after = cline(" Cline needs permission", " run_commands", "   $ dotnet test", " Approve tool call?", Buttons);
+    string[] json = cline(" Cline needs permission", " Approve tool call?", " write_to_file", "   {", "     \"path\": \"scripts/a.lua\",",
+        "     \"content\": \"-- new\"", "   }", Buttons);
+    Expect(ApprovalPrompts.Find("cline", asks, shades(asks, 0, "[y]")) is { Choice: "Approve" }, "cline approve highlighted");
+    Expect(ApprovalPrompts.Find("cline", after, shades(after, 0, "[y]")) is { Choice: "Approve" }, "cline question under the detail");
+    Expect(ApprovalPrompts.Find("cline", json, shades(json, 0, "[y]")) is { Choice: "Approve" }, "cline multi-line detail");
+    Expect(ApprovalPrompts.Find("cline", asks, shades(asks, 0x202020, "[y]")) is { Choice: "Approve" }, "cline filled panel");
+    Expect(ApprovalPrompts.Find("cline", asks, shades(asks, 0, "[n]")) is null, "cline: Deny highlighted");
+    Expect(ApprovalPrompts.Find("cline", asks, shades(asks, 0, "[y]", "[n]")) is null, "cline: both highlighted");
+    Expect(ApprovalPrompts.Find("cline", asks) is null, "cline needs colours");
+    string[] scrolled = [.. asks, .. Enumerable.Range(0, 6).Select(i => $" output line {i}".PadRight(80))];
+    Expect(ApprovalPrompts.Find("cline", scrolled, shades(scrolled, 0, "[y]")) is null, "cline: panel in scrollback");
+    string[] bare = cline(" Cline needs permission", " Approve tool call?", " run_commands");
+    Expect(ApprovalPrompts.Find("cline", bare, bare.Select(line => new uint[line.Length]).ToArray()) is null, "cline: question without buttons");
+    string[] followUp = cline(" Cline is asking a question", " Run the tests?", "> Yes", "  No", "  Type a response...");
+    Expect(ApprovalPrompts.Find("cline", followUp, followUp.Select(line => Enumerable.Repeat(Selected, line.Length).ToArray()).ToArray()) is null, "cline follow-up question");
+}
+
 static class NativeArgs
 {
     [DllImport("shell32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
@@ -417,74 +545,4 @@ sealed class FixtureHost(string project) : ISolforgeHost
     public JsonObject LiveState() => new() { ["attached"] = false };
     public Task<bool> ApproveAsync(string tool, string summary, CancellationToken cancel) { Interlocked.Increment(ref Approvals); return Task.FromResult(false); }
     public Task<string> RunActionAsync(string tool, JsonObject args, CancellationToken cancel) => Task.FromResult("ran");
-}
-
-static void Approvals()
-{
-    string[] screen(params string[] bottom) => [.. Enumerable.Repeat("", 6), .. bottom];
-    string[] agy(int pointed = 1, string tool = "solforge/get_viewport_screenshot")
-    {
-        string[] options =
-        [
-            "Yes, allow tool call", $"Yes, and always allow tool '{tool}' in this conversation", $"Yes, and always allow tool '{tool}' (Persist to settings.json)",
-            "No, deny tool call", $"No, and always deny tool '{tool}' in this conversation", $"No, and always deny tool '{tool}' (Persist to settings.json)"
-        ];
-        return screen([
-            "  " + tool, "  Allow calling this tool?",
-            .. options.Select((label, i) => (i + 1 == pointed ? "> " : "  ") + $"{i + 1}. {label}"),
-            "   ↑/↓ Navigate · tab Amend",
-            "  esc to cancel                                   accept-edits · Gemini 3.8 Flash · high"]);
-    }
-    var first = ApprovalPrompts.Find("agy", agy());
-    Expect(first is { Choice: "Yes, allow tool call", Question: "Allow calling this tool?" }, "agy tool call");
-    Expect(ApprovalPrompts.Find("agy", agy())?.Signature == first!.Signature, "same prompt, same signature");
-    Expect(ApprovalPrompts.Find("agy", agy(tool: "solforge/find_object"))?.Signature is { } next && next != first.Signature, "next prompt differs");
-    Expect(ApprovalPrompts.Find("agy", agy(4)) is null, "agy: No highlighted");
-    Expect(ApprovalPrompts.Find("claude", agy()) is null && ApprovalPrompts.Find("custom", agy()) is null, "other engines' layouts");
-    Expect(ApprovalPrompts.Find("agy", screen("Run this command?", "> 1. Yes, run command", "  2. Yes, and always allow in this conversation for commands",
-        "     that start with 'dotnet'", "  4. No, cancel", "↑/↓ Navigate · tab Amend", "esc to cancel"))?.Choice == "Yes, run command", "agy command, wrapped option");
-    Expect(ApprovalPrompts.Find("agy", screen("Allow administrator elevation?", "> 1. Yes, elevate", "  2. No, deny", "esc to cancel")) is null, "agy elevation stays manual");
-    Expect(ApprovalPrompts.Find("agy", screen("Do you trust the contents of this project?", "> 1. Yes, I trust this folder", "  2. No, exit", "enter Confirm · esc to cancel")) is null, "agy trust");
-    Expect(ApprovalPrompts.Find("agy", screen("Allow calling this tool?", "> 1. Yes, allow tool call", "  4. No, deny tool call", "esc to cancel",
-        "", "> ")) is null, "options not at the bottom");
-
-    string[] claude(string pointed = "❯ 1. Yes", string question = "Do you want to proceed?") => screen(
-        "╭──────────────────────────────────────────╮",
-        "│ Bash command                              │",
-        "│   dotnet build Solforge.sln               │",
-        "│ " + question,
-        "│ " + pointed,
-        "│   2. Yes, and don’t ask again for dotnet commands in C:\work",
-        "│   3. No",
-        "╰──────────────────────────────────────────╯",
-        "   Esc to cancel · Tab to amend");
-    Expect(ApprovalPrompts.Find("claude", claude()) is { Choice: "Yes" }, "claude bash");
-    Expect(ApprovalPrompts.Find("claude", claude("> 1. Yes")) is { Choice: "Yes" }, "claude ASCII pointer");
-    Expect(ApprovalPrompts.Find("claude", claude(question: "Do you want to make this edit to Foo.cs?")) is { Choice: "Yes" }, "claude edit");
-    Expect(ApprovalPrompts.Find("claude", screen("Allow Claude in Chrome to click on example.com?", "❯ 1. Allow", "  2. Deny (esc)", "Esc to cancel")) is { Choice: "Allow" }, "claude chrome");
-    Expect(ApprovalPrompts.Find("claude", screen("Do you want to proceed?", "  1. Yes", "  2. Yes, and don’t ask again for: git", "❯ 3. No", "Esc to cancel")) is null, "claude: No highlighted");
-    Expect(ApprovalPrompts.Find("claude", screen("Do you want to proceed?", "❯ No", "  Yes", "Esc to cancel")) is null, "claude default-to-no");
-    Expect(ApprovalPrompts.Find("claude", screen("Allow this read outside the working directories?", "❯ 1. Yes, and keep allowing any reads outside the working directories",
-        "  2. No, and ask again next time", "Esc to cancel")) is null, "claude persistent first row");
-    Expect(ApprovalPrompts.Find("claude", screen("Quick safety check: Is this a project you created or one you trust?", "❯ No, exit", "  Yes, I trust this folder",
-        "Enter to confirm · Esc to cancel")) is null, "claude trust");
-    Expect(ApprovalPrompts.Find("claude", screen("Do you want to proceed?", "Esc to cancel")) is null, "question without options");
-    Expect(ApprovalPrompts.Find("claude", screen("● The dialog asks: Do you want to proceed?", "  ❯ 1. Yes", "  2. No", "Esc to cancel then pick one")) is null, "quoted question");
-    Expect(ApprovalPrompts.Find("claude", screen("Do you want to proceed?", "❯ 1. Yes", "  2. No", "Esc to cancel", "",
-        "● Done. The build passed.", "", "> Yes", "  ? for shortcuts")) is null, "question in scrollback, output below");
-    Expect(ApprovalPrompts.Find("claude", screen("● Should I go on?", "", "> Yes", "  ? for shortcuts")) is null, "free-text input line");
-
-    string[] cline = screen(" Cline needs permission", " run_commands", "   $ dotnet test", " Approve tool call?", "  [y] Approve  [n] Deny ", "", " Auto-approve all disabled (Shift+Tab)");
-    bool[][] marks(bool approve)
-    {
-        var flags = cline.Select(row => new bool[row.Length]).ToArray();
-        int row = Array.FindIndex(cline, line => line.Contains("[y] Approve")), start = cline[row].IndexOf(approve ? "[y]" : "[n]", StringComparison.Ordinal) - 1;
-        for (int i = start; i < start + (approve ? 13 : 10); i++) flags[row][i] = true;
-        return flags;
-    }
-    Expect(ApprovalPrompts.Find("cline", cline, marks(true)) is { Choice: "Approve" }, "cline approve highlighted");
-    Expect(ApprovalPrompts.Find("cline", cline, marks(false)) is null, "cline: Deny highlighted");
-    Expect(ApprovalPrompts.Find("cline", cline) is null, "cline needs colours");
-    string[] question = screen(" Cline is asking a question", " Run the tests?", "> Yes", "  No", "  Type a response...");
-    Expect(ApprovalPrompts.Find("cline", question, question.Select(row => Enumerable.Repeat(true, row.Length).ToArray()).ToArray()) is null, "cline follow-up question");
 }
