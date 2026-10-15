@@ -107,11 +107,12 @@ public sealed unsafe class ImGuiController : IDisposable
 
     /**
      * The atlas keeps the range pointer until it is cleared, and fonts are rebuilt on DPI changes,
-     * so the ranges live for the process: Latin to Ext-A, punctuation, arrows to Misc Technical,
-     * box drawing through Braille (TUI rules, spinners and dingbats), and U+FFFD.
+     * so the ranges live for the process: Latin through Cyrillic, punctuation, currency and letterlike
+     * symbols to Misc Technical, and box drawing through Braille plus Misc Symbols and Arrows (TUI rules,
+     * spinners, dingbats, stars). Neither face has U+FFFD, so missing glyphs fall back to '?'.
      */
     private static readonly ushort* TerminalRanges = MakeRanges(
-        [0x0020, 0x017F, 0x2000, 0x206F, 0x2190, 0x23FF, 0x2500, 0x28FF, 0xFFFD, 0xFFFD]);
+        [0x0020, 0x052F, 0x2000, 0x206F, 0x20A0, 0x23FF, 0x2500, 0x28FF, 0x2B00, 0x2BFF]);
 
     private static ushort* MakeRanges(ReadOnlySpan<ushort> pairs)
     {
@@ -130,6 +131,8 @@ public sealed unsafe class ImGuiController : IDisposable
         string monoPath = Path.Combine(folder, "consola.ttf"), symbolPath = Path.Combine(folder, "seguisym.ttf");
         if (!File.Exists(monoPath)) { monospace = fonts.AddFontDefault(); return; }
         ImFontConfigPtr config = ImGuiNative.ImFontConfig_ImFontConfig();
+        // Whole-pixel advances keep terminal columns, run text and cell fills on one grid at every DPI scale.
+        config.PixelSnapH = true;
         monospace = fonts.AddFontFromFileTTF(monoPath, fontSize, config, (IntPtr)TerminalRanges);
         if (File.Exists(symbolPath) && CellAdvance(monoPath) is { } advance)
         {

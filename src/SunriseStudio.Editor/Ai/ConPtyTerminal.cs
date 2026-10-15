@@ -99,7 +99,8 @@ internal sealed class ConPtyTerminal : IDisposable
     private void Read()
     {
         var buffer = new byte[16384];
-        var chars = new char[16384];
+        // Bytes carried over from the last read can decode into more chars than this read's bytes.
+        var chars = new char[Encoding.UTF8.GetMaxCharCount(buffer.Length) + 4];
         var decoder = Encoding.UTF8.GetDecoder();
         using var stream = new FileStream(output, FileAccess.Read, 1, false);
         try
@@ -109,7 +110,9 @@ internal sealed class ConPtyTerminal : IDisposable
                 int read = stream.Read(buffer, 0, buffer.Length);
                 if (read <= 0) break;
                 int count = decoder.GetChars(buffer, 0, read, chars, 0);
-                Screen.Feed(chars.AsSpan(0, count));
+                // A parser fault must not kill the reader thread and with it the app.
+                try { Screen.Feed(chars.AsSpan(0, count)); }
+                catch (Exception error) when (error is IndexOutOfRangeException or ArgumentException) { }
                 Changed?.Invoke();
             }
         }
