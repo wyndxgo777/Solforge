@@ -42,6 +42,14 @@ public sealed partial class StudioForm
     private object? aiHoverCandidate, aiLastHover, aiLastSelected;
     private double aiHoverSince;
     private Vector3 aiLastPivot;
+    /** Auto-allow: the engine command the terminal runs, the last match, and when Enter went for it. */
+    private string aiRunEngine = "";
+    private ConPtyTerminal? aiAllowTerminal;
+    private ApprovalPrompt? aiAllowPrompt;
+    private string? aiAllowSeen;
+    private long aiAllowRevision = -1;
+    private double aiAllowSince, aiAllowLast = -10;
+    private int aiAllowSent, aiAllowCount;
 
     /** Shows the AI workspace (Ctrl+Shift+A), or its own window when it is popped out. */
     public void OpenAiWorkspace()
@@ -56,6 +64,7 @@ public sealed partial class StudioForm
     {
         TrackAiAttention();
         PublishAiContext();
+        AutoAllowAi();
         if (!ShortcutInput.Pressed(ShortcutActions.OpenAiWorkspace) || aiShortcutFrame == ShortcutInput.Frame) return;
         aiShortcutFrame = ShortcutInput.Frame;
         OpenAiWorkspace();
@@ -132,8 +141,8 @@ public sealed partial class StudioForm
         if (ImGui.Button("Stop")) aiTerminal.Stop();
         ImGui.EndDisabled();
 
-        // The Context button gives up width so Folders and the status dot still fit beside it.
-        float folders = ButtonWidth("Folders"), dot = ImGui.GetFrameHeight();
+        // The Context button gives up width so Folders, Auto-allow and the status dot still fit beside it.
+        float folders = ButtonWidth("Folders") + spacing + ButtonWidth("Auto-allow"), dot = ImGui.GetFrameHeight();
         float contextRoom = Math.Min(300 * scale, Math.Max(60 * scale, room - folders - dot - 2 * spacing)) - style.FramePadding.X * 2;
         string context = StudioUi.Fit("Context: " + AiContextShort(), contextRoom);
         AiFlow(ref x, ButtonWidth(context) + spacing + folders, room);
@@ -144,7 +153,58 @@ public sealed partial class StudioForm
         if (ImGui.Button("Folders")) ImGui.OpenPopup(AiFoldersPopup);
         StudioUi.Tip("Folders outside the project the engine may read (Claude Code --add-dir).");
         DrawAiFoldersPopup();
+        ImGui.SameLine();
+        DrawAiAutoAllowToggle();
         DrawAiStatus(x, room);
+    }
+
+    /** Auto-allow on/off, sun-filled while on like the Start button. */
+    private void DrawAiAutoAllowToggle()
+    {
+        bool on = settings.AiAutoAllow;
+        if (on)
+        {
+            ImGui.PushStyleColor(ImGuiCol.Button, SolTheme.Sun);
+            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, SolTheme.SunGradStart);
+            ImGui.PushStyleColor(ImGuiCol.ButtonActive, SolTheme.Sun2);
+            ImGui.PushStyleColor(ImGuiCol.Text, SolTheme.AccentInk);
+        }
+        if (ImGui.Button("Auto-allow###ai-auto-allow")) { settings.AiAutoAllow = !on; aiAllowSeen = null; SaveSettings(); }
+        if (on) ImGui.PopStyleColor(4);
+        StudioUi.Tip($"Auto-allow is {(on ? "on" : "off")}. When on, Solforge presses Enter when the engine asks to allow "
+            + "something and the highlighted choice is a one-time Yes/Allow (never \"always allow\", No or trust prompts). "
+            + $"Claude Code, Cline and Antigravity only. Allowed this session: {aiAllowCount}.");
+    }
+
+    /**
+     * Auto-allow, every frame: once the same allow prompt has been on screen for 250 ms, sends Enter the way typed keys
+     * go. If that prompt is still up 1.5 s later (a key the engine dropped, or an identical prompt queued behind it) it
+     * sends again, at most three times; a new or vanished prompt re-arms. The screen is read under its own lock.
+     */
+    private void AutoAllowAi()
+    {
+        if (!settings.AiAutoAllow || aiInstalling is not null || aiTerminal.Terminal is not { HasExited: false } terminal)
+        {
+            aiAllowSeen = null;
+            aiAllowRevision = -1;
+            return;
+        }
+        double now = ImGui.GetTime();
+        var screen = terminal.Screen;
+        if (screen.Revision != aiAllowRevision || !ReferenceEquals(terminal, aiAllowTerminal))
+        {
+            aiAllowTerminal = terminal;
+            aiAllowRevision = screen.Revision;
+            var (rows, marked) = screen.Snapshot();
+            aiAllowPrompt = ApprovalPrompts.Find(aiRunEngine, rows, marked);
+        }
+        string? signature = aiAllowPrompt?.Signature;
+        if (signature != aiAllowSeen) { aiAllowSeen = signature; aiAllowSince = now; aiAllowSent = 0; return; }
+        if (signature is null || now - aiAllowSince < .25 || now - aiAllowLast < .5) return;
+        if (aiAllowSent > 0 && (now - aiAllowLast < 1.5 || aiAllowSent >= 3)) return;
+        terminal.Send("\r");
+        if (aiAllowSent++ == 0) aiAllowCount++;
+        aiAllowLast = now;
     }
 
     /** The full status text right-aligned when it fits; otherwise a coloured dot carrying it as a tooltip. */
@@ -212,6 +272,7 @@ public sealed partial class StudioForm
         ResolveAiEngines(true);
         aiInstalling = null;
         aiInstallNote = null;
+        aiRunEngine = engine.Command;
         var environment = new Dictionary<string, string> { ["PATH"] = aiFreshPath };
         // cmd /k keeps a prompt after the engine exits.
         if (engine.Command.Length == 0) { aiTerminal.Start($"cmd.exe /d /k {command}", folder, 120, 32, environment); return; }

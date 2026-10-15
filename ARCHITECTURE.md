@@ -153,6 +153,8 @@ Real count is 14 libraries (incl. App), not 20.
   tracking; `StudioForm.Ai.Host.cs` = the tool host (UI-thread marshalling via `BeginInvoke`, context snapshot every 250 ms,
   visible list every 1 s, screenshots from `FrameRendered` + `CapturePng`, approvals, AI edits with Undo, mission-script hot reload).
   `AssetViewport.Ai.cs` adds `ScreenOrigin`/`ScreenSize`/`ScreenRect`; `LivePage.Ai.cs` adds `AiState`.
+  The header's Auto-allow toggle (right of Folders, `AiAutoAllow` setting) reads `VtScreen.Snapshot()` each frame and sends ``
+  once per prompt (after 250 ms stable) when `Solforge.Mcp.ApprovalPrompts` sees a claude/agy/cline allow prompt at the bottom with a one-time Yes/Allow highlighted.
 - **Configs:** written when a project is open: `<project>/.mcp.json` (Claude Code), `~/.cline/data/settings/cline_mcp_settings.json`
   (+ the VS Code Cline extension settings if installed), `~/.gemini/antigravity/mcp_config.json` (Antigravity desktop) and
   `~/.gemini/config/mcp_config.json` (the `agy` CLI, which also gets the open folders as `--add-dir`). Each runs the shim with

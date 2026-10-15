@@ -93,6 +93,26 @@ internal sealed class VtScreen(int columns, int rows)
                 new string(line.Where(cell => cell.Char != Continuation).Select(cell => cell.Char).ToArray()).TrimEnd()));
     }
 
+    /**
+     * The visible rows as text, with a flag per character for cells drawn highlighted (a background colour or
+     * inverse), for ApprovalPrompts. Wide characters' right halves are left out of both, so indexes line up.
+     */
+    public (string[] Rows, bool[][] Marked) Snapshot()
+    {
+        lock (Gate)
+        {
+            var rows = new string[lines.Length];
+            var marked = new bool[lines.Length][];
+            for (int row = 0; row < lines.Length; row++)
+            {
+                var cells = lines[row].Where(cell => cell.Char != Continuation).ToArray();
+                rows[row] = new string(cells.Select(cell => cell.Char).ToArray());
+                marked[row] = cells.Select(cell => cell.Background != 0 || cell.Inverse).ToArray();
+            }
+            return (rows, marked);
+        }
+    }
+
     public void Feed(ReadOnlySpan<char> text)
     {
         lock (Gate)

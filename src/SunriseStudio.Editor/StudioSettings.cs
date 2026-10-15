@@ -30,6 +30,8 @@ public sealed class StudioSettings
     /** AI workspace: folders added for the engines by hand, and found folders the user switched off. */
     public List<string> AiFolders { get; set; } = [];
     public List<string> AiHiddenFolders { get; set; } = [];
+    /** AI workspace: press Enter on an engine's allow prompt when its highlighted choice is a one-time Yes/Allow. */
+    public bool AiAutoAllow { get; set; }
     /** Editors shown in their own windows, with each window's screen bounds. */
     public List<StudioPopoutState> Popouts { get; set; } = [];
 
