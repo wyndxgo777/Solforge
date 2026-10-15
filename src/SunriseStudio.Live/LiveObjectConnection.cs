@@ -18,7 +18,7 @@ internal sealed class LiveObjectConnection : IDisposable
     public LiveObjectConnection(int processId)
     {
         this.processId = processId;
-        mapping = MemoryMappedFile.CreateNew(LiveObjectProtocol.MappingName(processId), LiveObjectProtocol.MappingBytes);
+        mapping = MemoryMappedFile.CreateOrOpen(LiveObjectProtocol.MappingName(processId), LiveObjectProtocol.MappingBytes);
         try
         {
             view = mapping.CreateViewAccessor(0, LiveObjectProtocol.MappingBytes, MemoryMappedFileAccess.ReadWrite);

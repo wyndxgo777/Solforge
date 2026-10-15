@@ -17,6 +17,10 @@ public sealed class StudioSettings
     public bool GameShaders { get; set; } = true;
     /** Static objects keep their most detailed level at every distance instead of the game's distance levels. */
     public bool FullDetail { get; set; }
+    /** Memory optimization profile for 16GB RAM systems: bounds texture caches and LOH buffers. */
+    public bool LowMemoryMode { get; set; } = true;
+    /** Suspends viewport rendering while Destiny 2 is running unless attached via Live link. */
+    public bool PauseRenderWhenGameRunning { get; set; } = true;
     public bool ShowSceneTree { get; set; } = true;
     public float SceneTreeWidth { get; set; } = 280;
     public bool ShowSceneCursor { get; set; } = true;

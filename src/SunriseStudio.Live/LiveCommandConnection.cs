@@ -101,7 +101,7 @@ public sealed class LiveCommandConnection : IDisposable
                 {
                     ObjectDisposedException.ThrowIf(disposed, this);
                     cancellationToken.ThrowIfCancellationRequested();
-                    mapping = MemoryMappedFile.CreateNew(LiveCommandProtocol.MappingName(processId), LiveCommandProtocol.MappingBytes);
+                    mapping = MemoryMappedFile.CreateOrOpen(LiveCommandProtocol.MappingName(processId), LiveCommandProtocol.MappingBytes);
                     view = mapping.CreateViewAccessor(0, LiveCommandProtocol.MappingBytes, MemoryMappedFileAccess.ReadWrite);
                     view.Write(4, LiveCommandProtocol.Version);
                     view.Write(8, LiveCommandProtocol.MappingBytes);

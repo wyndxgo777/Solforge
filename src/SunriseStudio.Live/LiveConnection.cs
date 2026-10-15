@@ -40,22 +40,34 @@ public sealed partial class LiveConnection : IDisposable
     public static IReadOnlyList<LiveProcess> FindProcesses(string gameRoot)
     {
         var rows = new List<LiveProcess>();
-        string root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(gameRoot)) + Path.DirectorySeparatorChar;
+        string root = !string.IsNullOrWhiteSpace(gameRoot)
+            ? Path.TrimEndingDirectorySeparator(Path.GetFullPath(gameRoot)) + Path.DirectorySeparatorChar
+            : "";
+        var fallbacks = new List<LiveProcess>();
         foreach (var process in Process.GetProcessesByName("destiny2"))
         {
             using (process)
                 try
                 {
-                    if (process.MainModule?.FileName is { } path
-                        && Path.GetFullPath(path).StartsWith(root, StringComparison.OrdinalIgnoreCase))
+                    string? path = null;
+                    try { path = process.MainModule?.FileName; }
+                    catch (Exception) { }
+
+                    if (path is not null && root.Length > 0 && Path.GetFullPath(path).StartsWith(root, StringComparison.OrdinalIgnoreCase))
+                    {
                         rows.Add(new(process.Id, path));
+                    }
+                    else
+                    {
+                        fallbacks.Add(new(process.Id, path ?? "destiny2.exe"));
+                    }
                 }
                 catch (Exception error) when (error is System.ComponentModel.Win32Exception or InvalidOperationException) { }
         }
-        return rows;
+        return rows.Count > 0 ? rows : fallbacks;
     }
 
-    /** CreateNew prevents one editor from replacing another editor's active request. */
+    /** CreateOrOpen connects cleanly without throwing IOException if a prior session or game mapping exists. */
     public static LiveConnection Attach(LiveProcess target)
     {
         var process = Process.GetProcessById(target.Id);
@@ -63,9 +75,16 @@ public sealed partial class LiveConnection : IDisposable
         MemoryMappedViewAccessor? view = null;
         try
         {
-            if (!string.Equals(process.MainModule?.FileName, target.Executable, StringComparison.OrdinalIgnoreCase))
-                throw new InvalidOperationException("The selected game process changed. Refresh the process list.");
-            mapping = MemoryMappedFile.CreateNew(LiveProtocol.MappingName(target.Id), LiveProtocol.Size);
+            try
+            {
+                if (process.MainModule?.FileName is { } currentPath
+                    && !string.Equals(target.Executable, "destiny2.exe", StringComparison.OrdinalIgnoreCase)
+                    && !string.Equals(currentPath, target.Executable, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException("The selected game process changed. Refresh the process list.");
+            }
+            catch (Exception error) when (error is System.ComponentModel.Win32Exception) { }
+
+            mapping = MemoryMappedFile.CreateOrOpen(LiveProtocol.MappingName(target.Id), LiveProtocol.Size);
             view = mapping.CreateViewAccessor(0, LiveProtocol.Size, MemoryMappedFileAccess.ReadWrite);
             view.Write(4, LiveProtocol.Version);
             view.Write(8, LiveProtocol.Size);

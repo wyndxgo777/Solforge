@@ -879,6 +879,9 @@ public sealed partial class StudioWorkspace : IDisposable
 
     /** Decoded world textures, kept so an edit's reload does not decode them again. */
     private readonly System.Collections.Concurrent.ConcurrentDictionary<uint, TextureData> worldTextures = new();
+    /** Low memory optimization (16GB RAM profile): bounds texture budget and avoids pinning uncompressed pixel buffers in CPU heap. */
+    public bool LowMemoryMode { get; set; } = true;
+    public void TrimTextureCache() { worldTextures.Clear(); }
 
     /** Unsupported shader inputs retain geometry with a completed diagnostic. */
     private NativeScenePlan? PrepareScene(SceneDocument? scene, out string error, bool assetPreview = false)
@@ -888,16 +891,20 @@ public sealed partial class StudioWorkspace : IDisposable
             || !scene.Instances.Any(instance => instance.Mesh.Native is not null)) return null;
         try
         {
+            long textureBudget = LowMemoryMode ? 256L * 1024 * 1024 : NativeScenePlan.DefaultTextureBudgetBytes;
             return AssetViewport.PrepareNativeScene(catalog, scene, OperationToken,
-                ReportProgress, textureBudgetBytes: long.MaxValue, assetPreview: assetPreview,
-                textureCache: assetPreview ? null : worldTextures);
+                ReportProgress, textureBudgetBytes: textureBudget, assetPreview: assetPreview,
+                textureCache: assetPreview || LowMemoryMode ? null : worldTextures);
         }
         catch (Exception failure) when (failure is not OperationCanceledException and not OutOfMemoryException)
         { error = failure.Message; return null; }
     }
 
     private void AdoptNative(NativeScenePlan? plan, SceneDocument? scene)
-    { NativePlan = plan; NativePlanScene = scene; NativeRevision++; }
+    {
+        NativePlan = plan; NativePlanScene = scene; NativeRevision++;
+        if (LowMemoryMode) worldTextures.Clear();
+    }
 
     public void Run(Action action)
     {

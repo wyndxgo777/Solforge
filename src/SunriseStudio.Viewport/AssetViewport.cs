@@ -576,6 +576,13 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
         }
     }
 
+    /** True when rendering is suspended (e.g. Destiny 2 is running in the background) to save GPU/RAM resources. */
+    public bool SuspendRendering { get; set; }
+    /** Reason displayed on the suspended viewport placeholder. */
+    public string SuspendReason { get; set; } = "";
+    /** User override to force 3D viewport rendering even while suspended. */
+    public bool ForceResumeRendering { get; set; }
+
     /** Draw inside an ImGui window after NewFrame and before the host renders ImGui. */
     public void DrawImGui(Vector2 size)
     {
@@ -603,6 +610,11 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
             var imageStart = origin + (size - imageSize) / 2 + imageOffset;
             draw.AddImage(texture.ImGuiId, imageStart, imageStart + imageSize);
         }
+        else if (SuspendRendering && !ForceResumeRendering)
+        {
+            ScreenOrigin = origin; ScreenSize = size;
+            DrawSuspendedBanner(draw, origin, size);
+        }
         else
         {
             simulationSeconds += ImGui.GetIO().DeltaTime;
@@ -617,6 +629,34 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
             DrawViewOverlays(draw, origin, size);
         }
         draw.PopClipRect();
+    }
+
+    private void DrawSuspendedBanner(ImDrawListPtr draw, Vector2 origin, Vector2 size)
+    {
+        string title = "3D Viewport Rendering Suspended";
+        string subtitle = string.IsNullOrEmpty(SuspendReason)
+            ? "Destiny 2 is running. Viewport rendering is suspended to preserve RAM & GPU."
+            : SuspendReason;
+        string detail = "Connect via the Live tab to sync with the active game, or click below to resume rendering.";
+
+        var titleSize = ImGui.CalcTextSize(title);
+        var subtitleSize = ImGui.CalcTextSize(subtitle);
+        var detailSize = ImGui.CalcTextSize(detail);
+
+        float centerY = origin.Y + MathF.Max(20, (size.Y - 140) * 0.5f);
+        draw.AddText(new Vector2(origin.X + MathF.Max(10, (size.X - titleSize.X) * 0.5f), centerY),
+            ImGui.GetColorU32(new Vector4(1f, 0.76f, 0.28f, 1f)), title);
+        draw.AddText(new Vector2(origin.X + MathF.Max(10, (size.X - subtitleSize.X) * 0.5f), centerY + 30),
+            ImGui.GetColorU32(new Vector4(0.85f, 0.88f, 0.92f, 1f)), subtitle);
+        draw.AddText(new Vector2(origin.X + MathF.Max(10, (size.X - detailSize.X) * 0.5f), centerY + 55),
+            ImGui.GetColorU32(new Vector4(0.55f, 0.60f, 0.68f, 1f)), detail);
+
+        float buttonWidth = 200;
+        ImGui.SetCursorScreenPos(new Vector2(origin.X + MathF.Max(10, (size.X - buttonWidth) * 0.5f), centerY + 90));
+        if (ImGui.Button("Resume 3D Viewport##resume-render", new Vector2(buttonWidth, 32)))
+        {
+            ForceResumeRendering = true;
+        }
     }
 
     /** Toolbar controls affect this viewport alone. */

@@ -38,6 +38,8 @@ public sealed partial class StudioForm : Form
     private readonly MissionGraphPage missionGraph = new();
     private readonly LivePage livePage = new();
     private bool missionGraphActive, focusMissionGraph, focusAssets, focusLive, initialMissionScript;
+    private long lastDestiny2CheckTick;
+    private bool destiny2Detected;
     private int documentRevision = -1, assetRevision = -1, smokeFrames;
     private int nativeRevision;
     private int sceneRevision = -1;
@@ -218,9 +220,42 @@ public sealed partial class StudioForm : Form
     {
         if (drawing || nativeDialog || closed || renderer is null || gui is null || viewport is null
             || WindowState == FormWindowState.Minimized) return;
+
+        long tickNow = Environment.TickCount64;
+        if (tickNow - lastDestiny2CheckTick > 1500)
+        {
+            lastDestiny2CheckTick = tickNow;
+            try { destiny2Detected = Process.GetProcessesByName("destiny2").Length > 0; }
+            catch { }
+        }
+
+        bool shouldSuspend = settings.PauseRenderWhenGameRunning && destiny2Detected && !livePage.IsAttached;
+        viewport.SuspendRendering = shouldSuspend;
+        viewport.SuspendReason = destiny2Detected
+            ? "Destiny 2 is running. 3D rendering is suspended to conserve GPU & RAM." : "";
+
+        if (assetViewport is not null)
+        {
+            assetViewport.SuspendRendering = shouldSuspend;
+            assetViewport.SuspendReason = destiny2Detected
+                ? "Destiny 2 is running. 3D rendering is suspended to conserve GPU & RAM." : "";
+        }
+
+        workspace.LowMemoryMode = settings.LowMemoryMode || destiny2Detected || livePage.IsAttached;
+
         // An attached game shares this GPU; Studio draws at most 30 frames a second, and 10 in the background.
-        if (livePage.IsAttached && !options.Smoke
-            && clock.Elapsed.TotalSeconds - lastFrame < (ContainsFocus ? 1 / 30.0 : 1 / 10.0)) return;
+        // When Destiny 2 is running detached, throttle to 15 / 5 FPS to yield resources completely to the game.
+        if (!options.Smoke)
+        {
+            if (livePage.IsAttached)
+            {
+                if (clock.Elapsed.TotalSeconds - lastFrame < (ContainsFocus ? 1 / 30.0 : 1 / 10.0)) return;
+            }
+            else if (shouldSuspend)
+            {
+                if (clock.Elapsed.TotalSeconds - lastFrame < (ContainsFocus ? 1 / 15.0 : 1 / 5.0)) return;
+            }
+        }
         drawing = true;
         long profileStart = Stopwatch.GetTimestamp();
         long profileBytes = options.ProfileFrames is null ? 0 : GC.GetAllocatedBytesForCurrentThread();
@@ -234,7 +269,7 @@ public sealed partial class StudioForm : Form
             AdoptDocument();
             AdoptPlacementUpdates();
             PollCollisionLayer();
-            livePage.Poll(workspace, viewport);
+            livePage.Poll(workspace, viewport!);
             PollStartup();
             RefreshWorldLabels();
             PrepareMissionRows();

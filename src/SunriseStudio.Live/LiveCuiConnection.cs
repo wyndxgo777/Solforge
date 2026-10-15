@@ -33,7 +33,7 @@ internal sealed class LiveCuiConnection : IDisposable
     /** Creates the mapping; the magic is written last, after the header. */
     public LiveCuiConnection(int processId)
     {
-        mapping = MemoryMappedFile.CreateNew(LiveCuiProtocol.MappingName(processId), LiveCuiProtocol.MappingBytes);
+        mapping = MemoryMappedFile.CreateOrOpen(LiveCuiProtocol.MappingName(processId), LiveCuiProtocol.MappingBytes);
         try
         {
             view = mapping.CreateViewAccessor(0, LiveCuiProtocol.MappingBytes, MemoryMappedFileAccess.ReadWrite);

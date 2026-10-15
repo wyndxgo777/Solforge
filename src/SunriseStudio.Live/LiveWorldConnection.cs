@@ -19,7 +19,7 @@ internal sealed class LiveWorldConnection : IDisposable
     /** Creates the mapping; the magic is written last, after the header. */
     public LiveWorldConnection(int processId)
     {
-        mapping = MemoryMappedFile.CreateNew(LiveWorldProtocol.MappingName(processId), LiveWorldProtocol.MappingBytes);
+        mapping = MemoryMappedFile.CreateOrOpen(LiveWorldProtocol.MappingName(processId), LiveWorldProtocol.MappingBytes);
         try
         {
             view = mapping.CreateViewAccessor(0, LiveWorldProtocol.MappingBytes, MemoryMappedFileAccess.ReadWrite);

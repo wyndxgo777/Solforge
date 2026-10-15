@@ -21,7 +21,7 @@ internal sealed class LivePoseConnection : IDisposable
     /** Creates the mapping; the magic is written last, after the header. */
     public LivePoseConnection(int processId)
     {
-        mapping = MemoryMappedFile.CreateNew(LivePoseProtocol.MappingName(processId), LivePoseProtocol.MappingBytes);
+        mapping = MemoryMappedFile.CreateOrOpen(LivePoseProtocol.MappingName(processId), LivePoseProtocol.MappingBytes);
         try
         {
             view = mapping.CreateViewAccessor(); view.Write(4, LivePoseProtocol.Version);

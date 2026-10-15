@@ -325,7 +325,7 @@ public sealed partial class LivePage : IDisposable
         followedViewport.Camera.ClearExternalPose(); followedViewport.Camera.PivotFollowed = false; followedViewport = null;
     }
 
-    private void Disconnect()
+    private void Disconnect(StudioWorkspace? workspace = null)
     {
         StopAnimation();
         poseViewport = null; poseBindings.Clear(); poseErrors.Clear();
@@ -342,6 +342,8 @@ public sealed partial class LivePage : IDisposable
         connection?.Dispose(); connection = null; snapshot = null; status = "";
         syncStatus = "";
         ResetCui();
+        workspace?.TrimTextureCache();
+        GC.Collect(1, GCCollectionMode.Optimized);
     }
 
     /**
@@ -393,6 +395,11 @@ public sealed partial class LivePage : IDisposable
             if (sameWorld) workspace.ReloadWorld(options);
             else if (scenario == 0) workspace.OpenMap(mapTag, options);
             else workspace.OpenMission(mapTag, scenario, options);
+            if (workspace.LowMemoryMode)
+            {
+                workspace.TrimTextureCache();
+                GC.Collect(1, GCCollectionMode.Optimized);
+            }
         });
     }
 
