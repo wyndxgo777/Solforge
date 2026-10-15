@@ -1,0 +1,293 @@
+{
+  "source": "sol/08-docs/Studio.md §4",
+  "status_values": {
+    "done": "complete",
+    "partial": "started in Solforge",
+    "upstream_partial": "upstream Sunrise Studio already has part of it",
+    "todo": "not started"
+  },
+  "phases": [
+    {
+      "id": "00",
+      "title": "Repository, Upstream Pin & Product Contract",
+      "status": "partial",
+      "notes": "Fork, subtree, UPSTREAM.md, ARCHITECTURE.md, todo.json done; clean baseline build + archived log pending (main session builds)"
+    },
+    {
+      "id": "01",
+      "title": "License, Provenance & Repository Hygiene",
+      "status": "todo",
+      "notes": "Pending"
+    },
+    {
+      "id": "02",
+      "title": "Baseline Build & Continuous Integration",
+      "status": "todo"
+    },
+    {
+      "id": "03",
+      "title": "Product Identity & Application Shell",
+      "status": "todo"
+    },
+    {
+      "id": "04",
+      "title": "Checker Phase: Baseline Architecture Audit",
+      "status": "todo"
+    },
+    {
+      "id": "05",
+      "title": "Package Header Parsing & VFS Architecture",
+      "status": "upstream_partial",
+      "notes": "Packages: PackageFile header/entries, PackageCatalog + disk cache; no memory-mapped indexer"
+    },
+    {
+      "id": "06",
+      "title": "Block Decompression & Oodle Integration",
+      "status": "upstream_partial",
+      "notes": "OodleDecoder loads oo2core_3_win64.dll from the game install"
+    },
+    {
+      "id": "07",
+      "title": "Tag Deserialization & Structural Memory Mapping",
+      "status": "upstream_partial",
+      "notes": "Formats.TagReader and typed readers"
+    },
+    {
+      "id": "08",
+      "title": "Package Entry Table Modification & Block Writing",
+      "status": "upstream_partial",
+      "notes": "Packages.PackageWriter, StringBankWriter"
+    },
+    {
+      "id": "09",
+      "title": "Checker Phase: Package & File System Engine Audit",
+      "status": "todo"
+    },
+    {
+      "id": "10",
+      "title": "Direct3D Viewport Pipeline",
+      "status": "upstream_partial",
+      "notes": "Rendering: D3D11 via Vortice (no D3D12)"
+    },
+    {
+      "id": "11",
+      "title": "Mesh Decoding & Vertex Buffers",
+      "status": "upstream_partial",
+      "notes": "Scene: StaticMeshDecoder, EntityMeshDecoder, TerrainDecoder"
+    },
+    {
+      "id": "12",
+      "title": "Shader & Material Pipeline",
+      "status": "upstream_partial",
+      "notes": "Rendering game shaders, NativeRenderStates86657.json, MaterialInspector"
+    },
+    {
+      "id": "13",
+      "title": "Object Picking, Transform Gizmos & Selection",
+      "status": "upstream_partial",
+      "notes": "Viewport selection, gizmos, shortcuts"
+    },
+    {
+      "id": "14",
+      "title": "Checker Phase: Viewport & Geometry Pipeline Audit",
+      "status": "todo"
+    },
+    {
+      "id": "15",
+      "title": "Project System & Workspace Architecture",
+      "status": "upstream_partial",
+      "notes": "Projects: sunrise.project.json (spec says .solproj)"
+    },
+    {
+      "id": "16",
+      "title": "Non-Destructive Delta Overlay Engine",
+      "status": "upstream_partial",
+      "notes": "Projects: BinaryDelta, ObjectEdits, transactions"
+    },
+    {
+      "id": "17",
+      "title": "Asset Interchange & Export",
+      "status": "upstream_partial",
+      "notes": "glTF/OBJ/DDS/PNG interchange + Blender bundles"
+    },
+    {
+      "id": "18",
+      "title": "Dependency Resolution & Packaging Rules",
+      "status": "upstream_partial",
+      "notes": "ProjectBuilder native/socket dependencies"
+    },
+    {
+      "id": "19",
+      "title": "Checker Phase: Project & Overlay Engine Audit",
+      "status": "todo"
+    },
+    {
+      "id": "20",
+      "title": "Parhelion Source Audit & Domain Extraction",
+      "status": "todo"
+    },
+    {
+      "id": "21",
+      "title": "Weapon Recipe DSL & Schema Implementation",
+      "status": "todo"
+    },
+    {
+      "id": "22",
+      "title": "Weapon Workbench UI & 3D Weapon Preview",
+      "status": "upstream_partial",
+      "notes": "Editor/Creation ExoticWeaponWorkflow + Authoring Weapon* compilers; no Parhelion"
+    },
+    {
+      "id": "23",
+      "title": "Weapon Stat & Recoil Sandbox Engine",
+      "status": "todo"
+    },
+    {
+      "id": "24",
+      "title": "Checker Phase: Weapon Workbench Audit",
+      "status": "todo"
+    },
+    {
+      "id": "25",
+      "title": "Custom Perk Architecture & Schema",
+      "status": "todo"
+    },
+    {
+      "id": "26",
+      "title": "Visual Perk Node Graph Editor",
+      "status": "upstream_partial",
+      "notes": "Formats NativePerkBehavior graph + PerkBehaviorWorkflow"
+    },
+    {
+      "id": "27",
+      "title": "Perk Compiler & Bytecode Generator",
+      "status": "todo"
+    },
+    {
+      "id": "28",
+      "title": "Sandbox Limit & Balance Guard",
+      "status": "todo"
+    },
+    {
+      "id": "29",
+      "title": "Checker Phase: Perk Engine & Balance Audit",
+      "status": "todo"
+    },
+    {
+      "id": "30",
+      "title": "Lua 5.3 Code Editor & Language Server",
+      "status": "todo"
+    },
+    {
+      "id": "31",
+      "title": "Visual Mission Graph Canvas",
+      "status": "upstream_partial",
+      "notes": "Missions MissionScriptGraph"
+    },
+    {
+      "id": "32",
+      "title": "Bi-directional Graph-to-Lua AST Engine",
+      "status": "upstream_partial",
+      "notes": "Missions LuaScript.Convert (Loretta, Lua54 options)"
+    },
+    {
+      "id": "33",
+      "title": "Tiger Mission Script Runtime Rules Enforcement",
+      "status": "todo"
+    },
+    {
+      "id": "34",
+      "title": "Checker Phase: Mission Scripting Engine Audit",
+      "status": "todo"
+    },
+    {
+      "id": "35",
+      "title": "Destiny Destination & World Editor",
+      "status": "todo"
+    },
+    {
+      "id": "36",
+      "title": "Activity, Strike & Raid Director",
+      "status": "upstream_partial",
+      "notes": "Investment/vendor editors only; no encounter director"
+    },
+    {
+      "id": "37",
+      "title": "Combatant, AI & Encounter Builder",
+      "status": "todo"
+    },
+    {
+      "id": "38",
+      "title": "Seasonal Artifact & Progression Studio",
+      "status": "todo"
+    },
+    {
+      "id": "39",
+      "title": "Checker Phase: Structured Content Systems Audit",
+      "status": "todo"
+    },
+    {
+      "id": "40",
+      "title": "The `solc` Mod Compiler Pipeline",
+      "status": "todo"
+    },
+    {
+      "id": "41",
+      "title": "Package Limit Enforcer & Sharder",
+      "status": "todo"
+    },
+    {
+      "id": "42",
+      "title": "Mod Container Packaging (`.solmod`)",
+      "status": "todo"
+    },
+    {
+      "id": "43",
+      "title": "Install, Backup & Rollback Manager",
+      "status": "upstream_partial",
+      "notes": "Projects ModInstaller (mods under bin/x64/Sunrise/mods); no rollback snapshots"
+    },
+    {
+      "id": "44",
+      "title": "Checker Phase: Compiler & Packaging Audit",
+      "status": "todo"
+    },
+    {
+      "id": "45",
+      "title": "Live Runtime Bridge (`Solforge.Live`)",
+      "status": "upstream_partial",
+      "notes": "Live over shared memory, not TCP 30978"
+    },
+    {
+      "id": "46",
+      "title": "Live Memory Inspector & Telemetry HUD",
+      "status": "todo"
+    },
+    {
+      "id": "47",
+      "title": "Hot-Reload & Remote Command Dispatcher",
+      "status": "upstream_partial",
+      "notes": "Live command channel reloads mission bindings"
+    },
+    {
+      "id": "47B",
+      "title": "AI CLI Vibecoding Integration (Cline, Claude Code, Antigravity)",
+      "status": "todo"
+    },
+    {
+      "id": "48",
+      "title": "Comprehensive Automated Test Suite",
+      "status": "todo"
+    },
+    {
+      "id": "49",
+      "title": "Documentation, Starter Templates & Creator Manual",
+      "status": "todo"
+    },
+    {
+      "id": "50",
+      "title": "Final Product Release 1.0 Milestone",
+      "status": "todo"
+    }
+  ]
+}
