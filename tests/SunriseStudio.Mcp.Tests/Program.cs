@@ -296,7 +296,7 @@ void ClaudeLaunch()
     Expect(EngineLaunch.AgyArguments([]).Length == 0, "agy without folders");
 }
 
-static void ResumeSessions()
+void ResumeSessions()
 {
     string home = Path.Combine(scratch, "resume home");
     string folder = @"C:\Users\Seth\Desktop\sol\09-solforge\publish", other = @"C:\Other";
