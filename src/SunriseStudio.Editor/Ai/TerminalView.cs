@@ -13,6 +13,8 @@ internal sealed class TerminalView : IDisposable
 {
     private readonly Queue<char> typed = new();
     private int scroll;
+    /** Measured once per frame to get the font's fractional advance; CalcTextSize rounds one "M" up to a whole pixel. */
+    private static readonly string Ruler = new('M', 256);
 
     public ConPtyTerminal? Terminal { get; private set; }
     public bool Focused { get; private set; }
@@ -61,7 +63,9 @@ internal sealed class TerminalView : IDisposable
             return;
         }
         ImGui.PushFont(font);
-        var cell = ImGui.CalcTextSize("M");
+        // AddText advances each glyph by the font's unrounded advance, so the grid must use the same pitch or a long
+        // run drifts off its backgrounds, the cursor and the next colour run. Rows get a whole-pixel pitch.
+        var cell = new Vector2(ImGui.CalcTextSize(Ruler).X / Ruler.Length, MathF.Ceiling(ImGui.CalcTextSize("M").Y));
         float fontSize = ImGui.GetFontSize();
         ImGui.PopFont();
         int columns = Math.Max(20, (int)((size.X - 8) / cell.X)), rows = Math.Max(5, (int)((size.Y - 8) / cell.Y));
@@ -71,7 +75,7 @@ internal sealed class TerminalView : IDisposable
         lock (screen.Gate)
         {
             scroll = Math.Min(scroll, screen.Scrollback.Count);
-            var start = origin + new Vector2(4);
+            var start = new Vector2(MathF.Floor(origin.X + 4), MathF.Floor(origin.Y + 4));
             for (int row = 0; row < screen.Rows; row++)
             {
                 int source = row - scroll;
@@ -85,7 +89,12 @@ internal sealed class TerminalView : IDisposable
             }
         }
         if (terminal.HasExited)
-            draw.AddText(origin + new Vector2(8, size.Y - cell.Y - 6), SolTheme.U32(SolTheme.Sun), "[process exited - press Restart]");
+        {
+            // Sits on the last grid row over a cleared band rather than overprinting that row's text.
+            var at = new Vector2(MathF.Floor(origin.X + 4), MathF.Floor(origin.Y + 4) + (rows - 1) * cell.Y);
+            draw.AddRectFilled(at, at + new Vector2(columns * cell.X, cell.Y), SolTheme.U32(SolTheme.Bg));
+            draw.AddText(at + new Vector2(4, 0), SolTheme.U32(SolTheme.Sun), "[process exited - press Restart]");
+        }
         if (!Focused) draw.AddRect(origin, origin + size, SolTheme.U32(SolTheme.Line));
         else draw.AddRect(origin, origin + size, SolTheme.U32(SolTheme.Sun) & 0x80FFFFFF);
     }
@@ -100,10 +109,12 @@ internal sealed class TerminalView : IDisposable
             var first = line[x];
             uint fg = first.Inverse ? Abgr(first.Background, SolTheme.U32(SolTheme.Bg)) : Abgr(first.Foreground, defaultText);
             uint bg = first.Inverse ? Abgr(first.Foreground, defaultText) : Abgr(first.Background, 0);
+            if (first.Dim) fg = Fade(fg, bg != 0 ? bg : SolTheme.U32(SolTheme.Bg));
             int end = x;
             run.Clear();
             while (end < line.Length && line[end].Foreground == first.Foreground && line[end].Background == first.Background
-                && line[end].Inverse == first.Inverse)
+                && line[end].Inverse == first.Inverse && line[end].Dim == first.Dim && line[end].Underline == first.Underline
+                && line[end].Strike == first.Strike)
             {
                 // Glyphs are one cell wide, so the right half of a wide character pads with a space.
                 char c = line[end++].Char;
@@ -113,8 +124,20 @@ internal sealed class TerminalView : IDisposable
             if (bg != 0) draw.AddRectFilled(from, from + new Vector2((end - x) * cell.X, cell.Y), bg);
             string text = run.ToString();
             if (text.AsSpan().TrimEnd(' ').Length > 0) draw.AddText(font, fontSize, from, fg, text);
+            float width = (end - x) * cell.X;
+            if (first.Underline) draw.AddLine(from + new Vector2(0, cell.Y - 1.5f), from + new Vector2(width, cell.Y - 1.5f), fg);
+            if (first.Strike) draw.AddLine(from + new Vector2(0, MathF.Floor(cell.Y / 2) + .5f), from + new Vector2(width, MathF.Floor(cell.Y / 2) + .5f), fg);
             x = end;
         }
+    }
+
+    /** Halfway from one 0xAABBGGRR colour to another, for faint (SGR 2) text. */
+    private static uint Fade(uint color, uint toward)
+    {
+        uint mix = 0xFF000000;
+        for (int shift = 0; shift < 24; shift += 8)
+            mix |= (((color >> shift) & 0xFF) + ((toward >> shift) & 0xFF)) / 2 << shift;
+        return mix;
     }
 
     /** 0xAARRGGBB (0 = fallback) to ImGui's 0xAABBGGRR. */
