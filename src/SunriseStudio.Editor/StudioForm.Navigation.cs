@@ -21,12 +21,13 @@ public sealed partial class StudioForm
     private void NavigateBack() { if (workspace.CanNavigateBack) workspace.Run(workspace.NavigateBack); }
     private void NavigateForward() { if (workspace.CanNavigateForward) workspace.Run(workspace.NavigateForward); }
 
-    private void DrawNavigationButtons()
+    /** @param top The toolbar's control top; SameLine alone would put Forward on the logo's top. */
+    private void DrawNavigationButtons(float top)
     {
         ImGui.BeginDisabled(!workspace.CanNavigateBack);
         string back = ShortcutInput.Text(ShortcutActions.NavigateBack);
         if (ImGuiIcons.Button("navigate-back", StudioIcon.Back, back.Length == 0 ? "Back" : $"Back ({back})")) NavigateBack();
-        ImGui.EndDisabled(); ImGui.SameLine();
+        ImGui.EndDisabled(); ImGui.SameLine(); ImGui.SetCursorPosY(top);
         ImGui.BeginDisabled(!workspace.CanNavigateForward);
         string forward = ShortcutInput.Text(ShortcutActions.NavigateForward);
         if (ImGuiIcons.Button("navigate-forward", StudioIcon.Forward, forward.Length == 0 ? "Forward" : $"Forward ({forward})"))

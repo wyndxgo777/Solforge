@@ -174,15 +174,18 @@ public sealed partial class StudioForm
         ImGui.TextDisabled(StudioVersion.Text);
         if (ImGui.IsItemHovered()) ImGui.SetTooltip(AboutCredit);
         float brandEnd = ImGui.GetItemRectMax().X - ImGui.GetWindowPos().X;
+        // SameLine returns to the top of the line's first item (the taller logo), so every control below sets its own
+        // top on the toolbar's centre line; text aligns to the frame padding from there.
+        float top = (height - ImGui.GetFrameHeight()) / 2;
         ImGui.SameLine(brandEnd + 16 * scale);
-        ImGui.SetCursorPosY((height - ImGui.GetFrameHeight()) / 2);
-        DrawNavigationButtons();
+        ImGui.SetCursorPosY(top);
+        DrawNavigationButtons(top);
         float navigationEnd = ImGui.GetItemRectMax().X - ImGui.GetWindowPos().X;
         ImGui.SameLine(MathF.Max(230 * scale, navigationEnd + 16 * scale));
-        ImGui.SetCursorPosY((height - ImGui.GetFrameHeight()) / 2);
+        ImGui.SetCursorPosY(top);
         ImGui.AlignTextToFramePadding();
         ImGui.TextUnformatted(workspace.Project?.Name ?? "View only");
-        ImGui.SameLine();
+        ToolbarNext(top);
         if (workspace.Project is null)
         {
             if (ImGuiIcons.Button("tb-new", StudioIcon.Plus, "New project")) projectDialog = true;
@@ -191,18 +194,18 @@ public sealed partial class StudioForm
         {
             ImGui.BeginDisabled(!workspace.CanEdit);
             if (ImGuiIcons.Button("tb-add", StudioIcon.Plus, "Add asset")) addDialog = true;
-            ImGui.SameLine();
+            ToolbarNext(top);
             string build = ShortcutInput.Text(ShortcutActions.BuildPackages);
             // Solforge: the primary action uses the sun-grad button (SolTheme).
             if (SolTheme.PrimaryButton("Build##tb-build")) workspace.Run(() => workspace.Build());
             StudioUi.Tip(build.Length == 0 ? "Build packages" : $"Build packages ({build})");
             ImGui.EndDisabled();
         }
-        ImGui.SameLine();
+        ToolbarNext(top);
         bool shading = settings.GameShaders;
         if (ImGuiIcons.Toggle("tb-shaders", StudioIcon.Shader, "Game shaders", ref shading))
         { settings.GameShaders = shading; PrepareGameShaders(); }
-        ImGui.SameLine();
+        ToolbarNext(top);
         bool fullDetail = settings.FullDetail;
         if (ImGuiIcons.Toggle("tb-detail", StudioIcon.Detail,
             "Full detail: draw static objects at full detail at every distance, with no far cull.\nOff switches detail and culls with distance, as the game does.",
@@ -212,7 +215,7 @@ public sealed partial class StudioForm
             if (viewport is not null) viewport.FullDetail = fullDetail;
             if (assetViewport is not null) assetViewport.FullDetail = fullDetail;
         }
-        ImGui.SameLine();
+        ToolbarNext(top);
         ImGui.BeginDisabled(!settings.GameShaders);
         int lighting = Math.Clamp((int)settings.LightingMode, 0, LightingNames.Length - 1);
         // The preview names the setting so a bare "Studio" doesn't read as the app or layout name.
@@ -233,8 +236,15 @@ public sealed partial class StudioForm
             ? "Lighting: atmosphere preview\nLocal probes and shadows are not drawn"
             : "Lighting: editor lights with game materials");
         ImGui.EndDisabled();
-        if (workspace.IsBusy) { ImGui.SameLine(); ImGui.AlignTextToFramePadding(); ImGui.TextDisabled("Working"); }
+        if (workspace.IsBusy) { ToolbarNext(top); ImGui.AlignTextToFramePadding(); ImGui.TextDisabled("Working"); }
         ImGui.End();
+    }
+
+    /** The next toolbar control on this row, its top on the centre line. */
+    private static void ToolbarNext(float top)
+    {
+        ImGui.SameLine();
+        ImGui.SetCursorPosY(top);
     }
 
     private static readonly string[] LightingNames = ["Studio", "Sky", "Ambient"];
