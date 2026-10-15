@@ -46,7 +46,8 @@
     {
       "id": "04",
       "title": "Checker Phase: Baseline Architecture Audit",
-      "status": "todo"
+      "status": "done",
+      "notes": "tests/SunriseStudio.Architecture.Tests (first entry in verify.ps1 $studioChecks, so CI runs it): git ls-files audit for game data (ignored-but-tracked, extensions/names/dirs, header sniff for .pkg/BKHD/AKPK/BIK), build network audit (csproj/props/targets Exec/DownloadFile/URLs/floating versions, nuget.config feeds, build/publish.ps1 downloads), ProjectReference DAG check over src+tests; skips cleanly outside a git checkout"
     },
     {
       "id": "05",

@@ -38,6 +38,8 @@ if ($Game -and -not $SkipBuild) {
 
 # Each check program and its target framework, in run order.
 $studioChecks = [ordered]@{
+    # Solforge Phase 04: the checkout audit runs first and needs no installation.
+    'Architecture.Tests' = 'net9.0'
     'Projects.Tests' = 'net9.0'; 'Formats.Tests' = 'net9.0'; 'Missions.Tests' = 'net9.0'; 'Cui.Tests' = 'net9.0'
     'Cui.Gpu.Tests' = 'net9.0-windows'; 'Investment.Tests' = 'net9.0-windows'; 'Live.Tests' = 'net9.0-windows'
     'LiveBinding.Tests' = 'net9.0-windows'; 'LivePose.Tests' = 'net9.0-windows'; 'Audio.Tests' = 'net9.0-windows'
