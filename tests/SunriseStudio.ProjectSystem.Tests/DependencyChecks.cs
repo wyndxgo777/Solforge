@@ -51,6 +51,23 @@ internal static class DependencyChecks
             "A deleted added-asset file was not reported.");
         checks.Add("a missing added-asset file shows in the dependency manifest");
 
+        // A native link names the kind of child it needs: a texture header its payload, a sound event its bank.
+        var typed = StudioProject.Create(Path.Combine(root, "typed-project"), "Typed dependency fixture");
+        ushort typedPackage = PackageIdAllocator.For(catalog, typed).Allocate();
+        uint missingPayload = Fixture.Tag(998), missingBank = Fixture.Tag(997);
+        typed.AddAsset("fixture:texture", new byte[40],
+            new NativeAssetMetadata(typedPackage, missingPayload, (32u << 9) | (1u << 6), "fixture:texture", 0));
+        byte[] soundEvent = new byte[0x18];
+        BinaryPrimitives.WriteUInt32LittleEndian(soundEvent.AsSpan(0x14), missingBank);
+        typed.AddAsset("fixture:event", soundEvent, new NativeAssetMetadata(typedPackage, 0x80809802, 0x100A, "fixture:event", 1));
+        var kinds = DependencyCrawler.Crawl(typed, catalog);
+        Require(kinds.Issues.Any(item => item.Kind == DependencyIssueKind.MissingReference && item.TargetTag == missingPayload
+            && item.Category == "Texture"), "A missing texture payload was not reported as a Texture.");
+        Require(kinds.Issues.Count(item => item.TargetTag == missingBank) == 1 && kinds.Issues.Any(item =>
+            item.Kind == DependencyIssueKind.MissingReference && item.TargetTag == missingBank && item.Category == "Audio"),
+            "A missing sound bank was not reported once as Audio.");
+        checks.Add("missing texture payloads and sound banks are reported with their kind");
+
         var pool = new PackageIdAllocator([0x100, 0x101, 0x103, 0x0FF, 0xD00]);
         Require(pool.Allocate() == 0x102 && pool.Allocate() == 0x104, "The allocator did not take the lowest free ids.");
         Require(!pool.TryReserve(0x0FF) && !pool.TryReserve(0xD00) && !pool.TryReserve(0x103) && pool.TryReserve(0xCFF),

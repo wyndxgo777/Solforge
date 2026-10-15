@@ -93,7 +93,7 @@ internal static class IntegrityChecks
         var result = new SortedDictionary<string, string>(StringComparer.Ordinal);
         foreach (string file in Directory.EnumerateFiles(folder, "*", SearchOption.AllDirectories))
         {
-            string relative = Path.GetRelativePath(folder, file).Replace('\', '/');
+            string relative = Path.GetRelativePath(folder, file).Replace('\\', '/');
             if (ProjectWatcher.IgnoredRootFolders.Contains(relative.Split('/')[0], StringComparer.OrdinalIgnoreCase)) continue;
             result[relative] = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(file)));
         }

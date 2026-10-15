@@ -81,6 +81,7 @@ public static class AudioStemExport
         BinaryPrimitives.WriteUInt16LittleEndian(header.AsSpan(34), 16);
         "data"u8.CopyTo(header.AsSpan(36));
         BinaryPrimitives.WriteInt32LittleEndian(header.AsSpan(40), wave.Samples.Length);
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
         string temporary = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
         try
         {

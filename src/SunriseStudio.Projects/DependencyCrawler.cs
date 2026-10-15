@@ -6,10 +6,14 @@ namespace SunriseStudio.Projects;
 
 public enum DependencyIssueKind { MissingReference, InvalidNativeReference, MissingProjectFile }
 
-/** A problem the build would ship; Category is Texture, Audio, Script, ... from AssetCategories when known. */
+/**
+ * A problem the build would ship. Category is the AssetCategories kind of the missing or invalid child
+ * (Texture, Audio, Buffer, ...) when a native link names it; a bare structured-tag word that resolves
+ * nowhere has no known kind and is "Unknown". MissingProjectFile carries the authored tag's own kind.
+ */
 public sealed record DependencyIssue(DependencyIssueKind Kind, uint FromTag, uint? TargetTag, string Category, string Message);
 
-/** An authored tag (changed or added) and the child tags its bytes reference. */
+/** An authored tag the build ships (changed, object edit, config, added, generated) and the children its bytes reference. */
 public sealed record DependencyNode(uint Tag, string Source, string Category, IReadOnlyList<uint> References);
 
 /** The dependency manifest of a project: every authored tag, its children and what is missing. */
@@ -47,7 +51,12 @@ public static class DependencyCrawler
     {
         ArgumentNullException.ThrowIfNull(project);
         ArgumentNullException.ThrowIfNull(catalog);
+        // The same tag set and bytes ProjectBuilder.Build ships: raw changes, compiled object edits,
+        // config bindings, added native assets and generated object assets.
+        var objects = project.CompileObjectEdits(catalog, build: true);
+        var config = project.CompileConfigBindings(catalog);
         var added = new Dictionary<uint, (AddedProjectAsset Asset, PackageEntry Entry)>();
+        var generated = new Dictionary<uint, (GeneratedObjectAsset Asset, PackageEntry Entry)>();
         var projectPackages = new HashSet<ushort>();
         foreach (var asset in project.AddedAssets)
         {
@@ -55,11 +64,15 @@ public static class DependencyCrawler
             projectPackages.Add(native.PackageId);
             if (native.EntryIndex is not int index) continue;
             uint tag = TagOf(native.PackageId, index);
-            added[tag] = (asset, new(tag, native.Reference, (int)((native.TypeInfo >> 9) & 127), (int)((native.TypeInfo >> 6) & 7),
-                (int)Math.Min(asset.Size, int.MaxValue), $"w64_sunrise_{native.PackageId:x4}_0", native.PackageId, index)
-                { TypeInfo = native.TypeInfo });
+            added[tag] = (asset, NativeEntry(tag, native, index, asset.Size));
+        }
+        foreach (var asset in objects.GeneratedAssets)
+        {
+            projectPackages.Add(asset.Native.PackageId);
+            generated[asset.TagHash] = (asset, NativeEntry(asset.TagHash, asset.Native, asset.Native.EntryIndex!.Value, asset.Data.Length));
         }
         PackageEntry? Resolve(uint tag) => added.TryGetValue(tag, out var own) ? own.Entry
+            : generated.TryGetValue(tag, out var derived) ? derived.Entry
             : catalog.TryGetEntry(tag, out var entry) ? entry : null;
 
         var nodes = new List<DependencyNode>();
@@ -76,10 +89,20 @@ public static class DependencyCrawler
                 return;
             }
             var references = new SortedSet<uint>();
+            uint? reported = null;
             try
             {
                 foreach (uint target in PackageNativeDependencies.Read(catalog, tag, entry.Reference, entry.TypeInfo, data, Resolve))
                     references.Add(target);
+            }
+            catch (NativeDependencyException error)
+            {
+                bool absent = Resolve(error.Target) is null;
+                reported = error.Target;
+                issues.Add(new(absent ? DependencyIssueKind.MissingReference : DependencyIssueKind.InvalidNativeReference,
+                    tag, error.Target, error.ExpectedCategory, absent
+                        ? $"{tag:X8} needs {error.Target:X8} as its {error.Role} ({error.ExpectedCategory}), which neither the installation nor the project holds."
+                        : error.Message));
             }
             catch (InvalidDataException error)
             {
@@ -89,7 +112,7 @@ public static class DependencyCrawler
                 for (int offset = 0; offset + 4 <= data.Length; offset += 4)
                 {
                     uint word = BinaryPrimitives.ReadUInt32LittleEndian(data.AsSpan(offset));
-                    if (word == tag || word - TagBase >= TagSpan) continue;
+                    if (word == tag || word == reported || word - TagBase >= TagSpan) continue;
                     ushort package = (ushort)((word - TagBase) >> 13);
                     if (!catalog.ContainsInstalledPackage(package) && !projectPackages.Contains(package)) continue;
                     if (Resolve(word) is null)
@@ -103,20 +126,30 @@ public static class DependencyCrawler
             nodes.Add(new(tag, source, category, references.ToArray()));
         }
 
-        foreach (var change in project.Changes.OrderBy(change => change.TagHash))
+        foreach (uint tag in project.Changes.Select(change => change.TagHash).Union(objects.Assets.Keys)
+            .Union(config.Assets.Keys).Where(tag => !added.ContainsKey(tag)).Order())
         {
-            uint tag = change.TagHash;
             if (!catalog.TryGetEntry(tag, out var entry))
             {
-                issues.Add(new(DependencyIssueKind.MissingReference, tag, tag, "Unknown", $"Changed tag {tag:X8} is not in the installation."));
+                issues.Add(new(DependencyIssueKind.MissingReference, tag, tag, "Unknown", $"Authored tag {tag:X8} is not in the installation."));
                 continue;
             }
-            Visit(tag, "changed", entry, () => project.ReadAsset(tag, catalog));
+            string source = config.Assets.ContainsKey(tag) ? "config" : objects.Assets.ContainsKey(tag) ? "object edit" : "changed";
+            Visit(tag, source, entry, () => config.Assets.TryGetValue(tag, out var configured) ? configured
+                : objects.Assets.TryGetValue(tag, out var compiled) ? compiled.ToArray() : project.ReadAsset(tag, catalog));
         }
         foreach (var (tag, (asset, entry)) in added.OrderBy(pair => pair.Key))
-            Visit(tag, "added", entry, () => project.ReadAddedAsset(asset.Id, catalog));
+            Visit(tag, "added", entry, () => config.Assets.TryGetValue(tag, out var configured)
+                ? configured : project.ReadAddedAsset(asset.Id, catalog));
+        foreach (var (tag, (asset, entry)) in generated.OrderBy(pair => pair.Key))
+            Visit(tag, "generated", entry, () => asset.Data);
         return new(project.Name, nodes, issues);
     }
+
+    private static PackageEntry NativeEntry(uint tag, NativeAssetMetadata native, int index, long size) =>
+        new(tag, native.Reference, (int)((native.TypeInfo >> 9) & 127), (int)((native.TypeInfo >> 6) & 7),
+            (int)Math.Min(size, int.MaxValue), $"w64_sunrise_{native.PackageId:x4}_0", native.PackageId, index)
+        { TypeInfo = native.TypeInfo };
 
     public static uint TagOf(ushort packageId, int entryIndex) => checked(TagBase + ((uint)packageId << 13) + (uint)entryIndex);
 }

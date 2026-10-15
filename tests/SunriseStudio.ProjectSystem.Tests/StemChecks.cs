@@ -9,6 +9,7 @@ internal static class StemChecks
 {
     internal static void Run(string folder, List<string> checks)
     {
+        Directory.CreateDirectory(folder);
         const int rate = 8000, frames = 300;
         byte[] samples = new byte[frames * 2 * 2];
         for (int frame = 0; frame < frames; frame++)

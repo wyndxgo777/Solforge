@@ -41,7 +41,7 @@ internal sealed class Fixture
         foreach (string file in Directory.EnumerateFiles(Install, "*.pkg", SearchOption.AllDirectories))
         {
             using var stream = File.OpenRead(file);
-            result[Path.GetRelativePath(Install, file).Replace('\', '/')] = Convert.ToHexString(SHA256.HashData(stream));
+            result[Path.GetRelativePath(Install, file).Replace('\\', '/')] = Convert.ToHexString(SHA256.HashData(stream));
         }
         return result;
     }
