@@ -93,6 +93,38 @@ internal sealed class VtScreen(int columns, int rows)
                 new string(line.Where(cell => cell.Char != Continuation).Select(cell => cell.Char).ToArray()).TrimEnd()));
     }
 
+    /**
+     * The bottom lastRows rows as text, with each character's drawn background (the background colour, or the
+     * complemented foreground for inverse cells; 0 is the default), for ApprovalPrompts. Wide characters' right
+     * halves are left out of both, so indexes line up.
+     */
+    public (string[] Rows, uint[][] Shade) Snapshot(int lastRows)
+    {
+        lock (Gate)
+        {
+            int first = Math.Max(0, lines.Length - lastRows);
+            var rows = new string[lines.Length - first];
+            var shade = new uint[rows.Length][];
+            var text = new char[lines.Length == 0 ? 0 : lines[0].Length];
+            for (int row = 0; row < rows.Length; row++)
+            {
+                var line = lines[first + row];
+                if (text.Length < line.Length) text = new char[line.Length];
+                var shades = new uint[line.Length];
+                int count = 0;
+                for (int i = 0; i < line.Length; i++)
+                {
+                    if (line[i].Char == Continuation) continue;
+                    text[count] = line[i].Char;
+                    shades[count++] = line[i].Inverse ? ~line[i].Foreground : line[i].Background;
+                }
+                rows[row] = new string(text, 0, count);
+                shade[row] = count == shades.Length ? shades : shades[..count];
+            }
+            return (rows, shade);
+        }
+    }
+
     public void Feed(ReadOnlySpan<char> text)
     {
         lock (Gate)

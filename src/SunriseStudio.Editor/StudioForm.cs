@@ -107,6 +107,7 @@ public sealed partial class StudioForm : Form
         SetStyle(ControlStyles.Opaque | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
         if (options.Smoke) ShowInTaskbar = false;
         timer.Tick += (_, _) => TickFrame();
+        aiAllowTimer.Tick += (_, _) => { try { AutoAllowAi(); } catch (InvalidOperationException) { } catch (IOException) { } };
         workspace.BeforeAssetMutation += () =>
         {
             livePage.CancelPreparation();
@@ -207,6 +208,7 @@ public sealed partial class StudioForm : Form
             }
             lastFrame = clock.Elapsed.TotalSeconds;
             timer.Start();
+            aiAllowTimer.Start();
         }
         catch (Exception error) { Failure = error.ToString(); Close(); }
     }
@@ -847,6 +849,7 @@ public sealed partial class StudioForm : Form
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         { Failure ??= error.Message; }
         timer.Stop(); timer.Dispose();
+        aiAllowTimer.Stop(); aiAllowTimer.Dispose();
         filterCancellation?.Cancel(); filterCancellation?.Dispose();
         RememberPopouts();
         foreach (var popout in popouts) popout.Dispose();
