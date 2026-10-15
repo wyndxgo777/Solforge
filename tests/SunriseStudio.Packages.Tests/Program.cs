@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using SunriseStudio.Packages;
 
-// Solforge Phase 05 (metadata index, search), Phase 06 (parallel block reads) and Phase 07 (tag headers, DAG) checks.
+// Solforge Phase 05 (metadata index, search), Phase 06 (parallel block reads), Phase 07 (tag headers, DAG) and Phase 08 (delta allocator) checks.
 // The install-free sections open packages PackageWriter writes into a scratch install (uncompressed,
 // unencrypted blocks, so no Oodle or keys are needed). --game-root <path> adds the timed warm open of
 // the installation and a serial/parallel comparison over installed (compressed, encrypted) tags.
@@ -102,6 +102,55 @@ try
         Check(catalog.MaximumParallelDecodes == 1 && catalog.ReadOriginalAll(tags).Zip(serial).All(x => x.First.AsSpan().SequenceEqual(x.Second)),
             "a parallel bound of 1 falls back to serial reads (Phase 06)");
     }
+
+    // Phase 08: mock chunk append and entry-table update into a project delta; the source package is only read.
+    static string Sha256(string path) => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(path)));
+    string sourceHash = Sha256(first);
+    long sourceLength = new FileInfo(first).Length;
+    DateTime sourceTime = File.GetLastWriteTimeUtc(first);
+    byte[] edited = Bytes(1200, 6), added = Bytes(300_000, 7);
+    var allocator = PackageBlockAllocator.Open(first);
+    allocator.Replace(0, edited);
+    uint addedTag = allocator.Append(0x80800001, 0x100A, added);
+    string deltaPath = Path.Combine(root, "project", "deltas", "w64_test_0100_0.sfpd");
+    var delta = allocator.Write(deltaPath);
+    Check(addedTag == TagHeaders.Compose(0x100, 2) && delta.TargetPatch == delta.SourcePatch + 1
+        && delta.Redirects.Count == 2 && delta.Redirects[0].Flags == PackageEntryOverride.Replaced
+        && delta.Redirects[1].Flags == PackageEntryOverride.Appended && delta.EntryCount == 3,
+        "the allocator records a replaced and an appended entry with the next patch (Phase 08)");
+    Check(delta.Blocks.Count == 2 && delta.Blocks[0].Index == delta.SourceBlockCount
+        && delta.Blocks.All(b => b.Patch == delta.TargetPatch && b.Flags == 0)
+        && delta.Redirects.All(r => r.StartBlock >= delta.SourceBlockCount && r.StartOffset % 16 == 0),
+        "new chunks go in raw blocks after the source's last block, owned by the target patch (Phase 08)");
+    Check(delta.ReadEntry(0).AsSpan().SequenceEqual(edited) && delta.ReadEntry(2).AsSpan().SequenceEqual(added),
+        "the delta file returns the replaced and appended bytes (Phase 08)");
+    var table = TagHeaders.ParseEntryTable(0x100, "w64_test_0100_1", delta.BuildEntryTable(first));
+    Check(table.Length == 3 && table[0].Size == edited.Length && table[1].Size == medium.Length
+        && table[1].Reference == 0x80800001 && table[2].Size == added.Length && table[2].TypeInfo == 0x100A,
+        "the updated entry table redirects entry 0, keeps entry 1 and appends entry 2 (Phase 08)");
+    Check(Sha256(first) == sourceHash && new FileInfo(first).Length == sourceLength
+        && File.GetLastWriteTimeUtc(first) == sourceTime && delta.Matches(first),
+        "the source package is unchanged after the delta write (Phase 08)");
+    using (var catalog = PackageCatalog.Open(install, cacheOptions: options))
+        Check(catalog.ReadOriginal(TagHeaders.Compose(0x100, 0)).AsSpan().SequenceEqual(small),
+            "the catalog still reads the source bytes (Phase 08)");
+    bool Throws<T>(Action action) where T : Exception
+    {
+        try { action(); return false; } catch (T) { return true; }
+    }
+    Check(Throws<InvalidDataException>(() => PackageBlockAllocator.CheckLimits(8193, 1))
+        && Throws<InvalidDataException>(() => PackageBlockAllocator.CheckLimits(1, 16385))
+        && !Throws<InvalidDataException>(() => PackageBlockAllocator.CheckLimits(8192, 16384))
+        && Throws<InvalidDataException>(() => PackageBlockAllocator.CheckNewPackageId(0x0D00))
+        && !Throws<InvalidDataException>(() => PackageBlockAllocator.CheckNewPackageId(0x0100))
+        && Throws<InvalidDataException>(() => allocator.Replace(5, edited)),
+        "entry, block, package id and entry index limits are enforced (Phase 08)");
+    Check(Throws<IOException>(() => allocator.Write(first)) && Sha256(first) == sourceHash,
+        "the allocator refuses to write over its source (Phase 08)");
+    byte[] damaged = File.ReadAllBytes(deltaPath);
+    damaged[(int)delta.Blocks[delta.Blocks.Count - 1].Offset] ^= 0xFF;
+    File.WriteAllBytes(deltaPath, damaged);
+    Check(Throws<InvalidDataException>(() => PackageDelta.Read(deltaPath)), "a damaged delta block fails its SHA-1 (Phase 08)");
 }
 finally
 {

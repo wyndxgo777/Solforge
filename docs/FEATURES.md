@@ -18,6 +18,11 @@ Project facts (TFM, references, sizes) are in ARCHITECTURE.md; this file is abou
   `LocalizedStrings`, `ComponentIndex`, `ClassNames`/`GameNames`/`ObjectTypeNames`.
 - Solforge: metadata index (`PackageCatalog.Index.cs`, Phase 05), class/group search
   (`PackageCatalog.Search.cs`, Phase 05), bounded parallel block reads (`PackageCatalog.Parallel.cs`, Phase 06).
+- Solforge (Phase 08): `PackageDelta.cs` (`PackageBlockAllocator` places replaced/appended entries in raw
+  blocks after the source's last block and writes an "SFPD" project delta with entry redirections, target
+  patch block records and SHA-1s; `PackageDelta` reads/validates it, `ReadEntry`, `BuildEntryTable`,
+  `Matches`; entry/block/id limits). (Exists) `PackageWriter.WritePatch` turns replacements into the next
+  patch file and enforces the same limits.
 - Gaps: memory mapping (not needed by profiling yet), sharding across package ids (Phase 41).
 
 ## Tags (`SunriseStudio.Formats`, Phase 07)
@@ -77,4 +82,4 @@ Project facts (TFM, references, sizes) are in ARCHITECTURE.md; this file is abou
 ## Checks (`tests/*.Tests`, run by verify.ps1)
 - (Exists) 36 console check programs (no test framework); `-Game` adds installation checks,
   `-Blender` the add-on checks; CI runs the install-free set on WARP.
-- Solforge: `Architecture.Tests` (Phase 04), `Packages.Tests` (Phases 05-07).
+- Solforge: `Architecture.Tests` (Phase 04), `Packages.Tests` (Phases 05-08).

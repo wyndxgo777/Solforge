@@ -70,8 +70,8 @@
     {
       "id": "08",
       "title": "Package Entry Table Modification & Block Writing",
-      "status": "upstream_partial",
-      "notes": "Packages.PackageWriter, StringBankWriter"
+      "status": "done",
+      "notes": "(Exists) PackageWriter.WritePatch/WriteNew/WriteReplacement (block placement, 8192-entry/16384-block/0x0100-0x0CFF limits), StringBankWriter. Solforge: Packages/PackageDelta.cs: PackageBlockAllocator (opens the source read-only, Replace/Append, places edits with PackageWriter.Place after the source's last block, writes an SFPD v1 project delta atomically: header bound to source length + metadata SHA-1, 32-byte redirect rows with PackageEntryOverride Replaced/Appended flags and old/new block info, 48-byte block records with target patch, raw flags, SHA-1), CheckLimits/CheckNewPackageId; PackageDelta (Read validates block SHA-1s, Matches, ReadEntry, BuildEntryTable = next patch entry table). PackageWriter.Place is now internal. Check: Packages.Tests mock replace + append into a scratch project delta, verifies redirects/blocks/bytes/table, source SHA-256/length/write time unchanged, limits, refusal to write over the source, damaged-block detection"
     },
     {
       "id": "09",

@@ -227,7 +227,7 @@ public static partial class PackageWriter
     }
 
     /** Entry starts are sixteen-byte aligned within full-size logical blocks. */
-    private static (ulong[] Placements, List<byte[]> Blocks) Place(IEnumerable<byte[]> entries, int firstBlock)
+    internal static (ulong[] Placements, List<byte[]> Blocks) Place(IEnumerable<byte[]> entries, int firstBlock)
     {
         var placements = new List<ulong>();
         var blocks = new List<byte[]>();
