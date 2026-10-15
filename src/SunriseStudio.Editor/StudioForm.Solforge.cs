@@ -23,7 +23,7 @@ public sealed partial class StudioForm
         if (statusFacts.Length == 0 || now - statusFactsTicks >= 1000) { statusFactsTicks = now; RefreshStatusFacts(); }
         float width = ImGui.CalcTextSize(statusFacts).X;
         ImGui.SameLine();
-        float x = ImGui.GetWindowContentRegionMax().X - width;
+        float x = ImGui.GetCursorPosX() + ImGui.GetContentRegionAvail().X - width;
         if (x > ImGui.GetCursorPosX()) ImGui.SetCursorPosX(x);
         ImGui.TextDisabled(statusFacts);
         if (ImGui.IsItemHovered()) ImGui.SetTooltip(statusFactsTip);
