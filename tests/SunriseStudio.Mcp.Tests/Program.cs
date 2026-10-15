@@ -27,8 +27,16 @@ try
     checks.Add("resume: claude --continue only when ~/.claude/projects/<folder> has a session; agy --conversation and cline --id pick the newest session for the same folder; none means a fresh start");
     ContextText();
     checks.Add("context summary: compact lines under 2 KB with map, hovered, selected values, open documents; nothing when paused");
+    MissionObjects();
+    checks.Add("mission slots: SDK slot ids and constants, parent/children/descendants, find by id, object id, name and registry-suffixed constant; find_object resolves slot names, ids and registry hashes");
+    MissionScale();
+    checks.Add("mission slots stay fast at EDZ scale: 120k slots index, page and resolve in seconds, pages carry total and next");
+    CodeRefsCheck();
+    checks.Add("code refs: slot id, quoted name and whole-word constants in this mission's SDK file and the server scripts; everywhere reads other missions; limit and folder discovery");
+    ReferenceCheck();
+    checks.Add("reference library: found above the project, index.json plus unindexed front matter, ranked search with tag filter, read by path or url with paging, half-written index and path escapes are safe");
     await StdioRoundTrip();
-    checks.Add("initialize, tools/list (17 tools with object schemas), tools/call and get_open_documents round trip over the stdio shim");
+    checks.Add("initialize, tools/list (22 tools with object schemas), tools/call, get_open_documents, mission, read_panel and reference tools round trip over the stdio shim");
     await ContextHook();
     checks.Add("solforge-mcp --context prints the live context, and nothing (exit 0, fast) when paused or no Solforge runs");
     Approvals();
@@ -162,7 +170,8 @@ async Task StdioRoundTrip()
 {
     string project = Path.Combine(scratch, "project");
     string discovery = Path.Combine(scratch, "discovery");
-    var host = new FixtureHost(project);
+    var host = new FixtureHost(project) { CodeRoots = MissionFixtures.CodeRoots(Path.Combine(scratch, "stdio-code")),
+        ReferenceFolder = MissionFixtures.Reference(Path.Combine(scratch, "stdio-reference")) };
     var dispatcher = new McpDispatcher(SolforgeTools.Create(host), "0.1.0", SolforgeTools.Instructions);
     await using var server = new McpHttpServer(dispatcher);
     server.Start();
@@ -202,7 +211,8 @@ async Task StdioRoundTrip()
         await process.StandardInput.WriteLineAsync("{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}");
         var tools = (await Call(2, "tools/list"))["tools"]!.AsArray();
         string[] expected = ["get_context", "get_open_documents", "find_object", "get_object", "get_viewport_screenshot", "list_visible", "get_attention_log",
-            "read_project_file", "search_project", "get_tag", "get_package_entry", "get_live_state",
+            "read_project_file", "search_project", "search_reference", "read_reference", "get_tag", "get_package_entry", "get_live_state",
+            "list_mission_objects", "get_mission_object", "read_panel",
             "select_object", "focus_camera", "highlight", "open_file", "apply_project_edit"];
         Expect(tools.Select(tool => tool?["name"]?.ToString()).SequenceEqual(expected), "tool names: " + string.Join(",", tools.Select(tool => tool?["name"])));
         foreach (var tool in tools)
@@ -212,7 +222,7 @@ async Task StdioRoundTrip()
             foreach (var required in schema["required"]?.AsArray() ?? new JsonArray())
                 Expect(schema["properties"]![required!.ToString()] is not null, $"{tool["name"]} requires an undeclared {required}");
             bool readOnly = tool["annotations"]?["readOnlyHint"]?.GetValue<bool>() == true;
-            Expect(readOnly == Array.IndexOf(expected, tool["name"]!.ToString()) < 12, "read-only flag of " + tool["name"]);
+            Expect(readOnly == Array.IndexOf(expected, tool["name"]!.ToString()) < 17, "read-only flag of " + tool["name"]);
         }
         var found = await Call(3, "tools/call", new JsonObject { ["name"] = "find_object", ["arguments"] = new JsonObject { ["query"] = "static mesh 7489" } });
         var text = JsonNode.Parse(found["content"]![0]!["text"]!.ToString())!;
@@ -225,7 +235,27 @@ async Task StdioRoundTrip()
         var open = JsonNode.Parse(documents["content"]![0]!["text"]!.ToString())!;
         Expect(open["asset"]?["tag"]?.ToString() == "0x80A1B2C3" && open["script"]?["path"]?.ToString() == "scripts/freeroam.lua"
             && open["changes"]?["count"]?.GetValue<int>() == 3, "get_open_documents: " + open.ToJsonString());
+        JsonNode Body(JsonNode result) => JsonNode.Parse(result["content"]![0]!["text"]!.ToString())!;
+        var slot = Body(await Call(20, "tools/call", new JsonObject { ["name"] = "get_mission_object",
+            ["arguments"] = new JsonObject { ["id"] = "pf_event_multipoint.pf_placement[0].o_generator" } }));
+        Expect(slot["slotId"]?.ToString() == "slot/80be5d9b/000014/0014/0004" && slot["prefab"]?.ToString() == "0x80BE5DA0"
+            && slot["transform"]?["position"]?[0]?.GetValue<double>() == 1 && slot["code"]?["count"]?.GetValue<int>() == 3, "get_mission_object: " + slot.ToJsonString());
+        var spoken = Body(await Call(21, "tools/call", new JsonObject { ["name"] = "find_object", ["arguments"] = new JsonObject { ["query"] = "o_generator" } }));
+        Expect(spoken["matches"]?[0]?["id"]?.ToString()?.StartsWith("slot/80be5d9b/") == true && spoken["matches"]?[0]?["next"]?.ToString() == "get_mission_object",
+            "find_object reaches slots: " + spoken.ToJsonString());
+        var listed = Body(await Call(22, "tools/call", new JsonObject { ["name"] = "list_mission_objects", ["arguments"] = new JsonObject { ["limit"] = 2 } }));
+        Expect(listed["total"]?.GetValue<int>() == 5 && listed["count"]?.GetValue<int>() == 2 && listed["next"]?.GetValue<int>() == 2, "list_mission_objects paging");
+        var panel = Body(await Call(23, "tools/call", new JsonObject { ["name"] = "read_panel", ["arguments"] = new JsonObject { ["panel"] = "hierarchy" } }));
+        Expect(panel["panel"]?.ToString() == "hierarchy" && host.Panels == "hierarchy", "read_panel reaches the host");
+        var badPanel = await Call(24, "tools/call", new JsonObject { ["name"] = "read_panel", ["arguments"] = new JsonObject { ["panel"] = "nope" } });
+        Expect(badPanel["isError"]?.GetValue<bool>() == true, "unknown panel");
+        var reference = Body(await Call(25, "tools/call", new JsonObject { ["name"] = "search_reference", ["arguments"] = new JsonObject { ["query"] = "replication" } }));
+        Expect(reference["hits"]?[0]?["path"]?.ToString() == "unreal/replication.md", "search_reference: " + reference.ToJsonString());
         host.Paused = true;
+        var pausedReference = await Call(26, "tools/call", new JsonObject { ["name"] = "read_reference", ["arguments"] = new JsonObject { ["path"] = "unreal/replication.md" } });
+        Expect(pausedReference["isError"]?.GetValue<bool>() != true, "the reference library stays readable while paused");
+        var pausedMission = await Call(27, "tools/call", new JsonObject { ["name"] = "list_mission_objects", ["arguments"] = new JsonObject() });
+        Expect(pausedMission["isError"]?.GetValue<bool>() == true, "mission objects hidden while paused");
         var paused = await Call(7, "tools/call", new JsonObject { ["name"] = "get_open_documents", ["arguments"] = new JsonObject() });
         Expect(paused["isError"]?.GetValue<bool>() == true, "get_open_documents while paused");
         host.Paused = false;
@@ -544,6 +574,153 @@ static void Approvals()
     Expect(ApprovalPrompts.Find("cline", followUp, followUp.Select(line => Enumerable.Repeat(Selected, line.Length).ToArray()).ToArray()) is null, "cline follow-up question");
 }
 
+void MissionObjects()
+{
+    Expect(MissionSlots.SlotId(0x80fd58b9, 4, 20) == "slot/80fd58b9/000014/0014/0004", "slot id format");
+    Expect(MissionSlots.TryParseSlotId("slot/80be0b1a/000006/0006/0047", out uint registry, out int type, out int index)
+        && registry == 0x80BE0B1A && type == 71 && index == 6, "slot id parse");
+    Expect(MissionSlots.ParentName("pf_event_multipoint.pf_placement[0].o_glimmer[0]") == "pf_event_multipoint.pf_placement[0]", "parent name");
+    Expect(MissionSlots.ParentName("a.b[x.y]") == "a" && MissionSlots.ParentName("top") is null, "brackets do not split");
+    Expect(MissionSlots.ConstantName("pf_event_multipoint.pf_placement[0].o_capture_ring") == "PF_EVENT_MULTIPOINT_PF_PLACEMENT_0_O_CAPTURE_RING", "constant");
+    var mission = MissionFixtures.Snapshot();
+    var generator = mission.Find("slot/80BE5D9B/000014/0014/0004");
+    Expect(generator?.Name == "pf_event_multipoint.pf_placement[0].o_generator", "find by slot id (any case)");
+    Expect(mission.Find("marker:gen") == generator && mission.Find("pf_event_multipoint.pf_placement[0].o_generator") == generator, "find by object id and name");
+    Expect(mission.Find("PF_EVENT_MULTIPOINT_PF_PLACEMENT_0_O_GENERATOR_80BE5D9B") == generator, "find by server constant");
+    Expect(mission.Find("PF_EVENT_MULTIPOINT_PF_PLACEMENT_0_O_GENERATOR_80BE0B1A") is null, "wrong registry suffix");
+    var glimmer = mission.Find("pf_event_multipoint.pf_placement[0].o_glimmer[0]")!;
+    Expect(mission.Children(glimmer) is [{ Name: "pf_event_multipoint.pf_placement[0].o_glimmer[0].fx" }], "direct children");
+    Expect(mission.Parent(mission.Find("pf_event_multipoint.pf_placement[0].o_glimmer[0].fx")!) == glimmer, "parent slot");
+    var details = MissionSlots.Describe(mission, generator!, 0, 10);
+    Expect(details["parent"]?["note"] is not null && details["parent"]?["name"]?.ToString() == "pf_event_multipoint.pf_placement[0]", "parent without a slot");
+    Expect(details["prefabObject"]?["id"]?.ToString() == "object:80BE5DA0" && details["zone"]?.ToString() == "Trostland", "prefab and zone");
+    var all = mission.Entries(new HashSet<string> { "marker:gen" }).ToArray();
+    Expect(all.Single(entry => entry.Id == generator!.SlotId).Scope == ObjectScope.Viewport, "placed slot on screen ranks as viewport");
+    string Top(string query) => ObjectIndex.Find(all, query, "EDZ") is [var first, ..] ? first.Entry.Id : "(none)";
+    Expect(Top("o_generator") == generator!.SlotId, "spoken slot name -> " + Top("o_generator"));
+    Expect(Top("that generator") == generator!.SlotId, "that generator -> " + Top("that generator"));
+    Expect(Top("slot/80be5d9b/000015/0015/0004") == glimmer.SlotId, "exact slot id");
+    Expect(Top("0x80BE0B1A") == mission.Find("m_public_event_sensor")!.SlotId, "registry hash");
+    Expect(Top("placement 1 generator") == mission.Find("pf_event_multipoint.pf_placement[1].o_generator")!.SlotId, "placement number");
+    var page = MissionSlots.List(mission, "generator", false, 0, 1);
+    Expect(page["total"]?.GetValue<int>() == 2 && page["count"]?.GetValue<int>() == 1 && page["next"]?.GetValue<int>() == 1, "list paging");
+    Expect(MissionSlots.List(mission, null, true, 0, 50)["total"]?.GetValue<int>() == 1, "placed only");
+}
+
+static void MissionScale()
+{
+    var clock = Stopwatch.StartNew();
+    var slots = Enumerable.Range(0, 120_000).Select(i => new MissionSlot(MissionSlots.SlotId(0x80B00000u + (uint)(i / 200), 4, i % 200),
+        $"pf_prefab_{i / 200}.pf_placement[{i % 10}].o_thing_{i}", 0x80B00000u + (uint)(i / 200), 4, i % 200, 0x80C00000u + (uint)(i / 200))
+        { ObjectId = i % 3 == 0 ? $"marker:{i}" : null, Position = i % 3 == 0 ? [i, 0, 0] : null });
+    var mission = new MissionSnapshot("EDZ", 0x80B2F00A, "edz_freeroam", slots);
+    var entries = mission.Entries().ToArray();
+    var found = ObjectIndex.Find(entries, "o_thing_119999", "EDZ");
+    var page = MissionSlots.List(mission, "o_thing_5", true, 100, 50);
+    var child = MissionSlots.Describe(mission, mission.Slots[0], 0, 10);
+    Expect(found is [{ Entry.Label: "pf_prefab_599.pf_placement[9].o_thing_119999" }, ..], "scale find");
+    Expect(page["count"]?.GetValue<int>() == 50 && page["rows"]?.AsArray().Count == 50, "scale page");
+    Expect(child["children"]?["total"] is not null, "scale describe");
+    Expect(clock.Elapsed < TimeSpan.FromSeconds(20), "120k slots took " + clock.Elapsed);
+}
+
+void CodeRefsCheck()
+{
+    var roots = MissionFixtures.CodeRoots(Path.Combine(scratch, "code"));
+    var generator = MissionFixtures.Snapshot().Find("marker:gen")!;
+    var needles = CodeRefs.Needles(generator);
+    Expect(CodeRefs.Match("x = mission.Slot.PF_EVENT_MULTIPOINT_PF_PLACEMENT_0_O_GENERATOR_80BE5D9B,", needles) == "constant with registry", "server constant");
+    Expect(CodeRefs.Match("PF_EVENT_MULTIPOINT_PF_PLACEMENT_0_O_GENERATOR_X = 1", needles) is null, "identifier boundary");
+    Expect(CodeRefs.Match("local id = \"SLOT/80BE5D9B/000014/0014/0004\"", needles) == "slot id", "slot id any case");
+    var narrow = CodeRefs.Search(roots, needles, 0x80B2F00A, false, 50, TimeSpan.FromSeconds(10), CancellationToken.None);
+    Expect(narrow["count"]?.GetValue<int>() == 3, "this mission's SDK file and the server: " + narrow.ToJsonString());
+    var hits = narrow["hits"]!.AsArray();
+    Expect(hits.Any(hit => hit!["root"]?.ToString() == "server-scripts" && hit["line"]?.GetValue<int>() == 2)
+        && hits.All(hit => hit?["path"]?.ToString() != "other_80000001.lua"), "server line and no other mission");
+    var wide = CodeRefs.Search(roots, needles, 0x80B2F00A, true, 50, TimeSpan.FromSeconds(10), CancellationToken.None);
+    Expect(wide["count"]?.GetValue<int>() == 4, "everywhere reads other missions");
+    var capped = CodeRefs.Search(roots, needles, 0x80B2F00A, true, 1, TimeSpan.FromSeconds(10), CancellationToken.None);
+    Expect(capped["count"]?.GetValue<int>() == 1 && capped["truncated"]?.GetValue<bool>() == true, "limit");
+    string sol = Path.Combine(scratch, "layout", "sol");
+    string game = Path.Combine(sol, "01-clients", "sol-client"), project = Path.Combine(sol, "09-solforge", "project");
+    Directory.CreateDirectory(Path.Combine(game, "bin", "x64", "Sunrise", "sdk", "lua", "missions"));
+    Directory.CreateDirectory(Path.Combine(sol, "02-server", "solserver", "solserverbase", "Destiny-Sol-main", "mission-scripts"));
+    Directory.CreateDirectory(project);
+    var found = CodeRefs.Locate(game, project, []);
+    Expect(found.Select(root => root.Name).SequenceEqual(["sdk-missions", "server-scripts", "project"]) && found[0].ByMission
+        && found[1].Folder.EndsWith("mission-scripts"), "locate: " + string.Join(", ", found.Select(root => root.Name + "=" + root.Folder)));
+}
+
+void ReferenceCheck()
+{
+    string folder = MissionFixtures.Reference(Path.Combine(scratch, "refs", "sol", "08-docs", "reference"));
+    string project = Path.Combine(scratch, "refs", "sol", "09-solforge", "project");
+    Directory.CreateDirectory(project);
+    Expect(ReferenceLibrary.Locate([null, project]) == Path.GetFullPath(folder), "locate the library above the project");
+    var pages = ReferenceLibrary.Load(folder);
+    Expect(pages.Count == 2 && pages.Any(page => page.Path == "lua-coroutines.md" && page.Url == "https://www.lua.org/pil/9.html" && page.Tags.Contains("lua")),
+        "front matter of an unindexed page: " + string.Join("; ", pages));
+    var search = ReferenceLibrary.Search(folder, "replication", null, 5);
+    Expect(search["hits"]?[0]?["path"]?.ToString() == "unreal/replication.md" && search["hits"]?[0]?["url"]?.ToString() == "https://docs.unrealengine.com/replication"
+        && search["hits"]?[0]?["snippet"]?.ToString()?.Contains("Replication") == true, "search: " + search.ToJsonString());
+    Expect(ReferenceLibrary.Search(folder, "coroutines yield", "lua", 5)["hits"]?[0]?["path"]?.ToString() == "lua-coroutines.md", "tag search");
+    Expect(ReferenceLibrary.Search(folder, "coroutines", "unreal", 5)["count"]?.GetValue<int>() == 0, "tag filter excludes");
+    var read = ReferenceLibrary.Read(folder, null, "http://lua.org/pil/9.html/", 1, 2);
+    Expect(read is not null && read["path"]?.ToString() == "lua-coroutines.md" && read["next"]?.GetValue<int>() == 3, "read by url with paging");
+    Expect(ReferenceLibrary.Read(folder, "../../secret.md", null, 1, 10) is null, "path escape refused");
+    File.WriteAllText(Path.Combine(folder, "index.json"), "[{\"path\": \"unreal/repl");
+    Expect(ReferenceLibrary.Load(folder).Count == 2, "half-written index.json");
+}
+
+/** A small EDZ-like mission and the Lua folders that name its slots. */
+static class MissionFixtures
+{
+    public static MissionSnapshot Snapshot() => new("EDZ", 0x80B2F00A, "edz_freeroam",
+    [
+        new MissionSlot(MissionSlots.SlotId(0x80BE5D9B, 4, 20), "pf_event_multipoint.pf_placement[0].o_generator", 0x80BE5D9B, 4, 20, 0x80BE5DA0)
+        {
+            ObjectId = "marker:gen", Label = "Generator", Kind = "Marker", Zone = "Trostland", Position = [1, 2, 3], Rotation = [0, 0, 0, 1],
+            PrefabObjectId = "object:80BE5DA0", PrefabName = "pf_event_multipoint", Placements = ["marker:gen"]
+        },
+        new MissionSlot(MissionSlots.SlotId(0x80BE5D9B, 4, 21), "pf_event_multipoint.pf_placement[0].o_glimmer[0]", 0x80BE5D9B, 4, 21, 0x80BE5DA0),
+        new MissionSlot(MissionSlots.SlotId(0x80BE5D9B, 4, 22), "pf_event_multipoint.pf_placement[0].o_glimmer[0].fx", 0x80BE5D9B, 4, 22, 0x80BE5DA0),
+        new MissionSlot(MissionSlots.SlotId(0x80BE5D9B, 4, 23), "pf_event_multipoint.pf_placement[1].o_generator", 0x80BE5D9B, 4, 23, 0x80BE5DA0),
+        new MissionSlot(MissionSlots.SlotId(0x80BE0B1A, 71, 6), "m_public_event_sensor", 0x80BE0B1A, 71, 6, 0x80BE0B20),
+    ]);
+
+    public static IReadOnlyList<CodeRoot> CodeRoots(string folder)
+    {
+        string sdk = Path.Combine(folder, "missions"), server = Path.Combine(folder, "mission-scripts", "edz_freeroam");
+        Directory.CreateDirectory(sdk);
+        Directory.CreateDirectory(server);
+        File.WriteAllLines(Path.Combine(sdk, "edz_freeroam_80b2f00a.lua"),
+        [
+            "local slots = {",
+            "    PF_EVENT_MULTIPOINT_PF_PLACEMENT_0_O_GENERATOR = { id = \"slot/80be5d9b/000014/0014/0004\", name = \"pf_event_multipoint.pf_placement[0].o_generator\" },",
+            "    PF_EVENT_MULTIPOINT_PF_PLACEMENT_0_O_GENERATOR_LIGHT = { id = \"slot/80be5d9b/000030/0030/0004\" },",
+            "    objective = slots.PF_EVENT_MULTIPOINT_PF_PLACEMENT_0_O_GENERATOR,",
+            "}"
+        ]);
+        File.WriteAllLines(Path.Combine(sdk, "other_80000001.lua"), ["x = \"slot/80be5d9b/000014/0014/0004\""]);
+        File.WriteAllLines(Path.Combine(server, "content.lua"),
+            ["return {", "    objective = mission.Slot.PF_EVENT_MULTIPOINT_PF_PLACEMENT_0_O_GENERATOR_80BE5D9B,", "}"]);
+        return [new CodeRoot("sdk-missions", sdk, true), new CodeRoot("server-scripts", Path.Combine(folder, "mission-scripts"))];
+    }
+
+    public static string Reference(string folder)
+    {
+        Directory.CreateDirectory(Path.Combine(folder, "unreal"));
+        File.WriteAllText(Path.Combine(folder, "unreal", "replication.md"),
+            "---\nurl: https://docs.unrealengine.com/replication\ntitle: Actor Replication\ntags: [unreal, networking]\n---\n# Actor Replication\n\nReplication sends actor state from server to clients.\n");
+        File.WriteAllText(Path.Combine(folder, "lua-coroutines.md"),
+            "---\nurl: https://www.lua.org/pil/9.html\ntitle: Coroutines\ntags: [lua]\n---\n# Coroutines\n\nA coroutine can yield.\nResume it later.\n");
+        File.WriteAllText(Path.Combine(folder, "index.json"),
+            "[{\"title\": \"Actor Replication\", \"url\": \"https://docs.unrealengine.com/replication\", \"tags\": [\"unreal\", \"networking\"], " +
+            "\"summary\": \"How replication works\", \"path\": \"unreal/replication.md\"}, {\"title\": \"Not saved yet\", \"path\": \"missing.md\"}]");
+        return folder;
+    }
+}
+
 static class NativeArgs
 {
     [DllImport("shell32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
@@ -589,6 +766,15 @@ sealed class FixtureHost(string project) : ISolforgeHost
     public Task<JsonObject?> GetTagAsync(uint hash, CancellationToken cancel) => Task.FromResult<JsonObject?>(null);
     public Task<JsonObject?> GetPackageEntryAsync(string id, CancellationToken cancel) => Task.FromResult<JsonObject?>(null);
     public JsonObject LiveState() => new() { ["attached"] = false };
+    public IReadOnlyList<CodeRoot> CodeRoots { get; set; } = [];
+    public string? ReferenceFolder { get; set; }
+    public string? Panels;
+    public Task<MissionSnapshot?> MissionAsync(CancellationToken cancel) => Task.FromResult<MissionSnapshot?>(MissionFixtures.Snapshot());
+    public Task<JsonObject> ReadPanelAsync(string panel, PanelQuery query, CancellationToken cancel)
+    {
+        Panels = panel;
+        return Task.FromResult(new JsonObject { ["total"] = 0, ["rows"] = new JsonArray() });
+    }
     public Task<bool> ApproveAsync(string tool, string summary, CancellationToken cancel) { Interlocked.Increment(ref Approvals); return Task.FromResult(false); }
     public Task<string> RunActionAsync(string tool, JsonObject args, CancellationToken cancel) => Task.FromResult("ran");
 }

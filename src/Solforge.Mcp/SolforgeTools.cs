@@ -29,11 +29,22 @@ public interface ISolforgeHost
     Task<JsonObject?> GetTagAsync(uint hash, CancellationToken cancel);
     Task<JsonObject?> GetPackageEntryAsync(string id, CancellationToken cancel);
     JsonObject LiveState();
+    /** The open mission's slots, built off the UI thread and cached per loaded world; null with no map or mission open. */
+    Task<MissionSnapshot?> MissionAsync(CancellationToken cancel);
+    /** Lua folders that name mission slots: SDK mission files, server mission scripts, the project. */
+    IReadOnlyList<CodeRoot> CodeRoots { get; }
+    /** The reference library folder (08-docs\reference), found at call time; null until it exists. */
+    string? ReferenceFolder { get; }
+    /** One page of a panel the user sees (see Panels); heavy reads run off the UI thread. */
+    Task<JsonObject> ReadPanelAsync(string panel, PanelQuery query, CancellationToken cancel);
     /** Shows the request in the AI workspace; true once the user clicks Approve. */
     Task<bool> ApproveAsync(string tool, string summary, CancellationToken cancel);
     /** Runs an approved action tool on the UI thread and says what happened. */
     Task<string> RunActionAsync(string tool, JsonObject args, CancellationToken cancel);
 }
+
+/** A page of a panel: path picks a node or section, filter narrows rows. */
+public sealed record PanelQuery(string? Path, string? Filter, int Offset, int Limit);
 
 public static class SolforgeTools
 {
@@ -42,14 +53,20 @@ public static class SolforgeTools
         "'Botza District / Static mesh 7489 - Last city crater [182]') are exact names. When the user says " +
         "'this', 'that one', 'here' or 'the one I just clicked', call get_context or get_attention_log first, and " +
         "get_open_documents for the open map, asset, inspector values, mission script, tag diff, project changes and build " +
-        "status, before searching files. Resolve spoken names with find_object, then get_object for details. Action tools " +
-        "need the user's approve click.";
+        "status, before searching files. Resolve spoken names with find_object, then get_object for details. Mission objects " +
+        "('this event point', 'that generator') have slot ids (slot/...): get_mission_object gives their transform, prefab, " +
+        "children and the SDK and server Lua lines naming them. read_panel reads any panel (hierarchy, inspector, assets, " +
+        "mission graph, report, changes, live) a page at a time. Action tools need the user's approve click.";
+
+    /** read_panel names; each pages with offset/limit. */
+    public static readonly string[] Panels =
+        ["hierarchy", "inspector", "selection", "assets", "mission", "mission_graph", "report", "changes", "live", "attention"];
 
     public static IReadOnlyList<McpTool> Create(ISolforgeHost host)
     {
         McpTool Read(string name, string description, JsonObject schema, Func<JsonObject, CancellationToken, Task<McpToolResult>> run) =>
             new(name, description, schema, false, async (args, cancel) =>
-                host.Paused && name is not ("read_project_file" or "search_project")
+                host.Paused && name is not ("read_project_file" or "search_project" or "search_reference" or "read_reference")
                     ? McpToolResult.Error("The user paused context publishing in Solforge's AI workspace.")
                     : await run(args, cancel).ConfigureAwait(false));
         McpTool Act(string name, string description, JsonObject schema, Func<JsonObject, string?> validate, Func<JsonObject, string> summary) =>
@@ -65,27 +82,41 @@ public static class SolforgeTools
 
         return
         [
-            Read("get_context", "What the user is looking at now: hovered and selected objects, camera position and zone, " +
-                "open editor and file, active map and mission, pinned objects, and a short list of open documents.", Schema(),
+            Read("get_context", "What the user is looking at now: hovered and selected objects (with slot id, slot name, type, " +
+                "position and owning prefab for mission objects), camera position and zone, open editor and file, active map and " +
+                "mission, pinned objects, and a short list of open documents.", Schema(),
                 (_, _) => Task.FromResult(McpToolResult.Text(host.ContextJson))),
             Read("get_open_documents", "Everything Solforge has open right now: map and mission, the open asset (tag, type, package, " +
                 "name) with its inspector values, the selected objects' property values, the open mission script, the open tag " +
                 "diff, the project change list and the build and notice status.", Schema(),
                 async (_, cancel) => McpToolResult.Json(await host.GetOpenDocumentsAsync(cancel).ConfigureAwait(false))),
-            Read("find_object", "Fuzzy-resolve a spoken name ('static mesh 7489', 'last city crater', '[182]', a tag hash) against " +
-                "viewport labels, the Object tree and the asset index of the open map. Returns ranked matches.",
+            Read("find_object", "Fuzzy-resolve a spoken name ('static mesh 7489', 'last city crater', '[182]', 'o_generator', " +
+                "'pf_event_multipoint', a tag, prefab or registry hash, a slot id) against viewport labels, the Object tree, the open " +
+                "mission's slots and the asset index of the open map. Returns ranked matches; slot rows say next: get_mission_object.",
                 Schema(("query", "string", "The name as the user said it", true), ("limit", "integer", "Most matches to return (default 10)", false)),
                 async (args, cancel) =>
                 {
                     string query = McpJson.String(args, "query") ?? "";
                     var entries = await host.ObjectsAsync(query, cancel).ConfigureAwait(false);
-                    var matches = ObjectIndex.Find(entries, query, host.CurrentMap, host.Attention.Recency(), Math.Clamp(McpJson.Int(args, "limit", 10), 1, 50));
+                    var mission = await host.MissionAsync(cancel).ConfigureAwait(false);
+                    var visible = host.Visible.Select(item => item.Id).ToHashSet(StringComparer.Ordinal);
+                    var all = entries.Select(entry => entry.Scope == ObjectScope.Tree && visible.Contains(entry.Id) ? entry with { Scope = ObjectScope.Viewport } : entry)
+                        .Concat(mission?.Entries(visible) ?? Enumerable.Empty<ObjectEntry>());
+                    var matches = ObjectIndex.Find(all, query, host.CurrentMap, host.Attention.Recency(), Math.Clamp(McpJson.Int(args, "limit", 10), 1, 50));
                     return McpToolResult.Json(new JsonObject { ["query"] = query, ["map"] = host.CurrentMap, ["matches"] = ObjectIndex.ToJson(matches) });
                 }),
             Read("get_object", "Full details for an object id: label, type, tag hash, package, transform, bounds, mesh/material/texture " +
-                "references, parent and children, script references.", Schema(("id", "string", "Object id from find_object or get_context", true)),
-                async (args, cancel) => await host.GetObjectAsync(McpJson.String(args, "id") ?? "", cancel).ConfigureAwait(false) is { } found
-                    ? McpToolResult.Json(found) : McpToolResult.Error("No object with that id in the open map.")),
+                "references, parent and children, slot facts, script references. Slot ids (slot/...) return the mission slot.",
+                Schema(("id", "string", "Object id from find_object or get_context", true)),
+                async (args, cancel) =>
+                {
+                    string id = McpJson.String(args, "id") ?? "";
+                    if (id.StartsWith("slot/", StringComparison.OrdinalIgnoreCase)
+                        && await host.MissionAsync(cancel).ConfigureAwait(false) is { } mission && mission.Find(id) is { } slot)
+                        return McpToolResult.Json(MissionSlots.Describe(mission, slot, 0, 50));
+                    return await host.GetObjectAsync(id, cancel).ConfigureAwait(false) is { } found
+                        ? McpToolResult.Json(found) : McpToolResult.Error("No object with that id in the open map.");
+                }),
             Read("get_viewport_screenshot", "The current viewport as a PNG; with id, cropped to that object's screen rectangle.",
                 Schema(("id", "string", "Optional object id to crop to", false), ("labels", "boolean", "Draw object labels (default true)", false)),
                 async (args, cancel) =>
@@ -127,6 +158,26 @@ public static class SolforgeTools
                     ("limit", "integer", "Most hits (default 100)", false)),
                 (args, _) => Task.FromResult(McpToolResult.Json(ProjectFiles.Search(host.ProjectRoot, host.SdkRoots,
                     McpJson.String(args, "query") ?? "", McpJson.String(args, "extension"), Math.Clamp(McpJson.Int(args, "limit", 100), 1, 1000))))),
+            Read("search_reference", "Search the reference library (saved docs and repo pages, 08-docs\\reference): ranked hits " +
+                "with title, url, library path, tags and a snippet. Read a hit with read_reference.",
+                Schema(("query", "string", "Words to find", true), ("tag", "string", "Optional tag the page must have", false),
+                    ("limit", "integer", "Most hits (default 10, max 100)", false)),
+                (args, cancel) => Task.Run(() => host.ReferenceFolder is not { } folder
+                    ? McpToolResult.Error(NoReference)
+                    : McpToolResult.Json(ReferenceLibrary.Search(folder, McpJson.String(args, "query") ?? "", McpJson.String(args, "tag"),
+                        McpJson.Int(args, "limit", 10))), cancel)),
+            Read("read_reference", "Read a reference library page by its library path (from search_reference) or its url, a slice of " +
+                "lines at a time (next gives the following offset).",
+                Schema(("path", "string", "Library path, e.g. 'unreal/networking.md'", false), ("url", "string", "Or the page's url", false),
+                    ("offset", "integer", "First line (default 1)", false), ("limit", "integer", "Line count (default 300, max 2000)", false)),
+                (args, cancel) => Task.Run(() =>
+                {
+                    if (host.ReferenceFolder is not { } folder) return McpToolResult.Error(NoReference);
+                    string? path = McpJson.String(args, "path"), url = McpJson.String(args, "url");
+                    if (string.IsNullOrWhiteSpace(path) && string.IsNullOrWhiteSpace(url)) return McpToolResult.Error("Give a path or a url.");
+                    return ReferenceLibrary.Read(folder, path, url, McpJson.Int(args, "offset", 1), McpJson.Int(args, "limit", 300)) is { } page
+                        ? McpToolResult.Json(page) : McpToolResult.Error("No such page in the reference library (it may not be saved yet).");
+                }, cancel)),
             Read("get_tag", "Raw read-only inspection of a tag by hash (hex like 0x80A1B2C3 or decimal).",
                 Schema(("hash", "string", "Tag hash", true)),
                 async (args, cancel) => ParseHash(McpJson.String(args, "hash")) is not { } hash ? McpToolResult.Error("Give a tag hash such as 0x80A1B2C3.")
@@ -137,6 +188,64 @@ public static class SolforgeTools
                     ? McpToolResult.Json(entry) : McpToolResult.Error("No such package entry.")),
             Read("get_live_state", "When the in-game Live link is attached: player position and nearby in-game objects.", Schema(),
                 (_, _) => Task.FromResult(McpToolResult.Json(host.LiveState()))),
+            Read("list_mission_objects", "The open mission's placed objects (prefab slots), a page at a time: slot id, name, type, " +
+                "registry, owning prefab, placing object id, position and zone. Every filter word must appear in the name, slot id, " +
+                "SDK constant, kind, label, prefab name or hash.",
+                Schema(("filter", "string", "Optional words, e.g. 'pf_event_multipoint generator'", false),
+                    ("placed", "boolean", "Only slots the map places (with a position); default false", false),
+                    ("offset", "integer", "First row (default 0)", false), ("limit", "integer", "Rows per page (default 100, max 500)", false)),
+                async (args, cancel) => await host.MissionAsync(cancel).ConfigureAwait(false) is not { } mission
+                    ? McpToolResult.Error(NoMission)
+                    : McpToolResult.Json(MissionSlots.List(mission, McpJson.String(args, "filter"), McpJson.Bool(args, "placed", false),
+                        McpJson.Int(args, "offset", 0), McpJson.Int(args, "limit", 100)))),
+            Read("get_mission_object", "One mission object by slot id, placing object id, slot name or SDK constant: type, transform, " +
+                "registry, parent prefab, parent slot, a page of children, and code refs, the lines naming it in the SDK mission Lua " +
+                "(this mission's file) and the server mission scripts, with full paths and line numbers.",
+                Schema(("id", "string", "slot/... id, object id, slot name or constant (PF_..._O_GENERATOR[_80BE5D9B])", true),
+                    ("code", "boolean", "Search the Lua for code refs (default true)", false),
+                    ("everywhere", "boolean", "Read every SDK mission file, not just this mission's (slower; default false)", false),
+                    ("codeLimit", "integer", "Most code lines (default 60, max 500)", false),
+                    ("childOffset", "integer", "First child row (default 0)", false), ("childLimit", "integer", "Children per page (default 50)", false)),
+                async (args, cancel) =>
+                {
+                    if (await host.MissionAsync(cancel).ConfigureAwait(false) is not { } mission) return McpToolResult.Error(NoMission);
+                    if (mission.Find(McpJson.String(args, "id") ?? "") is not { } slot)
+                        return McpToolResult.Error("No slot with that id, name or constant in the open mission; try find_object or list_mission_objects.");
+                    var details = MissionSlots.Describe(mission, slot, McpJson.Int(args, "childOffset", 0), McpJson.Int(args, "childLimit", 50));
+                    if (McpJson.Bool(args, "code", true))
+                    {
+                        bool everywhere = McpJson.Bool(args, "everywhere", false);
+                        var roots = host.CodeRoots;
+                        details["code"] = await Task.Run(() => CodeRefs.Search(roots, CodeRefs.Needles(slot), mission.MissionTag, everywhere,
+                            McpJson.Int(args, "codeLimit", 60), TimeSpan.FromSeconds(everywhere ? 60 : 15), cancel), cancel).ConfigureAwait(false);
+                    }
+                    return McpToolResult.Json(details);
+                }),
+            Read("read_panel", "Read any Solforge panel a page at a time, off the UI thread: " + string.Join(", ", Panels) + ". " +
+                "hierarchy: Object tree nodes (path = node id lists its children; filter searches names). inspector: the open asset's " +
+                "inspector rows and references. selection: every property of the selected objects. assets: the asset index. mission: " +
+                "mission slots. mission_graph: nodes, edges and diagnostics of the open mission script. report: the world report " +
+                "(counts, load, names and shader diagnostics). changes: project changes. live: Live link state. attention: the attention log.",
+                Schema(("panel", "string", "One of: " + string.Join(", ", Panels), true), ("path", "string", "Optional node id or section", false),
+                    ("filter", "string", "Optional text rows must contain", false), ("offset", "integer", "First row (default 0)", false),
+                    ("limit", "integer", "Rows per page (default 100, max 500)", false)),
+                async (args, cancel) =>
+                {
+                    string panel = (McpJson.String(args, "panel") ?? "").Trim().ToLowerInvariant().Replace(' ', '_');
+                    if (!Panels.Contains(panel)) return McpToolResult.Error("Unknown panel; use one of: " + string.Join(", ", Panels));
+                    var query = new PanelQuery(McpJson.String(args, "path"), McpJson.String(args, "filter"),
+                        Math.Max(0, McpJson.Int(args, "offset", 0)), Math.Clamp(McpJson.Int(args, "limit", 100), 1, Pages.MaximumLimit));
+                    if (panel == "attention")
+                        return McpToolResult.Json(Pages.Page(host.Attention.ToJson(256).OfType<JsonNode>().ToArray()
+                            .Where(row => query.Filter is not { Length: > 0 } filter || row.ToJsonString().Contains(filter, StringComparison.OrdinalIgnoreCase)),
+                            query.Offset, query.Limit, row => row.DeepClone()));
+                    if (panel == "mission")
+                        return await host.MissionAsync(cancel).ConfigureAwait(false) is { } mission
+                            ? McpToolResult.Json(MissionSlots.List(mission, query.Filter, false, query.Offset, query.Limit)) : McpToolResult.Error(NoMission);
+                    var result = await host.ReadPanelAsync(panel, query, cancel).ConfigureAwait(false);
+                    result["panel"] = panel;
+                    return McpToolResult.Json(result);
+                }),
 
             Act("select_object", "Select an object in Solforge.", Schema(("id", "string", "Object id", true)), NeedId,
                 args => $"Select {McpJson.String(args, "id")}"),
@@ -173,6 +282,9 @@ public static class SolforgeTools
                     : $"Edit {McpJson.String(args, "path")}: replace {Quote(McpJson.String(args, "find"))} with {Quote(McpJson.String(args, "replace"))}")
         ];
     }
+
+    private const string NoReference = "No reference library found (08-docs\\reference above the project or game folder, or SOLFORGE_REFERENCE).";
+    private const string NoMission = "No mission is open in Solforge; open the map with its mission (Missions tab) first.";
 
     public static uint? ParseHash(string? text)
     {

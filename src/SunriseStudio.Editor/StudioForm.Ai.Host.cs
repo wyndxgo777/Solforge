@@ -125,11 +125,18 @@ public sealed partial class StudioForm
         aiHost.ContextJson = aiPaused ? "{\"paused\":true}" : BuildAiContext().ToJsonString(McpJson.Indented);
         aiHost.CurrentMap = workspace.World?.Map.Name;
         if (now >= aiHost.NextVisible) { aiHost.NextVisible = now + 1; aiHost.Visible = aiPaused ? [] : BuildAiVisible(); }
+        AiPrewarm();
     }
 
     private JsonObject BuildAiContext()
     {
         static JsonObject Item(string id, string label) => new() { ["id"] = id, ["label"] = label };
+        // Mission objects carry their slot id, slot name, type, position and owning prefab.
+        JsonObject WithSlot(JsonObject item, object source)
+        {
+            if (AiSlotFacts(source) is { } slot) item["slot"] = slot;
+            return item;
+        }
         var view = viewport;
         var context = new JsonObject
         {
@@ -138,10 +145,10 @@ public sealed partial class StudioForm
             ["mission"] = workspace.World?.MissionTag is { } mission ? $"0x{mission:X8}" : null,
             ["openFile"] = missionGraph.ScriptPath is { } script && workspace.Project is { } open
                 ? Path.GetRelativePath(open.DirectoryPath, script).Replace('\\', '/') : null,
-            ["hovered"] = view?.HoveredObject is { } hovered ? Item(AiId(hovered), AiLabel(hovered)) : null,
+            ["hovered"] = view?.HoveredObject is { } hovered ? WithSlot(Item(AiId(hovered), AiLabel(hovered)), hovered) : null,
         };
         var selected = new JsonArray();
-        if (view is not null) foreach (var item in view.SelectedItems.Take(20)) selected.Add(Item(AiId(item), AiLabel(item)));
+        if (view is not null) foreach (var item in view.SelectedItems.Take(20)) selected.Add(WithSlot(Item(AiId(item), AiLabel(item)), item));
         if (view?.SelectedItems is [var first, ..] && selected[0] is JsonObject primary)
             foreach (var (name, value) in AiFacts(first)) primary[name] = value?.DeepClone();
         context["selected"] = selected;
@@ -240,6 +247,7 @@ public sealed partial class StudioForm
                     row["zone"] = item.BubbleName;
                     row["position"] = item.Position is { } p ? new JsonArray(p.X, p.Y, p.Z) : null;
                 }
+                if (AiSlotFacts(source) is { } slot) row["slot"] = slot;
                 if (inspectionWorld?.Inspect(source) is { } inspection)
                 {
                     var properties = new JsonArray();
@@ -315,7 +323,15 @@ public sealed partial class StudioForm
         return visible;
     }
 
-    private WorldObject? AiObject(string id) => inspectionWorld?.Objects.FirstOrDefault(item => item.Id == id);
+    /** A world object id, or a slot id the cached mission snapshot places. */
+    private WorldObject? AiObject(string id)
+    {
+        if (id.StartsWith("slot/", StringComparison.OrdinalIgnoreCase)
+            && aiMission is { Snapshot.IsCompletedSuccessfully: true } cached && ReferenceEquals(cached.World, inspectionWorld)
+            && cached.Snapshot.Result?.Find(id)?.ObjectId is { } placed)
+            id = placed;
+        return inspectionWorld?.Find(id);
+    }
 
     private string? AiPackage(uint tag) =>
         tag != 0 && workspace.Catalog is { } catalog && catalog.TryGetEntry(tag, out var entry) ? entry.PackageName : null;
@@ -541,39 +557,6 @@ public sealed partial class StudioForm
         }
     }
 
-    private JsonObject? AiObjectDetails(string id)
-    {
-        if (AiObject(id) is not { } item) return AiAssetDetails(SolforgeTools.ParseHash(id.StartsWith("tag:", StringComparison.Ordinal) ? id[4..] : id));
-        var details = new JsonObject
-        {
-            ["id"] = item.Id, ["label"] = AiLabel(item.Source), ["name"] = item.Name, ["kind"] = item.Kind.ToString(),
-            ["tag"] = item.AssetTag != 0 ? $"0x{item.AssetTag:X8}" : null, ["package"] = AiPackage(item.AssetTag),
-            ["zone"] = item.BubbleName, ["state"] = item.StateName,
-            ["mission"] = item.MissionTag != 0 ? $"0x{item.MissionTag:X8}" : null,
-            ["position"] = item.Position is { } p ? new JsonArray(p.X, p.Y, p.Z) : null,
-            ["extents"] = item.Extents is { } e ? new JsonArray(e.X, e.Y, e.Z) : null
-        };
-        if (inspectionWorld?.Inspect(item.Source) is { } inspection)
-        {
-            var properties = new JsonArray();
-            foreach (var property in inspection.Properties.Take(200))
-                properties.Add(new JsonObject { ["group"] = property.Group, ["name"] = property.Name, ["value"] = property.Value });
-            details["properties"] = properties;
-            var references = new JsonArray();
-            foreach (var reference in inspection.References.Take(200))
-                references.Add(new JsonObject { ["name"] = reference.Name, ["tag"] = $"0x{reference.TagHash:X8}", ["package"] = AiPackage(reference.TagHash) });
-            details["references"] = references;
-            var related = new JsonArray();
-            foreach (var other in inspection.RelatedObjects.Take(50))
-                related.Add(new JsonObject { ["id"] = AiId(other), ["label"] = AiLabel(other) });
-            details["related"] = related;
-            details["slots"] = inspection.Slots.Count;
-        }
-        if (workspace.Project?.DirectoryPath is { } root && item.AssetTag != 0)
-            details["scriptReferences"] = ProjectFiles.Search(root, [], $"{item.AssetTag:X8}", ".lua", 20);
-        return details;
-    }
-
     private JsonObject? AiAssetDetails(uint? hash)
     {
         if (hash is not { } tag || workspace.Catalog is not { } catalog || !catalog.TryGetEntry(tag, out var entry)) return null;
@@ -584,32 +567,6 @@ public sealed partial class StudioForm
             ["size"] = entry.Size, ["package"] = entry.PackageName, ["packageId"] = entry.PackageId, ["entryIndex"] = entry.EntryIndex,
             ["name"] = asset?.Name, ["kind"] = asset?.Kind
         };
-    }
-
-    private List<ObjectEntry> AiObjects(string query)
-    {
-        var entries = new List<ObjectEntry>();
-        var visible = (aiHost?.Visible ?? []).Select(item => item.Id).ToHashSet();
-        string? map = workspace.World?.Map.Name;
-        if (inspectionWorld is { } world)
-            foreach (var item in world.Objects)
-                entries.Add(new ObjectEntry(item.Id, AiLabel(item.Source), item.Kind.ToString(),
-                    visible.Contains(item.Id) ? ObjectScope.Viewport : ObjectScope.Tree, map, AiPackage(item.AssetTag), item.AssetTag));
-        // Assets: only rows sharing the query's first number or longest word, so a large index stays cheap.
-        var words = query.Split([' ', '[', ']', '-', '/', '_', ','], StringSplitOptions.RemoveEmptyEntries)
-            .Where(word => word.Length >= 3).OrderByDescending(word => word.Any(char.IsDigit)).ThenByDescending(word => word.Length).ToArray();
-        if (words.Length > 0)
-        {
-            int added = 0;
-            foreach (var asset in workspace.Assets)
-            {
-                if (!asset.SearchText.Contains(words[0], StringComparison.OrdinalIgnoreCase)) continue;
-                entries.Add(new ObjectEntry("tag:" + asset.Entry.TagHash.ToString("X8"), asset.Name, asset.Kind, ObjectScope.Asset, null,
-                    asset.Entry.PackageName, asset.Entry.TagHash));
-                if (++added >= 5000) break;
-            }
-        }
-        return entries;
     }
 
     /** The tool host; members the tools read off the UI thread are swapped whole. */
@@ -627,9 +584,13 @@ public sealed partial class StudioForm
             ? new[] { Path.Combine(root, "sdk"), Path.Combine(root, "docs") }.Where(Directory.Exists).ToArray() : [];
         public AttentionLog Attention => form.aiAttention;
 
-        public async Task<IReadOnlyList<ObjectEntry>> ObjectsAsync(string query, CancellationToken cancel) =>
-            await form.OnUi(() => form.AiObjects(query)).WaitAsync(cancel).ConfigureAwait(false);
-        public Task<JsonObject?> GetObjectAsync(string id, CancellationToken cancel) => form.OnUi(() => form.AiObjectDetails(id)).WaitAsync(cancel);
+        public IReadOnlyList<CodeRoot> CodeRoots => form.aiCodeRoots;
+        public string? ReferenceFolder => ReferenceLibrary.Locate(form.aiReferenceStarts);
+
+        public Task<IReadOnlyList<ObjectEntry>> ObjectsAsync(string query, CancellationToken cancel) => form.AiObjectsAsync(query, cancel);
+        public Task<JsonObject?> GetObjectAsync(string id, CancellationToken cancel) => form.AiObjectDetailsAsync(id, cancel);
+        public Task<MissionSnapshot?> MissionAsync(CancellationToken cancel) => form.AiMissionAsync(cancel);
+        public Task<JsonObject> ReadPanelAsync(string panel, PanelQuery query, CancellationToken cancel) => form.AiReadPanelAsync(panel, query, cancel);
         public Task<JsonObject> GetOpenDocumentsAsync(CancellationToken cancel) => form.OnUi(form.BuildAiOpenDocuments).WaitAsync(cancel);
         public Task<JsonObject?> GetTagAsync(uint hash, CancellationToken cancel) => form.OnUi(() => form.AiAssetDetails(hash)).WaitAsync(cancel);
         public Task<JsonObject?> GetPackageEntryAsync(string id, CancellationToken cancel) => form.OnUi(() =>

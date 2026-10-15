@@ -9,7 +9,7 @@ public enum ObjectScope { Viewport, Tree, Asset }
 
 /** One resolvable name. Map is null for assets, which belong to no map. */
 public sealed record ObjectEntry(string Id, string Label, string Kind, ObjectScope Scope, string? Map = null,
-    string? Package = null, uint Tag = 0);
+    string? Package = null, uint Tag = 0, IReadOnlyList<uint>? Hashes = null);
 
 public sealed record ObjectMatch(ObjectEntry Entry, int Score, string Why);
 
@@ -55,12 +55,13 @@ public static class ObjectIndex
             if (match.Entry.Map is not null) row["map"] = match.Entry.Map;
             if (match.Entry.Package is not null) row["package"] = match.Entry.Package;
             if (match.Entry.Tag != 0) row["tag"] = $"0x{match.Entry.Tag:X8}";
+            if (match.Entry.Id.StartsWith("slot/", StringComparison.Ordinal)) row["next"] = "get_mission_object";
             array.Add(row);
         }
         return array;
     }
 
-    private sealed record Query(string Normalized, List<string> Words, List<string> Numbers, uint? Hex);
+    private sealed record Query(string Raw, string Normalized, List<string> Words, List<string> Numbers, uint? Hex);
 
     private static Query Parse(string query)
     {
@@ -76,7 +77,7 @@ public static class ObjectIndex
             else if (token.All(char.IsDigit)) numbers.Add(token.TrimStart('0') is { Length: > 0 } trimmed ? trimmed : "0");
             else if (!StopWords.Contains(token)) words.Add(token);
         }
-        return new Query(Normalize(query), words, numbers, hex);
+        return new Query(query.Trim(), Normalize(query), words, numbers, hex);
     }
 
     private static readonly HashSet<string> StopWords = ["the", "a", "an", "that", "this", "one", "do", "you", "see", "i", "is"];
@@ -84,7 +85,10 @@ public static class ObjectIndex
     private static int Score(ObjectEntry entry, Query query, out string why)
     {
         why = "";
+        // Exact ids (slot/80be91f7/000014/0014/0004, a world object id) win outright.
+        if (string.Equals(entry.Id, query.Raw, StringComparison.OrdinalIgnoreCase)) { why = "exact id"; return 1200; }
         if (query.Hex is { } hex && entry.Tag == hex) { why = "tag hash"; return 900; }
+        if (query.Hex is { } other && entry.Hashes?.Contains(other) == true) { why = "registry or asset hash"; return 850; }
         string label = Normalize(entry.Label);
         var tokens = Tokens(entry.Label + " " + entry.Kind).ToList();
         var numbers = tokens.Where(token => token.All(char.IsDigit)).Select(token => token.TrimStart('0') is { Length: > 0 } t ? t : "0").ToHashSet();

@@ -72,12 +72,15 @@ public sealed class WorldDocument
             if (byId.TryGetValue(wrapper.Id, out var current)) return current;
             source = wrapper.Source;
         }
-        if (bySource is null)
+        // Built whole before it is published, so the AI tools may read it off the UI thread.
+        var sources = bySource;
+        if (sources is null)
         {
-            bySource = new(ReferenceEqualityComparer.Instance);
-            foreach (var item in Objects) bySource.TryAdd(item.Source, item);
+            sources = new(ReferenceEqualityComparer.Instance);
+            foreach (var item in Objects) sources.TryAdd(item.Source, item);
+            bySource = sources;
         }
-        if (bySource.TryGetValue(source, out var row)) return row;
+        if (sources.TryGetValue(source, out var row)) return row;
         return source switch
         {
             WorldLight light => Objects.FirstOrDefault(x => x.Source is WorldLight current
@@ -92,6 +95,9 @@ public sealed class WorldDocument
             _ => null
         };
     }
+
+    /** Inspect without the cache, for readers off the UI thread (the cache is not thread-safe). */
+    public WorldObjectInspection? Describe(object source) => Find(source) is { } row ? WorldInspection.Describe(this, row) : null;
 
     public WorldObjectInspection? Inspect(object source)
     {
