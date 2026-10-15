@@ -104,7 +104,11 @@ internal sealed class TerminalView : IDisposable
             run.Clear();
             while (end < line.Length && line[end].Foreground == first.Foreground && line[end].Background == first.Background
                 && line[end].Inverse == first.Inverse)
-                run.Append(line[end++].Char);
+            {
+                // Glyphs are one cell wide, so the right half of a wide character pads with a space.
+                char c = line[end++].Char;
+                run.Append(c == VtScreen.Continuation ? ' ' : c);
+            }
             var from = at + new Vector2(x * cell.X, 0);
             if (bg != 0) draw.AddRectFilled(from, from + new Vector2((end - x) * cell.X, cell.Y), bg);
             string text = run.ToString();
