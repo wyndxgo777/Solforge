@@ -16,4 +16,6 @@ if ($LASTEXITCODE -ne 0) { throw 'Studio publish failed.' }
 # The license notices are embedded; Help > Third-party notices shows them.
 $stale = Join-Path $Output 'THIRD_PARTY.md'
 if (Test-Path $stale) { Remove-Item $stale }
+# Solforge Phase 17: the in-repo Blender add-on ships as its own extension zip beside the exe.
+& (Join-Path $PSScriptRoot 'package-blender.ps1') -Output $Output | Out-Null
 Write-Host "Published to $Output"

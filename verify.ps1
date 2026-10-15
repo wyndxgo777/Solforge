@@ -85,6 +85,8 @@ if ($Game) {
         Invoke-Dotnet "Check failed: $weaponCheck" @((Get-Check $weaponCheck 'net9.0'), '--game-root', $Game)
     }
 }
+# Solforge Phase 17: the Blender add-on zip that ships beside a build (needs no Blender).
+& (Join-Path $PSScriptRoot 'tests/blender_package_check.ps1') -Scratch (New-Scratch 'blender-package')
 $viewportArgs = @((Get-Check 'Viewport.Tests' 'net9.0-windows'), '--output', $Output)
 if ($Game) { $viewportArgs += @('--game', $Game) }
 Invoke-Dotnet 'Viewport checks failed.' $viewportArgs

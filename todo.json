@@ -121,8 +121,8 @@
     {
       "id": "17",
       "title": "Asset Interchange & Export",
-      "status": "upstream_partial",
-      "notes": "glTF/OBJ/DDS/PNG interchange + Blender bundles"
+      "status": "partial",
+      "notes": "glTF/OBJ/DDS/PNG export + Blender bundles exist (Interchange AssetBundle*, WorldSceneExport, Authoring importers); FBX still planned. Added: package-blender.ps1 packs blender/ as <id>-<version>.zip (manifest exclude rules, reproducible), called by publish.ps1; tests/blender_package_check.ps1 in verify.ps1. WAV stems: Audio/AudioStemExport.cs (mix + mono stem per channel, any channel count) with ProjectSystem.Tests StemChecks (raw PCM WEM). Manual: export a compressed Vorbis WEM from the install via AudioStemExport.ExportWem; no Audio page menu item for stems yet; FBX"
     },
     {
       "id": "18",

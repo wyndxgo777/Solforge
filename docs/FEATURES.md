@@ -63,6 +63,9 @@ Project facts (TFM, references, sizes) are in ARCHITECTURE.md; this file is abou
 - (Exists) Blender bundles (`AssetBundle*`, mesh/texture/collision codecs), world scene export
   (`WorldSceneExport`), effect export, `MeshAssetImporter`, `AnimationAssetImporter`,
   `OriginalAssetImporter`, `CollisionImport`, `HavokPackfileBuilder`, `CompressedMeshEncoder`.
+- Solforge Phase 17: `package-blender.ps1` ships `blender/` as an extension zip with publish builds
+  (check: `tests/blender_package_check.ps1`); WAV stem export `Audio/AudioStemExport.cs`.
+- Gaps: FBX export; a Studio menu item for stem export.
 
 ## Weapons (`Authoring` + `Editor/Creation`, Phases 20-23)
 - (Exists) `ExoticWeaponWorkflow`, `ExoticWeaponDefinition`, `PreparedWeapon*` compilers
