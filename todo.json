@@ -109,8 +109,8 @@
     {
       "id": "15",
       "title": "Project System & Workspace Architecture",
-      "status": "upstream_partial",
-      "notes": "Projects: sunrise.project.json (spec says .solproj)"
+      "status": "done",
+      "notes": "sunrise.project.json exists (StudioProject.cs); schema documented in docs/sunrise.project.schema.json + ProjectSchema.cs (Projects); external edit watcher ProjectWatcher.cs (Projects); AppData prefs/layouts/recent projects exist (Editor/StudioSettings.cs, %LocalAppData%/Sunrise Studio/settings.json). Checks: tests/SunriseStudio.ProjectSystem.Tests (SchemaChecks, WatcherChecks) in verify.ps1. Not yet wired: Studio UI polling ProjectWatcher to reload a project"
     },
     {
       "id": "16",

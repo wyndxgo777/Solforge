@@ -48,6 +48,8 @@ $studioChecks = [ordered]@{
     'PackageReplacement.Tests' = 'net9.0'; 'Editor.Tests' = 'net9.0-windows'; 'Creation.Tests' = 'net9.0-windows'
     'OriginalAsset.Tests' = 'net9.0'; 'Shortcuts.Tests' = 'net9.0-windows'
 }
+# Solforge Phases 15-19: project system, overlay, interchange packaging, dependencies, integrity audit (no install).
+$studioChecks['ProjectSystem.Tests'] = 'net9.0-windows'
 # The arguments each check takes with -Game; checks not listed take none.
 $gameArgs = @{
     'Cui.Gpu.Tests' = @('--game-root', $Game, '--output', (Join-Path $Output 'cui-fonts'))

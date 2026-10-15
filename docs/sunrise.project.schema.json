@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/wyndxgo777/solforge/docs/sunrise.project.schema.json",
+  "title": "sunrise.project.json",
+  "description": "A Solforge / Sunrise Studio project manifest (ProjectManifest, manifest version 7). Folder layout beside it: deltas/ (base-relative BinaryDelta JSON per changed tag and per derived added asset), assets/ (whole added files named <id>-<sha256>.bin); build/, exports/ and .local/ are generated and gitignored. Unknown members are rejected. ProjectSystem.Tests keeps the member names here in step with the C# records.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "name", "changes", "addedAssets"],
+  "properties": {
+    "version": { "type": "integer", "minimum": 1, "maximum": 7, "description": "2 object edits, 3 wide hashes, 4 config bindings, 5 names, 6 groups, 7 group collision parts." },
+    "name": { "type": "string", "minLength": 1 },
+    "changes": { "type": "array", "items": { "$ref": "#/$defs/change" }, "description": "Edits of installed tags, stored as deltas against the installed original." },
+    "addedAssets": { "type": "array", "items": { "$ref": "#/$defs/addedAsset" } },
+    "mod": { "$ref": "#/$defs/mod" },
+    "objectEdits": { "type": "array", "description": "ObjectEdit records (SunriseStudio.Projects/ObjectEdits.cs)." },
+    "configBindings": { "type": "array", "description": "ProjectConfigBinding records (ProjectConfigBindings.cs)." },
+    "objectNames": { "type": "array", "items": { "$ref": "#/$defs/objectName" } },
+    "objectGroups": { "type": "array", "description": "ProjectObjectGroup records; collision parts are written as their Key strings." }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9A-Fa-f]{64}$" },
+    "change": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tagHash", "packageName", "originalSha256", "originalSize", "editedSize", "deltaPath", "resultSha256"],
+      "properties": {
+        "tagHash": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+        "packageName": { "type": "string" },
+        "originalSha256": { "$ref": "#/$defs/sha256" },
+        "originalSize": { "type": "integer", "minimum": 0 },
+        "editedSize": { "type": "integer", "minimum": 0 },
+        "deltaPath": { "type": "string", "description": "Project-relative path with '/' separators, under deltas/." },
+        "resultSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "addedAsset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "path", "sha256", "size"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "path": { "type": "string", "description": "Project-relative: assets/<id>-<sha256>.bin, or deltas/added-<id>-<sha256>.json when baseTagHash is set." },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "size": { "type": "integer", "minimum": 0 },
+        "native": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/native" }] },
+        "baseTagHash": { "type": ["integer", "null"], "minimum": 0, "maximum": 4294967295 },
+        "originalSha256": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/sha256" }] },
+        "originalSize": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    },
+    "native": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["packageId", "reference", "typeInfo"],
+      "properties": {
+        "packageId": { "type": "integer", "minimum": 256, "maximum": 3327, "description": "New package ids 0x0100-0x0CFF (PackageWriter.FirstNewPackageId..LastNewPackageId)." },
+        "reference": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+        "typeInfo": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+        "name": { "type": ["string", "null"] },
+        "entryIndex": { "type": ["integer", "null"], "minimum": 0 },
+        "wideHashes": { "type": "array", "items": { "type": "string" }, "description": "64-bit reference keys (WideHashAliasesConverter)." }
+      }
+    },
+    "mod": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "name"],
+      "properties": {
+        "id": { "type": "string" },
+        "version": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": ["string", "null"] },
+        "authors": { "type": ["array", "null"], "items": { "type": "string" } },
+        "src": { "type": ["string", "null"] },
+        "dependencies": { "type": ["array", "null"] },
+        "incompatible": { "type": ["array", "null"], "items": { "type": "string" } },
+        "cheat": { "type": "boolean" },
+        "config": { "type": ["array", "null"] }
+      }
+    },
+    "objectName": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "name"],
+      "properties": {
+        "key": { "type": "string", "maxLength": 512 },
+        "name": { "type": "string", "maxLength": 200 }
+      }
+    }
+  }
+}

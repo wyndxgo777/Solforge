@@ -50,6 +50,12 @@ Project facts (TFM, references, sizes) are in ARCHITECTURE.md; this file is abou
   (native/socket dependency resolution, `BuiltProjectAsset`), `ModInstaller` + `ModManifest`
   (`mod.json`, mods under `bin/x64/Sunrise/mods`), `MergeSidecarArtifact`, `ModUpdatePlan`.
 - Gaps: `.solproj` naming (spec), rollback snapshots (Phase 43), `.solmod` container (Phase 42).
+- (Exists) AppData preferences, window layouts and recent projects: `Editor/StudioSettings.cs`
+  (`%LocalAppData%/Sunrise Studio/settings.json`); revert-to-base per tag: `StudioProject.Revert`
+  + Changes panel "Revert" (`Editor/StudioForm.Browser.cs`); overlay reads: `StudioProject.ReadAsset`
+  over `PackageCatalog.ReadOriginal` + `PackageOverlayEntry`.
+- Solforge Phase 15: `docs/sunrise.project.schema.json` + `ProjectSchema`, external edit watcher
+  `ProjectWatcher` (checks: `tests/SunriseStudio.ProjectSystem.Tests`).
 
 ## Interchange (`SunriseStudio.Interchange`, `Authoring`, Phase 17)
 - (Exists) Blender bundles (`AssetBundle*`, mesh/texture/collision codecs), world scene export
