@@ -96,6 +96,7 @@ public sealed unsafe partial class Dx11Renderer
         }
         Context.DrawIndexedInstanced(mesh.IndexCount, (uint)count, 0, 0, (uint)first);
         DrawCalls++;
+        CountTriangles(mesh.IndexCount, count);
     }
 
     /** Draws wire boxes; each World maps the cube [-1, 1] to one box. */

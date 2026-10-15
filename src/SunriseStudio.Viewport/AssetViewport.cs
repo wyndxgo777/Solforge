@@ -606,11 +606,14 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
         else
         {
             simulationSeconds += ImGui.GetIO().DeltaTime;
+            BeginViewportStatistics();
             var image = RenderImage(Math.Max(1, (int)size.X), Math.Max(1, (int)size.Y), simulationSeconds);
+            EndViewportStatistics();
             draw.AddImage(image.ImGuiId, origin, origin + size);
             Animation?.DrawImGuiBones(draw, origin, size, Camera.ViewProjection(size.X / size.Y));
             DrawObjectNames(draw, origin, size, hovered);
             DrawGizmo(draw, origin, size, hovered);
+            DrawViewOverlays(draw, origin, size);
         }
         draw.PopClipRect();
     }
@@ -694,6 +697,7 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
                 Camera.Orthographic = orthographic;
             }
             ImGui.EndDisabled();
+            DrawViewMenu(Next);
             if (Scene is not null) DrawPlayerControls(Next);
             if (ShowGameShaderToggle)
             {
@@ -902,6 +906,7 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
                 if (ShowCursorToggle && ShortcutInput.Pressed(ShortcutActions.ToggleCursor3D)) ShowCursor = !ShowCursor;
                 if (ShortcutInput.Pressed(ShortcutActions.TogglePlayer3D)) SetPlayerCamera(!Camera.Player);
                 HandleToolKeys();
+                HandleViewKeys();
             }
         }
         if (!image && PlayerCamera) MovePlayer(hovered || dragButton >= 0);
