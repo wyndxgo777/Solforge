@@ -50,6 +50,10 @@ public static class EngineLaunch
         return string.Join(' ', args.Select(Quote));
     }
 
+    /** The Antigravity CLI (agy) gets the same folders; its MCP entry comes from ~/.gemini/config/mcp_config.json. */
+    public static string AgyArguments(IEnumerable<string> addDirs) =>
+        string.Join(' ', addDirs.SelectMany(folder => new[] { "--add-dir", folder }).Select(Quote));
+
     /** cmd /s strips only the outer quotes, so the engine path and each argument keep theirs; /k keeps a prompt afterwards. */
     public static string CmdLine(string executable, string arguments, bool keep = true) =>
         $"cmd.exe /d /s /{(keep ? 'k' : 'c')} \"{Quote(executable)}{(arguments.Length > 0 ? " " + arguments : "")}\"";

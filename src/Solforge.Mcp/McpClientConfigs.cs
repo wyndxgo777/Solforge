@@ -4,7 +4,8 @@ using System.Text.Json.Nodes;
 namespace Solforge.Mcp;
 
 /**
- * Writes the "solforge" MCP server entry for Claude Code, Cline and Antigravity. Every entry runs the stdio
+ * Writes the "solforge" MCP server entry for Claude Code, Cline, the Antigravity desktop app and the Antigravity
+ * CLI (agy), which reads its own file under ~/.gemini/config. Every entry runs the stdio
  * shim with --project, so it reaches the Solforge that has this project open; the session token never goes
  * into a config file. Other servers and settings in each file are kept.
  */
@@ -37,20 +38,27 @@ public static class McpClientConfigs
             Merge(path, cline.DeepClone().AsObject());
             written.Add(new("Cline (VS Code)", path));
         }
-        // Antigravity: ~/.gemini/antigravity/mcp_config.json.
+        // Antigravity desktop app: ~/.gemini/antigravity/mcp_config.json.
         string antigravity = Path.Combine(home, ".gemini", "antigravity", "mcp_config.json");
         Merge(antigravity, new JsonObject { ["command"] = shimPath, ["args"] = Array(args) });
-        written.Add(new("Antigravity", antigravity));
+        written.Add(new("Antigravity (desktop)", antigravity));
+        // Antigravity CLI (agy): ~/.gemini/config/mcp_config.json, the shape "agy mcp add" writes.
+        string agy = Path.Combine(home, ".gemini", "config", "mcp_config.json");
+        Merge(agy, new JsonObject { ["command"] = shimPath, ["args"] = Array(args), ["disabled"] = false });
+        written.Add(new("Antigravity CLI", agy));
         return written;
     }
 
-    /** Sets mcpServers.solforge and keeps the rest; a damaged file is kept beside as .bak and replaced. */
+    /**
+     * Sets mcpServers.solforge and keeps the rest. An empty file (the agy installer leaves one) counts as {}; a
+     * damaged one is kept beside as .bak and replaced.
+     */
     public static void Merge(string path, JsonObject server)
     {
         var root = new JsonObject();
-        if (File.Exists(path))
+        if (File.Exists(path) && File.ReadAllText(path) is { } existing && !string.IsNullOrWhiteSpace(existing))
         {
-            try { root = JsonNode.Parse(File.ReadAllText(path)) as JsonObject ?? new JsonObject(); }
+            try { root = JsonNode.Parse(existing) as JsonObject ?? new JsonObject(); }
             catch (JsonException) { File.Copy(path, path + ".bak", true); root = new JsonObject(); }
         }
         if (root["mcpServers"] is not JsonObject servers) root["mcpServers"] = servers = new JsonObject();

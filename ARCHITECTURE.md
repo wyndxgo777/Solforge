@@ -154,7 +154,8 @@ Real count is 14 libraries (incl. App), not 20.
   visible list every 1 s, screenshots from `FrameRendered` + `CapturePng`, approvals, AI edits with Undo, mission-script hot reload).
   `AssetViewport.Ai.cs` adds `ScreenOrigin`/`ScreenSize`/`ScreenRect`; `LivePage.Ai.cs` adds `AiState`.
 - **Configs:** written when a project is open: `<project>/.mcp.json` (Claude Code), `~/.cline/data/settings/cline_mcp_settings.json`
-  (+ the VS Code Cline extension settings if installed), `~/.gemini/antigravity/mcp_config.json`. Each runs the shim with
+  (+ the VS Code Cline extension settings if installed), `~/.gemini/antigravity/mcp_config.json` (Antigravity desktop) and
+  `~/.gemini/config/mcp_config.json` (the `agy` CLI, which also gets the open folders as `--add-dir`). Each runs the shim with
   `--project`; tokens never go into config files.
 - **Checks:** `tests/SunriseStudio.Mcp.Tests` (in `verify.ps1`): stdio round trip through the shim, find_object fixture, attention
   log, project path rules, config generation.

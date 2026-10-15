@@ -34,7 +34,7 @@ public sealed class SolforgeMcpService : IAsyncDisposable
     public void Publish(string? project) =>
         DiscoveryPath = McpDiscovery.Write(new McpDiscoveryEntry(Environment.ProcessId, server.Url, server.Token, project, DateTimeOffset.UtcNow));
 
-    /** Writes .mcp.json and the Cline and Antigravity settings for the project; null shim means it was not found. */
+    /** Writes .mcp.json and the Cline, Antigravity desktop and Antigravity CLI settings for the project; null shim means it was not found. */
     public IReadOnlyList<McpClientConfigs.Written> WriteClientConfigs(string projectRoot, string shimPath) =>
         Configs = McpClientConfigs.WriteAll(projectRoot, shimPath);
 
