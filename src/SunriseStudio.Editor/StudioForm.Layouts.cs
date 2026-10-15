@@ -26,8 +26,8 @@ public sealed partial class StudioForm
         browserSlot = null;
         settings.BrowserWidth = settings.InspectorWidth = 300;
         settings.ChangesHeight = 190;
-        // The Solforge layout docks the object tree as its own area, so the copy inside the scene view starts hidden.
-        settings.ShowSceneTree = name != StudioLayout.SolforgePreset;
+        // The scene layout docks the object tree as its own area, so the copy inside the scene view starts hidden.
+        settings.ShowSceneTree = name != StudioLayout.ScenePreset;
         settings.SceneTreeWidth = name == StudioLayout.ClassicPreset ? 160 : 280;
         layoutDirty = true;
     }

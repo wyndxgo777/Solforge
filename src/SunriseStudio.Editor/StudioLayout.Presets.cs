@@ -7,20 +7,45 @@ public sealed record StudioLayoutSlot(int SiblingId, StudioSplitAxis Axis, bool 
 public sealed partial class StudioLayout
 {
     public const string SolforgePreset = "Solforge";
+    public const string ScenePreset = "Solforge (scene)";
     public const string ClassicPreset = "Solforge (classic)";
     public const string SunrisePreset = "Sunrise Studio";
-    public static IReadOnlyList<string> PresetNames { get; } = [SolforgePreset, ClassicPreset, SunrisePreset];
+    public static IReadOnlyList<string> PresetNames { get; } = [SolforgePreset, ScenePreset, ClassicPreset, SunrisePreset];
 
     /** An unknown name gives the upstream Sunrise Studio layout. */
     public static StudioLayout Preset(string name) => name switch
     {
         SolforgePreset => Solforge(),
+        ScenePreset => Scene(),
         ClassicPreset => Classic(),
         _ => Default()
     };
 
-    /** Solforge's default: Asset browser left, Workspace centre, Object tree over Inspector right, and a bottom row. */
+    /** Solforge's default (Seth's, 2026-10-15): Asset browser, Workspace and AI, over Project changes and the Mission Graph. */
     private static StudioLayout Solforge() => new(new()
+    {
+        Id = 1, Axis = StudioSplitAxis.Rows, Ratio = .74f,
+        First = new()
+        {
+            Id = 2, Axis = StudioSplitAxis.Columns, Ratio = .16f,
+            First = new() { Id = 3, Panel = StudioPanelKind.Browser },
+            Second = new()
+            {
+                Id = 4, Axis = StudioSplitAxis.Columns, Ratio = .54f,
+                First = new() { Id = 5, Panel = StudioPanelKind.Workspace },
+                Second = new() { Id = 6, Panel = StudioPanelKind.AI }
+            }
+        },
+        Second = new()
+        {
+            Id = 7, Axis = StudioSplitAxis.Columns, Ratio = .5f,
+            First = new() { Id = 8, Panel = StudioPanelKind.Changes },
+            Second = new() { Id = 9, Panel = StudioPanelKind.MissionGraph }
+        }
+    });
+
+    /** Scene editing: Asset browser left, Workspace centre, Object tree over Inspector right, and a bottom row. */
+    private static StudioLayout Scene() => new(new()
     {
         Id = 1, Axis = StudioSplitAxis.Rows, Ratio = .74f,
         First = new()
