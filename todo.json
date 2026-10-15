@@ -92,8 +92,8 @@
     {
       "id": "12",
       "title": "Shader & Material Pipeline",
-      "status": "upstream_partial",
-      "notes": "Rendering game shaders, NativeRenderStates86657.json, MaterialInspector"
+      "status": "done",
+      "notes": "(Exists) game-material shading instead of a stand-in PBR shader: GameMaterialReader + NativeMaterialPipeline execute the original Tiger pixel shaders (Rendering/NativeRendering.cs, NativeDeferredShading.cs); BC1-BC5 CPU decode (Formats/TexturePixels.cs), BC7 via BCnEncoder.Net BcDecoder (Interchange/BundleTextureCodec.cs), all BCn on the GPU (Rendering/TextureUploads.cs incl. cube textures); authored cubemap probes and ambient diffuse in the game-shader path (Rendering/NativeCubemapLighting.cs, NativeAmbientLighting.cs). Solforge: CPU cubemap -> SH9 irradiance projection, box probe weights/nesting and box-projected (parallax) lookups (Rendering/ProbeLighting.cs) for the geometry preview and export; not yet used by the fallback MeshShader. Checks: ViewportPipeline.Tests ProbeChecks"
     },
     {
       "id": "13",

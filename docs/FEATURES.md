@@ -48,6 +48,9 @@ Project facts (TFM, references, sizes) are in ARCHITECTURE.md; this file is abou
 ## Materials and shaders (`SunriseStudio.Rendering` + `Formats`, Phase 12)
 - (Exists) `GameMaterialReader`, `MaterialSampler`, `MaterialStageData`, DXBC text/checksum,
   `Data/NativeRenderStates86657.json`, Editor `MaterialsPage`/`ShadersPage`/`MaterialWorkflow`.
+- (Exists) BCn: BC1-BC5 CPU decode (`TexturePixels`), BC7 via BCnEncoder.Net (`BundleTextureCodec`), GPU upload of all BCn.
+- Solforge (Phase 12): `ProbeLighting` projects cubemaps to SH9 ambient irradiance and weighs/parallax-corrects box
+  reflection probes on the CPU; the game-shader path keeps the authored probes (`NativeCubemapLighting`).
 
 ## Project system and overlay (`SunriseStudio.Projects`, Phases 15-16, 18, 43)
 - (Exists) `StudioProject` (`sunrise.project.json`), `ProjectManifest`, `ProjectAssetEdits`,
