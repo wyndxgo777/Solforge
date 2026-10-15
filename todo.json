@@ -138,7 +138,8 @@
     {
       "id": "20",
       "title": "Parhelion Source Audit & Domain Extraction",
-      "status": "todo"
+      "status": "done",
+      "notes": "docs/PARHELION_AUDIT.md (module map, kept vs dropped, licence); src/Solforge.Weapons (WeaponRecipe, WeaponRecipeEnums, WeaponRecipeJson, WeaponRecipeValidator, WeaponDonorProfile, WeaponNamespace, HexHash) built on Formats InvestmentItemDetail + Authoring WeaponTuning; check tests/Solforge.Weapons.Tests (sample.weapon.json round-trip + 22 rejection cases + donor checks, no game needed) in .sln and verify.ps1; THIRD_PARTY.md Parhelion GPL-3.0-only section. Licence decision open (Studio.md 2.1). RPN stack-depth check deferred to 21."
     },
     {
       "id": "21",

@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <RootNamespace>Solforge.Weapons</RootNamespace>
+    <!-- Directory.Build.props keys warnings-as-errors on the src\SunriseStudio.* folder name, so this
+         project opts in explicitly with the same NuGet audit exclusions. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../SunriseStudio.Formats/SunriseStudio.Formats.csproj" />
+    <ProjectReference Include="../SunriseStudio.Authoring/SunriseStudio.Authoring.csproj" />
+  </ItemGroup>
+</Project>

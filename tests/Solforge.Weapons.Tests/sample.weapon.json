@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "namespace": "solforge.first-light",
+  "collection_placement": "sunrise_badge",
+  "donor": {
+    "item_hash": "0x3E7B47F8",
+    "expected_name": "Stock hand cannon"
+  },
+  "identity": {
+    "item_hash": "0xA1B2C3D4",
+    "collectible_hash": "0xA1B2C3D5",
+    "unlock_hash": "0xA1B2C3D6",
+    "name_hash": "0xA1B2C3D7",
+    "flavor_hash": "0xA1B2C3D8",
+    "source_hash": "0xA1B2C3D9"
+  },
+  "name": "First Light",
+  "flavor": "\"Everything after this is yours.\"",
+  "source": "Source: Project Sol",
+  "locale_overrides": [
+    { "locale_index": 1, "name": "Premiere Lueur" }
+  ],
+  "overrides": {
+    "investment_stats": [
+      { "definition_index": 16, "value": 55 },
+      { "definition_index": 22, "value": 80 }
+    ],
+    "inventory_slot": "kinetic",
+    "ammo_type": "primary",
+    "modern_damage_type": "kinetic",
+    "power_cap_group": 15,
+    "rarity": "legendary",
+    "collection_destination": { "ammo": "primary", "family": "hand_cannons" },
+    "tuning": { "rounds_per_minute": 140, "magazine": 9 },
+    "socket_columns": [
+      null,
+      {
+        "choices": ["0x5778AFAD", "0x6DAFD49E"],
+        "socket_type": null,
+        "choice_weight_bits": [],
+        "choice_conditions": [],
+        "reusable_plug_set_index": null,
+        "randomized_plug_set_index": null,
+        "randomized_selection_program": []
+      },
+      {
+        "choices": ["0x9FBF6A53"],
+        "socket_type": 92
+      }
+    ],
+    "raw_payload_patches": [
+      { "target": "item_stats_block", "offset": 16, "bytes": "0x0000_0000" }
+    ]
+  }
+}
