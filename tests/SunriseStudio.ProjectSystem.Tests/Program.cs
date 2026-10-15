@@ -12,6 +12,7 @@ try
     OverlayChecks.Run(Path.Combine(root, "overlay"), checks);
     StemChecks.Run(Path.Combine(root, "stems"), checks);
     DependencyChecks.Run(Path.Combine(root, "dependencies"), checks);
+    IntegrityChecks.Run(Path.Combine(root, "integrity"), checks);
     foreach (string check in checks) Console.WriteLine("ok: " + check);
     Console.WriteLine($"Project system checks passed ({checks.Count}).");
 }

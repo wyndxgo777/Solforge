@@ -133,7 +133,8 @@
     {
       "id": "19",
       "title": "Checker Phase: Project & Overlay Engine Audit",
-      "status": "todo"
+      "status": "done",
+      "notes": "tests/SunriseStudio.ProjectSystem.Tests/IntegrityChecks.cs (run by verify.ps1, no install): generated install (60 tags) + project with 50 modified tags and 20 new assets (15 native in an allocated package); base package SHA-256s unchanged, every authored byte reads back after reload with a fresh catalog, re-save byte-identical, dependency manifest complete. Pending: main session build + verify run (agent did not build)"
     },
     {
       "id": "20",

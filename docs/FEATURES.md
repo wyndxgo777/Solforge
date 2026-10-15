@@ -60,6 +60,8 @@ Project facts (TFM, references, sizes) are in ARCHITECTURE.md; this file is abou
   dialog with "Revert to base" (`Editor/StudioForm.TagDiff.cs`).
 - Solforge Phase 18: `DependencyCrawler` + `DependencyManifest` (`build/dependencies.json`, missing
   texture/audio/script/child references) and `PackageIdAllocator` (0x0100-0x0CFF).
+- Solforge Phase 19: `ProjectSystem.Tests/IntegrityChecks` audits a generated 50-edit / 20-asset
+  project: base packages untouched, save/reload byte-identical.
 
 ## Interchange (`SunriseStudio.Interchange`, `Authoring`, Phase 17)
 - (Exists) Blender bundles (`AssetBundle*`, mesh/texture/collision codecs), world scene export
