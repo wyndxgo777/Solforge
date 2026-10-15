@@ -97,13 +97,78 @@ public sealed unsafe class ImGuiController : IDisposable
             if (fontPath is not null && File.Exists(fontPath)) fonts.AddFontFromFileTTF(fontPath, fontSize);
             else fonts.AddFontDefault();
         }
-        string monoPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Fonts), "consola.ttf");
-        monospace = File.Exists(monoPath) ? fonts.AddFontFromFileTTF(monoPath, fontSize) : fonts.AddFontDefault();
+        AddMonospace(fonts, fontSize);
         if (hostTitle is { } hosted) { title = hosted; return; }
         // The title font is Segoe UI Semibold when installed, else the body face, at 1.4 times the body size.
         string titlePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Fonts), "seguisb.ttf");
         string? titleFace = File.Exists(titlePath) ? titlePath : fontPath is not null && File.Exists(fontPath) ? fontPath : null;
         title = titleFace is not null ? fonts.AddFontFromFileTTF(titleFace, fontSize * 1.4f) : fonts.AddFontDefault();
+    }
+
+    /**
+     * The atlas keeps the range pointer until it is cleared, and fonts are rebuilt on DPI changes,
+     * so the ranges live for the process: Latin to Ext-A, punctuation, arrows to Misc Technical,
+     * box drawing through Braille (TUI rules, spinners and dingbats), and U+FFFD.
+     */
+    private static readonly ushort* TerminalRanges = MakeRanges(
+        [0x0020, 0x017F, 0x2000, 0x206F, 0x2190, 0x23FF, 0x2500, 0x28FF, 0xFFFD, 0xFFFD]);
+
+    private static ushort* MakeRanges(ReadOnlySpan<ushort> pairs)
+    {
+        var ranges = (ushort*)NativeMemory.AllocZeroed((nuint)(pairs.Length + 1), sizeof(ushort));
+        pairs.CopyTo(new Span<ushort>(ranges, pairs.Length));
+        return ranges;
+    }
+
+    /**
+     * Consolas for code and the AI terminal, with Segoe UI Symbol merged in for the symbols Consolas
+     * lacks. Merged glyphs are pinned to the Consolas advance so terminal columns stay on the grid.
+     */
+    private void AddMonospace(ImFontAtlasPtr fonts, float fontSize)
+    {
+        string folder = Environment.GetFolderPath(Environment.SpecialFolder.Fonts);
+        string monoPath = Path.Combine(folder, "consola.ttf"), symbolPath = Path.Combine(folder, "seguisym.ttf");
+        if (!File.Exists(monoPath)) { monospace = fonts.AddFontDefault(); return; }
+        ImFontConfigPtr config = ImGuiNative.ImFontConfig_ImFontConfig();
+        monospace = fonts.AddFontFromFileTTF(monoPath, fontSize, config, (IntPtr)TerminalRanges);
+        if (File.Exists(symbolPath) && CellAdvance(monoPath) is { } advance)
+        {
+            config.MergeMode = true;
+            config.GlyphMinAdvanceX = config.GlyphMaxAdvanceX = advance * fontSize;
+            fonts.AddFontFromFileTTF(symbolPath, fontSize, config, (IntPtr)TerminalRanges);
+        }
+        config.Destroy();
+    }
+
+    /**
+     * A monospaced face's advance as a fraction of ImGui's pixel size (hhea ascent minus descent),
+     * read from the first hmtx entry. Null when the tables are missing.
+     */
+    private static float? CellAdvance(string path)
+    {
+        try
+        {
+            var data = File.ReadAllBytes(path);
+            int Read16(int at) => data[at] << 8 | data[at + 1];
+            int Table(string tag)
+            {
+                for (int i = 0, count = Read16(4); i < count; i++)
+                {
+                    int entry = 12 + 16 * i;
+                    if (System.Text.Encoding.ASCII.GetString(data, entry, 4) == tag)
+                        return data[entry + 8] << 24 | data[entry + 9] << 16 | data[entry + 10] << 8 | data[entry + 11];
+                }
+                return -1;
+            }
+            int hhea = Table("hhea"), hmtx = Table("hmtx");
+            if (hhea < 0 || hmtx < 0) return null;
+            int height = (short)Read16(hhea + 4) - (short)Read16(hhea + 6);
+            return height > 0 ? Read16(hmtx) / (float)height : null;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or IndexOutOfRangeException or ArgumentException)
+        {
+            return null;
+        }
     }
 
     private void UploadFonts(ImFontAtlasPtr fonts)
