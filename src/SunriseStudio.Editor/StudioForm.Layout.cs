@@ -12,17 +12,8 @@ public sealed partial class StudioForm
     private bool layoutDirty;
     public StudioLayout EditorLayout => layout;
 
-    public void ResetLayout()
-    {
-        foreach (var popout in popouts.ToArray()) ClosePopout(popout.Panel);
-        layout = StudioLayout.Default();
-        maximizedPanel = null;
-        settings.BrowserWidth = settings.InspectorWidth = 300;
-        settings.ChangesHeight = 190;
-        settings.SceneTreeWidth = 280;
-        settings.ShowSceneTree = true;
-        layoutDirty = true;
-    }
+    // Solforge: Reset layout uses the UE5 preset (Studio.md §3.9); Window > Layouts keeps the upstream one.
+    public void ResetLayout() => ApplyLayoutPreset(StudioLayout.Ue5Preset);
 
     private static string PanelTitle(StudioPanelKind kind) => kind switch
     {

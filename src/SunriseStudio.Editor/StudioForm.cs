@@ -89,6 +89,7 @@ public sealed partial class StudioForm : Form
         settingsPath = options.SettingsPath ?? StudioSettings.DefaultPath;
         settings = StudioSettings.Load(settingsPath);
         layout = StudioLayout.Restore(settings.Layout, settings.BrowserWidth, settings.InspectorWidth, settings.ChangesHeight);
+        UseFirstRunLayout();
         missionGraph.LayoutDirectory = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(settingsPath))!, "mission-layouts");
         ShortcutInput.Map = ShortcutMap.FromElement(settings.Shortcuts);
         ApplyCacheSettings();
@@ -535,6 +536,7 @@ public sealed partial class StudioForm : Form
         if (ShortcutInput.Pressed(ShortcutActions.Redo)) RedoActive();
         if (ShortcutInput.Pressed(ShortcutActions.SaveProject)) SaveActiveDocument();
         HandleNavigationShortcuts();
+        HandleLayoutShortcuts();
         if (!workspace.CanEdit) return;
         if (ShortcutInput.Pressed(ShortcutActions.BuildPackages)) workspace.Run(() => workspace.Build());
         if (ShortcutInput.Pressed(ShortcutActions.BuildAndInstall)) InstallMod();

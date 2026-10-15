@@ -31,6 +31,7 @@ public static class ShortcutActions
     public const string ClonePlug = "menu.create_plug";
     public const string NavigateBack = "menu.navigate_back";
     public const string NavigateForward = "menu.navigate_forward";
+    public const string ToggleBrowser = "menu.toggle_browser";
 
     public const string Pan2D = "2d.pan";
     public const string Zoom2D = "2d.zoom";
@@ -52,6 +53,10 @@ public static class ShortcutActions
     public const string HideSelection3D = "3d.hide_selection";
     public const string ShowAll3D = "3d.show_all";
     public const string TogglePlayer3D = "3d.toggle_player";
+    public const string SelectTool3D = "3d.select_tool";
+    public const string MoveTool3D = "3d.move_tool";
+    public const string RotateTool3D = "3d.rotate_tool";
+    public const string ScaleTool3D = "3d.scale_tool";
 
     private static readonly ShortcutKind[] KeyOnly = [ShortcutKind.Key];
     private static readonly ShortcutKind[] KeyOrClick = [ShortcutKind.Key, ShortcutKind.Click];
@@ -79,6 +84,7 @@ public static class ShortcutActions
         new(ClonePlug, "Clone plug", ShortcutSection.Menus, KeyOnly),
         new(NavigateBack, "Navigate back", ShortcutSection.Menus, KeyOrClick),
         new(NavigateForward, "Navigate forward", ShortcutSection.Menus, KeyOrClick),
+        new(ToggleBrowser, "Show or hide the Asset browser", ShortcutSection.Menus, KeyOnly),
 
         new(Pan2D, "Pan", ShortcutSection.View2D, DragOnly),
         new(Zoom2D, "Zoom", ShortcutSection.View2D, WheelOrDrag),
@@ -99,7 +105,11 @@ public static class ShortcutActions
         new(ToggleTree3D, "Show or hide the object tree", ShortcutSection.View3D, KeyOnly),
         new(HideSelection3D, "Hide selected object", ShortcutSection.View3D, KeyOnly),
         new(ShowAll3D, "Show all objects", ShortcutSection.View3D, KeyOnly),
-        new(TogglePlayer3D, "Toggle player camera", ShortcutSection.View3D, KeyOnly)
+        new(TogglePlayer3D, "Toggle player camera", ShortcutSection.View3D, KeyOnly),
+        new(SelectTool3D, "Select tool", ShortcutSection.View3D, KeyOnly),
+        new(MoveTool3D, "Move tool", ShortcutSection.View3D, KeyOnly),
+        new(RotateTool3D, "Rotate tool", ShortcutSection.View3D, KeyOnly),
+        new(ScaleTool3D, "Scale tool", ShortcutSection.View3D, KeyOnly)
     ];
 
     private static readonly Dictionary<string, ShortcutAction> ById = All.ToDictionary(action => action.Id, StringComparer.Ordinal);
@@ -175,6 +185,7 @@ public static class ShortcutPresets
         (ShortcutActions.ClonePlug, ""),
         (ShortcutActions.NavigateBack, "Back click or Alt+Left Arrow"),
         (ShortcutActions.NavigateForward, "Forward click or Alt+Right Arrow"),
+        (ShortcutActions.ToggleBrowser, "Ctrl+Space"),
         (ShortcutActions.Pan2D, "Middle drag or Right drag"),
         (ShortcutActions.Zoom2D, "Wheel"),
         (ShortcutActions.FrameSelection2D, "F or Numpad ."),
@@ -193,7 +204,11 @@ public static class ShortcutPresets
         (ShortcutActions.ToggleTree3D, ""),
         (ShortcutActions.HideSelection3D, ""),
         (ShortcutActions.ShowAll3D, ""),
-        (ShortcutActions.TogglePlayer3D, "")
+        (ShortcutActions.TogglePlayer3D, ""),
+        (ShortcutActions.SelectTool3D, "Q"),
+        (ShortcutActions.MoveTool3D, "W"),
+        (ShortcutActions.RotateTool3D, "E"),
+        (ShortcutActions.ScaleTool3D, "R")
     ];
 
     private static (string Id, string Bindings)[] BlenderRows() =>
@@ -216,6 +231,7 @@ public static class ShortcutPresets
         (ShortcutActions.ClonePlug, ""),
         (ShortcutActions.NavigateBack, "Back click"),
         (ShortcutActions.NavigateForward, "Forward click"),
+        (ShortcutActions.ToggleBrowser, ""),
         (ShortcutActions.Pan2D, "Middle drag"),
         (ShortcutActions.Zoom2D, "Wheel or Ctrl+Middle drag"),
         (ShortcutActions.FrameSelection2D, "Numpad ."),
@@ -234,7 +250,11 @@ public static class ShortcutPresets
         (ShortcutActions.ToggleTree3D, ""),
         (ShortcutActions.HideSelection3D, "H"),
         (ShortcutActions.ShowAll3D, "Alt+H"),
-        (ShortcutActions.TogglePlayer3D, "")
+        (ShortcutActions.TogglePlayer3D, ""),
+        (ShortcutActions.SelectTool3D, ""),
+        (ShortcutActions.MoveTool3D, ""),
+        (ShortcutActions.RotateTool3D, ""),
+        (ShortcutActions.ScaleTool3D, "")
     ];
 
     private static (string Id, string Bindings)[] UnityRows() =>
@@ -257,6 +277,7 @@ public static class ShortcutPresets
         (ShortcutActions.ClonePlug, ""),
         (ShortcutActions.NavigateBack, "Back click"),
         (ShortcutActions.NavigateForward, "Forward click"),
+        (ShortcutActions.ToggleBrowser, ""),
         (ShortcutActions.Pan2D, "Middle drag"),
         (ShortcutActions.Zoom2D, "Wheel"),
         (ShortcutActions.FrameSelection2D, "F"),
@@ -275,7 +296,11 @@ public static class ShortcutPresets
         (ShortcutActions.ToggleTree3D, ""),
         (ShortcutActions.HideSelection3D, ""),
         (ShortcutActions.ShowAll3D, ""),
-        (ShortcutActions.TogglePlayer3D, "")
+        (ShortcutActions.TogglePlayer3D, ""),
+        (ShortcutActions.SelectTool3D, ""),
+        (ShortcutActions.MoveTool3D, "W"),
+        (ShortcutActions.RotateTool3D, "E"),
+        (ShortcutActions.ScaleTool3D, "R")
     ];
 
     private static (string Id, string Bindings)[] MayaRows() =>
@@ -298,6 +323,7 @@ public static class ShortcutPresets
         (ShortcutActions.ClonePlug, ""),
         (ShortcutActions.NavigateBack, "Back click"),
         (ShortcutActions.NavigateForward, "Forward click"),
+        (ShortcutActions.ToggleBrowser, ""),
         (ShortcutActions.Pan2D, "Alt+Middle drag"),
         (ShortcutActions.Zoom2D, "Alt+Right drag or Wheel"),
         (ShortcutActions.FrameSelection2D, "F"),
@@ -316,7 +342,11 @@ public static class ShortcutPresets
         (ShortcutActions.ToggleTree3D, ""),
         (ShortcutActions.HideSelection3D, "Ctrl+H"),
         (ShortcutActions.ShowAll3D, ""),
-        (ShortcutActions.TogglePlayer3D, "")
+        (ShortcutActions.TogglePlayer3D, ""),
+        (ShortcutActions.SelectTool3D, "Q"),
+        (ShortcutActions.MoveTool3D, "W"),
+        (ShortcutActions.RotateTool3D, "E"),
+        (ShortcutActions.ScaleTool3D, "R")
     ];
 
     private static (string Id, string Bindings)[] UnrealRows() =>
@@ -339,6 +369,7 @@ public static class ShortcutPresets
         (ShortcutActions.ClonePlug, ""),
         (ShortcutActions.NavigateBack, "Back click"),
         (ShortcutActions.NavigateForward, "Forward click"),
+        (ShortcutActions.ToggleBrowser, "Ctrl+Space"),
         (ShortcutActions.Pan2D, "Right drag"),
         (ShortcutActions.Zoom2D, "Wheel"),
         (ShortcutActions.FrameSelection2D, ""),
@@ -357,7 +388,11 @@ public static class ShortcutPresets
         (ShortcutActions.ToggleTree3D, ""),
         (ShortcutActions.HideSelection3D, "H"),
         (ShortcutActions.ShowAll3D, "Ctrl+H"),
-        (ShortcutActions.TogglePlayer3D, "")
+        (ShortcutActions.TogglePlayer3D, ""),
+        (ShortcutActions.SelectTool3D, "Q"),
+        (ShortcutActions.MoveTool3D, "W"),
+        (ShortcutActions.RotateTool3D, "E"),
+        (ShortcutActions.ScaleTool3D, "R")
     ];
 
     /** Parses one table; a bad row is skipped at run time and reported when problems is set. */

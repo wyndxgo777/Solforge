@@ -120,9 +120,9 @@ public sealed partial class StudioForm
             bool wire = viewport?.Wireframe ?? false, grid = viewport?.ShowGrid ?? true;
             if (ImGui.MenuItem("Wireframe", "", ref wire)) viewport!.Wireframe = wire;
             if (ImGui.MenuItem("Grid", "", ref grid)) viewport!.ShowGrid = grid;
-            DrawLayoutMenu();
             ImGui.EndMenu();
         }
+        DrawWindowMenu();
         if (ImGui.BeginMenu("Help"))
         {
             if (ImGui.MenuItem("Third-party notices")) noticesDialog = true;

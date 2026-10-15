@@ -73,6 +73,17 @@ user-visible strings are rebranded (Phase 03).
   icon/asset `File.ReadAllBytes` in creation dialogs and Import delta, settings/layout saves, and the
   `Directory.Exists` in the mission script combo (runs only while the combo is open with no scripts).
 
+## Phase 03B notes (layout presets)
+
+- **Presets** (`Editor/StudioLayout.Presets.cs`, new partial): `UE5`, `Solforge (current)` and the upstream
+  `Sunrise Studio` default, all plain split trees. `Remove`/`Reinsert` take an area out and put it back beside
+  the same neighbour (the Ctrl+Space Asset browser drawer). Window > Layouts lists the presets; Reset layout is UE5.
+- **First run:** UE5 applies only when there is no settings file and no saved layout, and never in smoke runs, so
+  saved layouts and the UI checks keep their trees.
+- **Viewport** (`Viewport/AssetViewport.Fly.cs`, new partial): right drag + W/A/S/D/Q/E flies the orbit camera,
+  the wheel sets fly speed meanwhile; an unbound right drag is a fly look. Q/W/E/R pick the transform tool,
+  never while flying, dragging or in the player camera (which owns W/A/S/D, Space and Ctrl).
+
 ## Phase 03C notes (Sol theme)
 
 - **SolTheme** (`Viewport/SolTheme.cs`, new file): the sol.css token set, launcher sizes (title 17, body 14,

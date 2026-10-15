@@ -868,6 +868,7 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
                 if (!ImGui.IsMouseClicked((ImGuiMouseButton)button)) continue;
                 var actions = ShortcutInput.Mouse(view, button);
                 if (actions.FirstOrDefault(IsDragAction) is { } drag) { dragButton = (int)button; dragAction = drag; }
+                else if (StartsFlyLook(button, image)) { dragButton = (int)button; dragAction = FlyLook; }
                 if (actions.Contains(ShortcutActions.Select3D))
                 {
                     selecting = true;
@@ -888,17 +889,19 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
                 {
                     float wheel = ShortcutInput.Wheel(view, ShortcutActions.Zoom3D);
                     if (PlayerCamera) ScalePlayerSpeed(wheel);
+                    else if (Flying) ScaleFlySpeed(wheel);
                     else Camera.Zoom(wheel);
                 }
                 if (Camera.PivotFree)
                 {
                     if (ShortcutInput.Pressed(ShortcutActions.FrameSelection3D)) FocusSelection();
                     // A movement key may also be bound to frame all, as A is in the Maya preset.
-                    if (!PlayerCamera && ShortcutInput.Pressed(ShortcutActions.FrameAll3D)) Frame();
+                    if (!PlayerCamera && !Flying && ShortcutInput.Pressed(ShortcutActions.FrameAll3D)) Frame();
                     if (ShortcutInput.Pressed(ShortcutActions.SetCursor3D)) SetCursorToSelection();
                 }
                 if (ShowCursorToggle && ShortcutInput.Pressed(ShortcutActions.ToggleCursor3D)) ShowCursor = !ShowCursor;
                 if (ShortcutInput.Pressed(ShortcutActions.TogglePlayer3D)) SetPlayerCamera(!Camera.Player);
+                HandleToolKeys();
             }
         }
         if (!image && PlayerCamera) MovePlayer(hovered || dragButton >= 0);
@@ -915,6 +918,7 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
         if (!ImGui.IsMouseDown((ImGuiMouseButton)dragButton)) { dragButton = -1; return; }
         // Modifiers pressed during a drag can switch it, as Shift turns an orbit into a pan.
         string action = ShortcutInput.Mouse(view, (ShortcutButton)dragButton).FirstOrDefault(IsDragAction) ?? dragAction;
+        if (!image && Fly(action)) return;
         if (image)
         {
             if (action == ShortcutActions.Pan2D) imageOffset += io.MouseDelta;
@@ -924,7 +928,7 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
         // The player camera turns in place on orbit and pan drags, so Shift for sprint keeps the look.
         else if (PlayerCamera)
         {
-            if (action is ShortcutActions.Orbit3D or ShortcutActions.Pan3D) Camera.Look(io.MouseDelta.X, io.MouseDelta.Y);
+            if (action is ShortcutActions.Orbit3D or ShortcutActions.Pan3D or FlyLook) Camera.Look(io.MouseDelta.X, io.MouseDelta.Y);
         }
         else if (action == ShortcutActions.Pan3D) { if (Camera.PivotFree) Camera.Pan(io.MouseDelta.X, io.MouseDelta.Y, (int)size.Y); }
         else if (action == ShortcutActions.Orbit3D) Camera.Orbit(io.MouseDelta.X, io.MouseDelta.Y);

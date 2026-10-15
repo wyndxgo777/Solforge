@@ -32,6 +32,12 @@
       "notes": "Solforge.exe + user-visible strings (incl. loading screen and empty workspace titles), credit in Help/tooltip/THIRD_PARTY.md, status bar (profile/packages/keys/cache/mem), UI-thread I/O audit; ImGui docking skipped: Studio has its own split-tree layout; dark theme delivered by SolTheme (03C)"
     },
     {
+      "id": "03B",
+      "title": "Layout Presets & UE5 Shortcuts",
+      "status": "done",
+      "notes": "StudioLayout.Presets.cs: UE5 (Place | Viewport | Outliner/Details, bottom Changes | Mission Graph), Solforge (current) (Seth 2026-10-15 tree) and upstream Sunrise Studio; Window > Layouts / Panels / Restore areas / Reset layout (Reset = UE5); UE5 only on a fresh install (no settings file, not smoke runs). Shortcuts: Ctrl+Space Asset browser drawer (Remove/Reinsert area), Q/W/E/R tool keys, RMB+WASD/QE fly + wheel fly speed (AssetViewport.Fly.cs). Not done: Ctrl+Shift+A (AI workspace is 47B); drawer tabs (one editor per area, so the drawer is a split). Tests updated, not run"
+    },
+    {
       "id": "03C",
       "title": "Sol UI Overhaul & Map-Scoped Missions",
       "status": "partial",

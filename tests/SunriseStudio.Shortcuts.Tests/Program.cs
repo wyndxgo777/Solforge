@@ -86,7 +86,13 @@ static void SunriseDefaults()
         [Pan3D] = [ShortcutBinding.Drag(Middle), ShortcutBinding.Drag(Right, Shift)],
         [Zoom3D] = [ShortcutBinding.Wheel()],
         [FrameSelection3D] = [Key("F"), Key("Numpad .")],
-        [Select3D] = [ShortcutBinding.Click(Left)]
+        [Select3D] = [ShortcutBinding.Click(Left)],
+        // Phase 03B: UE5 tool keys and the Asset browser drawer.
+        [ToggleBrowser] = [Key("Space", Ctrl)],
+        [SelectTool3D] = [Key("Q")],
+        [MoveTool3D] = [Key("W")],
+        [RotateTool3D] = [Key("E")],
+        [ScaleTool3D] = [Key("R")]
     };
     foreach (var action in ShortcutActions.All)
         Same(map.Bindings(action.Id), expected.GetValueOrDefault(action.Id) ?? [], $"Sunrise Studio {action.Id}");

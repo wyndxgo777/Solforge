@@ -18,7 +18,7 @@ public sealed class StudioLayoutNode
     [JsonIgnore] public bool IsLeaf => First is null && Second is null;
 }
 
-public sealed class StudioLayout
+public sealed partial class StudioLayout
 {
     public const int MaximumPanels = 16;
     private static readonly JsonSerializerOptions Json = new()
