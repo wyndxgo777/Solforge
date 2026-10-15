@@ -54,7 +54,8 @@ public sealed record WeaponDonorReference
     public string? ExpectedName { get; init; }
 }
 
-/** The hashes the new weapon owns. All are derived from the namespace when a recipe is created. */
+/** The hashes the new weapon owns. FromNamespace derives all twelve the way Parhelion does; a recipe must
+ *  write the required ones, and an omitted optional one is derived from the namespace (Resolve). */
 public sealed record WeaponIdentity
 {
     public required HexHash ItemHash { get; init; }
@@ -70,20 +71,30 @@ public sealed record WeaponIdentity
     public HexHash? InventoryHintHash { get; init; }
     public HexHash? CollectionRequirementHash { get; init; }
 
-    public IEnumerable<(string Field, HexHash Hash)> All()
+    /** Parhelion's from_namespace as a full identity with every optional hash written. */
+    public static WeaponIdentity FromNamespace(string ns)
     {
-        yield return ("identity.item_hash", ItemHash);
-        yield return ("identity.collectible_hash", CollectibleHash);
-        yield return ("identity.unlock_hash", UnlockHash);
-        if (PatternGlobalIdHash is { } pattern) yield return ("identity.pattern_global_id_hash", pattern);
-        yield return ("identity.name_hash", NameHash);
-        if (TypeHash is { } type) yield return ("identity.type_hash", type);
-        yield return ("identity.flavor_hash", FlavorHash);
-        yield return ("identity.source_hash", SourceHash);
-        if (CollectionNameHash is { } name) yield return ("identity.collection_name_hash", name);
-        if (CollectionDescriptionHash is { } description) yield return ("identity.collection_description_hash", description);
-        if (InventoryHintHash is { } hint) yield return ("identity.inventory_hint_hash", hint);
-        if (CollectionRequirementHash is { } requirement) yield return ("identity.collection_requirement_hash", requirement);
+        var h = WeaponIdentityHashes.Derive(ns).Select(HexHash.From).ToArray();
+        return new()
+        {
+            ItemHash = h[0], CollectibleHash = h[1], UnlockHash = h[2], PatternGlobalIdHash = h[3], NameHash = h[4],
+            TypeHash = h[5], FlavorHash = h[6], SourceHash = h[7], CollectionNameHash = h[8],
+            CollectionDescriptionHash = h[9], InventoryHintHash = h[10], CollectionRequirementHash = h[11],
+        };
+    }
+
+    /** All twelve hashes in WeaponIdentityHashes.Roles order as Parhelion's to_compiler sees them: an omitted
+     *  optional hash is derived from the namespace and marked Derived. With a malformed namespace those are skipped. */
+    public IEnumerable<(int Role, string Field, HexHash Hash, bool Derived)> Resolve(string? ns)
+    {
+        uint[]? derived = ns is not null && WeaponNamespace.Problem(ns) is null ? WeaponIdentityHashes.Derive(ns) : null;
+        HexHash?[] authored = [ItemHash, CollectibleHash, UnlockHash, PatternGlobalIdHash, NameHash, TypeHash, FlavorHash,
+            SourceHash, CollectionNameHash, CollectionDescriptionHash, InventoryHintHash, CollectionRequirementHash];
+        for (int i = 0; i < authored.Length; i++)
+        {
+            if (authored[i] is { } hash) yield return (i, WeaponIdentityHashes.Fields[i], hash, false);
+            else if (derived is not null) yield return (i, WeaponIdentityHashes.Fields[i], HexHash.From(derived[i]), true);
+        }
     }
 }
 

@@ -52,7 +52,7 @@ user-visible strings are rebranded (Phase 03).
 | Live | net9.0-windows | - | - | 14 / 1.6k | Link to a running game over shared memory |
 | Editor | net9.0-windows (WinForms) | 9 projects above | - | 155 / 27.7k | `StudioForm` partials, pages, creation dialogs (`Creation/`: items, exotic weapons, perks, vendors, materials, textures, static props) |
 | App | net9.0-windows WinExe | Editor | - | 1 / 74 | Entry point and command line |
-| Solforge.Weapons | net9.0 | Formats, Authoring | - | 7 / 0.7k | Phase 20: `.weapon.json` recipe schema and validation, C# rewrite of Parhelion's weapon domain (GPL-3.0-only, see `THIRD_PARTY.md`, `docs/PARHELION_AUDIT.md`); not referenced by Editor yet. Check: `tests/Solforge.Weapons.Tests` |
+| Solforge.Weapons | net9.0 | Formats, Authoring | - | 9 / 0.9k | Phase 20: `.weapon.json` recipe schema and validation, C# rewrite of Parhelion's weapon domain (GPL-3.0-only, see `THIRD_PARTY.md`, `docs/PARHELION_AUDIT.md`); not referenced by Editor yet. Check: `tests/Solforge.Weapons.Tests` |
 
 ## Phase 03 notes (shell)
 

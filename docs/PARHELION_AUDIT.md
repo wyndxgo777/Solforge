@@ -11,10 +11,10 @@ Line counts are whole directories or files including their tests.
 | module | lines | what it does | Solforge |
 |---|---|---|---|
 | `recipe.rs`, `recipe/` | 1.9k + 0.8k | `WeaponRecipe` (`.parhelion.json`, schema 1): donor, identity hashes, text, locales, `WeaponRecipeOverrides`; load/save, canonical order, namespace rules | **Kept** as `WeaponRecipe`, `WeaponRecipeJson`, `WeaponNamespace`, `HexHash` |
-| `weapon/validation.rs` | 1.4k | Recipe rules (stats, sockets, raw patches, text, locales, power caps) and installed-catalog checks | **Kept**: static rules in `WeaponRecipeValidator.Validate`, catalog rules in `ValidateAgainstDonor` |
+| `weapon/validation.rs` | 1.4k | Recipe rules (stats, sockets, raw patches, text, locales, power caps), identity rules and installed-catalog checks | **Kept**: static rules and `validate_for_donor` identity rules in `WeaponRecipeValidator.Validate`; donor and catalog rules (socket lanes, plug membership, socket types, plug-set bounds, weapon-pattern and stat-group indices, stat bounds, addable stats) in `ValidateAgainstDonor`. **Deferred:** RPN stack depth (Phase 21); the catalog sets are caller-supplied on `WeaponDonorProfile` because Studio does not decode those installed tables yet (Phase 21/23). Base sandbox-perk and trait-index checks are dropped with their fields |
 | `weapon/donors.rs`, `weapon/resolve.rs`, `weapon/socket_columns.rs` | 0.3k + 0.5k + 0.8k | Donor lookup, socket/plug-set resolution against the investment tables | **Kept as lookups**: `WeaponDonorProfile.FromInvestment` over Studio's `InvestmentItemDetail` |
-| `collection.rs` | 0.3k | Collections destination (ammo x 16 families) | **Kept**: `WeaponCollectionDestination`, `WeaponFamily` |
-| `weapon.rs`, `weapon/build/`, `weapon/item_fields/`, `weapon/table_rows.rs`, `weapon/raw_payload.rs`, `weapon/localization.rs`, `weapon/placements.rs` | ~9k | Compiles a recipe into cloned investment rows, strings, unlocks, collectibles, package writes | **Not ported yet**: Studio's own `InvestmentItemClone`, `InvestmentSocketEdits`, `WeaponTuningAuthoring`, `WeaponArchetypeAuthoring` already write these rows; the recipe-to-Studio compiler is Phase 21-22 work |
+| `collection.rs` | 0.3k | Collections destination (ammo x 16 families), stock pages, presentation-node budget | **Kept**: `WeaponCollectionDestination`, `WeaponFamily`, `WeaponCollections` (stock exemplars, family template, `NODE_CAPACITY` 1024, base 924 + 4) and `WeaponCollectionNodeBudget` (NodeBudget over a build's recipes; badge and gear-page counts are the caller's since Solforge recipes carry no badge). **Deferred:** node identities (`custom_node_hashes`) go with the compiler (Phase 21) |
+| `weapon.rs`, `weapon/build/`, `weapon/item_fields/`, `weapon/table_rows.rs`, `weapon/raw_payload.rs`, `weapon/localization.rs`, `weapon/placements.rs` | ~9k | Compiles a recipe into cloned investment rows, strings, unlocks, collectibles, package writes | **Ported:** identity derivation (`from_namespace`, `allocate_identity_hash`) as `WeaponIdentityHashes` and `WeaponIdentity.FromNamespace`/`Resolve`. **Deferred to Phase 21** (owner, see `todo.json` phase 21 notes): the recipe-to-Studio compiler over Studio's own `InvestmentItemClone`, `InvestmentSocketEdits`, `WeaponTuningAuthoring`, `WeaponArchetypeAuthoring`; Phase 22's workbench calls it and Phase 24 depends on it |
 | `weapon/custom_runtime*`, `weapon_behavior.rs`, `weapon/variable_damage.rs`, `weapon/subclass.rs`, `weapon_ammo.rs` | ~8k | Runtime component grafts, exotic behavior graphs, subclass-weapon abilities | **Dropped for now**: Studio has `NativePerkBehavior*`/`PerkBehaviorGraph`; Solforge's perk engine (§3.5) is its own |
 | `perk.rs`, `perk/`, `app/custom_perks/` | ~25k | Custom-perk workbench, sandbox-perk programs | **Dropped** (Solforge perk authoring is not a Parhelion port) |
 | `weapon/dyes.rs`, `dye.rs`, `weapon/emission/`, `weapon/gear.rs`, `weapon/rig.rs`, `presentation*`, `shader_icon.rs`, `hud_icon*`, `icon_edit*`, `badge*`, `watermark*`, `artwork_browser*`, `image_import*` | ~20k | Icons, badges, dyes, shaders, watermarks, presentation art | **Dropped**: Studio has `WeaponPresentationAuthoring`, `WeaponHudIconAuthoring`, `InvestmentIcons` |
@@ -32,9 +32,14 @@ Line counts are whole directories or files including their tests.
 - **Recipe schema:** System.Text.Json, snake_case, unknown fields rejected, `schema: 1`, canonical
   order of stats/removed stats/locales on load and save, hashes as `0xXXXXXXXX` upper-case strings.
   Namespace prefix is `solforge.`; `parhelion.` is accepted so their namespaces stay valid.
-- **Validation:** every rule from `validation.rs` that does not need the compiled payload, with the
-  same wording, collected as a list instead of failing on the first. RPN stack-depth checking needs
-  the progression opcode table and is left for Phase 21 (only length is checked).
+- **Validation:** the `validation.rs` rules that do not need the compiled payload, with Parhelion's
+  wording, collected as a list instead of failing on the first. Identity hashes follow
+  `validate_for_donor`: omitted optional hashes are derived from the namespace first, then all twelve
+  must be nonzero, not the empty-name hash and pairwise distinct, the item hash must differ from the
+  donor's, and every localized hash must sort after the donor bank's terminal hash `0x304D56FE`.
+  An empty per-choice condition is allowed (unconditional); a randomized plug set needs a non-empty
+  selection program. Not yet: RPN stack depth needs the progression opcode table (Phase 21; only
+  length is checked).
 - **Tag lookups:** donor sockets, plug sets and stat-curve bounds come from Studio's investment
   catalog (`InvestmentItemDetail`, `InvestmentStatCurve`), not from Parhelion's own catalog reader.
 

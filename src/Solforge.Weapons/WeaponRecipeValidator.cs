@@ -31,7 +31,7 @@ public static class WeaponRecipeValidator
         if (WeaponNamespace.Problem(recipe.Namespace) is { } namespaceProblem) Add("namespace", namespaceProblem);
         DonorHash(recipe.Donor, "donor", "The donor", Add);
         if (recipe.PresentationDonor is { } presentation) DonorHash(presentation, "presentation_donor", "The geometry donor", Add);
-        Identity(recipe.Identity, Add);
+        Identity(recipe, Add);
         Text(recipe, Add);
         Stats(recipe.Overrides, Add);
         Scalars(recipe.Overrides, Add);
@@ -43,7 +43,8 @@ public static class WeaponRecipeValidator
         return issues;
     }
 
-    /** Checks a recipe against the stock weapon it names: socket lanes and plug sets, stat definitions and bounds. */
+    /** Checks a recipe against the stock weapon it names and the installed catalog: socket lanes, socket types and
+     *  plug sets, weapon-pattern and stat-group indices, stat definitions and bounds. */
     public static IReadOnlyList<WeaponRecipeIssue> ValidateAgainstDonor(WeaponRecipe recipe, WeaponDonorProfile donor)
     {
         var issues = new List<WeaponRecipeIssue>();
@@ -64,6 +65,14 @@ public static class WeaponRecipeValidator
                 Add(field, $"Authored socket column {lane} is outside the donor's {donor.Sockets.Count} sockets");
                 continue;
             }
+            if (column.SocketType is { } socketType && socketType != ushort.MaxValue
+                && donor.KnownSocketTypes is { } socketTypes && !socketTypes.Contains(socketType))
+                Add(field, $"Socket {lane} uses unknown native socket type {socketType}");
+            foreach (var (kind, index) in new[] { ("reusable", column.ReusablePlugSetIndex), ("randomized", column.RandomizedPlugSetIndex) })
+            {
+                if (index is { } plugSet && donor.PlugSetCount is { } plugSets && plugSet < ushort.MaxValue && plugSet >= plugSets)
+                    Add(field, $"Socket column {lane} selects {kind} plug-set index {plugSet}, but the installed table contains {plugSets} rows");
+            }
             var socket = donor.Sockets[lane];
             if (column.Choices.Count > socket.MaxAuthoredChoices)
             {
@@ -78,6 +87,11 @@ public static class WeaponRecipeValidator
                     Add(field, $"Authored socket column {lane} plug {choice} is not in the donor socket's plug set");
             }
         }
+
+        if (recipe.Overrides.WeaponPatternIndex is { } pattern && donor.WeaponPatternIndices is { } patterns && !patterns.Contains(pattern))
+            Add("overrides.weapon_pattern_index", $"Weapon-pattern index {pattern} is not used by any installed stock weapon");
+        if (recipe.Overrides.StatGroupIndex is { } group && donor.StatGroupIndices is { } groups && !groups.Contains(group))
+            Add("overrides.stat_group_index", $"Stat-display group {group} is not used by any installed stock weapon");
 
         var known = donor.Stats.Concat(donor.AddableStats).GroupBy(stat => stat.DefinitionIndex)
             .ToDictionary(group => group.Key, group => group.First());
@@ -109,20 +123,31 @@ public static class WeaponRecipeValidator
             add($"{field}.item_hash", $"{label} item hash must be nonzero and cannot use the reserved empty-name hash");
     }
 
-    private static void Identity(WeaponIdentity identity, Action<string, string> add)
+    /** Parhelion's WeaponCloneIdentity::validate_for_donor over all twelve hashes, omitted optional ones derived
+     *  from the namespace first: nonzero, not the empty-name hash, pairwise distinct, item hash not the donor's,
+     *  and every localized hash above the donor string bank's terminal hash. */
+    private static void Identity(WeaponRecipe recipe, Action<string, string> add)
     {
         var seen = new Dictionary<uint, string>();
-        foreach (var (field, hash) in identity.All())
+        foreach (var (role, field, hash, derived) in recipe.Identity.Resolve(recipe.Namespace))
         {
+            string label = derived ? $"{field} (derived from the namespace)" : field;
             if (!hash.TryParse(out uint value))
-                add(field, $"{field} must be a canonical hash of the form 0xXXXXXXXX, not {hash}");
-            else if (value is 0 or WeaponRecipe.ReservedEmptyNameHash)
-                add(field, $"{field} must be nonzero and cannot use the reserved empty-name hash");
-            else if (field == "identity.item_hash" || field == "identity.collectible_hash" || field == "identity.unlock_hash")
             {
-                if (seen.TryGetValue(value, out string? other)) add(field, $"{field} repeats {other}");
-                else seen[value] = field;
+                add(field, $"{field} must be a canonical hash of the form 0xXXXXXXXX, not {hash}");
+                continue;
             }
+            if (value is 0 or WeaponRecipe.ReservedEmptyNameHash)
+            {
+                add(field, $"{label} must be nonzero and cannot use the reserved empty-name hash");
+                continue;
+            }
+            if (seen.TryGetValue(value, out string? other)) add(field, $"{label} repeats {other}; weapon identity hashes must be pairwise distinct");
+            else seen[value] = field;
+            if (role == 0 && recipe.Donor.ItemHash.TryParse(out uint donor) && value == donor)
+                add(field, "The authored item hash collides with its donor");
+            if (role >= WeaponIdentityHashes.FirstLocalizedRole && value <= WeaponIdentityHashes.DonorStringBankTerminal)
+                add(field, $"{label} 0x{value:X8}: Localized hashes must sort after the donor bank's terminal hash (0x{WeaponIdentityHashes.DonorStringBankTerminal:X8})");
         }
     }
 
@@ -252,14 +277,14 @@ public static class WeaponRecipeValidator
             if (column.ChoiceConditions.Count != column.Choices.Count)
                 add(field, $"Authored socket column {lane} has {column.ChoiceConditions.Count} conditions for {column.Choices.Count} choices");
             for (int i = 0; i < column.ChoiceConditions.Count; i++)
-                Program($"{field}.choice_conditions[{i}]", $"Socket column {lane} choice {i} condition", column.ChoiceConditions[i], false, add);
+                Program($"{field}.choice_conditions[{i}]", $"Socket column {lane} choice {i} condition", column.ChoiceConditions[i], true, add);
         }
         if (column.ReusablePlugSetIndex == ushort.MaxValue || column.RandomizedPlugSetIndex == ushort.MaxValue)
             add(field, $"Authored socket column {lane} uses 65535 as an active plug-set index");
         if (column.RandomizedSelectionProgram.Count > 0 && column.RandomizedPlugSetIndex is null)
             add(field, $"Authored socket column {lane} has a randomized selection program without a randomized plug set");
         Program($"{field}.randomized_selection_program", $"Socket column {lane} randomized selection program",
-            column.RandomizedSelectionProgram, true, add);
+            column.RandomizedSelectionProgram, column.RandomizedPlugSetIndex is null, add);
     }
 
     /** Length rules for an RPN program. Stack-depth checking needs the opcode table and lands with Phase 21. */

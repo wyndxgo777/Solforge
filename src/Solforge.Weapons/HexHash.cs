@@ -39,4 +39,4 @@ public sealed class HexHashConverter : JsonConverter<HexHash>
 }
 
 /** A recipe that cannot be read or does not validate; the message names the field. */
-public sealed class WeaponRecipeException(string message, Exception? inner = null) : InvalidDataException(message, inner);
+public sealed class WeaponRecipeException(string message, Exception? inner = null) : Exception(message, inner);
