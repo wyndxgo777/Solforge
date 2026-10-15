@@ -42,6 +42,8 @@ Project facts (TFM, references, sizes) are in ARCHITECTURE.md; this file is abou
 - (Exists) `StaticMeshDecoder`, `EntityMeshDecoder`, `TerrainDecoder`, `CompressedMesh`,
   decorators, collision scenes (`CollisionScene`, shapes, connectivity), spawns/squads, effects,
   guardian appearance, map/scenario loading (`AssetSceneLoader`).
+- Solforge (Phase 11): `VertexAttributeDecoding` decodes half floats, SNORM/UNORM streams, SNORM16 normal/tangent
+  frames, quaternion tangent frames and octahedral normals on the CPU (export, picking, checks).
 
 ## Materials and shaders (`SunriseStudio.Rendering` + `Formats`, Phase 12)
 - (Exists) `GameMaterialReader`, `MaterialSampler`, `MaterialStageData`, DXBC text/checksum,

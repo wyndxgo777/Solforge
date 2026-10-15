@@ -86,8 +86,8 @@
     {
       "id": "11",
       "title": "Mesh Decoding & Vertex Buffers",
-      "status": "upstream_partial",
-      "notes": "Scene: StaticMeshDecoder, EntityMeshDecoder, TerrainDecoder"
+      "status": "done",
+      "notes": "(Exists) Tiger geometry parsing of position/normal/tangent/UV0/UV1 streams (Scene/StaticMeshDecoder.cs, EntityMeshDecoder.cs, TerrainDecoder.cs, NativeMeshReader.cs input layouts incl. terrain half2 UVs), D3D index/vertex buffers (Rendering/RenderTypes.cs GpuMesh) and per-part multi-submesh draws (Viewport/NativeSceneRenderer.cs). Solforge: CPU decoder for half floats, SNORM/UNORM/SINT streams, SNORM16 normal+tangent frames (handedness in tangent W), quaternion tangent frames and octahedral normals (Scene/VertexAttributeDecoding.cs). Not wired into the preview decoders: the geometry preview still regenerates normals and the game-shader path keeps uploading raw streams. Checks: ViewportPipeline.Tests GeometryChecks"
     },
     {
       "id": "12",

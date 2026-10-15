@@ -14,6 +14,7 @@ try
         }
     }
     CameraChecks.Run(checks);
+    GeometryChecks.Run(checks);
     foreach (string check in checks) Console.WriteLine("PASS " + check);
     Console.WriteLine($"PASS checks={checks.Count}");
     return 0;
