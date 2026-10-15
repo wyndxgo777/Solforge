@@ -35,6 +35,12 @@ public sealed unsafe class ImGuiController : IDisposable
     private bool frameStarted;
     private bool disposed;
 
+    /**
+     * Optional host faces (Solforge's bundled fonts). Called first on every atlas build with the body
+     * pixel size; its first font becomes the default. Returns the title face, or null to keep the built-in faces.
+     */
+    public static Func<ImFontAtlasPtr, float, ImFontPtr?>? HostFonts { get; set; }
+
     public bool WantsMouse => ImGui.GetIO().WantCaptureMouse;
     public bool WantsKeyboard => ImGui.GetIO().WantCaptureKeyboard;
     public bool IsInputActive => IsActive();
@@ -85,10 +91,15 @@ public sealed unsafe class ImGuiController : IDisposable
 
     private void AddFonts(ImFontAtlasPtr fonts, string? fontPath, float fontSize)
     {
-        if (fontPath is not null && File.Exists(fontPath)) fonts.AddFontFromFileTTF(fontPath, fontSize);
-        else fonts.AddFontDefault();
+        var hostTitle = HostFonts?.Invoke(fonts, fontSize);
+        if (hostTitle is null)
+        {
+            if (fontPath is not null && File.Exists(fontPath)) fonts.AddFontFromFileTTF(fontPath, fontSize);
+            else fonts.AddFontDefault();
+        }
         string monoPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Fonts), "consola.ttf");
         monospace = File.Exists(monoPath) ? fonts.AddFontFromFileTTF(monoPath, fontSize) : fonts.AddFontDefault();
+        if (hostTitle is { } hosted) { title = hosted; return; }
         // The title font is Segoe UI Semibold when installed, else the body face, at 1.4 times the body size.
         string titlePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Fonts), "seguisb.ttf");
         string? titleFace = File.Exists(titlePath) ? titlePath : fontPath is not null && File.Exists(fontPath) ? fontPath : null;

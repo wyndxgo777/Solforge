@@ -193,8 +193,9 @@ public sealed partial class StudioForm
             if (ImGuiIcons.Button("tb-add", StudioIcon.Plus, "Add asset")) addDialog = true;
             ImGui.SameLine();
             string build = ShortcutInput.Text(ShortcutActions.BuildPackages);
-            if (ImGuiIcons.Button("tb-build", StudioIcon.Build, build.Length == 0 ? "Build packages" : $"Build packages ({build})"))
-                workspace.Run(() => workspace.Build());
+            // Solforge: the primary action uses the sun-grad button (SolTheme).
+            if (SolTheme.PrimaryButton("Build##tb-build")) workspace.Run(() => workspace.Build());
+            StudioUi.Tip(build.Length == 0 ? "Build packages" : $"Build packages ({build})");
             ImGui.EndDisabled();
         }
         ImGui.SameLine();

@@ -12,7 +12,7 @@ public sealed partial class StudioForm
         (ShortcutSection.View2D, "2D", "Textures, CUI canvases and graphs. The view must be under the pointer."),
         (ShortcutSection.View3D, "3D", "Scene and asset viewports. The view must be under the pointer.")
     ];
-    private static readonly Vector4 ShortcutConflictColor = new(1, .45f, .35f, 1);
+    private static readonly Vector4 ShortcutConflictColor = SolTheme.Bad;
     private bool shortcutsDialog, openShortcutCapture;
     private string? captureAction;
     private int captureSlot;

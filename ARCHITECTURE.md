@@ -73,6 +73,19 @@ user-visible strings are rebranded (Phase 03).
   icon/asset `File.ReadAllBytes` in creation dialogs and Import delta, settings/layout saves, and the
   `Directory.Exists` in the mission script combo (runs only while the combo is open with no scripts).
 
+## Phase 03C notes (Sol theme)
+
+- **SolTheme** (`Viewport/SolTheme.cs`, new file): the sol.css token set, launcher sizes (title 17, body 14,
+  label 11, button 12.5 px; 28 px controls) and draw helpers: `ChamferFrame`, `ChamferGradient`/`PrimaryButton`
+  (sun-grad), `SectionHeader`/`CollapsingSection`, `PanelHeader` (notch + uppercase title), `ModeButton`
+  (sun underline), `LeftBar`, `Chip`, `IconTint`. Lives in Viewport so the viewport and `ImGuiIcons` can use it.
+- **Fonts:** Chakra Petch 600/700 and Rajdhani 500/600 are embedded (`Solforge.Fonts.*`) and added through
+  `ImGuiController.HostFonts`, which the editor sets before creating its controller; the controller's 16 px
+  body size gives the DPI scale. Without the hook (tests, other hosts) the controller keeps Segoe UI.
+- **Upstream files** keep small edits: `StudioTheme` constants and `Apply` forward to SolTheme, `BeginPanel`
+  draws the panel gradient, `StudioUi.Heading` draws a section header, and each restyled call site is one line.
+  Viewport selection outlines and bubble boxes keep their colours.
+
 ## Runtime and native dependencies
 
 - **Oodle**: `oo2core_3_win64.dll` is loaded with `NativeLibrary.Load` from the user's game install

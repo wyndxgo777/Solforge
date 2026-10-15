@@ -170,6 +170,7 @@ public sealed partial class StudioForm : Form
             scale = Math.Max(1, DeviceDpi / 96f);
             renderer = new Dx11Renderer(Handle, ClientSize.Width, ClientSize.Height, options.Warp);
             loadingLogo = StudioBrand.CreateTexture(renderer);
+            ImGuiController.HostFonts ??= SolTheme.AddFonts;
             gui = new ImGuiController(renderer, this, BodyFontPath, 16 * scale);
             missionGraph.CodeFont = gui.MonospaceFont;
             StudioTheme.Apply(scale);
@@ -613,7 +614,9 @@ public sealed partial class StudioForm : Form
     {
         ImGui.SetNextWindowPos(position);
         ImGui.SetNextWindowSize(size);
-        return ImGui.Begin(id, PanelFlags | extra);
+        bool open = ImGui.Begin(id, PanelFlags | extra);
+        SolTheme.PanelGradient();
+        return open;
     }
 
     private static void Splitter(string id, Vector2 position, Vector2 size, Action<Vector2> drag)
@@ -783,6 +786,7 @@ public sealed partial class StudioForm : Form
     {
         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(12, 5) * scale);
         BeginPanel("Status", position, size, ImGuiWindowFlags.NoScrollbar);
+        SolTheme.StatusBackground();
         if (workspace.IsBusy && !workspace.IsBlocking)
         {
             // A background command shows its stage and a moving bar in place of the status text.
@@ -796,7 +800,7 @@ public sealed partial class StudioForm : Form
         }
         if (workspace.Notice is { } notice)
         {
-            ImGui.TextColored(notice.Failed ? new Vector4(1, .45f, .35f, 1) : StudioTheme.Accent, notice.Text);
+            ImGui.TextColored(notice.Failed ? SolTheme.Bad : StudioTheme.Accent, notice.Text);
             StudioUi.Tip(notice.Details ?? notice.Text);
             if (notice.Folder is { } folder && StatusFolderExists(folder))
             {
@@ -813,7 +817,7 @@ public sealed partial class StudioForm : Form
         string message = workspace.Error.Length != 0 ? workspace.Error : workspace.Status;
         if (workspace.Error.Length == 0 && workspace.BackgroundStatus.Length != 0)
             message += "  |  " + workspace.BackgroundStatus;
-        ImGui.TextColored(workspace.Error.Length != 0 ? new Vector4(1, .45f, .35f, 1)
+        ImGui.TextColored(workspace.Error.Length != 0 ? SolTheme.Bad
             : StudioTheme.Muted, message);
         StudioUi.Tip(message);
         DrawStatusFacts();

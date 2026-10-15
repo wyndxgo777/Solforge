@@ -59,8 +59,8 @@ public static class StudioUi
     /** A section heading with an optional tooltip. */
     public static void Heading(string text, string tooltip = "")
     {
-        ImGui.SeparatorText(text);
-        Tip(tooltip);
+        // Solforge: Sol section header (uppercase Chakra Petch label over a hairline).
+        SolTheme.SectionHeader(text, tooltip);
     }
 
     /**

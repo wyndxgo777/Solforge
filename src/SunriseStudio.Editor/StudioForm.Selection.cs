@@ -23,16 +23,11 @@ public sealed partial class StudioForm
     private bool DrawSelectedObjectInspector()
     {
         if (selectedObject is null) return false;
-        ImGui.PushStyleColor(ImGuiCol.Button, !inspectAsset ? ImGui.GetStyle().Colors[(int)ImGuiCol.Header]
-            : ImGui.GetStyle().Colors[(int)ImGuiCol.Button]);
         // The mode buttons share labels with property groups below, so they carry their own IDs.
-        if (ImGui.SmallButton("Object##inspector-mode")) inspectAsset = false;
-        ImGui.PopStyleColor();
+        // Solforge: the active mode gets a sun underline instead of a fill.
+        if (SolTheme.ModeButton("Object##inspector-mode", !inspectAsset)) inspectAsset = false;
         ImGui.SameLine();
-        ImGui.PushStyleColor(ImGuiCol.Button, inspectAsset ? ImGui.GetStyle().Colors[(int)ImGuiCol.Header]
-            : ImGui.GetStyle().Colors[(int)ImGuiCol.Button]);
-        if (ImGui.SmallButton("Asset##inspector-mode")) inspectAsset = true;
-        ImGui.PopStyleColor();
+        if (SolTheme.ModeButton("Asset##inspector-mode", inspectAsset)) inspectAsset = true;
         if (inspectAsset) return false;
         if (DrawRuntimeObjectInspector()) return true;
         if (inspectionWorld is null) return false;
@@ -80,7 +75,7 @@ public sealed partial class StudioForm
         {
             bool holding = !observed.TransformAvailable && (selectedObject is MeshInstance { PreviewTransform: not null }
                 or SceneMarker { PreviewPose: not null });
-            DrawObservedPlacement(observed, holding); ImGui.SeparatorText("Authored placement");
+            DrawObservedPlacement(observed, holding); SolTheme.SectionHeader("Authored placement");
         }
         DrawPlacementEditor();
         if (selectedObject is SceneMarker { Effect: not null } effectMarker && workspace.World?.Scene is { } effectScene)
@@ -90,7 +85,7 @@ public sealed partial class StudioForm
         foreach (var group in inspection.Properties.GroupBy(property => property.Group))
         {
             if (expandObjectDetails) ImGui.SetNextItemOpen(true);
-            if (!ImGui.CollapsingHeader($"{group.Key}##property-group")) continue;
+            if (!SolTheme.CollapsingSection($"{group.Key}##property-group")) continue;
             var facts = new List<(string, string, string)>();
             foreach (var property in group)
             {
@@ -153,7 +148,7 @@ public sealed partial class StudioForm
             if (ImGui.IsItemHovered()) ImGui.SetTooltip(info.Reason);
             return;
         }
-        if (!ImGui.CollapsingHeader($"{info.CoordinateSpace} placement", ImGuiTreeNodeFlags.DefaultOpen)) return;
+        if (!SolTheme.CollapsingSection($"{info.CoordinateSpace} placement", ImGuiTreeNodeFlags.DefaultOpen)) return;
         ImGui.BeginDisabled(!workspace.CanEdit);
         if (info.CanTransform)
         {

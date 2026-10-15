@@ -49,6 +49,18 @@ SOFTWARE.
 The .NET runtime and the Community Toolkit include code from other projects. Their own notice files
 are copied unchanged into `licenses/`. Studio shows each on its own tab.
 
+## Fonts
+
+Solforge's interface theme (SolTheme) embeds these faces in `SunriseStudio.Viewport.dll`. They come
+unchanged from github.com/google/fonts (`ofl/chakrapetch`, `ofl/rajdhani`). Each is licensed under the
+SIL Open Font License 1.1; the full license with each project's copyright line is copied unchanged into
+`licenses/chakra-petch-OFL.txt` and `licenses/rajdhani-OFL.txt`, and Studio shows each on its own tab.
+
+| font | files | license | copyright |
+|---|---|---|---|
+| Chakra Petch | ChakraPetch-SemiBold.ttf, ChakraPetch-Bold.ttf | OFL-1.1 | Copyright 2018 The Chakra Petch Project Authors (https://github.com/m4rc1e/Chakra-Petch.git) |
+| Rajdhani | Rajdhani-Medium.ttf, Rajdhani-SemiBold.ttf | OFL-1.1 | Copyright (c) 2014, Indian Type Foundry (info@indiantypefoundry.com) |
+
 ## Ported audio code
 
 Studio ships no third-party audio program, script or native library.

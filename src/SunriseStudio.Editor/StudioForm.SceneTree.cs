@@ -221,7 +221,7 @@ public sealed partial class StudioForm
                     ImGuiIcons.Draw(ImGui.GetWindowDrawList(), node.Authored is { } authoredIcon ? NodeIcon(authoredIcon.Kind)
                         : node.Live?.Parent is null ? StudioIcon.Group : StudioIcon.Cube,
                         symbol + new Vector2(1 * scale, (iconSize - 12 * scale) / 2), 12 * scale,
-                        ImGui.GetColorU32(node.Visible ? StudioTheme.Muted : new Vector4(.28f, .31f, .36f, 1)));
+                        ImGui.GetColorU32(node.Visible ? StudioTheme.Muted : SolTheme.Faint));
                     ImGui.SameLine(0, 4 * scale);
                     bool dimmed = !node.Visible;
                     if (dimmed) ImGui.PushStyleColor(ImGuiCol.Text, StudioTheme.Muted);

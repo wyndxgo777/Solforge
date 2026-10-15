@@ -23,7 +23,7 @@ public static class ImGuiIcons
         bool clicked = ImGui.Button("##" + id, new(size));
         if (active) ImGui.PopStyleColor();
         Draw(ImGui.GetWindowDrawList(), icon, ImGui.GetItemRectMin() + new Vector2(size * .22f),
-            size * .56f, ImGui.GetColorU32(active ? ImGuiCol.CheckMark : ImGuiCol.Text));
+            size * .56f, SolTheme.IconTint(active, ImGui.IsItemHovered()));
         if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
         { ImGui.BeginTooltip(); ImGui.TextUnformatted(tooltip); ImGui.EndTooltip(); }
         return clicked;

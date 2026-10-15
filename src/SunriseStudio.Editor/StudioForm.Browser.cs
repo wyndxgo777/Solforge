@@ -1,5 +1,6 @@
 using System.Numerics;
 using ImGuiNET;
+using SunriseStudio.Viewport;
 using SunriseStudio.Editor.Creation;
 using SunriseStudio.Packages;
 using SunriseStudio.Projects;
@@ -272,7 +273,7 @@ public sealed partial class StudioForm
             int count = workspace.CategoryCounts.GetValueOrDefault(item.Name);
             inCategories += count;
             if (count == 0) continue;
-            if (item.Group != group) { group = item.Group; ImGui.SeparatorText(group.ToUpperInvariant()); }
+            if (item.Group != group) { group = item.Group; SolTheme.SectionHeader(group); }
             if (CategoryRow(item.Name, item.Icon, item.Label, count, item.Tooltip)) OpenBrowserCategory(item.Name);
         }
         if (group is not null) ImGui.Separator();
@@ -321,6 +322,7 @@ public sealed partial class StudioForm
                     workspace.Open(row.Entry.TagHash);
                 bool hovered = ImGui.IsItemHovered();
                 var draw = ImGui.GetWindowDrawList();
+                if (active) SolTheme.LeftBar(draw, start, start + new Vector2(0, rowHeight - 6 * scale));
                 var textStart = start + new Vector2(7 * scale, 2 * scale);
                 var end = start + new Vector2(ImGui.GetContentRegionAvail().X - 4, rowHeight);
                 draw.PushClipRect(start, end, true);
@@ -402,7 +404,7 @@ public sealed partial class StudioForm
             ImGui.Spacing();
             if (selectedMesh is { } part && document.Scene?.Instances.Contains(part) == true)
             {
-                ImGui.SeparatorText("PART");
+                SolTheme.SectionHeader("Part");
                 ImGui.TextWrapped(part.Name);
                 var partFacts = new List<(string, string, string)>
                 {
@@ -427,7 +429,7 @@ public sealed partial class StudioForm
             }
             if (selectedProperty is { } property)
             {
-                ImGui.SeparatorText("PROPERTY");
+                SolTheme.SectionHeader("Property");
                 ImGui.TextWrapped(property.Name);
                 if (property.Offset >= 0) ImGui.TextDisabled($"Offset  {property.Offset:X8}");
                 var configured = workspace.ConfigBindingForProperty(property);
@@ -617,7 +619,7 @@ public sealed partial class StudioForm
             if (ImGui.BeginTabItem("Changes"))
             {
                 if (workspace.ObjectEditError.Length != 0)
-                    ImGui.TextColored(StudioTheme.Accent, "Object edits not applied: " + workspace.ObjectEditError);
+                    ImGui.TextColored(SolTheme.Bad, "Object edits not applied: " + workspace.ObjectEditError);
                 if (workspace.Project is not { } project) ImGui.TextDisabled("No project open");
                 else if (project.Changes.Count == 0 && project.AddedAssets.Count == 0 && project.ObjectEdits.Count == 0
                     && project.ConfigBindings.Count == 0)
@@ -643,6 +645,7 @@ public sealed partial class StudioForm
             {
                 if (workspace.LastInstall is { } install)
                 {
+                    SolTheme.SectionHeader("Last install");
                     ImGui.TextUnformatted($"Installed {Path.GetFileName(install.ModDirectory)}");
                     StudioUi.Facts("install-facts", [
                         ("Packages", $"{install.PackageFiles}", ""),
@@ -655,6 +658,7 @@ public sealed partial class StudioForm
                 }
                 if (workspace.LastBuild is { } build)
                 {
+                    SolTheme.SectionHeader("Last build");
                     if (ImGui.Button("Open output folder")) OpenFolder(build.OutputDirectory);
                     if (ImGui.TreeNode($"Package files ({build.PackageFiles.Count})###package-files"))
                     {
@@ -677,7 +681,7 @@ public sealed partial class StudioForm
     /** An accent "Error" row with the first sentence; the full text is the tooltip. */
     private static void DrawErrorRow(string error)
     {
-        ImGui.TextColored(StudioTheme.Accent, "Error");
+        ImGui.TextColored(SolTheme.Bad, "Error");
         StudioUi.Tip(error);
         ImGui.SameLine();
         ImGui.TextUnformatted(FirstSentence(error));

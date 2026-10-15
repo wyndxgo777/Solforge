@@ -1,5 +1,6 @@
 using System.Numerics;
 using ImGuiNET;
+using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
@@ -108,8 +109,12 @@ public sealed partial class StudioForm
         BeginPanel($"area-{node.Id}-header", position, new(size.X, header), ImGuiWindowFlags.NoScrollbar);
         if (node.Panel != StudioPanelKind.Empty) TrackAreaFocus(node.Panel == StudioPanelKind.MissionGraph);
         float button = ImGui.GetFrameHeight();
-        ImGui.SetNextItemWidth(Math.Max(button, size.X - button - 16 * scale));
-        if (ImGui.BeginCombo("##editor-type", PanelTitle(node.Panel)))
+        // Solforge: Sol panel header (notch + uppercase title); the combo keeps its id and behaviour.
+        float titleWidth = Math.Max(button, size.X - button - 16 * scale - SolTheme.HeaderIndent);
+        SolTheme.PanelHeader(PanelTitle(node.Panel), titleWidth);
+        ImGui.SetNextItemWidth(titleWidth);
+        SolTheme.PushHeaderCombo();
+        if (ImGui.BeginCombo("##editor-type", ""))
         {
             foreach (var kind in Enum.GetValues<StudioPanelKind>())
             {
@@ -123,6 +128,7 @@ public sealed partial class StudioForm
             }
             ImGui.EndCombo();
         }
+        ImGui.PopStyleColor(3);
         ImGui.SameLine(0, 4 * scale);
         if (ImGui.Button("...", new(button, 0))) ImGui.OpenPopup("Area");
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Area options");

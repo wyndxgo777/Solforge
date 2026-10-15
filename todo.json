@@ -32,6 +32,12 @@
       "notes": "Solforge.exe + user-visible strings (incl. loading screen and empty workspace titles), credit in Help/tooltip/THIRD_PARTY.md, status bar (profile/packages/keys/cache/mem), UI-thread I/O audit; ImGui docking skipped: Studio has its own split-tree layout; dark theme delivered by SolTheme (03C)"
     },
     {
+      "id": "03C",
+      "title": "Sol UI Overhaul & Map-Scoped Missions",
+      "status": "partial",
+      "notes": "SolTheme (Viewport/SolTheme.cs): sol.css tokens, embedded Chakra Petch 600/700 + Rajdhani 500/600 (OFL) via ImGuiController.HostFonts at DPI scale, chamfer/gradient/section-header/chip helpers; shell, toolbar Build, panel headers, tabs, Asset browser, Inspector, Project changes, status bar, viewport label chip restyled; StudioTheme reads the tokens. Missions tab already map-scoped (no change). Left: 120 ms fades + sun-shimmer + reduce-motion, launcher category icons, Chakra Petch on tab labels (tabs use the sun overline)"
+    },
+    {
       "id": "04",
       "title": "Checker Phase: Baseline Architecture Audit",
       "status": "todo"

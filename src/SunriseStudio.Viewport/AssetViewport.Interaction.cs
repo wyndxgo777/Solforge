@@ -169,9 +169,9 @@ public sealed partial class AssetViewport
             textSize = ImGui.CalcTextSize(selectedName);
         }
         at = Vector2.Clamp(at, origin + margin + padding, origin + size - margin - padding - textSize);
-        draw.AddRectFilled(at - padding, at + textSize + padding,
-            ImGui.GetColorU32(new Vector4(.04f, .05f, .06f, .9f)), 3);
-        draw.AddText(at, ImGui.GetColorU32(new Vector4(1, .8f, .45f, 1)), selectedName);
+        // Solforge: a Sol panel chip with a sun border while the pointer is over it.
+        SolTheme.Chip(draw, at - padding, at + textSize + padding, ImGui.IsMouseHoveringRect(at - padding, at + textSize + padding, false));
+        draw.AddText(at, SolTheme.U32(SolTheme.Text), selectedName);
     }
 
     private string? Name(object item) => ObjectName?.Invoke(item) ?? item switch

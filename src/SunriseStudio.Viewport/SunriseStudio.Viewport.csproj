@@ -7,6 +7,10 @@
     <InternalsVisibleTo Include="SunriseStudio.Viewport.Tests" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Solforge SolTheme faces (SIL OFL 1.1, from github.com/google/fonts; notices in licenses/). -->
+    <EmbeddedResource Include="Assets/Fonts/*.ttf" LogicalName="Solforge.Fonts.%(Filename)" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="../SunriseStudio.Packages/SunriseStudio.Packages.csproj" />
     <ProjectReference Include="../SunriseStudio.Scene/SunriseStudio.Scene.csproj" />
     <ProjectReference Include="../SunriseStudio.Animation/SunriseStudio.Animation.csproj" />

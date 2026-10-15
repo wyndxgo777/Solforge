@@ -1,11 +1,12 @@
 using System.Numerics;
 using ImGuiNET;
+using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
 public sealed partial class StudioForm
 {
-    private static readonly Vector4 LogoColor = new(246 / 255f, 226 / 255f, 122 / 255f, 1);
+    private static readonly Vector4 LogoColor = SolTheme.Sun;
     private bool loadingCaptured;
 
     /** Resource upload callbacks may present loading frames only outside an active ImGui frame. */
@@ -97,7 +98,7 @@ public sealed partial class StudioForm
         var draw = ImGui.GetWindowDrawList();
         draw.AddRectFilled(bar, bar + size, ImGui.GetColorU32(ImGuiCol.FrameBg), 3 * scale);
         if (progress.Fraction is { } fraction)
-            draw.AddRectFilled(bar, bar + new Vector2(size.X * fraction, size.Y), ImGui.GetColorU32(LogoColor), 3 * scale);
+            SolTheme.ChamferGradient(draw, bar, bar + new Vector2(size.X * fraction, size.Y), 0);
         else
         {
             float offset = (float)(clock.Elapsed.TotalSeconds % 1.6 / 1.6) * (width + width * .22f) - width * .22f;
