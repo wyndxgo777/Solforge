@@ -23,7 +23,8 @@ All addresses are RVAs (offsets from the image start), for example `0xE2DBE0`. `
 5. Struct layouts come from `get_struct`:
    - `name=` searches the Sunrise client and server C/C++ headers;
    - `function=` with `variable=param_1` infers fields by offset and type from the decompiled C.
-6. Classes and virtual methods: `get_vtables` (`function=` lists the vtables containing it; `address=` lists the entries).
+6. Classes and virtual methods: `get_class` (`class=` a name, vtable RVA or method; no args lists classes, `rtti=true` only RTTI-named ones) gives bases, derived classes, vtables, methods by slot, constructors and fields inferred from this-pointer use. `get_vtables` (`function=` lists the vtables containing it; `address=` lists the entries and owners).
+   - The class layer comes from MSVC RTTI in the image (mostly Havok classes; Bungie code has no RTTI) plus pointer-run vtables named `vtable_RVA`. Unnamed virtual functions are shown as `Class::vfN`; a name you give with `rename_function` wins. It is built once per image and cached beside the decomp index.
 7. Tag type to code: `tag_type_handlers class=0x8080xxxx` lists the exe functions that compare against that class hash and the Sunrise source lines that name it.
 8. When you work out what a function does, name it with `rename_function` (the user approves). Names are saved to `solforge-names.csv` in the analysis folder and shared with every agent and the Data explorer window.
 

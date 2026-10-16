@@ -19,14 +19,15 @@ The index is cached at `%LOCALAPPDATA%\Solforge\decomp\index-*.bin` and rebuilt 
 
 | Tool | What it returns |
 |---|---|
-| decomp_status | folder, counts, image and source roots |
+| decomp_status | folder, counts, image, source roots and class-layer coverage |
 | search_functions | functions by name, RVA or signature |
 | get_function | C source paged by line, with signature, callers and callees |
 | xrefs_to / xrefs_from | callers, data users and vtables / callees, data (with strings) and tag classes |
 | find_string | exe strings with RVA and referencing functions |
 | grep_decomp | full-text search of all function bodies |
-| get_struct | header struct definitions, or fields inferred from a function's pointer use |
-| get_vtables | vtables, their entries, and the vtables containing a function |
+| get_struct | image classes with inferred fields, header struct definitions, or fields inferred from a function's pointer use |
+| get_vtables | vtables with their RTTI class, their entries and owners, and the vtables containing a function |
+| get_class | a class: RTTI name, bases and derived classes, vtables, methods by slot, constructors, inferred fields, tag classes |
 | tag_type_handlers | exe functions and source lines that use a tag class hash |
 | rename_function | saves a name (approval) |
 | get_string / search_strings | localized text |

@@ -17,7 +17,7 @@ public static partial class SolforgeTools
     public static readonly string[] DecompToolNames =
     [
         "decomp_status", "search_functions", "get_function", "xrefs_to", "xrefs_from", "find_string", "grep_decomp", "get_struct",
-        "get_vtables", "tag_type_handlers", "rename_function"
+        "get_vtables", "get_class", "tag_type_handlers", "rename_function"
     ];
 
     public static readonly string[] PackageDataToolNames =
@@ -46,7 +46,11 @@ public static partial class SolforgeTools
             {
                 if (DecompRoot(host) is not { } root) return McpToolResult.Error(NoDecomp);
                 var index = await DecompIndex.LoadAsync(root, cancel).ConfigureAwait(false);
-                return await Task.Run(() => run(index, args, cancel), cancel).ConfigureAwait(false);
+                return await Task.Run(() =>
+                {
+                    _ = index.Classes; // the class layer (Class::vfN names): built once per image and cached
+                    return run(index, args, cancel);
+                }, cancel).ConfigureAwait(false);
             });
         McpTool Pkg(string name, string description, JsonObject schema, Func<ISolforgeDataHost, JsonObject, CancellationToken, Task<McpToolResult>> run) =>
             new(name, description, schema, false, async (args, cancel) =>
@@ -67,6 +71,12 @@ public static partial class SolforgeTools
                 ["image"] = File.Exists(Path.Combine(index.Root, "image", "destiny2_image.bin")),
                 ["source_roots"] = new JsonArray([.. index.SourceRoots.Select(root => (JsonNode?)root)]),
                 ["names_file"] = Path.Combine(index.Root, DecompIndex.NamesFile),
+                ["classes"] = index.Classes is { } classes ? new JsonObject
+                {
+                    ["rtti_classes"] = classes.RttiClasses, ["rtti_vtables"] = classes.Classes.Where(c => c.Rtti).Sum(c => c.VTables.Length),
+                    ["vtables"] = classes.VTableCount, ["virtual_functions"] = classes.Virtuals.Count, ["named_virtuals"] = index.VirtualNameCount,
+                    ["classes_with_fields"] = classes.Classes.Count(c => c.Fields.Length > 0)
+                } : null,
                 ["note"] = "Addresses are RVAs (offset from the image start); FUN_00E2DBE0 is the function at 0xE2DBE0. Build 86657."
             }));
 
@@ -189,7 +199,8 @@ public static partial class SolforgeTools
                     { ["rva"] = Hex(hit.Function.Rva), ["name"] = index.NameOf(hit.Function.Rva), ["line"] = hit.Line }, countAll: false));
             });
 
-        yield return Code("get_struct", "A struct layout. With 'name': struct/class definitions in the Sunrise client and server C/C++ " +
+        yield return Code("get_struct", "A struct layout. With 'name': image classes (RTTI or vtable_RVA, see get_class) with fields inferred from their methods' " +
+            "this-pointer accesses, then struct/class definitions in the Sunrise client and server C/C++ " +
             "source (SOLFORGE_SOURCE_ROOTS adds folders). With 'function' (and optional 'variable', e.g. param_1): the fields that function's " +
             "decompiled C reads or writes through that pointer, by offset and type; without 'variable' it lists the candidate variables.",
             Paged(("name", "string", "Struct or class name (substring)", false), ("function", "string", "Function RVA or name to infer from", false),
@@ -214,29 +225,140 @@ public static partial class SolforgeTools
                 }
                 if (McpJson.String(args, "name") is not { Length: > 0 } name) return McpToolResult.Error("Give name, or function (and variable).");
                 var roots = index.SourceRoots;
-                if (roots.Count == 0) return McpToolResult.Error("No C/C++ source roots found; set SOLFORGE_SOURCE_ROOTS.");
-                return McpToolResult.Json(DataPages.Page(StructLayouts.FindDefinitions(roots, name, cancel), args, found => new JsonObject
-                    { ["name"] = found.Name, ["file"] = found.File, ["line"] = found.Line, ["text"] = found.Text.Length > 6000 ? found.Text[..6000] + "\n..." : found.Text }, fallback: 5));
+                var classLayer = index.Classes;
+                if (roots.Count == 0 && classLayer is null) return McpToolResult.Error("No C/C++ source roots found; set SOLFORGE_SOURCE_ROOTS.");
+                // Image classes (RTTI names or vtable_RVA) with fields inferred from their methods' this-pointer accesses, then source definitions.
+                var inferredClasses = (classLayer?.Search(name) ?? Enumerable.Empty<ClassInfo>()).Where(c => c.Fields.Length > 0).Take(20)
+                    .Select(c => new JsonObject
+                    {
+                        ["kind"] = "inferred", ["name"] = c.Name, ["rtti"] = c.Rtti, ["vtable"] = c.VTables.Length > 0 ? Hex(c.VTables[0].Rva) : null,
+                        ["fields"] = new JsonArray([.. c.Fields.Select(f => (JsonNode?)new JsonObject { ["offset"] = Hex(f.Offset), ["type"] = f.Type, ["uses"] = f.Uses })])
+                    });
+                var definitions = StructLayouts.FindDefinitions(roots, name, cancel).Select(found => new JsonObject
+                    { ["kind"] = "source", ["name"] = found.Name, ["file"] = found.File, ["line"] = found.Line, ["text"] = found.Text.Length > 6000 ? found.Text[..6000] + "\n..." : found.Text });
+                return McpToolResult.Json(DataPages.Page(inferredClasses.Concat(definitions), args, row => row, fallback: 5));
             });
 
-        yield return Code("get_vtables", "Vtables (runs of code pointers in the image's data sections). With 'address' of a vtable: its " +
-            "entries with names. With 'function': the vtables that contain it (its class's other virtual methods). With neither: every vtable, paged.",
+        yield return Code("get_vtables", "Vtables: MSVC RTTI vtables (class name, subobject offset) plus runs of code pointers in the image's data " +
+            "sections, split where the decompiled code references a table start. With 'address' of a vtable: its entries with names and " +
+            "owning class. With 'function': the vtables that contain it and its slot. With neither: every vtable with its class, paged.",
             Paged(("address", "string", "Vtable RVA", false), ("function", "string", "Function RVA or name", false)),
             (index, args, _) =>
             {
                 if (index.Image is not { } image) return McpToolResult.Error("No image\\destiny2_image.bin in the analysis folder.");
+                var classes = index.Classes;
                 if (index.Resolve(McpJson.String(args, "address")) is { } address)
                 {
-                    if (image.VTableAt(address) is not { } table) return McpToolResult.Error($"No vtable starts at 0x{address:X8}.");
-                    var page = DataPages.Page(table.Entries.Select((entry, slot) => (entry, slot)), args, item => new JsonObject
-                        { ["slot"] = item.slot, ["offset"] = Hex(item.slot * 8), ["rva"] = Hex(item.entry), ["name"] = index.NameOf(item.entry), ["signature"] = index.Get(item.entry)?.Signature }, fallback: 200);
-                    page["vtable"] = Hex(table.Rva);
-                    page["referenced_by"] = new JsonArray([.. index.UsersOf(table.Rva).Take(20).Select(f => (JsonNode?)index.Label(f.Rva))]);
+                    var owner = classes?.VTableAt(address);
+                    uint[]? entries = owner?.Table.Entries ?? image.VTableAt(address)?.Entries;
+                    if (entries is null) return McpToolResult.Error($"No vtable starts at 0x{address:X8}.");
+                    var page = DataPages.Page(entries.Select((entry, slot) => (entry, slot)), args, item => new JsonObject
+                    {
+                        ["slot"] = item.slot, ["offset"] = Hex(item.slot * 8), ["rva"] = Hex(item.entry), ["name"] = index.NameOf(item.entry),
+                        ["owner"] = classes?.Virtuals.GetValueOrDefault(item.entry) is { } virtualOwner ? (virtualOwner.Shared ? "shared" : virtualOwner.Class) : null,
+                        ["signature"] = index.Get(item.entry)?.Signature
+                    }, fallback: 200);
+                    page["vtable"] = Hex(address);
+                    if (owner is { } found)
+                    {
+                        page["class"] = found.Class.Name; page["rtti"] = found.Class.Rtti; page["subobject_offset"] = Hex(found.Table.Offset);
+                        page["bases"] = new JsonArray([.. found.Class.Bases.Select(b => (JsonNode?)b.Name)]);
+                    }
+                    page["referenced_by"] = new JsonArray([.. index.UsersOf(address).Take(20).Select(f => (JsonNode?)index.Label(f.Rva))]);
                     return McpToolResult.Json(page);
                 }
-                var tables = index.Resolve(McpJson.String(args, "function")) is { } function ? image.VTablesWith(function) : image.VTables;
-                return McpToolResult.Json(DataPages.Page(tables, args, table => new JsonObject
-                    { ["rva"] = Hex(table.Rva), ["entries"] = table.Entries.Length, ["users"] = index.UsersOf(table.Rva).Count() }));
+                if (index.Resolve(McpJson.String(args, "function")) is { } function)
+                {
+                    if (classes is null)
+                        return McpToolResult.Json(DataPages.Page(image.VTablesWith(function), args, table => new JsonObject
+                            { ["rva"] = Hex(table.Rva), ["entries"] = table.Entries.Length, ["slot"] = Array.IndexOf(table.Entries, function) }));
+                    return McpToolResult.Json(DataPages.Page(classes.Holding(function), args, hit => new JsonObject
+                    {
+                        ["rva"] = Hex(hit.Table.Rva), ["class"] = hit.Class.Name, ["rtti"] = hit.Class.Rtti, ["subobject_offset"] = Hex(hit.Table.Offset),
+                        ["slot"] = hit.Slot, ["entries"] = hit.Table.Entries.Length
+                    }));
+                }
+                if (classes is null)
+                    return McpToolResult.Json(DataPages.Page(image.VTables, args, table => new JsonObject
+                        { ["rva"] = Hex(table.Rva), ["entries"] = table.Entries.Length, ["users"] = index.UsersOf(table.Rva).Count() }));
+                return McpToolResult.Json(DataPages.Page(classes.VTables, args, table => new JsonObject
+                {
+                    ["rva"] = Hex(table.Rva), ["class"] = classes.VTableAt(table.Rva)?.Class.Name, ["subobject_offset"] = Hex(table.Offset),
+                    ["entries"] = table.Entries.Length, ["users"] = index.UsersOf(table.Rva).Count()
+                }));
+            });
+
+        yield return Code("get_class", "A C++ class from the image: MSVC RTTI name, base classes (depth 1 = direct) and derived classes, " +
+            "its vtables, virtual methods by slot (Class::vfN unless named; 'inherited' when a base owns the slot), constructors (functions " +
+            "that store the vtable), fields inferred from this-pointer (param_1) accesses in its methods and constructors, the Tiger tag " +
+            "classes those functions check, and matching source definitions. 'class' takes a name (substring), a vtable RVA or a method; " +
+            "without it, every class (query filters, rtti=true for RTTI classes only), paged.",
+            Paged(("class", "string", "Class name (e.g. hkpEntity), vtable RVA, or a virtual method's RVA or name", false),
+                ("query", "string", "Name filter when listing", false), ("rtti", "boolean", "List only classes with RTTI names", false),
+                ("source", "boolean", "Also look up struct/class definitions in the C/C++ source roots (default true)", false)),
+            (index, args, cancel) =>
+            {
+                if (index.Classes is not { } classes) return McpToolResult.Error("No image\\destiny2_image.bin in the analysis folder, so no class layer.");
+                var labels = (host as ISolforgeDataHost)?.ClassLabels;
+                string text = A(args, "class").Trim();
+                if (text.Length == 0)
+                {
+                    string query = A(args, "query");
+                    bool rttiOnly = McpJson.Bool(args, "rtti", false);
+                    var list = (query.Length > 0 ? classes.Search(query) : classes.Classes.OrderBy(c => !c.Rtti).ThenBy(c => c.Name, StringComparer.Ordinal))
+                        .Where(c => !rttiOnly || c.Rtti);
+                    var listing = DataPages.Page(list, args, c => new JsonObject
+                    {
+                        ["name"] = c.Name, ["rtti"] = c.Rtti, ["vtable"] = c.VTables.Length > 0 ? Hex(c.VTables[0].Rva) : null,
+                        ["bases"] = c.Bases.Length, ["methods"] = c.VTables.Length > 0 ? c.VTables[0].Entries.Length : 0, ["fields"] = c.Fields.Length
+                    });
+                    listing["rtti_classes"] = classes.RttiClasses; listing["vtables"] = classes.VTableCount;
+                    return McpToolResult.Json(listing);
+                }
+                ClassInfo? info = classes.Search(text).FirstOrDefault();
+                if (info is null && index.Resolve(text) is { } rva)
+                    info = classes.VTableAt(rva)?.Class ?? classes.Holding(rva).OrderBy(hit => hit.Class.Bases.Length).Select(hit => hit.Class).FirstOrDefault();
+                if (info is null) return McpToolResult.Error($"No class named or holding '{text}'. List with get_class (query=...).");
+                var primary = info.VTables.FirstOrDefault(table => table.Offset == 0) ?? info.VTables.FirstOrDefault();
+                var methods = new JsonArray();
+                if (primary is not null)
+                    for (int slot = 0; slot < primary.Entries.Length; slot++)
+                    {
+                        uint entry = primary.Entries[slot];
+                        var owner = classes.Virtuals.GetValueOrDefault(entry);
+                        methods.Add(new JsonObject
+                        {
+                            ["slot"] = slot, ["rva"] = Hex(entry), ["name"] = index.NameOf(entry), ["signature"] = index.Get(entry)?.Signature,
+                            ["owner"] = owner is null ? null : owner.Shared ? "shared" : owner.Class,
+                            ["inherited"] = owner is { Shared: false } && owner.Class != info.Name
+                        });
+                    }
+                var result = new JsonObject
+                {
+                    ["name"] = info.Name, ["mangled"] = info.Mangled, ["rtti"] = info.Rtti,
+                    ["type_descriptor"] = info.Rtti ? Hex(info.TypeDescriptor) : null, ["attributes"] = info.Rtti ? Hex(info.Attributes) : null,
+                    ["bases"] = new JsonArray([.. info.Bases.Select(b => (JsonNode?)new JsonObject
+                        { ["name"] = b.Name, ["depth"] = b.Depth, ["mdisp"] = Hex(b.Mdisp), ["pdisp"] = b.Pdisp, ["vdisp"] = b.Vdisp, ["virtual"] = b.Pdisp >= 0 })]),
+                    ["derived"] = new JsonArray([.. classes.DerivedFrom(info).Take(100).Select(d => (JsonNode?)d.Name)]),
+                    ["vtables"] = new JsonArray([.. info.VTables.Select(t => (JsonNode?)new JsonObject
+                        { ["rva"] = Hex(t.Rva), ["locator"] = t.Locator != 0 ? Hex(t.Locator) : null, ["subobject_offset"] = Hex(t.Offset), ["entries"] = t.Entries.Length })]),
+                    ["methods"] = methods,
+                    ["constructors"] = new JsonArray([.. info.Constructors.Select(c => (JsonNode?)index.Label(c))]),
+                    ["fields"] = new JsonArray([.. info.Fields.Select(f => (JsonNode?)new JsonObject
+                        { ["offset"] = Hex(f.Offset), ["type"] = f.Offset == 0 && info.VTables.Length > 0 ? "vftable* (" + f.Type + ")" : f.Type, ["uses"] = f.Uses })]),
+                    ["tag_classes"] = new JsonArray([.. info.TagClasses.Select(t => (JsonNode?)new JsonObject { ["class"] = Hex(t), ["label"] = labels?.GetValueOrDefault(t) })]),
+                    ["note"] = "Fields are merged from param_1 (this) accesses in the class's own virtual methods and constructors; offsets are from the object start."
+                };
+                if (McpJson.Bool(args, "source", true) && info.Rtti && index.SourceRoots is { Count: > 0 } roots)
+                {
+                    string shortName = info.Name.Split("::")[^1];
+                    int open = shortName.IndexOf('<');
+                    if (open > 0) shortName = shortName[..open];
+                    result["source_definitions"] = new JsonArray([.. StructLayouts.FindDefinitions(roots, shortName, cancel)
+                        .Where(found => string.Equals(found.Name, shortName, StringComparison.Ordinal)).Take(5)
+                        .Select(found => (JsonNode?)new JsonObject { ["file"] = found.File, ["line"] = found.Line })]);
+                }
+                return McpToolResult.Json(result);
             });
 
         yield return Code("tag_type_handlers", "Links a Tiger tag class (e.g. 0x80809FBD, the 'class_...' or label from list_tag_classes) " +
