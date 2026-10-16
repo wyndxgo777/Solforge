@@ -1,3 +1,7 @@
+/**
+ * File: C++ class layer over the image: MSVC RTTI classes, bases and vtables with the virtual functions in each slot.
+ * Built from BinaryImage.cs and DecompIndex.cs; serves get_class and get_vtables.
+ */
 using System.Buffers.Binary;
 using System.Globalization;
 using System.Text;
@@ -45,6 +49,7 @@ public sealed class ClassIndex
     private readonly Dictionary<uint, ClassInfo> byDescriptor = [];
     private readonly Dictionary<uint, List<ClassInfo>> derived = [];
 
+    /** Builds lookup tables (by vtable, by descriptor, derived classes) from the class list. */
     public ClassIndex(IReadOnlyList<ClassInfo> classes, IReadOnlyDictionary<uint, VirtualOwner> virtuals)
     {
         Classes = classes; Virtuals = virtuals;
@@ -65,8 +70,11 @@ public sealed class ClassIndex
     public int VTableCount => byVTable.Count;
     public IEnumerable<ClassVTable> VTables => byVTable.Values.Select(entry => entry.Table).OrderBy(table => table.Rva);
 
+    /** The class and vtable starting at an RVA, or null. */
     public (ClassInfo Class, ClassVTable Table)? VTableAt(uint rva) => byVTable.TryGetValue(rva, out var entry) ? entry : null;
+    /** The class whose RTTI descriptor sits at an RVA, or null. */
     public ClassInfo? ByDescriptor(uint rva) => byDescriptor.GetValueOrDefault(rva);
+    /** Classes that directly derive from a class. */
     public IReadOnlyList<ClassInfo> DerivedFrom(ClassInfo info) => info.Rtti && derived.TryGetValue(info.TypeDescriptor, out var list) ? list : [];
 
     /** The vtables (with their class and slot) that hold a function. */
@@ -293,6 +301,7 @@ public sealed class ClassIndex
 
     // ---- cache ----
 
+    /** Writes the index to a cache file (through a temp file) tagged with a stamp. */
     public void Write(string path, string stamp)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
@@ -328,6 +337,7 @@ public sealed class ClassIndex
         File.Move(temporary, path, overwrite: true);
     }
 
+    /** Reads a cached index when the stamp matches; null when missing, stale or unreadable. */
     public static ClassIndex? TryRead(string path, string stamp)
     {
         if (!File.Exists(path)) return null;
@@ -372,6 +382,7 @@ public sealed class ClassIndex
 /** A best-effort MSVC type-name demangler for RTTI names (".?AVFoo@ns@@" is "ns::Foo"); falls back to the raw name. */
 public static class RttiNames
 {
+    /** Demangles an MSVC RTTI type name (.?AV...) into a readable C++ name. */
     public static string Demangle(string mangled)
     {
         string body = mangled.StartsWith(".?A", StringComparison.Ordinal) && mangled.Length > 4 ? mangled[4..] : mangled;
@@ -398,6 +409,7 @@ public static class RttiNames
         return string.Join("::", parts);
     }
 
+    /** Demangler: one name part, either an inline name or a back-reference digit. */
     private static string Part(string text, ref int at, List<string> names)
     {
         char c = text[at];
@@ -417,6 +429,7 @@ public static class RttiNames
         return Identifier(text, ref at, names);
     }
 
+    /** Demangler: reads an @-terminated identifier and remembers it for back-references. */
     private static string Identifier(string text, ref int at, List<string> names)
     {
         int end = text.IndexOf('@', at);
@@ -427,6 +440,7 @@ public static class RttiNames
         return name;
     }
 
+    /** Demangler: reads one type argument of a template name. */
     private static string Argument(string text, ref int at, List<string> names)
     {
         char c = text[at++];

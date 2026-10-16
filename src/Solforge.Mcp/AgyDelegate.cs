@@ -1,3 +1,7 @@
+/**
+ * File: Stdio MCP server exposing ask_gemini; sibling of ClineDelegate.cs. Both are linked into the Solforge.Mcp.Shim
+ * exe and started with --gemini / --clinepass.
+ */
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
@@ -18,6 +22,7 @@ public static class AgyDelegate
     public const string ServerName = "gemini", ToolName = "ask_gemini";
     public const int MaxPrompt = 24000, DefaultTimeout = 600, MaxTimeout = 1800;
 
+    /** The MCP tool definition (name, description, input schema) for ask_gemini. */
     public static JsonObject Tool() => new()
     {
         ["name"] = ToolName,
@@ -136,6 +141,7 @@ public static class AgyDelegate
     {
         var gate = new SemaphoreSlim(1, 1);
         var pending = new List<Task>();
+        /** Writes one JSON-RPC message to stdout under a lock so concurrent replies do not interleave. */
         async Task Send(JsonObject message)
         {
             await gate.WaitAsync();
@@ -191,13 +197,17 @@ public static class AgyDelegate
         }
     }
 
+    /** A JSON-RPC success reply. */
     private static JsonObject Reply(JsonNode id, JsonObject result) => new() { ["jsonrpc"] = "2.0", ["id"] = id, ["result"] = result };
 
+    /** A JSON-RPC error reply. */
     private static JsonObject Error(JsonNode? id, int code, string message) =>
         new() { ["jsonrpc"] = "2.0", ["id"] = id, ["error"] = new JsonObject { ["code"] = code, ["message"] = message } };
 
+    /** A JSON schema property of a type with a description. */
     internal static JsonObject Field(string type, string description) => new() { ["type"] = type, ["description"] = description };
 
+    /** A string field of a JSON object, or null. */
     internal static string? Text(JsonObject? node, string key) =>
         node?[key] is JsonValue value && value.TryGetValue(out string? text) ? text : null;
 }

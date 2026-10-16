@@ -1,3 +1,7 @@
+/**
+ * File: Index of the Ghidra decompile output (decomp/all/func_<RVA>.c): functions, call and reference graphs, names,
+ * tag class users, with an on-disk cache. Used by SolforgeTools.Data.cs.
+ */
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
@@ -32,8 +36,10 @@ public sealed class DecompIndex
     private readonly HashSet<uint> starts;
     private volatile Dictionary<uint, (string Name, string Source)> names;
     private BinaryImage? image;
+    /** Guards the lazily opened binary image. */
     private readonly object imageLock = new();
 
+    /** Private; instances come from Load / Build / the cache reader. */
     private DecompIndex(string root, string[] files, DecompFunction[] functions, uint[][] calls, uint[][] refs, uint[][] tagClasses,
         uint[] failed, HashSet<uint> starts)
     {
@@ -48,6 +54,7 @@ public sealed class DecompIndex
             foreach (uint type in tagClasses[index]) Add(classUsers, type, index);
         }
         names = LoadNames(root);
+        /** Adds an index to a key list unless it is already the last entry. */
         static void Add(Dictionary<uint, List<int>> map, uint key, int index)
         {
             if (!map.TryGetValue(key, out var list)) map[key] = list = [];
@@ -76,7 +83,9 @@ public sealed class DecompIndex
         return null;
     }
 
+    /** Indexes already built in this process, by analysis folder. */
     private static readonly Dictionary<string, DecompIndex> Loaded = new(StringComparer.OrdinalIgnoreCase);
+    /** Serialises index builds so two tools do not build the same index at once. */
     private static readonly SemaphoreSlim LoadGate = new(1, 1);
 
     /** The index for an analysis folder, built once per process (and cached on disk). */
@@ -96,6 +105,7 @@ public sealed class DecompIndex
 
     private string stamp = "";
 
+    /** Cache file path for an analysis folder (hash of the folder name). */
     private static string CachePath(string root)
     {
         string key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(root.ToLowerInvariant())))[..16];
@@ -104,6 +114,7 @@ public sealed class DecompIndex
         return Path.Combine(folder, $"index-{key}.bin");
     }
 
+    /** The decompiled .c files under decomp/all. */
     private static string[] SourceFiles(string root)
     {
         var files = new List<string>();
@@ -114,6 +125,7 @@ public sealed class DecompIndex
         return [.. files];
     }
 
+    /** A stamp (version plus file sizes and times) that changes when the sources change, so stale caches are rebuilt. */
     private static string StampOf(string root, IEnumerable<string> files)
     {
         var text = new StringBuilder().Append(CacheVersion).Append('|');
@@ -125,6 +137,7 @@ public sealed class DecompIndex
         return text.ToString();
     }
 
+    /** Current stamp for this index root. */
     private string Stamp() => StampOf(Root, SourceFiles(Root));
 
     /** Builds (or reads from cachePath) the index for an analysis folder. */
@@ -143,6 +156,7 @@ public sealed class DecompIndex
 
     private bool fromCache;
 
+    /** Parses every decompiled file into functions, call and reference lists and tag class uses. */
     private static DecompIndex Build(string root, string[] files, CancellationToken cancel)
     {
         var sizes = ReadSizes(Path.Combine(root, "full", "functions.csv"));
@@ -183,6 +197,7 @@ public sealed class DecompIndex
             [.. ordered.Select(row => row.Refs)], [.. ordered.Select(row => row.Classes)], [.. failed.Distinct().Order()], startSet);
     }
 
+    /** Reads function sizes from full/functions.csv (empty when missing). */
     private static Dictionary<uint, uint> ReadSizes(string csv)
     {
         var sizes = new Dictionary<uint, uint>();
@@ -245,6 +260,7 @@ public sealed class DecompIndex
         return (new DecompFunction(rva, size, signature, file, offset, length), [.. calls], [.. refs], [.. classes]);
     }
 
+    /** Extracts the function signature from the head of a decompiled file. */
     private static string Signature(string head)
     {
         var parts = new List<string>();
@@ -259,11 +275,16 @@ public sealed class DecompIndex
         return string.Join(' ', parts);
     }
 
+    /** Whether a value is in the tag class constant range 0x80800000-0x8081FFFF. */
     public static bool IsTagClass(uint value) => value is >= 0x80800000 and <= 0x8081FFFF;
+    /** Whether a byte can start a C identifier. */
     private static bool IsIdentStart(byte c) => c is (>= (byte)'a' and <= (byte)'z') or (>= (byte)'A' and <= (byte)'Z') or (byte)'_';
+    /** Whether a byte can continue a C identifier. */
     private static bool IsIdent(byte c) => IsIdentStart(c) || c is >= (byte)'0' and <= (byte)'9';
+    /** Whether a byte is a hex digit. */
     private static bool IsHex(byte c) => c is (>= (byte)'0' and <= (byte)'9') or (>= (byte)'a' and <= (byte)'f') or (>= (byte)'A' and <= (byte)'F');
 
+    /** Parses hex text (optional 0x prefix) into a uint. */
     public static bool TryHex(ReadOnlySpan<char> text, out uint value)
     {
         text = text.Trim();
@@ -273,6 +294,7 @@ public sealed class DecompIndex
 
     // ---- cache ----
 
+    /** Writes the index to the cache file (through a temp file). */
     private static void WriteCache(DecompIndex index, string path, string stamp)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
@@ -295,6 +317,7 @@ public sealed class DecompIndex
         File.Move(temporary, path, overwrite: true);
     }
 
+    /** Reads the cache when its stamp matches; null when missing, stale or unreadable. */
     private static DecompIndex? TryReadCache(string root, string path, string stamp, string[] files)
     {
         if (!File.Exists(path)) return null;
@@ -326,6 +349,7 @@ public sealed class DecompIndex
 
     // ---- names ----
 
+    /** Loads function names from the analysis listings (and renames) as rva to (name, source). */
     private static Dictionary<uint, (string Name, string Source)> LoadNames(string root)
     {
         var names = new Dictionary<uint, (string, string)>();
@@ -370,17 +394,21 @@ public sealed class DecompIndex
         ReloadNames();
     }
 
+    /** Name of a function, or null. */
     public string? NameOf(uint rva) => names.TryGetValue(rva, out var entry) ? entry.Name
         : virtualNames.TryGetValue(rva, out var owner) ? owner.Name : null;
+    /** Where a name came from (listing, rename, or class layer), or null. */
     public string? NameSource(uint rva) => names.TryGetValue(rva, out var entry) ? entry.Source
         : virtualNames.ContainsKey(rva) ? "class" : null;
     /** Virtual functions named Class::vfN by the class layer (only once Classes has loaded; user names win). */
     public int VirtualNameCount => virtualNames.Count;
+    /** Display label: the name with the RVA, else FUN_<rva>. */
     public string Label(uint rva) => NameOf(rva) is { } name ? $"{name} (0x{rva:X8})" : $"FUN_{rva:X8}";
     public IEnumerable<KeyValuePair<uint, (string Name, string Source)>> Names => names;
 
     // ---- queries ----
 
+    /** The function that starts at an RVA, or null. */
     public DecompFunction? Get(uint rva) => byRva.TryGetValue(rva, out int index) ? functions[index] : null;
 
     /** The function containing an address: exact start, else the nearest start below it whose size (when known) covers it. */
@@ -411,14 +439,22 @@ public sealed class DecompIndex
         return null;
     }
 
+    /** Whether an RVA is a function start. */
     public bool IsFunctionStart(uint rva) => starts.Contains(rva);
+    /** RVAs a function calls. */
     public IReadOnlyList<uint> CallsFrom(DecompFunction function) => calls[byRva[function.Rva]];
+    /** RVAs a function references (data). */
     public IReadOnlyList<uint> RefsFrom(DecompFunction function) => refs[byRva[function.Rva]];
+    /** Tag class constants a function mentions. */
     public IReadOnlyList<uint> TagClassesOf(DecompFunction function) => tagClasses[byRva[function.Rva]];
+    /** Functions that call an RVA. */
     public IEnumerable<DecompFunction> CallersOf(uint rva) => callers.TryGetValue(rva, out var list) ? list.Select(i => functions[i]) : [];
+    /** Functions that reference an RVA as data. */
     public IEnumerable<DecompFunction> UsersOf(uint rva) => users.TryGetValue(rva, out var list) ? list.Select(i => functions[i]) : [];
+    /** Functions that use a tag class constant. */
     public IEnumerable<DecompFunction> UsersOfTagClass(uint type) => classUsers.TryGetValue(type, out var list) ? list.Select(i => functions[i]) : [];
     public IEnumerable<uint> TagClasses => classUsers.Keys.Order();
+    /** How many functions call an RVA. */
     public int CallerCount(uint rva) => callers.TryGetValue(rva, out var list) ? list.Count : 0;
 
     /** Functions whose name, RVA or signature contains the query, named ones first. */
@@ -499,6 +535,7 @@ public sealed class DecompIndex
     private ClassIndex? classes;
     private bool classesTried;
     private volatile Dictionary<uint, VirtualOwner> virtualNames = [];
+    /** Guards the lazily built class layer. */
     private readonly object classLock = new();
 
     /**

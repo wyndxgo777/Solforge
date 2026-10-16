@@ -1,3 +1,7 @@
+/**
+ * File: Builds the launch command, MCP config and prompt hook files for starting Claude Code from the AI workspace
+ * (editor side: Editor/Ai/ and StudioForm.Ai*.cs).
+ */
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Nodes;
@@ -196,6 +200,10 @@ public static class EngineLaunch
         return path;
     }
 
+    /**
+     * Markdown text carrying a conversation over from one engine to another (requests, last reply and transcript
+     * path).
+     */
     public static string HandoffText(string fromName, string toName, string? session, string? transcript,
         IReadOnlyList<string> requests, string? reply, DateTime at)
     {
@@ -258,8 +266,10 @@ public static class EngineLaunch
         return cut ? lines[1..] : lines;
     }
 
+    /** Truncates text to max characters with an ellipsis. */
     private static string Clip(string text, int max) => text.Length <= max ? text : text[..max] + " ...";
 
+    /** Whether a JSON node is the boolean true. */
     private static bool IsTrue(JsonNode? node) => node?.GetValueKind() == System.Text.Json.JsonValueKind.True;
 
     /** Joins argument strings, skipping empty ones. */
@@ -322,14 +332,17 @@ public static class EngineLaunch
             .Select(session => session.Id).FirstOrDefault();
     }
 
+    /** Parses JSON, returning null when invalid. */
     private static JsonNode? Parse(string json)
     {
         try { return JsonNode.Parse(json); }
         catch (System.Text.Json.JsonException) { return null; }
     }
 
+    /** A JSON string value, or null. */
     private static string? Text(JsonNode? node) => node is JsonValue value && value.TryGetValue(out string? text) ? text : null;
 
+    /** Whether a JSON path value names the same folder. */
     private static bool Same(JsonNode? node, string folder)
     {
         if (Text(node) is not { Length: > 0 } path) return false;
@@ -349,6 +362,7 @@ public static class EngineLaunch
         string.Equals(path, folder, StringComparison.OrdinalIgnoreCase)
         || path.StartsWith(folder.TrimEnd('\\') + "\\", StringComparison.OrdinalIgnoreCase);
 
+    /** Writes the file only if its content changed, to avoid needless rewrites. */
     private static void Write(string path, JsonObject root)
     {
         string text = root.ToJsonString(McpJson.Indented);

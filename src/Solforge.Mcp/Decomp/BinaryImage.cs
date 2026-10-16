@@ -1,3 +1,7 @@
+/**
+ * File: Reads the game executable image (sections, strings, vtables) for the decomp tools; DecompIndex.cs knows the
+ * function list and ClassIndex.cs the RTTI classes.
+ */
 using System.Globalization;
 using System.Text;
 using System.Text.Json.Nodes;
@@ -26,17 +30,20 @@ public sealed class BinaryImage
     private IReadOnlyList<VTable>? vtables;
     private Dictionary<uint, ImageString>? stringAt;
     private Dictionary<uint, List<VTable>>? vtablesWith;
+    /** Guards the one-time scan. */
     private readonly object scanLock = new();
 
     public ulong Base { get; }
     public IReadOnlyList<ImageSection> Sections { get; }
     public long Length => bytes.LongLength;
 
+    /** Private; instances come from Open / FromBytes. */
     private BinaryImage(byte[] bytes, ulong imageBase, IReadOnlyList<ImageSection> sections, Func<uint, bool> isFunctionStart)
     {
         this.bytes = bytes; Base = imageBase; Sections = sections; this.isFunctionStart = isFunctionStart;
     }
 
+    /** Loads the image file, with optional image.json metadata (base address and sections). */
     public static BinaryImage Open(string path, string? metadata, Func<uint, bool> isFunctionStart) =>
         FromBytes(File.ReadAllBytes(path), metadata is not null && File.Exists(metadata) ? File.ReadAllText(metadata) : null, isFunctionStart);
 
@@ -77,9 +84,11 @@ public sealed class BinaryImage
         return new BinaryImage(bytes, imageBase, sections, isFunctionStart);
     }
 
+    /** Byte ranges of the non-executable sections (where strings and vtables live). */
     private IEnumerable<(int Start, int End)> DataRanges() => Sections.Where(section => !section.Executable)
         .Select(section => ((int)Math.Min(section.Rva, (uint)bytes.Length), (int)Math.Min((long)section.Rva + section.Size, bytes.Length)));
 
+    /** Whether an RVA is code: a known function start or inside an executable section. */
     private bool InCode(uint rva) => isFunctionStart(rva)
         || Sections.Any(section => section.Executable && rva >= section.Rva && rva < section.Rva + section.Size);
 
@@ -89,11 +98,16 @@ public sealed class BinaryImage
     /** The whole image (RVA = offset), for scanners such as the RTTI pass in ClassIndex. */
     public ReadOnlySpan<byte> Bytes => bytes;
 
+    /** All strings found in data sections (scanned on first use). */
     public IReadOnlyList<ImageString> Strings { get { Scan(); return strings!; } }
+    /** All vtable candidates found in data sections. */
     public IReadOnlyList<VTable> VTables { get { Scan(); return vtables!; } }
 
+    /** The string that starts at an RVA, or null. */
     public ImageString? StringAt(uint rva) { Scan(); return stringAt!.GetValueOrDefault(rva); }
+    /** Vtables that contain a function. */
     public IReadOnlyList<VTable> VTablesWith(uint function) { Scan(); return vtablesWith!.TryGetValue(function, out var list) ? list : []; }
+    /** The vtable starting at an RVA, or null. */
     public VTable? VTableAt(uint rva) { Scan(); return vtables!.FirstOrDefault(table => table.Rva == rva); }
 
     /** Reads raw bytes at an RVA (clamped to the image). */
@@ -104,6 +118,7 @@ public sealed class BinaryImage
         return bytes.AsSpan((int)rva, Math.Max(0, count)).ToArray();
     }
 
+    /** One-time scan of data sections for ASCII and UTF-16 strings and vtables. */
     private void Scan()
     {
         lock (scanLock)
@@ -131,8 +146,10 @@ public sealed class BinaryImage
         }
     }
 
+    /** Whether a byte is printable ASCII or tab, LF or CR. */
     private static bool Printable(byte c) => c is >= 0x20 and < 0x7F or (byte)'\t' or (byte)'\n' or (byte)'\r';
 
+    /** Finds ASCII strings in a byte range. */
     private void ScanAscii(int start, int end, List<ImageString> found)
     {
         int run = start;
@@ -144,6 +161,7 @@ public sealed class BinaryImage
         }
     }
 
+    /** Finds UTF-16 strings in a byte range. */
     private void ScanWide(int start, int end, List<ImageString> found)
     {
         start += start & 1;
@@ -157,6 +175,7 @@ public sealed class BinaryImage
         }
     }
 
+    /** Finds vtable candidates: runs of pointers into code at 8-byte alignment. */
     private void ScanTables(int start, int end, List<VTable> tables)
     {
         if (Base == 0) return;
