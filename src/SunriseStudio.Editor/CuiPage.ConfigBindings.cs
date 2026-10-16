@@ -5,6 +5,7 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Editor;
 
+/** CuiPage part: finds the project config binding that drives a property and shows it on the field. */
 public sealed partial class CuiPage
 {
     private ProjectConfigBinding? PropertyBinding(StudioPageContext context, CuiDocument owner,

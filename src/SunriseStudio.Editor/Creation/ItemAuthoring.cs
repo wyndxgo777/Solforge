@@ -4,6 +4,10 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Editor.Creation;
 
+/**
+ * Everything an item clone writes: new definition and display tags, item index, added assets and edits to
+ * existing tags.
+ */
 public sealed record ItemCreationPlan(uint DefinitionTag, uint DisplayTag, int ItemIndex,
     uint DefinitionHash, IReadOnlyList<ProjectAssetAddition> Additions,
     IReadOnlyDictionary<uint, byte[]> Edits);

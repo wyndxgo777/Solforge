@@ -3,8 +3,11 @@ using SunriseStudio.Formats;
 
 namespace SunriseStudio.Editor;
 
+/** One laid-out line: its text, width, baseline and the x position of each character. */
 public sealed record CuiTextLine(string Text, float Width, float Baseline, IReadOnlyList<float> Positions);
+/** Result of laying out a string: lines, overall size and whether any line was wrapped. */
 public sealed record CuiTextLayout(IReadOnlyList<CuiTextLine> Lines, Vector2 Size, bool Wrapped);
+/** Per-glyph metrics the layouter consumes. */
 internal readonly record struct CuiTextGlyph(float Advance, float Left, float Top, float Width, float Height, float LineHeight);
 
 /** The native Latin path breaks after empty glyphs and hyphens, then removes trailing empty glyphs. */
@@ -13,6 +16,7 @@ internal static class CuiTextLayouter
     // Native UI text is bounded before line and glyph-position arrays are allocated.
     public const int MaximumCharacters = 16384;
 
+    /** Lays the text out at the given width, wrapping where the native path would. */
     public static CuiTextLayout Create(CuiTextAppearance style, string source, float width,
         Func<char, CuiTextGlyph> glyph, Func<char, char, float> kerning)
     {

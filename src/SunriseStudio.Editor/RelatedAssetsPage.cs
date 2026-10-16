@@ -3,6 +3,7 @@ using SunriseStudio.Formats;
 
 namespace SunriseStudio.Editor;
 
+/** Related tab: assets connected to the open document, with search; typed links open models or clips. */
 public sealed class RelatedAssetsPage : IStudioPage
 {
     private string search = "", appliedSearch = "";
@@ -10,6 +11,7 @@ public sealed class RelatedAssetsPage : IStudioPage
     private RelatedAsset[] rows = [];
     public string Id => "sunrise.related";
     public string Title => "Related";
+    /** Accepts documents that have asset connections. */
     public bool CanOpen(StudioDocument document) => document.Connections is not null;
 
     /** Typed links retain their owner context when opening models or animation clips. */

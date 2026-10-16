@@ -4,6 +4,7 @@ using SunriseStudio.Missions;
 
 namespace SunriseStudio.Editor;
 
+/** MissionGraphPage part: lists and opens legacy script alternatives of an older project. */
 public sealed partial class MissionGraphPage
 {
     private string? legacyAssetId;

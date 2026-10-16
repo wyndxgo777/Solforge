@@ -5,6 +5,7 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Editor.Creation;
 
+/** VendorWorkflow part: publishes the new vendor's assets, strings and interaction changes. */
 public sealed partial class VendorWorkflow
 {
     /** Allocation, paired indices, strings and interaction changes share one manifest publication. */

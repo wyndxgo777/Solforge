@@ -24,8 +24,10 @@ public sealed class CuiLiveJoin
         bool partial)
     { this.rows = rows; this.shown = shown; Matched = matched; Mismatched = mismatched; OtherHierarchy = other; Partial = partial; }
 
+    /** The game's widget row for the node id, or null when the game has none. */
     public LiveCuiWidget? Row(int node) => rows.GetValueOrDefault(node);
 
+    /** How the game currently holds the node (not built, shown, hidden, hidden by a parent or unknown). */
     public CuiLiveState State(int node) =>
         !rows.TryGetValue(node, out var row) ? Partial ? CuiLiveState.Unknown : CuiLiveState.NotBuilt
             : shown[node] ? CuiLiveState.Shown : row.Visible ? CuiLiveState.HiddenByParent : CuiLiveState.Hidden;

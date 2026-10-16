@@ -4,6 +4,7 @@ using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
+/** StudioCategories part: entity and enemy categories and their class detection. */
 public static partial class StudioCategories
 {
     public const string EnemiesCategory = "Enemies and NPCs", EntityCategory = "Entity";

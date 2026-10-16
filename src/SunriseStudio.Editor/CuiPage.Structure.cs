@@ -8,6 +8,7 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Editor;
 
+/** CuiPage part: adds, duplicates, reparents and deletes widgets and keeps their name labels. */
 public sealed partial class CuiPage
 {
     private sealed record WidgetLabels(int Version, uint Hierarchy, Dictionary<ushort, string> Names);

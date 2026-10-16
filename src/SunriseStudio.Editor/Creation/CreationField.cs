@@ -3,8 +3,10 @@ using SunriseStudio.Formats;
 
 namespace SunriseStudio.Editor.Creation;
 
+/** How a creation form field is entered: a tag pick, a file, a number, text or a row list. */
 public enum CreationFieldKind { Tag, File, Scalar, Text, Rows }
 
+/** One selectable value of a creation field, with its label and detail text. */
 public sealed record CreationChoice(uint Value, string Label, string Detail = "");
 
 /**

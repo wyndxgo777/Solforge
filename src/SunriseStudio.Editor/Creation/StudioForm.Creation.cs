@@ -6,6 +6,7 @@ using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
+/** StudioForm part: the New and Duplicate creation dialog, routing and follow-up. */
 public sealed partial class StudioForm
 {
     private readonly CreationDialog creation = new();

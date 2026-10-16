@@ -19,6 +19,7 @@ public static partial class CreationTypes
         [InvestmentItemKinds.Bounties] = "bounty", [InvestmentItemKinds.Quests] = "quest"
     };
 
+    /** The noun used for items of a category in messages, defaulting to "item". */
     public static string ItemNoun(string category) => ItemNouns.GetValueOrDefault(category) ?? "item";
 
     static partial void AddItemTypes()

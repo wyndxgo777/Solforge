@@ -1,5 +1,6 @@
 namespace SunriseStudio.Editor.Creation;
 
+/** CreationTypes part: registers vendor types; New is blocked, Clone works. */
 public static partial class CreationTypes
 {
     static partial void AddVendorTypes()

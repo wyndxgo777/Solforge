@@ -5,6 +5,10 @@ using static SunriseStudio.Editor.StudioUi;
 
 namespace SunriseStudio.Editor;
 
+/**
+ * MissionGraphPage part: inspector and edits for nodes of a parsed Lua script (body templates, move, remove,
+ * inputs).
+ */
 public sealed partial class MissionGraphPage
 {
     private string addScriptScope = "";

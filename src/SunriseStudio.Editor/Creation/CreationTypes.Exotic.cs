@@ -2,6 +2,7 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Editor.Creation;
 
+/** CreationTypes part: registers the exotic weapon type. */
 public static partial class CreationTypes
 {
     static partial void AddExoticTypes() =>

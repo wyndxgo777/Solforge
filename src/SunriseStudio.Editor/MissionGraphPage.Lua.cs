@@ -3,6 +3,7 @@ using SunriseStudio.Missions;
 
 namespace SunriseStudio.Editor;
 
+/** MissionGraphPage part: per-node Lua drafts that must be applied or reverted before graph edits. */
 public sealed partial class MissionGraphPage
 {
     private sealed record LuaDraft(string Original, string Draft, object Document, string Owner, string? Path);

@@ -29,6 +29,7 @@ public sealed partial class AudioPage : IStudioPage, IDisposable
     public string Title => "Audio";
     public bool IsBusy => operation is not null;
     public AudioDocument? AudioDocument => session?.Document;
+    /** Accepts any entry the audio catalog can decode. */
     public bool CanOpen(StudioDocument document) => AudioCatalog.Supports(document.Entry);
 
     /** Hosts call this even when the tab is hidden so a changed selection stops its old sound. */
@@ -294,5 +295,6 @@ public sealed partial class AudioPage : IStudioPage, IDisposable
     private bool Matches(string value) => filter.Length == 0 || value.Contains(filter, StringComparison.OrdinalIgnoreCase);
     private static string Time(double seconds) => $"{(int)seconds / 60}:{(int)seconds % 60:00}";
     private void Try(Action action) { try { error = ""; action(); } catch (Exception exception) { error = exception.Message; } }
+    /** Stops playback and releases the session; safe to call twice. */
     public void Dispose() { if (disposed) return; Reset(); disposed = true; source = null; }
 }

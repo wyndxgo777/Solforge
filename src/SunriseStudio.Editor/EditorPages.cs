@@ -12,6 +12,7 @@ public sealed record StudioPageContext(StudioWorkspace Workspace, AssetViewport 
     Action<AssetProperty> SelectProperty, Action<MeshInstance>? SelectMesh = null,
     MeshInstance? SelectedMesh = null, ImFontPtr MonospaceFont = default, Action? ExportFullAsset = null);
 
+/** A tab in the asset window: says which documents it can show and draws them each frame. */
 public interface IStudioPage
 {
     string Id { get; }
@@ -46,6 +47,7 @@ public sealed class StudioPageRegistry
         Register(new GuardianPage(), first: true);
     }
 
+    /** Adds a page to the tab order; first places it ahead of the generic pages. */
     public void Register(IStudioPage page, bool first = false)
     {
         ArgumentNullException.ThrowIfNull(page);
@@ -56,6 +58,7 @@ public sealed class StudioPageRegistry
     }
 }
 
+/** Scene tab: the document's meshes, entity variant parameters and object channels. */
 public sealed partial class ScenePage : IStudioPage
 {
     private string filter = "";
@@ -69,6 +72,7 @@ public sealed partial class ScenePage : IStudioPage
     private SceneDocument? channelScene;
     public string Id => "sunrise.scene";
     public string Title => "Parts";
+    /** Accepts documents that carry a scene. */
     public bool CanOpen(StudioDocument document) => document.Scene is not null;
 
     /** Selection retains the source mesh, so external edits return to the right native buffer. */
@@ -178,6 +182,7 @@ public sealed partial class ScenePage : IStudioPage
     }
 }
 
+/** ScenePage part: variant parameter and channel editors. */
 public sealed partial class ScenePage
 {
     /** One row per variant parameter; a pick rereads the entity with that value over the spawn's. */
@@ -278,14 +283,18 @@ public sealed partial class ScenePage
     }
 }
 
+/** Preview tab: the 3D or texture viewport of the open document. */
 public sealed class PreviewPage : IStudioPage
 {
     public string Id => "sunrise.preview";
     public string Title => "Scene";
+    /** Accepts documents with a scene or a texture. */
     public bool CanOpen(StudioDocument document) => document.Scene is not null || document.Texture is not null;
+    /** Draws the shared viewport over the available area. */
     public void Draw(StudioPageContext context) => context.Viewport.DrawImGui(ImGui.GetContentRegionAvail());
 }
 
+/** Properties tab: the searchable tree of parsed tag fields, editable where the workspace allows. */
 public sealed class PropertiesPage : IStudioPage
 {
     private string filter = "";
@@ -295,6 +304,7 @@ public sealed class PropertiesPage : IStudioPage
     private AssetInspection? matchedInspection;
     public string Id => "sunrise.properties";
     public string Title => "Properties";
+    /** Always available. */
     public bool CanOpen(StudioDocument document) => true;
 
     /** The inspection tree; the filter is matched once per filter text and inspection. */
@@ -379,10 +389,12 @@ public sealed class PropertiesPage : IStudioPage
     }
 }
 
+/** References tab: tags this document points at and tags that point at it. */
 public sealed class ReferencesPage : IStudioPage
 {
     public string Id => "sunrise.references";
     public string Title => "References";
+    /** Always available. */
     public bool CanOpen(StudioDocument document) => true;
 
     /** A clipped table of references; a double click opens one. */
@@ -418,12 +430,14 @@ public sealed class ReferencesPage : IStudioPage
     }
 }
 
+/** Hex tab: raw bytes of the tag. */
 public sealed class HexPage : IStudioPage
 {
     private string offsetText = "0", replacement = "";
     private int targetRow = -1;
     public string Id => "sunrise.bytes";
     public string Title => "Bytes";
+    /** Always available. */
     public bool CanOpen(StudioDocument document) => true;
 
     /** The byte editor writes only the selected span and retains the asset length. */

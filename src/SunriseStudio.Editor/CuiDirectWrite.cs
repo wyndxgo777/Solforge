@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace SunriseStudio.Editor;
 
+/** One rasterized glyph: its alpha bitmap, bounds relative to the origin and horizontal advance. */
 internal sealed record CuiBakedGlyph(int Left, int Top, int Width, int Height, float Advance, byte[] Alpha);
 
 /** An isolated DirectWrite factory validates and rasterizes memory fonts without OS installation. */
@@ -55,6 +56,7 @@ internal sealed unsafe class CuiDirectWrite : IDisposable
         finally { Release(face); Release(file); }
     }
 
+    /** A font face created from memory bytes; measures kerning and bakes glyph bitmaps at an em size. */
     public sealed class Face : IDisposable
     {
         private readonly CuiDirectWrite owner;
@@ -84,6 +86,7 @@ internal sealed unsafe class CuiDirectWrite : IDisposable
             return adjustments[0] * emSize / units;
         }
 
+        /** Maps a Unicode code point to the face's glyph index (0 when missing). */
         public ushort Glyph(uint character)
         {
             ushort glyph = 0;
@@ -131,9 +134,11 @@ internal sealed unsafe class CuiDirectWrite : IDisposable
             finally { Release(analysis); }
         }
 
+        /** Releases the native face and font file. */
         public void Dispose() { Release(face1); face1 = 0; Release(face); face = 0; Release(file); file = 0; }
     }
 
+    /** Releases the native factory and its memory-font loader. */
     public void Dispose()
     {
         if (registered)

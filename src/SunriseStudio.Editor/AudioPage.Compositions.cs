@@ -3,6 +3,10 @@ using SunriseStudio.Audio;
 
 namespace SunriseStudio.Editor;
 
+/**
+ * AudioPage part: composition options (game syncs, parameters, playlists, loops) and preparing the timeline from
+ * them.
+ */
 public sealed partial class AudioPage
 {
     private readonly Dictionary<(uint Id, bool Switch), uint> gameSyncSelections = [];

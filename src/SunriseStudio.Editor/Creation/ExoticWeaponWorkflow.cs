@@ -270,6 +270,7 @@ public sealed class ExoticWeaponWorkflow : CreationWorkflow
         return (normalPerks.Choices, normalPerks.Indexes);
     }
 
+    /** Sets the catalyst stat (0 removes it); throws for a stat this installation lacks. */
     public void SetCatalystStat(byte index, int value)
     {
         if (workspace.Investment?.StatDefinitions.Any(stat => stat.Index == index) != true)
@@ -282,6 +283,7 @@ public sealed class ExoticWeaponWorkflow : CreationWorkflow
     /** The catalyst part's new fields count only while New is chosen. */
     private bool Active(CreationField field) => NewBonus || !normalPerk.Part!.NewFields.Contains(field);
 
+    /** The weapon definition built from the form fields. */
     public ExoticWeaponDefinition Definition()
     {
         var catalyst = new ExoticCatalystDefinition(catalystName.Text.Trim(), catalystDescription.Text.Trim(),

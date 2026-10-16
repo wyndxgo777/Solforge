@@ -266,6 +266,7 @@ internal sealed class LoadingBackdrop : IDisposable
 
     private static uint Rgba(Vector4 color, float alpha) => ImGui.ColorConvertFloat4ToU32(color with { W = Math.Clamp(alpha, 0, 1) });
 
+    /** Releases the backdrop's GPU resources. */
     public void Dispose()
     {
         gold.Dispose();

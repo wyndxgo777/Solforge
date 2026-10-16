@@ -3,6 +3,7 @@ using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
+/** Colour and font tokens the editor pages use, backed by SolTheme. */
 public static class StudioTheme
 {
     // Solforge: the upstream names now read the Sol tokens (SolTheme, Studio.md §3.10).

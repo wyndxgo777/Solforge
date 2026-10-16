@@ -4,6 +4,7 @@ using System.Numerics;
 
 namespace SunriseStudio.Editor;
 
+/** CuiPage part: builds the preview's font atlases and reports fonts that fail to load. */
 public sealed partial class CuiPage
 {
     private readonly Dictionary<string, CuiFontAtlas> fontAtlases = [];

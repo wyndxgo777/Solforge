@@ -1,5 +1,6 @@
 namespace SunriseStudio.Editor.Creation;
 
+/** CreationTypes part: registers enemy and other entity types; all are blocked because nothing can write them yet. */
 public static partial class CreationTypes
 {
     public const string GuardianBlocker = "Guardians need character data Studio cannot write.";

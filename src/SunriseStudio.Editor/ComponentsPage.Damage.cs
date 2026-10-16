@@ -4,6 +4,7 @@ using SunriseStudio.Formats;
 
 namespace SunriseStudio.Editor;
 
+/** ComponentsPage part: reads and edits the damage parts and health pools of a combatant entity. */
 public sealed partial class ComponentsPage
 {
     private const string AssumedHealth = "Meaning assumed. Read only.";

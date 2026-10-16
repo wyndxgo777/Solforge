@@ -5,6 +5,7 @@ using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
+/** CuiPage part: the widget hierarchy tree with per-widget visibility toggles. */
 public sealed partial class CuiPage
 {
     private readonly HashSet<int> hiddenWidgets = [], expandedWidgets = [];

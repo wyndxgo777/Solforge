@@ -4,6 +4,7 @@ using SunriseStudio.Audio;
 
 namespace SunriseStudio.Editor;
 
+/** AudioPage part: draws the volume and parameter automation envelopes of a prepared timeline plan. */
 public sealed partial class AudioPage
 {
     private sealed record EnvelopePlot(string Name, double Offset, double Duration, float[] Samples);

@@ -4,6 +4,7 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Editor;
 
+/** InvestmentPage part: adds stat and perk rows to an item. */
 public sealed partial class InvestmentPage
 {
     private bool addingPerk, openAddRow;

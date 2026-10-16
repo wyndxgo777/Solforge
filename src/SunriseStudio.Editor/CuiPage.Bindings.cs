@@ -4,6 +4,7 @@ using SunriseStudio.Formats;
 
 namespace SunriseStudio.Editor;
 
+/** CuiPage part: lists the scene's bindings and lets the preview inputs and comparison values be edited. */
 public sealed partial class CuiPage
 {
     private static readonly string[] ComparisonSymbols = ["==", "!=", "<", "<=", ">=", ">"];

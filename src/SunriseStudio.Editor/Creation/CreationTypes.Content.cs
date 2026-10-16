@@ -1,5 +1,9 @@
 namespace SunriseStudio.Editor.Creation;
 
+/**
+ * CreationTypes part: registers texture, material, screen and other content types with the reasons some stay
+ * blocked.
+ */
 public static partial class CreationTypes
 {
     private const string NoScreen = "New screens are not supported yet.";

@@ -1,5 +1,6 @@
 namespace SunriseStudio.Editor;
 
+/** Command line options of the Studio executable: what to open and the smoke test, capture and profiling switches. */
 public sealed record StudioOptions(string? Game = null, string? Project = null,
     uint? Tag = null, bool Warp = false, bool Smoke = false, int Frames = 12,
     string? Capture = null, string? SettingsPath = null, string? KeySource = null,

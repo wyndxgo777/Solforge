@@ -36,6 +36,7 @@ public sealed record WeaponPageState(uint Weapon, long Overlay)
     public bool CustomReload { get; init; }
     public IReadOnlyList<string> Errors { get; init; } = [];
 
+    /** State carrying only an error, for when the weapon could not be read at all. */
     public static WeaponPageState Failed(uint weapon, long overlay, string error) => new(weapon, overlay) { Errors = [error] };
 
     /** Runs on a worker. A failed part is kept as an error; the parts that did read still show. */
@@ -167,6 +168,7 @@ public sealed class WeaponPage : IStudioPage
     private Vector4 tracerStart, tracerEnd;
     public string Id => "sunrise.weapon";
     public string Title => "Weapon";
+    /** Accepts item-class tags of type 8 or 16 whose item kind byte marks a weapon. */
     public bool CanOpen(StudioDocument document) => document.Entry.Reference == InvestmentCatalog.ItemClass
         && document.Entry.Type is 8 or 16 && document.Bytes.Length > 184 && document.Bytes[184] <= 2;
 

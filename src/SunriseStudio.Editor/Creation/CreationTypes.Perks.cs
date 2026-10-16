@@ -1,5 +1,6 @@
 namespace SunriseStudio.Editor.Creation;
 
+/** CreationTypes part: registers perk behavior new and clone types. */
 public static partial class CreationTypes
 {
     static partial void AddPerkTypes()

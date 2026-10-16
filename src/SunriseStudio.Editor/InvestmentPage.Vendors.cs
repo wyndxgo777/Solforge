@@ -6,6 +6,7 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Editor;
 
+/** InvestmentPage part: edits the sale and cost rows of a vendor. */
 public sealed partial class InvestmentPage
 {
     private InvestmentSale? costSale;

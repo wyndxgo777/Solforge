@@ -20,6 +20,7 @@ public sealed partial class ComponentsPage : IStudioPage
 
     public string Id => "sunrise.components";
     public string Title => "Components";
+    /** Accepts entity tags. */
     public bool CanOpen(StudioDocument document) =>
         document.Entry.Reference == EntityClass && AssetCategories.IsStructured(document.Entry);
 

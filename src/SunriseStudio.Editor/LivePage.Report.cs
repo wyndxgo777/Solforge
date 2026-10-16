@@ -6,6 +6,7 @@ using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
+/** LivePage part: writes a join report of live rows against the package registry for manual review. */
 public sealed partial class LivePage
 {
     // Enough rows to review joins by hand without writing the whole registry.

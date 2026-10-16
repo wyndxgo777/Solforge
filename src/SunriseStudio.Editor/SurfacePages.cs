@@ -7,6 +7,7 @@ using Vortice.DXGI;
 
 namespace SunriseStudio.Editor;
 
+/** A page that needs GPU resources (thumbnails, textures) uploaded between frames before it draws. */
 public interface IPreparedStudioPage : IStudioPage, IDisposable
 {
     void Prepare(StudioDocument? document, Dx11Renderer renderer);
@@ -23,6 +24,7 @@ public sealed class MaterialsPage : IPreparedStudioPage
     public string Id => "sunrise.materials";
     public string Title => "Materials";
     public int TexturePreviewCount => thumbnails.Count;
+    /** Accepts documents whose surface has materials. */
     public bool CanOpen(StudioDocument document) => document.Surface?.Materials.Count > 0;
 
     /** Upload before ImGui can borrow the document's texture views. */
@@ -192,6 +194,7 @@ public sealed class ShadersPage : IStudioPage
     private string[] lines = [], header = [];
     public string Id => "sunrise.shaders";
     public string Title => "Shaders";
+    /** Accepts documents whose surface has shaders. */
     public bool CanOpen(StudioDocument document) => document.Surface?.Shaders.Count > 0;
 
     /** Shader headers retain their native stage and bytecode identity. */

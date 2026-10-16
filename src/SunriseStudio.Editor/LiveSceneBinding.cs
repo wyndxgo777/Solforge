@@ -45,7 +45,9 @@ internal sealed class LiveSceneBinding(WorldDocument world)
     public int Inactive { get; private set; }
     /** Spawned placements the game reports as not placed in the world or hidden; drawn as markers. */
     public int Dormant { get; private set; }
+    /** False for authored items the registry showed to be absent from the game. */
     public bool IsVisible(object item) => !absent.Contains(item);
+    /** Forgets the applied snapshot, poses and absences so the next apply starts clean. */
     public void InvalidatePreview() { applied = null; poses.Clear(); placedByHandle.Clear(); ClearAbsent(); }
     private void ClearAbsent() { absent.Clear(); absentFrom = null; Inactive = Dormant = 0; }
 
