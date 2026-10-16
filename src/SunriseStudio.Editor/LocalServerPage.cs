@@ -37,12 +37,24 @@ public sealed class LocalServerPage
     private string commandLine = "", player = "", item = "", target = "";
     private int amount = 1;
 
-    public void Draw(ref bool open, float scale, string? projectRoot, string? lastBuild)
+    /**
+     * The status dot for the workbench tab: grey while unknown, green running, red stopped or unreachable, amber when a
+     * ghost member or a sol-server from another folder needs a restart. Polls status even while another tab is shown.
+     */
+    public (Vector4 Color, string Tip) Dot()
     {
-        if (!open) return;
+        if (!statusClock.IsRunning || (statusClock.Elapsed > TimeSpan.FromSeconds(10) && !statusPending)) { statusClock.Restart(); RefreshStatus(); }
+        var current = status;
+        if (current is null) return (new(.6f, .6f, .6f, 1), "Local server: checking");
+        if (current.Error is not null) return (Bad, "Local server: " + current.Error);
+        if (current.Running && (current.Census.Ghosts.Count > 0 || current.ForeignInstance)) return (Warn, "Local server: " + current.Summary);
+        return (current.Running ? Good : Bad, "Local server: " + current.Summary);
+    }
+
+    /** The tab body: header with start/stop/restart/selftest, then the section tabs. */
+    public void DrawBody(string? projectRoot, string? lastBuild)
+    {
         Poll();
-        ImGui.SetNextWindowSize(new Vector2(860, 620) * scale, ImGuiCond.FirstUseEver);
-        if (!ImGui.Begin("Local Server###solforge-local-server", ref open)) { ImGui.End(); return; }
         DrawHeader();
         if (ImGui.BeginTabBar("local-server-tabs"))
         {
@@ -54,7 +66,6 @@ public sealed class LocalServerPage
             if (ImGui.BeginTabItem("Subsystems")) { DrawSubsystems(); ImGui.EndTabItem(); }
             ImGui.EndTabBar();
         }
-        ImGui.End();
     }
 
     // --- background work ----------------------------------------------------------------------------

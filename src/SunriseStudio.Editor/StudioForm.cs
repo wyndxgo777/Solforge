@@ -83,6 +83,7 @@ public sealed partial class StudioForm : Form
     {
         if (page.Equals("Mission Graph", StringComparison.OrdinalIgnoreCase)) { focusMissionGraph = true; return; }
         if (page.Equals("Live", StringComparison.OrdinalIgnoreCase)) { focusLive = true; return; }
+        if (page.Equals("Local Server", StringComparison.OrdinalIgnoreCase)) { focusLocalServer = true; return; }
         focusAssets = true; focusDocumentPage = page; focusAssetPage = true; inspectAsset = true;
     }
 
@@ -682,7 +683,7 @@ public sealed partial class StudioForm : Form
 
     private void DrawDocument(Vector2 position, Vector2 size)
     {
-        if (focusAssets || focusLive) ImGui.SetNextWindowFocus();
+        if (focusAssets || focusLive || focusLocalServer) ImGui.SetNextWindowFocus();
         BeginPanel("Document", position, size);
         if (ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows)) missionGraphActive = false;
         if (ImGui.BeginTabBar("workbench"))
@@ -701,6 +702,7 @@ public sealed partial class StudioForm : Form
                 livePage.Draw(workspace, viewport!, DrawSceneWithTree);
                 ImGui.EndTabItem();
             }
+            DrawLocalServerTab();
             ImGui.EndTabBar();
         }
         ImGui.End();

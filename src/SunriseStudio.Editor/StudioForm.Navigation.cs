@@ -61,6 +61,7 @@ public sealed partial class StudioForm
         switch (view.Page)
         {
             case "live": focusLive = true; break;
+            case "local-server": focusLocalServer = true; break;
             case "world:scene": focusWorldScene = true; break;
             case "world:mission": focusMissionPage = true; break;
             case "world:report": focusWorldReport = true; break;
