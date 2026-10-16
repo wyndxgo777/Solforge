@@ -66,6 +66,8 @@ public sealed partial class AssetViewport
     {
         effectRanges.Clear();
         EffectParticleCount = 0;
+        // Particle effects are a Full quality feature.
+        if (Quality != ViewportQuality.Full) return;
         if (!ReferenceEquals(Scene, effectScene)) RebuildEffects();
         FollowEffectBones();
         ActivateEffects();

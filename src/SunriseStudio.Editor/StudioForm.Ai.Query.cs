@@ -570,8 +570,17 @@ public sealed partial class StudioForm
                 return workspace.Error.Length > 0 ? workspace.Error : $"Opened {workspace.DisplayName(tag)}.";
             }
             case "set_viewport_rendering":
-                SetViewportRendering(McpJson.Bool(args, "on", true));
-                return settings.ViewportRendering ? "3D viewport rendering is on." : "3D viewport rendering is off.";
+            {
+                if (args["on"] is JsonValue) SetViewportRendering(McpJson.Bool(args, "on", true));
+                if (McpJson.String(args, "quality") is { Length: > 0 } name)
+                {
+                    if (!Enum.TryParse<SunriseStudio.Viewport.ViewportQuality>(name, true, out var quality) || !Enum.IsDefined(quality))
+                        return "quality must be low, medium, high or full.";
+                    SetViewportQuality(quality);
+                }
+                return (settings.ViewportRendering ? "3D viewport rendering is on" : "3D viewport rendering is off")
+                    + $", quality {settings.ViewportQuality}" + (GameShaderProblem() is { } problem ? ". " + problem : ".");
+            }
             case "edit_placement": return AiEditPlacement(args, bounds: false);
             case "edit_bounds": return AiEditPlacement(args, bounds: true);
             case "revert_object_edit":

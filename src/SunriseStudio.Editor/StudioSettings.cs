@@ -22,6 +22,8 @@ public sealed class StudioSettings
     public bool GameShaders { get; set; } = true;
     /** Static objects keep their most detailed level at every distance instead of the game's distance levels. */
     public bool FullDetail { get; set; }
+    /** Map viewport quality: Low (flat, coarse, short cull) to Full (all levels, decals, effects). */
+    public SunriseStudio.Viewport.ViewportQuality ViewportQuality { get; set; } = SunriseStudio.Viewport.ViewportQuality.High;
     /**
      * Memory optimization profile for 16GB RAM systems: bounds texture caches and LOH buffers. Off by default because the
      * budget leaves textures on their low resident mips, which changes the base look; the stored name changed so files
@@ -108,6 +110,7 @@ public sealed class StudioSettings
             settings.Popouts = settings.Popouts?.Where(popout => popout is not null && Enum.IsDefined(popout.Panel)
                 && popout.Panel != StudioPanelKind.Empty).DistinctBy(popout => popout.Panel).ToList() ?? [];
             if (!Enum.IsDefined(settings.LightingMode)) settings.LightingMode = NativeLightingMode.Studio;
+            if (!Enum.IsDefined(settings.ViewportQuality)) settings.ViewportQuality = SunriseStudio.Viewport.ViewportQuality.High;
             settings.DiskCacheLimitMiB = Math.Clamp(settings.DiskCacheLimitMiB, 128, 4096);
             return settings;
         }

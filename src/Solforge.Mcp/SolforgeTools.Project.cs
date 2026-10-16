@@ -139,10 +139,22 @@ public static partial class SolforgeTools
         yield return act("open_asset", "Open an asset (item, vendor, material, any tag) in Solforge's inspector and editor pages.",
             McpJson.Schema(("tag", "string", "Tag hash (0x...)", true)),
             args => ParseHash(McpJson.String(args, "tag")) is null ? "Give a tag such as 0x80A1B2C3." : null, args => $"Open asset {Arg(args, "tag")}");
-        yield return act("set_viewport_rendering", "Turn the 3D viewport on or off. Off saves GPU and memory; every tool except " +
-            "get_viewport_screenshot keeps working.", McpJson.Schema(("on", "boolean", "true to render, false to stop", true)),
-            args => args["on"] is JsonValue ? null : "Give on: true or false.",
-            args => McpJson.Bool(args, "on", true) ? "Turn the 3D viewport on" : "Turn the 3D viewport off");
+        yield return act("set_viewport_rendering", "Turn the 3D viewport on or off, and/or set its quality. Off saves GPU and " +
+            "memory; every tool except get_viewport_screenshot keeps working. Quality: low (flat grey, coarse levels, short " +
+            "cull), medium (textured, coarse levels), high (game shaders and lighting, game levels), full (all detail, decals, " +
+            "effects). Saved in settings.",
+            McpJson.Schema(("on", "boolean", "true to render, false to stop", false),
+                ("quality", "string", "low, medium, high or full", false)),
+            args => args["on"] is not JsonValue && McpJson.String(args, "quality") is not { Length: > 0 }
+                ? "Give on: true or false, and/or quality: low, medium, high or full."
+                : McpJson.String(args, "quality") is { Length: > 0 } quality
+                    && quality.ToLowerInvariant() is not ("low" or "medium" or "high" or "full")
+                    ? "quality must be low, medium, high or full." : null,
+            args => string.Join("; ", new[]
+            {
+                args["on"] is JsonValue ? (McpJson.Bool(args, "on", true) ? "Turn the 3D viewport on" : "Turn the 3D viewport off") : null,
+                McpJson.String(args, "quality") is { Length: > 0 } quality ? $"Set viewport quality to {quality}" : null
+            }.Where(part => part is not null)));
         yield return act("edit_placement", "Move, rotate or scale a placed object (static meshes, markers, lights, volumes whose " +
             "placement decodes). Saved as a project object edit (revert_object_edit undoes it). Omitted values keep the current ones. " +
             "See skill solforge-map-bounds.",

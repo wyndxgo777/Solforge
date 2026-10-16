@@ -218,20 +218,27 @@ public sealed partial class StudioForm
         DrawRenderingToolbarButton();
         ToolbarNext(row);
         bool shading = settings.GameShaders;
-        if (ImGuiIcons.Toggle("tb-shaders", StudioIcon.Shader, "Game shaders", ref shading))
-        { settings.GameShaders = shading; PrepareGameShaders(); }
+        string? shaderProblem = GameShaderProblem();
+        if (ImGuiIcons.Toggle("tb-shaders", StudioIcon.Shader,
+            "Game shaders: the game's materials and lighting (Quality High or Full)" + (shaderProblem is null ? "" : "\n" + shaderProblem),
+            ref shading))
+            SetGameShaders(shading);
+        ToolbarNext(row);
+        DrawQualityToolbarCombo();
         ToolbarNext(row);
         bool fullDetail = settings.FullDetail;
         if (ImGuiIcons.Toggle("tb-detail", StudioIcon.Detail,
-            "Full detail: draw static objects at full detail at every distance, with no far cull.\nOff switches detail and culls with distance, as the game does.",
+            "Full detail: draw static objects at full detail at every distance, with no far cull.\nOff switches detail and culls with distance, as the game does."
+            + "\nIn the map viewport this applies at Quality High; Full always draws full detail, Low and Medium never do.",
             ref fullDetail))
         {
             settings.FullDetail = fullDetail;
             if (viewport is not null) viewport.FullDetail = fullDetail;
             if (assetViewport is not null) assetViewport.FullDetail = fullDetail;
+            if (fullDetail && settings.ViewportQuality < ViewportQuality.High) SetViewportQuality(ViewportQuality.High);
+            else SaveSettings();
         }
         ToolbarNext(row);
-        ImGui.BeginDisabled(!settings.GameShaders);
         int lighting = Math.Clamp((int)settings.LightingMode, 0, LightingNames.Length - 1);
         // The preview names the setting so a bare "Studio" doesn't read as the app or layout name.
         ImGui.SetNextItemWidth(ImGui.CalcTextSize("Lighting: Ambient").X + ImGui.GetFrameHeight() + ImGui.GetStyle().FramePadding.X * 2);
@@ -244,13 +251,15 @@ public sealed partial class StudioForm
                     settings.LightingMode = (SunriseStudio.Rendering.NativeLightingMode)lighting;
                     if (viewport?.NativeRenderer is { } scene) scene.LightingMode = settings.LightingMode;
                     if (assetViewport?.NativeRenderer is { } asset) asset.LightingMode = settings.LightingMode;
+                    // Lighting is part of game shading; picking a mode turns it on so the choice shows.
+                    if (!settings.GameShaders || settings.ViewportQuality < ViewportQuality.High) SetGameShaders(true);
+                    else SaveSettings();
                 }
             UiAuto.EndCombo();
         }
-        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.SetTooltip(lighting == 1
+        if (ImGui.IsItemHovered()) ImGui.SetTooltip((lighting == 1
             ? "Lighting: atmosphere preview\nLocal probes and shadows are not drawn"
-            : "Lighting: editor lights with game materials");
-        ImGui.EndDisabled();
+            : "Lighting: editor lights with game materials") + (shaderProblem is null ? "" : "\n" + shaderProblem));
         ToolbarNext(row);
         string settingsKeys = ShortcutInput.Text(ShortcutActions.OpenSettings);
         if (ImGuiIcons.Button("tb-settings", StudioIcon.Gear, settingsKeys.Length > 0 ? $"Settings ({settingsKeys})" : "Settings"))

@@ -55,6 +55,60 @@ public sealed partial class StudioForm
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Off stops all 3D drawing to save GPU and memory; panels and the AI tools keep working.");
     }
 
+    private static readonly string[] QualityNames = ["Low", "Medium", "High", "Full"];
+    private static readonly string[] QualityTips =
+    [
+        "Quality: Low\nFlat grey geometry, coarsest levels and a short far cull. No game shading, decals or effects.",
+        "Quality: Medium\nColour-textured geometry at coarse levels. No game shading, decals or effects.",
+        "Quality: High\nGame shaders and lighting at the game's distance levels. No decals or particle effects.",
+        "Quality: Full\nEverything: most detailed level at every distance, game shading, decals and particle effects."
+    ];
+
+    /** Map viewport quality (toolbar, set_viewport_rendering); saved at once. */
+    public void SetViewportQuality(ViewportQuality quality)
+    {
+        if (!Enum.IsDefined(quality)) return;
+        settings.ViewportQuality = quality;
+        if (viewport is not null) viewport.Quality = quality;
+        SaveSettings();
+    }
+
+    /** Game shading draws only at High or Full, so turning it on raises a lower quality. */
+    private void SetGameShaders(bool on)
+    {
+        settings.GameShaders = on;
+        PrepareGameShaders();
+        if (on && settings.ViewportQuality < ViewportQuality.High) SetViewportQuality(ViewportQuality.High);
+        else SaveSettings();
+    }
+
+    private void DrawQualityToolbarCombo()
+    {
+        int quality = (int)settings.ViewportQuality;
+        ImGui.SetNextItemWidth(ImGui.CalcTextSize("Quality: Medium").X + ImGui.GetFrameHeight() + ImGui.GetStyle().FramePadding.X * 2);
+        if (UiAuto.BeginCombo("##quality", "Quality: " + QualityNames[quality]))
+        {
+            for (int i = 0; i < QualityNames.Length; i++)
+                if (UiAuto.Selectable(QualityNames[i], i == quality) && i != quality) SetViewportQuality((ViewportQuality)i);
+            UiAuto.EndCombo();
+        }
+        if (ImGui.IsItemHovered()) ImGui.SetTooltip(QualityTips[quality]);
+    }
+
+    /** Why the map is not drawn with game shading and lighting, or null when it is. */
+    private string? GameShaderProblem()
+    {
+        if (!settings.GameShaders) return "Game shaders are off, so the map draws as plain geometry and Lighting has no effect.";
+        if (settings.ViewportQuality < ViewportQuality.High)
+            return $"Quality {settings.ViewportQuality} draws plain geometry; pick High or Full for game shading and lighting.";
+        if (viewport is not { } view) return null;
+        if (view.Wireframe) return "Wireframe is on in the scene toolbar; it replaces game shading.";
+        if (!view.UseGameShaders)
+            return "Game shading failed for this scene" + (view.NativeError is { Length: > 0 } error ? ": " + error : "")
+                + "\nShowing textured fallback geometry. Toggle Game shaders to retry.";
+        return null;
+    }
+
     /** Toolbar: an eye that is lit while the 3D viewport renders. */
     private void DrawRenderingToolbarButton()
     {

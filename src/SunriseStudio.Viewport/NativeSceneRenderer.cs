@@ -344,6 +344,8 @@ public sealed partial class NativeSceneRenderer : IDisposable
     public GpuTexture? SceneColor => sceneColor?.Textures[0];
     /** Runs after the forward stages and exposure measurement, with the lit target on native depth. */
     public Action<NativeRenderTargets>? DrawForwardEffects { get; set; }
+    /** Draws the decal stages after the G-buffer; the viewport turns them off below Full quality. */
+    public bool DrawDecals { get; set; } = true;
     /** Summed CPU milliseconds: record, G-buffer submission, material TFX. */
     public double[] CpuMilliseconds { get; } = new double[3];
     public double ExposureReadbackMilliseconds => composite.ReadbackMilliseconds + skyMeter.ReadbackMilliseconds;
@@ -1296,8 +1298,11 @@ public sealed partial class NativeSceneRenderer : IDisposable
                 // A resize replaces the copy, so its view is bound again each frame.
                 ApplyExternResources();
             }
-            drawList.Execute(PassDecals, gbuffer.WriteTargets);
-            runtimeDrawList.Execute(PassDecals, gbuffer.WriteTargets);
+            if (DrawDecals)
+            {
+                drawList.Execute(PassDecals, gbuffer.WriteTargets);
+                runtimeDrawList.Execute(PassDecals, gbuffer.WriteTargets);
+            }
             CpuMilliseconds[1] += System.Diagnostics.Stopwatch.GetElapsedTime(recorded).TotalMilliseconds;
             var resolved = gbuffer.Resolve();
             foreach (var reader in depthReaders)

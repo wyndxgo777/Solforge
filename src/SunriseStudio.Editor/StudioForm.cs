@@ -198,7 +198,10 @@ public sealed partial class StudioForm : Form
             missionGraph.CodeFont = gui.MonospaceFont;
             StudioTheme.Apply(scale);
             viewport = new AssetViewport(renderer)
-                { UseGameShaders = settings.GameShaders, ShowGameShaderToggle = false, FullDetail = settings.FullDetail };
+            {
+                UseGameShaders = settings.GameShaders, ShowGameShaderToggle = false, FullDetail = settings.FullDetail,
+                Quality = settings.ViewportQuality
+            };
             assetViewport = new AssetViewport(renderer)
                 { UseGameShaders = settings.GameShaders, ShowGameShaderToggle = false, FullDetail = settings.FullDetail };
             viewport.EffectControls = assetViewport.EffectControls = effectControls;

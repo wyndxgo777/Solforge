@@ -56,6 +56,7 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
     private SceneBackdropMode culledMode;
     private object? culledGrid, culledOffsets, culledHandles, culledKinds, culledBackdrop;
     private (bool Native, int Detail, int Centers) culledDecorators;
+    private ViewportQuality culledQuality;
     // RenderItemVisible per grid cell for one policy; see ShownCells.
     private SceneGrid.ShownCells? shownCells;
     private (long Revision, uint Bubble, SceneBackdropMode Mode) shownKey;
@@ -882,12 +883,13 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
             stamp = System.Diagnostics.Stopwatch.GetTimestamp();
         }
         // Wireframe draws every part as plain edges, so it replaces game shading while it is on.
-        if (useGameShaders && !wireframe && nativeScene is not null && NativePartCount > 0)
+        if (NativeActive)
         {
             try
             {
-                nativeScene.Resize(width, height);
+                nativeScene!.Resize(width, height);
                 nativeScene.TimeOfDay = Math.Clamp(TimeOfDay, 0, 1);
+                nativeScene.DrawDecals = Quality == ViewportQuality.Full;
                 nativeScene.Render(Camera, timeSeconds, nativeHandles, new Vector4(.0015f, .0025f, .005f, 1));
                 if (MeasureFrameTimes)
                 {
@@ -1044,8 +1046,8 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
         try
         {
             var view = Camera.ViewProjection((float)width / height);
-            // With game shaders on, every part here stands in for a native draw that is not available.
-            DrawGeometryBatches(visibleMeshes, view, useGameShaders);
+            // Every part draws with its colour texture from Medium up (grey on Low), whether or not game shaders are on.
+            DrawGeometryBatches(visibleMeshes, view, FallbackTextured);
             DrawEffectsPlain(target, view);
         }
         finally { renderer.RestoreMainTarget(); }
@@ -1090,9 +1092,11 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
         long phase = MeasureFrameTimes ? System.Diagnostics.Stopwatch.GetTimestamp() : 0;
         long allocated = MeasureFrameTimes ? GC.GetAllocatedBytesForCurrentThread() : 0;
         // An orthographic view has no distance, and a chosen detail level shows that level.
-        Visibility.GameLod = !FullDetail && !Camera.Orthographic && Visibility.DetailLevel == 0;
+        // Full draws every part at its most detailed level; Low and Medium always use (coarser) distance levels.
+        bool fullDetail = Quality == ViewportQuality.Full || FullDetail && Quality == ViewportQuality.High;
+        Visibility.GameLod = !fullDetail && !Camera.Orthographic && Visibility.DetailLevel == 0;
         Visibility.Prepare(selection.Objects, selection.AuthoredBoundsRevision);
-        var lodView = StaticLod.View(Camera.Position, Camera.Projection((float)width / height).M11);
+        var lodView = QualityLod(StaticLod.View(Camera.Position, Camera.Projection((float)width / height).M11));
         if (nativeScene is not null) nativeScene.CasterLod = Visibility.GameLod ? lodView : null;
         var context = Visibility.ContextFilter;
         // The preview context passes every authored non-backdrop mesh, and so every anchor.
@@ -1176,6 +1180,7 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
             culledRevision = Visibility.Revision; culledBubble = Backdrop.ActiveBubbleHash; culledMode = Backdrop.Mode;
             culledGrid = sceneGrid; culledOffsets = nativeHandleOffsets; culledHandles = nativeHandleMap;
             culledKinds = itemKinds; culledBackdrop = backdropItems; culledDecorators = DecoratorLodInputs();
+            culledQuality = Quality;
         }
         if (MeasureFrameTimes) LastFrameTimings = LastFrameTimings with
         {
@@ -1218,11 +1223,11 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
         && culledBubble == Backdrop.ActiveBubbleHash && culledMode == Backdrop.Mode && ReferenceEquals(culledGrid, sceneGrid)
         && ReferenceEquals(culledOffsets, nativeHandleOffsets) && ReferenceEquals(culledHandles, nativeHandleMap)
         && ReferenceEquals(culledKinds, itemKinds) && ReferenceEquals(culledBackdrop, backdropItems)
-        && culledDecorators == DecoratorLodInputs();
+        && culledDecorators == DecoratorLodInputs() && culledQuality == Quality;
 
     /** The inputs of the decorator test in CollectVisible; it runs only while game shading draws the frame. */
     private (bool Native, int Detail, int Centers) DecoratorLodInputs() =>
-        useGameShaders && !wireframe && nativeScene is { } scene && NativePartCount > 0
+        NativeActive && nativeScene is { } scene
             ? (true, scene.DecoratorLodInputs.Detail, scene.DecoratorLodInputs.Centers) : default;
 
     /**
@@ -1569,16 +1574,18 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
         {
             float x = MathF.Floor(Camera.Pivot.X / step) * step;
             float y = MathF.Floor(Camera.Pivot.Y / step) * step;
+            // A map's ground is rarely at zero, where scene depth would hide the grid; it follows the pivot's height.
+            float z = SelectionMode == SceneSelectionMode.Object ? Camera.Pivot.Z : 0;
             float extent = step * Half;
             for (int i = -Half; i <= Half; i++)
             {
                 float px = x + i * step, py = y + i * step;
                 var xColor = MathF.Abs(px) < step * .5f ? new Vector4(.35f, .62f, .38f, 1) : color;
                 var yColor = MathF.Abs(py) < step * .5f ? new Vector4(.7f, .3f, .27f, 1) : color;
-                overlayLines.Add(new(new(px, y - extent, 0), xColor));
-                overlayLines.Add(new(new(px, y + extent, 0), xColor));
-                overlayLines.Add(new(new(x - extent, py, 0), yColor));
-                overlayLines.Add(new(new(x + extent, py, 0), yColor));
+                overlayLines.Add(new(new(px, y - extent, z), xColor));
+                overlayLines.Add(new(new(px, y + extent, z), xColor));
+                overlayLines.Add(new(new(x - extent, py, z), yColor));
+                overlayLines.Add(new(new(x + extent, py, z), yColor));
             }
             if (extent >= needed) break;
         }
