@@ -12,7 +12,7 @@ public sealed partial class StudioForm
         (".NET runtime", "SunriseStudio.Notices.DotNet", false),
         ("Community Toolkit", "SunriseStudio.Notices.Toolkit", false),
         ("Chakra Petch", "SunriseStudio.Notices.ChakraPetch", false),
-        ("Rajdhani", "SunriseStudio.Notices.Rajdhani", false)
+        ("Inter", "SunriseStudio.Notices.Inter", false)
     ];
     private bool noticesDialog;
     private NoticeBlock[][]? notices;

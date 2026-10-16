@@ -12,7 +12,7 @@
     <EmbeddedResource Include="../../licenses/dotnet-runtime.txt" LogicalName="SunriseStudio.Notices.DotNet" />
     <EmbeddedResource Include="../../licenses/community-toolkit.txt" LogicalName="SunriseStudio.Notices.Toolkit" />
     <EmbeddedResource Include="../../licenses/chakra-petch-OFL.txt" LogicalName="SunriseStudio.Notices.ChakraPetch" />
-    <EmbeddedResource Include="../../licenses/rajdhani-OFL.txt" LogicalName="SunriseStudio.Notices.Rajdhani" />
+    <EmbeddedResource Include="../../licenses/inter-OFL.txt" LogicalName="SunriseStudio.Notices.Inter" />
     <ProjectReference Include="../SunriseStudio.Packages/SunriseStudio.Packages.csproj" />
     <ProjectReference Include="../SunriseStudio.Projects/SunriseStudio.Projects.csproj" />
     <ProjectReference Include="../SunriseStudio.Formats/SunriseStudio.Formats.csproj" />

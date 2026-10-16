@@ -58,7 +58,7 @@ internal static class NoticesUiChecks
         if (failure is not null) throw new InvalidOperationException("Notices dialog failed.", failure);
         if (phase != 2) throw new InvalidDataException("Notices dialog was not drawn.");
         if (tabs != 5 || tables < 2) throw new InvalidDataException($"Notices parsed into {tabs} tabs and {tables} tables.");
-        foreach (string expected in new[] { "Omar Cornut", "Amer Koleci", "Xiph.org Foundation", "vgmstream", "Chakra Petch", "Rajdhani" })
+        foreach (string expected in new[] { "Omar Cornut", "Amer Koleci", "Xiph.org Foundation", "vgmstream", "Chakra Petch", "Inter" })
             if (!studio.Contains(expected)) throw new InvalidDataException($"Studio notices miss {expected}.");
         if (!dotnet.Contains(".NET") || !toolkit.Contains("PedroLamas"))
             throw new InvalidDataException("The .NET or Community Toolkit notices are missing.");

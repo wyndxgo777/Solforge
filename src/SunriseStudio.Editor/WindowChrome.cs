@@ -112,13 +112,14 @@ internal sealed class WindowChrome(Form form)
     public void DrawButtons(float height, Action? close = null)
     {
         float width = ButtonsWidth / 3;
-        ImGui.SetCursorPos(new(ImGui.GetWindowWidth() - 3 * width, 0));
         var draw = ImGui.GetWindowDrawList();
         uint glyph = ImGui.GetColorU32(ImGuiCol.Text);
         float stroke = MathF.Max(1, Scale);
         for (int button = 0; button < 3; button++)
         {
-            if (button > 0) ImGui.SameLine(0, 0);
+            // Each button is placed at the top: on a menu bar row SameLine returns to the row's text line, which
+            // pushed the second and third glyphs down.
+            ImGui.SetCursorPos(new(ImGui.GetWindowWidth() - (3 - button) * width, 0));
             if (ImGui.InvisibleButton($"##window-button-{button}", new(width, height)))
                 form.BeginInvoke(button switch
                 {

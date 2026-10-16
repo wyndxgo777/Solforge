@@ -53,14 +53,15 @@ are copied unchanged into `licenses/`. Studio shows each on its own tab.
 ## Fonts
 
 Solforge's interface theme (SolTheme) embeds these faces in `SunriseStudio.Viewport.dll`. They come
-unchanged from github.com/google/fonts (`ofl/chakrapetch`, `ofl/rajdhani`). Each is licensed under the
+unchanged from github.com/google/fonts (`ofl/chakrapetch`) and the Inter 4.1 release (github.com/rsms/inter,
+`extras/ttf`). Each is licensed under the
 SIL Open Font License 1.1; the full license with each project's copyright line is copied unchanged into
-`licenses/chakra-petch-OFL.txt` and `licenses/rajdhani-OFL.txt`, and Studio shows each on its own tab.
+`licenses/chakra-petch-OFL.txt` and `licenses/inter-OFL.txt`, and Studio shows each on its own tab.
 
 | font | files | license | copyright |
 |---|---|---|---|
 | Chakra Petch | ChakraPetch-SemiBold.ttf, ChakraPetch-Bold.ttf | OFL-1.1 | Copyright 2018 The Chakra Petch Project Authors (https://github.com/m4rc1e/Chakra-Petch.git) |
-| Rajdhani | Rajdhani-Medium.ttf, Rajdhani-SemiBold.ttf | OFL-1.1 | Copyright (c) 2014, Indian Type Foundry (info@indiantypefoundry.com) |
+| Inter | Inter-Regular.ttf, Inter-SemiBold.ttf | OFL-1.1 | Copyright (c) 2016 The Inter Project Authors (https://github.com/rsms/inter) |
 
 ## Ported audio code
 

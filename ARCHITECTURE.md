@@ -88,11 +88,11 @@ user-visible strings are rebranded (Phase 03).
 
 ## Phase 03C notes (Sol theme)
 
-- **SolTheme** (`Viewport/SolTheme.cs`, new file): the sol.css token set, launcher sizes (title 17, body 14,
+- **SolTheme** (`Viewport/SolTheme.cs`, new file): the website token set (site.css night theme), sizes (title 17, heading 14, body 13,
   label 11, button 12.5 px; 28 px controls) and draw helpers: `ChamferFrame`, `ChamferGradient`/`PrimaryButton`
-  (sun-grad), `SectionHeader`/`CollapsingSection`, `PanelHeader` (notch + uppercase title), `ModeButton`
+  (flat brand, as the site), `SectionHeader`/`CollapsingSection`, `PanelHeader` (notch + uppercase title), `ModeButton`
   (sun underline), `LeftBar`, `Chip`, `IconTint`. Lives in Viewport so the viewport and `ImGuiIcons` can use it.
-- **Fonts:** Chakra Petch 600/700 and Rajdhani 500/600 are embedded (`Solforge.Fonts.*`) and added through
+- **Fonts:** Chakra Petch 600/700 (headings, buttons) and Inter 400/600 (body), the website's faces, are embedded (`Solforge.Fonts.*`) and added through
   `ImGuiController.HostFonts`, which the editor sets before creating its controller; the controller's 16 px
   body size gives the DPI scale. Without the hook (tests, other hosts) the controller keeps Segoe UI.
 - **Upstream files** keep small edits: `StudioTheme` constants and `Apply` forward to SolTheme, `BeginPanel`

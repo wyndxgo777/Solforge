@@ -54,6 +54,8 @@ public sealed partial class StudioForm
         ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, Vector2.One);
         ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(style.FramePadding.X, barPad));
         ImGui.PushStyleColor(ImGuiCol.MenuBarBg, Vector4.Zero);
+        // The site's scrolled top bar: flat #121212 over a --line hairline (BeginPanel skips the panel gradient).
+        ImGui.PushStyleColor(ImGuiCol.WindowBg, SolTheme.Bar);
         BeginPanel("Toolbar", Vector2.Zero, new(ClientSize.Width, height),
             ImGuiWindowFlags.MenuBar | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
         // A frame whose bar fails to open offers nothing, so the layout checks see it.
@@ -63,14 +65,19 @@ public sealed partial class StudioForm
         ImGui.PopStyleVar();
         if (!bar)
         {
-            ImGui.End(); ImGui.PopStyleColor(); ImGui.PopStyleVar();
+            ImGui.End(); ImGui.PopStyleColor(2); ImGui.PopStyleVar();
             return;
         }
         // BeginMenuBar aligns the row's text to the bar padding; text items start this much higher to sit centred.
         float row = (height - ImGui.GetFrameHeight()) / 2;
         float textTop = row + normalPad - barPad;
+        var barMin = ImGui.GetWindowPos();
+        ImGui.GetWindowDrawList().AddLine(barMin + new Vector2(0, height - 1), barMin + new Vector2(ClientSize.Width, height - 1),
+            SolTheme.U32(SolTheme.Line), 1);
         float x = DrawTitleBrand(height);
         float right = ClientSize.Width - chrome.ButtonsWidth - 8 * scale;
+        // Where "Working" may go: after the last group, or between Build and the view controls when those sit right.
+        float busyX = -1, busyRight = right;
 
         // Which groups fit, from last frame's widths; the rest go to the "»" menu, the right-most first.
         float overflowWidth = ImGui.CalcTextSize("»").X + style.ItemSpacing.X * 2;
@@ -84,8 +91,17 @@ public sealed partial class StudioForm
         for (int i = 0; i < fit; i++)
         {
             var group = TitleGroups[i];
+            // With everything on the row, the view controls sit against the window buttons; the gap between
+            // Build and them is caption.
+            if (group == TitleGroup.Render && fit == TitleGroups.Length)
+            {
+                busyX = x;
+                x = Math.Max(x, right - TitleGroups.Where(g => g >= TitleGroup.Render).Sum(TitleWidth));
+                busyRight = x;
+            }
             float start = x;
             x += TitleLead(group);
+            if (TitleLead(group) > 0) TitleDivider(start + TitleLead(group) / 2 - style.ItemSpacing.X / 2, row);
             ImGui.SetCursorPos(new(x, IsMenu(group) ? textTop : row));
             DrawTitleGroup(group, row, textTop);
             // On a menu bar row each item's ItemSize steps the cursor past it (and the item spacing).
@@ -108,7 +124,8 @@ public sealed partial class StudioForm
                 titleOverflow.Add(TitleGroups[i].ToString());
             }
         }
-        if (workspace.IsBusy && x + ImGui.CalcTextSize("Working").X <= right)
+        if (busyX >= 0) x = busyX;
+        if (workspace.IsBusy && x + ImGui.CalcTextSize("Working").X <= busyRight)
         {
             ImGui.SetCursorPos(new(x, textTop));
             ImGui.TextDisabled("Working");
@@ -116,18 +133,23 @@ public sealed partial class StudioForm
         chrome.DrawButtons(height);
         titleReachable.Add("WindowButtons");
         ImGui.EndMenuBar();
-        ImGui.End(); ImGui.PopStyleColor(); ImGui.PopStyleVar();
+        ImGui.End(); ImGui.PopStyleColor(2); ImGui.PopStyleVar();
     }
 
     private static bool IsMenu(TitleGroup group) => group <= TitleGroup.Help;
 
-    // Extra room before a group: the toolbar starts apart from the menus, and the project apart from navigation.
-    private float TitleLead(TitleGroup group) => group switch
+    // Extra room before a section, with a hairline in it: menus | relay and navigation | project | view controls.
+    // Controls inside a section are ItemSpacing.X apart.
+    private float TitleLead(TitleGroup group) => group is TitleGroup.Relay or TitleGroup.Project or TitleGroup.Render ? 16 * scale : 0;
+
+    /** A --line hairline one control tall, centred at x between two title bar sections. */
+    private static void TitleDivider(float x, float row)
     {
-        TitleGroup.Relay => 12 * scale,
-        TitleGroup.Project => 16 * scale,
-        _ => 0
-    };
+        var origin = ImGui.GetWindowPos();
+        float top = row + ImGui.GetFrameHeight() * .2f, bottom = row + ImGui.GetFrameHeight() * .8f;
+        x = MathF.Round(x) + .5f;
+        ImGui.GetWindowDrawList().AddLine(origin + new Vector2(x, top), origin + new Vector2(x, bottom), SolTheme.U32(SolTheme.Line2), 1);
+    }
 
     /** A group's width when last drawn, or a guess before its first frame on the row. */
     private float TitleWidth(TitleGroup group)
@@ -163,10 +185,10 @@ public sealed partial class StudioForm
         }
         float titleTop = (height - ImGui.GetTextLineHeight()) / 2;
         float baseline = titleTop + FontAscent();
-        draw.AddText(origin + new Vector2(x, titleTop), ImGui.GetColorU32(StudioTheme.Accent), "SOL");
-        x += ImGui.CalcTextSize("SOL").X;
-        draw.AddText(origin + new Vector2(x, titleTop), ImGui.GetColorU32(ImGuiCol.Text), "FORGE");
-        x += ImGui.CalcTextSize("FORGE").X;
+        // The site's .logo: Chakra Petch 700, letter-spacing .16em, the first word in the brand colour.
+        float tracking = ImGui.GetFontSize() * .16f;
+        x += SolTheme.TrackedText(draw, origin + new Vector2(x, titleTop), ImGui.GetColorU32(StudioTheme.Accent), "SOL", tracking) + tracking;
+        x += SolTheme.TrackedText(draw, origin + new Vector2(x, titleTop), ImGui.GetColorU32(ImGuiCol.Text), "FORGE", tracking);
         ImGui.PopFont();
         x += 6 * scale;
         var version = ImGui.CalcTextSize(StudioVersion.Text);

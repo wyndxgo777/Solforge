@@ -6,37 +6,54 @@ namespace SunriseStudio.Viewport;
 
 /**
  * Sol design language (Studio.md §3.10): the token set shared with the Sol website and launcher
- * (sol-launcher/src/sol.css), the bundled Chakra Petch / Rajdhani faces and the draw helpers built on them.
+ * (sol-launcher/src/sol.css), the bundled Chakra Petch / Inter faces and the draw helpers built on them.
  * Pages take colours from here instead of writing their own.
  */
 public static unsafe class SolTheme
 {
-    // Tokens, named as in sol.css.
-    public static readonly Vector4 Bg = Hex(0x08090d);
-    public static readonly Vector4 Bg2 = Hex(0x0e1017);
-    public static readonly Vector4 Panel = Hex(0x11131a);
-    public static readonly Vector4 PanelTop = Hex(0x13151d);
-    public static readonly Vector4 PanelBottom = Hex(0x0d0e14);
-    public static readonly Vector4 Surface = White(.04f);
+    // Tokens from the Project Sol website (sol-website/assets/site.css on the cyberpulse night theme), named as
+    // there; the launcher (sol-launcher) uses the same values. Neutral greys, no blue cast.
+    /** --bg: hsl(0 0% 5%). */
+    public static readonly Vector4 Bg = Hex(0x0d0d0d);
+    /** --bg2: night background-100, hsl(0 0% 10%). */
+    public static readonly Vector4 Bg2 = Hex(0x1a1a1a);
+    /** --panel: hsl(0 0% 9%). */
+    public static readonly Vector4 Panel = Hex(0x171717);
+    public static readonly Vector4 PanelTop = Hex(0x181818);
+    public static readonly Vector4 PanelBottom = Hex(0x141414);
+    /** The site's scrolled top bar, hsla(0 0% 7% / .96). */
+    public static readonly Vector4 Bar = Hex(0x121212);
+    /** Form field fill, hsla(0 0% 100% / .05); hovered and focused fields go to .08. */
+    public static readonly Vector4 Surface = White(.05f);
     public static readonly Vector4 Surface2 = White(.08f);
-    public static readonly Vector4 Line = White(.08f);
-    public static readonly Vector4 Line2 = White(.14f);
-    public static readonly Vector4 Text = Hex(0xeceef3);
-    public static readonly Vector4 Dim = Hex(0x8b90a0);
-    public static readonly Vector4 Faint = Hex(0x5b6070);
+    /** --line and --line-strong. */
+    public static readonly Vector4 Line = White(.10f);
+    public static readonly Vector4 Line2 = White(.24f);
+    /** --text (night contrast-100, 98%). */
+    public static readonly Vector4 Text = Hex(0xfafafa);
+    /** --muted (night contrast-300, 75%): secondary text and resting icons. */
+    public static readonly Vector4 Muted = Hex(0xbfbfbf);
+    /** --faint (52%): hints and disabled text. */
+    public static readonly Vector4 Dim = Hex(0x858585);
+    /** One step under --faint, for rules and placeholder glyphs. */
+    public static readonly Vector4 Faint = Hex(0x5c5c5c);
+    /** --accent (--cpl-color-brand) and --accent-hi. */
     public static readonly Vector4 Sun = Hex(0xffb648);
+    public static readonly Vector4 SunHi = Hex(0xffcb7a);
     public static readonly Vector4 Sun2 = Hex(0xff7a2f);
     public static readonly Vector4 SunGradStart = Hex(0xffd88a);
     public static readonly Vector4 SunGradEnd = Hex(0xff9a45);
     /** The light ends of sun-shimmer (#ffe0a0 -> sun -> sun-2 -> sun -> #ffe0a0). */
     public static readonly Vector4 SunShimmerEdge = Hex(0xffe0a0);
-    public static readonly Vector4 AccentInk = Hex(0x1a1004);
+    /** --accent-ink: text on a sun fill. */
+    public static readonly Vector4 AccentInk = Hex(0x141006);
     public static readonly Vector4 Ok = Hex(0x5fd38a);
     public static readonly Vector4 Bad = Hex(0xf07a7a);
 
-    // Launcher type scale and shapes, in pixels at 96 DPI.
-    public const float TitleSize = 17, BodySize = 14, HintSize = 12, LabelSize = 11, ButtonSize = 12.5f;
-    public const float Cut = 14, CutSmall = 8, ControlHeight = 36, ControlSmall = 28;
+    // Type scale and shapes, in pixels at 96 DPI. Body is Inter (the site's --font-body), headings and buttons
+    // Chakra Petch (--font-head). Cuts are the site's --cut, --cut-sm and --cut-xs chamfers; corners are never rounded.
+    public const float TitleSize = 17, HeadingSize = 14, BodySize = 13, HintSize = 12, LabelSize = 11, ButtonSize = 12.5f;
+    public const float Cut = 14, CutSmall = 8, CutTiny = 5, ControlHeight = 36, ControlSmall = 28;
 
     /** The DPI scale from the last Apply. */
     public static float Scale { get; private set; } = 1;
@@ -48,10 +65,10 @@ public static unsafe class SolTheme
     public static ImFontPtr LabelFont { get; private set; }
     /** Chakra Petch 700 at title size: the SOLFORGE wordmark and dialog titles. */
     public static ImFontPtr TitleFont { get; private set; }
-    /** Rajdhani 600 at body size: emphasised body text. */
+    /** Inter 600 at body size: emphasised body text. */
     public static ImFontPtr StrongFont { get; private set; }
 
-    private static readonly string[] FaceNames = ["Rajdhani-Medium", "Rajdhani-SemiBold", "ChakraPetch-SemiBold", "ChakraPetch-Bold"];
+    private static readonly string[] FaceNames = ["Inter-Regular", "Inter-SemiBold", "ChakraPetch-SemiBold", "ChakraPetch-Bold"];
     // Native copies of the embedded faces. The atlas reads them on every rebuild and never frees them.
     private static (IntPtr Data, int Length)[]? faces;
     private static bool facesTried;
@@ -76,7 +93,7 @@ public static unsafe class SolTheme
         float scale = Math.Max(1, controllerBodySize / 16f);
         AddFace(fonts, loaded[0], BodySize * scale); // first face: ImGui's default font
         StrongFont = AddFace(fonts, loaded[1], BodySize * scale);
-        HeadingFont = AddFace(fonts, loaded[2], BodySize * scale);
+        HeadingFont = AddFace(fonts, loaded[2], HeadingSize * scale);
         ButtonFont = AddFace(fonts, loaded[2], ButtonSize * scale);
         LabelFont = AddFace(fonts, loaded[3], LabelSize * scale);
         TitleFont = AddFace(fonts, loaded[3], TitleSize * scale);
@@ -164,16 +181,18 @@ public static unsafe class SolTheme
         Set(ImGuiCol.TextDisabled, Dim);
         Set(ImGuiCol.WindowBg, Panel);
         Set(ImGuiCol.ChildBg, Panel);
-        Set(ImGuiCol.PopupBg, Alpha(Panel, .98f));
-        Set(ImGuiCol.Border, Line2);
+        // The site's dropdown option fill.
+        Set(ImGuiCol.PopupBg, Alpha(Hex(0x151515), .98f));
+        // Thin --line borders, as the site's cards; focus and selection add the sun.
+        Set(ImGuiCol.Border, Line);
         Set(ImGuiCol.BorderShadow, clear);
         Set(ImGuiCol.FrameBg, Surface);
         Set(ImGuiCol.FrameBgHovered, Surface2);
         Set(ImGuiCol.FrameBgActive, Alpha(Sun, .14f));
-        Set(ImGuiCol.TitleBg, Bg);
-        Set(ImGuiCol.TitleBgActive, Bg);
-        Set(ImGuiCol.TitleBgCollapsed, Bg);
-        Set(ImGuiCol.MenuBarBg, Bg);
+        Set(ImGuiCol.TitleBg, Bar);
+        Set(ImGuiCol.TitleBgActive, Bar);
+        Set(ImGuiCol.TitleBgCollapsed, Bar);
+        Set(ImGuiCol.MenuBarBg, Bar);
         Set(ImGuiCol.ScrollbarBg, clear);
         Set(ImGuiCol.ScrollbarGrab, Line2);
         Set(ImGuiCol.ScrollbarGrabHovered, White(.22f));
@@ -182,7 +201,7 @@ public static unsafe class SolTheme
         Set(ImGuiCol.SliderGrab, Sun);
         Set(ImGuiCol.SliderGrabActive, Sun2);
         Set(ImGuiCol.Button, Surface);
-        Set(ImGuiCol.ButtonHovered, Surface2);
+        Set(ImGuiCol.ButtonHovered, White(.12f));
         Set(ImGuiCol.ButtonActive, Alpha(Sun, .24f));
         // Selection is a faint sun wash; helpers add the sun bar or underline.
         Set(ImGuiCol.Header, Alpha(Sun, .12f));
@@ -405,7 +424,7 @@ public static unsafe class SolTheme
         return open;
     }
 
-    /** The launcher's .primary button: chamfered sun-grad fill, accent-ink uppercase label. */
+    /** The site's primary button: chamfered brand fill, accent-ink uppercase Chakra Petch label. */
     public static bool PrimaryButton(string label, Vector2 size = default)
     {
         int split = label.IndexOf("##", StringComparison.Ordinal);
@@ -421,9 +440,9 @@ public static unsafe class SolTheme
         var max = ImGui.GetItemRectMax();
         if (held) { min.Y += 1; max.Y += 1; }
         var draw = ImGui.GetWindowDrawList();
-        float alpha = ImGui.GetStyle().Alpha;
-        ChamferGradient(draw, min, max, CutSmall, alpha);
-        if (hovered && !held) ChamferFrame(draw, min, max, CutSmall, U32(White(.1f)));
+        // The site's .btn.primary: flat brand fill, inverted to --text on hover, --accent-hi while pressed.
+        var fill = held ? SunHi : hovered ? Text : Sun;
+        ChamferFrame(draw, min, max, CutSmall, U32(fill));
         var textPosition = new Vector2(min.X + (max.X - min.X - textWidth) / 2, min.Y + (max.Y - min.Y - ImGui.GetTextLineHeight()) / 2);
         TrackedText(draw, textPosition, U32(AccentInk), shown, tracking);
         if (font) ImGui.PopFont();
@@ -524,6 +543,6 @@ public static unsafe class SolTheme
     public static void Chip(ImDrawListPtr draw, Vector2 min, Vector2 max, bool hovered)
         => ChamferFrame(draw, min, max, CutSmall * .5f, U32(Alpha(Panel, .92f)), U32(hovered ? Sun : Line2));
 
-    /** Icon tint: dim at rest, text on hover, sun when active. */
-    public static uint IconTint(bool active, bool hovered) => U32(active ? Sun : hovered ? Text : Dim);
+    /** Icon tint: muted at rest, text on hover, sun when active. */
+    public static uint IconTint(bool active, bool hovered) => U32(active ? Sun : hovered ? Text : Muted);
 }
