@@ -8,12 +8,86 @@ public sealed partial class StudioForm
 {
     private LoadingBackdrop? backdrop;
     private bool loadingCaptured;
+    /** Set once the editor has drawn; later loads keep the docked layout on screen and show a toast instead. */
+    private bool editorShown;
+
+    /** Solforge: true while something loads after the editor has been shown; the layout stays usable. */
+    private bool LoadOverlay => !EditorReady && editorShown && !setup && workspace.Catalog is not null;
+
+    /** The stage the loading card and toast show. */
+    private StudioLoadProgress CurrentLoadProgress() => presentationProgress ?? (workspace.IsBusy ? workspace.LoadingProgress
+        : new StudioLoadProgress(viewport?.Animation?.IsLoading == true || assetViewport?.Animation?.IsLoading == true
+            ? "Loading animation" : browserPreparing ? "Preparing asset browser" : "Preparing editor"));
+
+    /** Loads and reads can be dropped safely (Poll skips their adopt); builds and writes cannot. */
+    private bool LoadCancellable => workspace.IsBusy
+        && (workspace.Status.StartsWith("Loading", StringComparison.Ordinal) || workspace.Status.StartsWith("Reading", StringComparison.Ordinal));
+
+    /** A small corner toast: spinner, "Loading European Dead Zone… 42%", the stage and Cancel. It never takes focus. */
+    private void DrawLoadToast()
+    {
+        var progress = CurrentLoadProgress();
+        string title = workspace.IsBusy && workspace.Status.Length > 0 ? workspace.Status : progress.Stage;
+        string percent = progress.Fraction is { } fraction ? $" {fraction * 100:0}%" : "";
+        float status = 27 * scale, margin = 12 * scale;
+        ImGui.SetNextWindowPos(new(ClientSize.Width - margin, ClientSize.Height - status - margin), ImGuiCond.Always, Vector2.One);
+        ImGui.SetNextWindowBgAlpha(.94f);
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(12 * scale, 8 * scale));
+        const ImGuiWindowFlags flags = ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoSavedSettings
+            | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.AlwaysAutoResize;
+        if (ImGui.Begin("##load-toast", flags))
+        {
+            float line = ImGui.GetTextLineHeight();
+            DrawSpinner(ImGui.GetCursorScreenPos() + new Vector2(line / 2), line * .42f);
+            ImGui.Dummy(new(line));
+            ImGui.SameLine(0, 8 * scale);
+            ImGui.TextUnformatted($"{title}…{percent}");
+            if (LoadCancellable)
+            {
+                ImGui.SameLine(0, 12 * scale);
+                if (UiAuto.SmallButton("Cancel##load-toast")) workspace.CancelWork();
+            }
+            if (progress.Stage != title)
+            {
+                string count = progress.Total > 0 ? $"  {progress.Completed:N0} / {progress.Total:N0}" : "";
+                ImGui.TextDisabled(progress.Stage + count);
+            }
+            DrawProgressBar(progress, Math.Max(220 * scale, ImGui.GetItemRectMax().X - ImGui.GetWindowPos().X - 12 * scale), 4 * scale);
+        }
+        ImGui.End();
+        ImGui.PopStyleVar();
+    }
+
+    /** Stands in for an editor area whose content is being replaced (the document during a load). */
+    private void DrawAreaLoading(string id, Vector2 position, Vector2 size)
+    {
+        BeginPanel(id, position, size, ImGuiWindowFlags.NoScrollbar);
+        float radius = 10 * scale;
+        var centre = position + size / 2;
+        DrawSpinner(centre - new Vector2(0, radius + 6 * scale), radius);
+        string text = CurrentLoadProgress().Stage;
+        ImGui.SetCursorScreenPos(new(centre.X - ImGui.CalcTextSize(text).X / 2, centre.Y + 6 * scale));
+        ImGui.TextDisabled(text);
+        ImGui.End();
+    }
+
+    /** A three-quarter arc turning once a second; still under reduced motion. */
+    private void DrawSpinner(Vector2 centre, float radius)
+    {
+        var draw = ImGui.GetWindowDrawList();
+        float start = LoadingBackdrop.ReducedMotion ? 0 : (float)(clock.Elapsed.TotalSeconds % 1 * Math.PI * 2);
+        draw.PathArcTo(centre, radius, start, start + MathF.PI * 1.5f, 24);
+        draw.PathStroke(SolTheme.U32(SolTheme.Sun), ImDrawFlags.None, Math.Max(1.5f, 2 * scale));
+    }
 
     /** Resource upload callbacks may present loading frames only outside an active ImGui frame. */
     private void ReportPreparation(string stage, int completed, int total)
     {
         presentationProgress = new(stage, completed, total);
         EditorReady = false;
+        // Solforge: once the editor has been shown, a synchronous preparation keeps the last editor frame on screen
+        // instead of painting the full-screen loading card over the docked layout; the toast reports it next frame.
+        if (editorShown) return;
         if (closed || renderer is null || gui is null || guiFrameActive || nativeDialog
             || clock.Elapsed.TotalSeconds - lastLoadingFrame < 1d / 30) return;
         lastLoadingFrame = clock.Elapsed.TotalSeconds;
@@ -63,9 +137,7 @@ public sealed partial class StudioForm
     private void DrawLoadingCard(ImDrawListPtr draw, Vector2 client, double now)
     {
         bool failed = workspace.Error.Length != 0, working = !setup && !failed;
-        var progress = presentationProgress ?? (workspace.IsBusy ? workspace.LoadingProgress
-            : new StudioLoadProgress(viewport?.Animation?.IsLoading == true || assetViewport?.Animation?.IsLoading == true
-                ? "Loading animation" : browserPreparing ? "Preparing asset browser" : "Preparing editor"));
+        var progress = CurrentLoadProgress();
         float pad = 24 * scale, width = Math.Max(200 * scale, Math.Min(400 * scale, client.X - 128 * scale - pad * 2));
         bool font = SolTheme.PushFont(SolTheme.TitleFont);
         float title = ImGui.GetTextLineHeight(), tracking = ImGui.GetFontSize() * .2f;

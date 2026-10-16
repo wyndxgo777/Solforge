@@ -329,14 +329,13 @@ public sealed partial class StudioForm : Form
             ShortcutInput.BeginFrame(gui.IsInputActive && EditorReady && !workspace.IsBusy);
             lastFrame = now;
             renderer.BeginFrame(StudioTheme.Canvas);
-            if (EditorReady) StartAiForProject();
+            if (EditorReady) { StartAiForProject(); editorShown = true; }
             long drawStart = Stopwatch.GetTimestamp();
-            if (EditorReady && workspace.IsBusy)
-            {
-                // A background command keeps the editor in view but takes no input until it ends.
-                ImGui.BeginDisabled(); DrawEditor(); ImGui.EndDisabled();
-            }
-            else if (EditorReady) { HandleShortcuts(); DrawEditor(); HandleViewShortcuts(); }
+            // Solforge: work and loads keep the docked layout in view and usable (commands still wait through
+            // workspace.Run/IsBusy and shortcuts stay off); a corner toast shows progress. The full-screen card is
+            // only for the first load, before the editor has been shown.
+            if (EditorReady && !workspace.IsBusy) { HandleShortcuts(); DrawEditor(); HandleViewShortcuts(); }
+            else if (EditorReady || LoadOverlay) { DrawEditor(); DrawLoadToast(); }
             else DrawLoading();
             chrome.EndFrame();
             long submitStart = Stopwatch.GetTimestamp();

@@ -99,9 +99,9 @@ public sealed partial class StudioForm
             {
                 popout.Gui.NewFrame(delta);
                 ShortcutInput.BeginFrame(popout.Gui.IsInputActive && EditorReady && !workspace.IsBusy);
-                if (EditorReady && workspace.IsBusy)
-                { ImGui.BeginDisabled(); DrawPopoutContent(popout, size); ImGui.EndDisabled(); }
-                else if (EditorReady) { HandleShortcuts(); DrawPopoutContent(popout, size); HandleViewShortcuts(); }
+                // Solforge: busy or loading, a popped-out editor stays drawn; DrawPanelContent holds the editing ones.
+                if (EditorReady && !workspace.IsBusy) { HandleShortcuts(); DrawPopoutContent(popout, size); HandleViewShortcuts(); }
+                else if (EditorReady || LoadOverlay) DrawPopoutContent(popout, size);
                 popout.Chrome.EndFrame();
                 popout.Gui.Render();
             }
