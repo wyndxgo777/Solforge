@@ -16,6 +16,7 @@ internal sealed class InstanceCullRule : IObjectEditRule
     ];
     public ObjectEditLayout Layout => ObjectEditLayout.StaticInstance;
 
+    /** Gives visible edited baked rows an aggregate-only owner so they still draw. */
     public void Apply(ObjectEditContext context, IReadOnlyList<ObjectEdit> edits)
     {
         context.Catalog.RequireCurrentOriginalPackages();

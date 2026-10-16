@@ -5,6 +5,7 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Authoring;
 
+/** Compiled weapon HUD icon: glyph hash and its texture, bitmap and config assets. */
 public sealed record PreparedWeaponHudIcon(uint GlyphHash, uint TextureTag, uint BitmapTag, uint ConfigTag,
     IReadOnlyList<ProjectAssetAddition> Assets, IReadOnlyDictionary<uint, byte[]> Changes)
 {

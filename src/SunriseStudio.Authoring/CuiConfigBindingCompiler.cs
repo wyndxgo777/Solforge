@@ -14,6 +14,7 @@ public sealed partial class CuiConfigBindingCompiler : IConfigBindingCompiler
     private static readonly HashSet<ulong> LayoutTypes = [CuiTypeRegistry.FrameType, CuiTypeRegistry.TextType,
         CuiTypeRegistry.BitmapType, CuiTypeRegistry.ContainerType];
 
+    /** Finds the CUI property sites in an entry that a config value can bind to; empty for other classes. */
     public IReadOnlyList<ConfigBindingCandidate> FindSites(uint tag, uint classHash, ReadOnlyMemory<byte> bytes)
     {
         if (classHash != ResourceClass) return [];

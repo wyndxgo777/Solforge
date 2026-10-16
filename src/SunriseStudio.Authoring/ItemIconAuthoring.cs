@@ -4,14 +4,17 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Authoring;
 
+/** Canvas and colour-space profile read from an item's existing icon, with its container and bitmap tags. */
 public sealed record ItemIconProfile(uint ContainerTag, uint BitmapTag, TextureData Texture)
 {
     /** One texture per bitmap group; compact UI rows select group one. */
     public IReadOnlyList<TextureData> Groups { get; init; } = [Texture];
 }
+/** Compiled item icon: icon-table index, new tags, added assets and edits to existing tags. */
 public sealed record PreparedItemIcon(ushort IconIndex, uint TextureTag, uint BitmapTag,
     uint ContainerTag, IReadOnlyList<ProjectAssetAddition> Assets,
     IReadOnlyDictionary<uint, byte[]> Changes);
+/** New texture, bitmap and container assets for a custom icon. */
 public sealed record PreparedIconAssets(uint TextureTag, uint BitmapTag, uint ContainerTag,
     IReadOnlyList<ProjectAssetAddition> Assets);
 

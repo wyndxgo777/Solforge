@@ -2,6 +2,7 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Authoring;
 
+/** Facts half of OriginalConfigReferences: per-asset isolation nodes of the unmodified install. */
 internal static partial class OriginalConfigReferences
 {
     /** Cached facts contain no borrowed source buffers or resolved overlay references. */

@@ -112,6 +112,7 @@ internal static class ObjectRows
         }
     }
 
+    /** Slot identity stored in a descriptor row. */
     internal static AuthoredSlotIdentity Slot(NativeRows source, int descriptor) =>
         new(source.U32(descriptor + 48), source.U16(descriptor + 52), source.U16(descriptor + 54));
 

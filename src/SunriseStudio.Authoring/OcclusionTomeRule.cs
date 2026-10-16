@@ -42,6 +42,7 @@ internal sealed class OcclusionTomeRule : IObjectEditRule
         }
     }
 
+    /** Opens and closes occlusion tomes for moved occluders in every bubble that places them. */
     public void Apply(ObjectEditContext context, IReadOnlyList<ObjectEdit> edits)
     {
         var graph = new BubbleGraph(context);
@@ -198,7 +199,9 @@ internal sealed class OcclusionTomeRule : IObjectEditRule
     /** Each bubble's static placements and visibility maps, by the typed map edges the scene decoder follows. */
     private sealed class BubbleGraph
     {
+        /** A static placement: list, row, index and table. */
         internal sealed record Placement(uint List, int Row, int Index, uint Table);
+        /** Maps and placements reachable from one bubble. */
         internal sealed class Scope
         {
             internal HashSet<uint> Maps { get; } = [];

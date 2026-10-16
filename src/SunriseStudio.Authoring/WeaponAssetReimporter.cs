@@ -11,11 +11,13 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Authoring;
 
+/** Identity of an imported weapon (tags and name) that a reimport rebuilds. */
 public sealed record WeaponAssetReimportProfile(uint WeaponTag, string Name, uint BaseWeaponTag,
     ushort PackageId, int FirstEntry, IReadOnlyList<uint> AssetTags, string ReceiptId,
     string SourcePath, uint GameplayEntityTag, uint AnimationEntityTag,
     IReadOnlyDictionary<string, uint> AnimationClips, IReadOnlyDictionary<int, uint> VariantEntities);
 
+/** Compiled reimport: project path, profile and the rebuilt assets. */
 public sealed record PreparedWeaponAssetReimport(string ProjectPath, WeaponAssetReimportProfile Profile,
     IReadOnlyDictionary<uint, byte[]> Changes, IReadOnlyDictionary<string, byte[]> AddedChanges,
     IReadOnlyDictionary<uint, string> AssetHashes, string ReceiptHash,

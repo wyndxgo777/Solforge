@@ -51,6 +51,7 @@ public static class WeaponParticleBinding
 
     /** The checked entity and sequence templates for a sequence of one or two bursts. */
     public static uint EntityTemplateFor(int bursts) => For(bursts).Entity;
+    /** Config template tag for a burst count. */
     public static uint ConfigTemplateFor(int bursts) => For(bursts).Config;
 
     /**

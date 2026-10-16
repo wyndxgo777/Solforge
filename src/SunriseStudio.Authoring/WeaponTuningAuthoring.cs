@@ -16,6 +16,7 @@ public sealed record WeaponTuning(int? RoundsPerMinute = null, float? DamagePerS
         && (Values is null || Values.Count == 0);
 }
 
+/** Compiled weapon tuning edits. */
 public sealed record PreparedWeaponTuning(uint ConfigTag, int TranslationGroup, int StatGroup,
     IReadOnlyList<ProjectAssetAddition> Assets, IReadOnlyDictionary<uint, byte[]> Changes,
     IReadOnlyDictionary<string, byte[]> AddedChanges);

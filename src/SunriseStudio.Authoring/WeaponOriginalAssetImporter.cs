@@ -10,6 +10,7 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Authoring;
 
+/** Compiled original weapon asset and its imported assets. */
 public sealed record PreparedWeaponOriginalAsset(IReadOnlyList<ProjectAssetAddition> Assets,
     IReadOnlyDictionary<int, uint> VariantEntities, OriginalAssetInspection SurfaceReport)
 {
@@ -263,6 +264,7 @@ public static class WeaponOriginalAssetImporter
             catch { Dispose(); throw; }
         }
 
+        /** Deletes the temporary copies of the source files and their folder. */
         public void Dispose()
         {
             foreach (string file in files) File.Delete(file);

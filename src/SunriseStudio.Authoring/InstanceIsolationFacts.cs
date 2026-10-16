@@ -4,10 +4,13 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Authoring;
 
+/** Link to another asset, by 32-bit tag or by a wide hash resolved through the catalog. */
 internal readonly record struct IsolationReference(uint Tag, ulong Wide)
 {
+    /** Tag the reference points at, or null when a wide hash is not installed. */
     internal uint? Resolve(PackageCatalog catalog) => Tag == uint.MaxValue ? catalog.Resolve64(Wide) : Tag;
 }
+/** Decoded isolation facts for one asset: class, links, placements, maps and children. */
 internal sealed record IsolationNode(uint Tag, uint Class, bool Valid, uint Link,
     InstanceIsolationScope.Placement[] Placements, uint[] Maps, IsolationReference[] Children, uint[] OwnerCandidates);
 
@@ -17,6 +20,7 @@ internal static class InstanceIsolationFacts
     internal static readonly HashSet<uint> Classes =
     [0x80806EF4, 0x808099D6, 0x808091DE, 0x80807DAE, 0x808091E0, 0x80808A54, 0x8080925B, 0x8080925E];
 
+    /** Decodes one asset's bytes into an isolation node; owners selects which placements are kept. */
     internal static IsolationNode Parse(uint tag, uint type, byte[] bytes, IReadOnlySet<uint> owners)
     {
         var source = new NativeRows(bytes);
@@ -106,9 +110,11 @@ internal sealed class InstanceIsolationSources
         original = context.IsolationSnapshot?.Nodes;
     }
 
+    /** Nodes of every installed asset of a class. */
     internal IEnumerable<IsolationNode> OfClass(uint type) => context.Catalog.Entries
         .Where(entry => entry.Reference == type).Select(entry => Read(entry.TagHash));
 
+    /** Node for a tag, taken from the edit layer, the original snapshot or a fresh parse. */
     internal IsolationNode Read(uint tag)
     {
         if (current.TryGetValue(tag, out var node)) return node;

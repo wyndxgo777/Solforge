@@ -9,13 +9,18 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Authoring;
 
+/** One installed rig bone: name hash, parent and bind matrices in object space. */
 public sealed record CompatibleSkinBone(uint NameHash, int ParentIndex, Matrix4x4 BindObject,
     Matrix4x4 InverseBindObject);
+/** Imported geometry with the rig bones and per-vertex influences it was weighted against. */
 public sealed record CompatibleSkinnedMeshInput(InterchangeMesh Geometry,
     IReadOnlyList<CompatibleSkinBone> Bones, IReadOnlyList<VertexSkinWeights> Influences);
+/** Target entity and model, the source part to replace, and the package and first entry index for the new assets. */
 public sealed record CompatibleSkinReplacementOptions(uint EntityTag, uint ModelTag, int SourcePartOffset,
     string Name, ushort PackageId, int FirstEntryIndex);
+/** Model part and material a replacement takes its draw state from. */
 public sealed record CompatibleSkinTemplate(uint ModelTag, int PartOffset, uint MaterialTag);
+/** Compiled skinned replacement: new tags, counts, kept and removed source parts, assets to add and raw replacements. */
 public sealed record PreparedCompatibleSkin(uint EntityTag, uint ModelTag, uint SkeletonTag, uint MaterialTag,
     int VertexCount, int TriangleCount, IReadOnlyList<int> RetainedSourceParts, int RemovedSourceParts,
     IReadOnlyList<ProjectAssetAddition> Additions, IReadOnlyDictionary<uint, byte[]> Replacements,

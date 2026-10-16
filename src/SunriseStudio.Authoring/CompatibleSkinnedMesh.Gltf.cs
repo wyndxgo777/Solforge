@@ -4,6 +4,7 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Authoring;
 
+/** glTF front end of CompatibleSkinnedMesh: maps the file's joints onto the installed rig and prepares the skin. */
 public static partial class CompatibleSkinnedMesh
 {
     /** Existing rig identities remain authoritative after mapping the file's joint order. */

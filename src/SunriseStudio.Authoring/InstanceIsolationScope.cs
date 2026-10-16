@@ -3,6 +3,7 @@ namespace SunriseStudio.Authoring;
 /** Visibility belongs to reachable bubble scopes, including edges across package boundaries. */
 internal sealed class InstanceIsolationScope
 {
+    /** One static placement row: its list, row and index, auxiliary row and owning entity. */
     internal sealed record Placement(uint List, int Row, int Index, int Auxiliary, uint Owner);
     private sealed class Scope
     {
@@ -65,7 +66,9 @@ internal sealed class InstanceIsolationScope
         }
     }
 
+    /** Placements owned by any of the given owners. */
     internal Placement[] ForOwners(IReadOnlySet<uint> owners) => placements.Where(x => owners.Contains(x.Owner)).ToArray();
+    /** Map containers of a placement list; throws when the list has none. */
     internal IReadOnlyList<uint> Containers(uint list) => listContainers.TryGetValue(list, out var containers)
         ? containers : throw new InvalidDataException("The static placement has no typed map container.");
 

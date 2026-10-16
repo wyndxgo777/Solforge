@@ -49,6 +49,7 @@ public sealed partial class ObjectEditContext
         return working[tag] = start.ToArray();
     }
 
+    /** Class hash of an installed asset; throws when the tag is not installed. */
     public uint ClassOf(uint tag) => Catalog.TryGetEntry(tag, out var entry)
         ? entry.Reference : throw new InvalidDataException($"Asset {tag:X8} is not installed.");
 
@@ -62,6 +63,7 @@ public sealed partial class ObjectEditContext
         tags.Add(tag);
     }
 
+    /** Collects the changed and generated assets into the compilation result. */
     internal ObjectEditCompilation Finish(IReadOnlyList<ObjectEdit> edits)
     {
         var assets = working.Where(pair => !pair.Value.AsSpan().SequenceEqual(raw[pair.Key]))
@@ -91,6 +93,7 @@ public sealed class ObjectEditCompiler : IObjectEditCompiler
 
     public ObjectEditCompiler(IEnumerable<IObjectEditRule> rules) => this.rules = rules.ToArray();
 
+    /** Compiles edits with options derived from the edits themselves. */
     public ObjectEditCompilation Compile(IReadOnlyList<ObjectEdit> edits, Func<uint, byte[]> readRaw, PackageCatalog catalog)
         => Compile(edits, readRaw, catalog, StandaloneOptions(catalog,
             "standalone:" + string.Join(";", edits.Select(edit => edit.Key).Order())));
@@ -106,6 +109,7 @@ public sealed class ObjectEditCompiler : IObjectEditCompiler
         };
     }
 
+    /** Compiles edits in key order through the rule pipeline into changed and generated assets. */
     public ObjectEditCompilation Compile(IReadOnlyList<ObjectEdit> edits, Func<uint, byte[]> readRaw,
         PackageCatalog catalog, ObjectEditCompileOptions options)
     {
@@ -122,6 +126,7 @@ public sealed class ObjectEditCompiler : IObjectEditCompiler
         return context.Finish(ordered);
     }
 
+    /** Reduces an edit to what really differs from the original row. */
     public ObjectEdit? Normalize(ObjectEdit edit, Func<uint, byte[]> readRaw, PackageCatalog catalog)
     {
         uint tag = edit.Target.SourceTag;
@@ -210,10 +215,14 @@ public sealed class ObjectEditCompiler : IObjectEditCompiler
         context.Produced(edit, tag);
     }
 
+    /** Vector as a float array. */
     internal static float[] Floats(Vector3 value) => [value.X, value.Y, value.Z];
+    /** Quaternion as a float array. */
     internal static float[] Floats(Quaternion value) => [value.X, value.Y, value.Z, value.W];
+    /** Float array as a vector. */
     internal static Vector3 Vector(float[] value) => new(value[0], value[1], value[2]);
 
+    /** True when a finite point lies inside the box. */
     internal static bool Contains(Vector3 min, Vector3 max, Vector3 value) =>
         float.IsFinite(value.X) && float.IsFinite(value.Y) && float.IsFinite(value.Z)
         && value.X >= min.X && value.X <= max.X && value.Y >= min.Y && value.Y <= max.Y

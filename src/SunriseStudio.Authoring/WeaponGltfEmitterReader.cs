@@ -5,6 +5,7 @@ using SunriseStudio.Formats;
 
 namespace SunriseStudio.Authoring;
 
+/** One particle emitter marker read from a weapon glTF. */
 public sealed record WeaponSourceEmitter(string Object, string System, string Event,
     int Count, float StartSeconds, float LifetimeSeconds, float Speed,
     WeaponAttachmentInput Attachment);

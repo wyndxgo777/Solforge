@@ -5,10 +5,13 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Authoring;
 
+/** One art variant of a weapon: selector, wrapper and entity tags. */
 public sealed record WeaponArtVariant(int Selector, uint WrapperTag, uint EntityTag,
     IReadOnlyList<uint> ArtHashes);
+/** Gear and art rows and the entity a new weapon archetype is cloned from. */
 public sealed record WeaponArchetypeSource(ushort GearIndex, ushort ArtIndex, uint EntityTag,
     IReadOnlyList<WeaponArtVariant> Variants);
+/** Compiled weapon archetype: the item definition plus the cloned gear and art assets. */
 public sealed record PreparedWeaponArchetype(byte[] ItemDefinition,
     IReadOnlyList<ProjectAssetAddition> Assets, IReadOnlyDictionary<uint, byte[]> Changes,
     ushort GearIndex, ushort ArtIndex, uint EntityTag);
@@ -89,12 +92,14 @@ public static class WeaponArchetypeAuthoring
     public static uint TypeKey(PackageCatalog catalog, WeaponArchetypeSource art, byte[]? gearTable = null) =>
         TypeKey(gearTable ?? catalog.Read(GearTableTag), art.GearIndex);
 
+    /** Type key stored in a gear row. */
     public static uint TypeKey(byte[] gearTable, ushort gearIndex)
     {
         var gear = new Bytes(gearTable);
         return gear.U32(Row(gear.Array(8, GearRowClass, 48), gearIndex, 48) + 20);
     }
 
+    /** Number of rows in the gear table. */
     public static int GearRowCount(byte[] gearTable) => new Bytes(gearTable).Array(8, GearRowClass, 48).Count;
 
     /** The gear row an item definition names, or null when it has no art block. */
@@ -385,17 +390,24 @@ public static class WeaponArchetypeAuthoring
                 throw new InvalidDataException("Weapon asset size header is invalid.");
             Data = data;
         }
+        /** Copy of a byte range, bounds-checked. */
         public byte[] Slice(int at, int count) { Require(at, count); return Data.AsSpan(at, count).ToArray(); }
+        /** Reads a byte, bounds-checked. */
         public byte U8(int at) { Require(at, 1); return Data[at]; }
+        /** Reads a little-endian ushort, bounds-checked. */
         public ushort U16(int at) { Require(at, 2); return BinaryPrimitives.ReadUInt16LittleEndian(Data.AsSpan(at)); }
+        /** Reads a little-endian uint, bounds-checked. */
         public uint U32(int at) { Require(at, 4); return BinaryPrimitives.ReadUInt32LittleEndian(Data.AsSpan(at)); }
+        /** Reads a little-endian long, bounds-checked. */
         public long I64(int at) { Require(at, 8); return BinaryPrimitives.ReadInt64LittleEndian(Data.AsSpan(at)); }
+        /** Follows a self-relative offset; -1 when it is null. */
         public int Relative(int at)
         {
             long offset = I64(at);
             if (offset == 0) return -1;
             int target = checked((int)(at + offset)); Require(target, 1); return target;
         }
+        /** Reads a typed array header as element count and data offset, with sanity limits. */
         public (int Count, int Data) Array(int at, uint type, int stride)
         {
             long count = I64(at);

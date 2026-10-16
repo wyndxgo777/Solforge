@@ -3,6 +3,7 @@ using SunriseStudio.Animation;
 
 namespace SunriseStudio.Authoring;
 
+/** One native animation control: frame count, codec and word offsets in the clip data. */
 internal sealed record NativeControlChannel(int Index, string Path, int Frames, int Codec,
     int Resource, int Component, int WordStart, int ExtentStart, int BiasStart)
 {
@@ -104,6 +105,7 @@ internal sealed class NativeControlLayout
             : (F32(channel.Resource + 0x1C + axis * 4), F32(channel.Resource + 0x28 + axis * 4));
     }
 
+    /** Components of a control sample for a channel path (scale, rotation or translation). */
     internal static float[] Sample(AnimationControlSample value, string path) => path switch
     {
         "scale" => [value.Scale],

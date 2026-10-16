@@ -7,13 +7,21 @@ namespace SunriseStudio.Authoring;
 internal sealed class NativeRows(byte[] bytes)
 {
     internal byte[] Bytes { get; } = bytes;
+    /** Reads a little-endian uint. */
     internal uint U32(int p) => BinaryPrimitives.ReadUInt32LittleEndian(Span(p, 4));
+    /** Reads a little-endian int. */
     internal int I32(int p) => BinaryPrimitives.ReadInt32LittleEndian(Span(p, 4));
+    /** Reads a little-endian ushort. */
     internal ushort U16(int p) => BinaryPrimitives.ReadUInt16LittleEndian(Span(p, 2));
+    /** Reads a little-endian ulong. */
     internal ulong U64(int p) => BinaryPrimitives.ReadUInt64LittleEndian(Span(p, 8));
+    /** Reads a little-endian long. */
     internal long I64(int p) => BinaryPrimitives.ReadInt64LittleEndian(Span(p, 8));
+    /** Reads a little-endian float. */
     internal float F32(int p) => BinaryPrimitives.ReadSingleLittleEndian(Span(p, 4));
+    /** Reads three floats as a vector. */
     internal Vector3 V3(int p) => new(F32(p), F32(p + 4), F32(p + 8));
+    /** Reads four floats as a quaternion. */
     internal Quaternion Q4(int p) => new(F32(p), F32(p + 4), F32(p + 8), F32(p + 12));
 
     /** A near-zero stored quaternion reads as identity. */
@@ -23,6 +31,7 @@ internal sealed class NativeRows(byte[] bytes)
         return rotation.LengthSquared() > 0.0001f ? Quaternion.Normalize(rotation) : Quaternion.Identity;
     }
 
+    /** Bounds-checked slice; throws when the range leaves the payload. */
     internal ReadOnlySpan<byte> Span(int offset, int count)
     {
         if (offset < 0 || count < 0 || offset > Bytes.Length - count) throw new InvalidDataException("Placement range leaves its source.");
@@ -82,6 +91,7 @@ internal sealed class NativeRows(byte[] bytes)
         return output;
     }
 
+    /** Writes floats little-endian at an offset, bounds-checked. */
     internal static void Write(byte[] bytes, int offset, params float[] values)
     {
         if (offset < 0 || offset > bytes.Length - values.Length * 4) throw new InvalidDataException("Placement range leaves its source.");

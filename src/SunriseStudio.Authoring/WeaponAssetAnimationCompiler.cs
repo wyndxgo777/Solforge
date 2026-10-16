@@ -6,6 +6,7 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Authoring;
 
+/** Compiled weapon animation: template tag, bytes and frame count. */
 public sealed record PreparedWeaponAnimation(uint TemplateTag, byte[] Data, int FrameCount,
     int ChangedControls, float MaximumSampleError);
 
@@ -273,13 +274,17 @@ public static class WeaponAssetAnimationCompiler
         private readonly List<byte> bytes = [.. source];
         internal int NextResourceOffset => checked(((bytes.Count + 15) & ~15) + 16);
 
+        /** Writes a ushort at an offset in the output. */
         internal void U16(int offset, ushort value) =>
             BinaryPrimitives.WriteUInt16LittleEndian(CollectionsMarshal.AsSpan(bytes)[offset..], value);
+        /** Writes a uint at an offset in the output. */
         internal void U32(int offset, uint value) =>
             BinaryPrimitives.WriteUInt32LittleEndian(CollectionsMarshal.AsSpan(bytes)[offset..], value);
+        /** Writes a long at an offset in the output. */
         internal void I64(int offset, long value) =>
             BinaryPrimitives.WriteInt64LittleEndian(CollectionsMarshal.AsSpan(bytes)[offset..], value);
 
+        /** Appends a typed resource on a 16-byte boundary and returns its payload offset. */
         internal int Resource(uint type, byte[] payload)
         {
             while ((bytes.Count & 15) != 0) bytes.Add(0);
@@ -290,6 +295,7 @@ public static class WeaponAssetAnimationCompiler
             return start;
         }
 
+        /** Appends an array resource and links it from a field with a relative pointer. */
         internal void Array(int field, uint type, byte[] payload, int stride)
         {
             I64(field, payload.Length / stride);
@@ -301,6 +307,7 @@ public static class WeaponAssetAnimationCompiler
             payload.CopyTo(CollectionsMarshal.AsSpan(bytes)[(header + 16)..]);
         }
 
+        /** Writes the size header and returns the finished bytes. */
         internal byte[] Finish()
         {
             I64(0, bytes.Count);

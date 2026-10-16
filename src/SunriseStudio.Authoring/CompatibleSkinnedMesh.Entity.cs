@@ -3,10 +3,12 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Authoring;
 
+/** Entity-level result of a skinned replacement: the prepared skin plus the entity, model and config assets cloned for it. */
 public sealed record PreparedCompatibleEntity(PreparedCompatibleSkin Skin, uint EntityTag, uint ModelTag,
     uint ConfigTag, string ProjectPath, IReadOnlyList<ProjectAssetAddition> Additions,
     IReadOnlyDictionary<uint, string> SourceHashes, IReadOnlyDictionary<uint, PackageEntry> SourceEntries);
 
+/** Entity creation half of CompatibleSkinnedMesh: clones the checked entity, model and config template set around a prepared skin. */
 public static partial class CompatibleSkinnedMesh
 {
     private const uint EntityTemplate = 0x80B82FE3, EntityModel = 0x80C4424F, EntityConfig = 0x80C443F8;
@@ -15,6 +17,7 @@ public static partial class CompatibleSkinnedMesh
     private const string EntityConfigHash = "B34BEAFF3DC82D5486BD9097B2C69F0546601A53A818C83EB00DF7A69A27E117";
     private const string EntityModelHash = "D89C5A5340854926FC86C50AFA1FB93C66DD5B045553BCE956B92A0FAF4A53C2";
 
+    /** True only for the one entity and model template pair whose component layout is checked. */
     public static bool SupportsEntityCreation(uint entityTag, uint modelTag) =>
         entityTag == EntityTemplate && modelTag == EntityModel;
 
@@ -176,6 +179,7 @@ public static partial class CompatibleSkinnedMesh
         return new(new Dictionary<uint, byte[]>());
     }
 
+    /** Adds the prepared assets and entity edits to the project in one transaction. */
     public static IReadOnlyList<AddedProjectAsset> ApplyEntity(StudioProject project, PackageCatalog catalog,
         PreparedCompatibleEntity prepared) => project.ApplyTransaction(prepared.Additions,
             _ => EntityEdits(project, catalog, prepared), catalog);

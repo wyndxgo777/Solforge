@@ -10,6 +10,7 @@ namespace SunriseStudio.Authoring;
 /** A holographic reticle part found on a template weapon's art. */
 public sealed record WeaponReticleTemplate(int Selector, uint EntityTag, uint ModelTag, int PartOffset, uint MaterialTag);
 
+/** Compiled reticle: material and assets. */
 public sealed record PreparedWeaponReticle(uint MaterialTag, IReadOnlyList<ProjectAssetAddition> Assets,
     IReadOnlyDictionary<string, byte[]> AddedChanges);
 
@@ -154,6 +155,7 @@ public static class WeaponReticleAuthoring
         return (U32(model, row), U32(model, row + 4));
     }
 
+    /** A model with its reticle buffers attached. */
     public sealed record AttachedReticle(byte[] Model, byte[]? Positions, byte[]? Attributes,
         byte[] ReticlePositions, byte[] ReticleAttributes, byte[] ReticleIndices);
     private sealed record ReticleQuad(Vector3[] Positions, Vector2[] Uvs, byte[][] Frames, uint[] Indices);
@@ -257,9 +259,11 @@ public static class WeaponReticleAuthoring
     /** The model's shared snorm encoding: position = snorm * scale + offset, and the same for UVs. */
     private sealed record Encoding(Vector3 Offset, float Scale, Vector2 UvOffset, float UvScale)
     {
+        /** Reads the encoding from a model header. */
         public static Encoding Read(byte[] model) => new(new(F(model, 0x60), F(model, 0x64), F(model, 0x68)), F(model, 0x6C),
             new(F(model, 0x78), F(model, 0x7C)), F(model, 0x70));
 
+        /** Smallest encoding that covers the given points and UVs. */
         public static Encoding Covering(IEnumerable<Vector3> points, IEnumerable<Vector2> uvs)
         {
             var p = points.ToArray(); var t = uvs.ToArray();
@@ -270,16 +274,22 @@ public static class WeaponReticleAuthoring
                 (uvMin + uvMax) / 2, Math.Max(1e-6f, Math.Max(uvHalf.X, uvHalf.Y)));
         }
 
+        /** True when a point is representable with the encoding. */
         public bool Fits(Vector3 point) => new[] { point.X - Offset.X, point.Y - Offset.Y, point.Z - Offset.Z }
             .All(value => MathF.Abs(value / Scale) <= 1);
+        /** True when a UV is representable with the encoding. */
         public bool FitsUv(Vector2 uv) => MathF.Abs((uv.X - UvOffset.X) / UvScale) <= 1 && MathF.Abs((uv.Y - UvOffset.Y) / UvScale) <= 1;
+        /** Decodes a position from three snorm shorts. */
         public Vector3 Position(byte[] data, int at) => new Vector3(S(data, at), S(data, at + 2), S(data, at + 4)) * Scale + Offset;
+        /** Decodes a UV from two snorm shorts. */
         public Vector2 Uv(byte[] data, int at) => new Vector2(S(data, at), S(data, at + 2)) * UvScale + UvOffset;
+        /** Encodes a position as three snorm shorts. */
         public void WritePosition(byte[] data, int at, Vector3 point)
         {
             var value = (point - Offset) / Scale;
             W(data, at, value.X); W(data, at + 2, value.Y); W(data, at + 4, value.Z);
         }
+        /** Encodes a UV as two snorm shorts. */
         public void WriteUv(byte[] data, int at, Vector2 uv)
         {
             var value = (uv - UvOffset) / UvScale;

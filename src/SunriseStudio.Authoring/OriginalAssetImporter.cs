@@ -5,13 +5,17 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Authoring;
 
+/** One surface of an original asset file and whether it is present and supported. */
 public sealed record OriginalAssetSurface(string Name, bool Present, bool Supported, string Detail);
+/** Inspection of an original asset file: its path and surfaces. */
 public sealed record OriginalAssetInspection(string Path, IReadOnlyList<OriginalAssetSurface> Surfaces)
 {
     public bool CanImportAll => Surfaces.All(surface => !surface.Present || surface.Supported);
 }
+/** Options for an original asset import: source path, target package and name. */
 public sealed record OriginalAssetImportOptions(string Path, ushort PackageId, string Name,
     uint? TemplateTag, bool SkipUnsupported);
+/** Compiled original asset: model tag, assets to add and a summary. */
 public sealed record PreparedOriginalAsset(uint ModelTag, IReadOnlyList<ProjectAssetAddition> Assets, string Summary);
 
 /** Static primitive materials compile through one checked opaque native shader profile. */

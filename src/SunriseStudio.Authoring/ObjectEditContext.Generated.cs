@@ -8,6 +8,7 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Authoring;
 
+/** Generated-asset half of ObjectEditContext: package and ids of assets a rule creates, and their completion. */
 public sealed partial class ObjectEditContext
 {
     private readonly Dictionary<uint, GeneratedObjectAsset> generated = [];
@@ -20,6 +21,7 @@ public sealed partial class ObjectEditContext
 
     internal ObjectEditCompileOptions Options { get; }
 
+    /** Working bytes of a tag, or the raw layer when it is untouched. */
     internal byte[] ReadLayer(uint tag) => working.TryGetValue(tag, out var bytes) ? bytes : readRaw(tag);
 
     /** One compile admits one original snapshot; its raw changes never enter that shared snapshot. */
@@ -44,6 +46,7 @@ public sealed partial class ObjectEditContext
         return raw[tag];
     }
 
+    /** Replaces a tag's working bytes after loading it for edit. */
     internal void ReplaceCurrent(uint tag, byte[] bytes)
     {
         _ = Current(tag);
@@ -77,6 +80,7 @@ public sealed partial class ObjectEditContext
         return asset.TagHash;
     }
 
+    /** Fills in a reserved generated asset with its bytes and origin maps. */
     internal void CompleteGenerated(uint tag, byte[] bytes,
         IReadOnlyDictionary<int, PackageInstanceOrigin>? instances = null,
         IReadOnlyDictionary<int, PackagePlacementOrigin>? placements = null,

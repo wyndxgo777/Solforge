@@ -7,7 +7,9 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Authoring;
 
+/** Arms action and the weapon event it plays for. */
 public sealed record WeaponArmsClip(string Action, string Event);
+/** Arms rig glTF path with its clips. */
 public sealed record WeaponArmsSource(string Path, IReadOnlyList<WeaponArmsClip> Clips);
 
 /** First-person arm motion is authored in the weapon frame and solved back into rig controls. */
@@ -297,6 +299,7 @@ public static class WeaponArmsRig
         private readonly MemoryStream data = new();
         private readonly List<object> views = [], accessors = [];
 
+        /** Adds a float accessor of a glTF type and returns its index. */
         public int Add(float[] values, string type, float[]? minimum = null, float[]? maximum = null)
         {
             int width = type switch { "SCALAR" => 1, "VEC3" => 3, "VEC4" => 4, "MAT4" => 16, _ => throw new ArgumentException(type) };
@@ -312,12 +315,14 @@ public static class WeaponArmsRig
             return accessors.Count - 1;
         }
 
+        /** Adds an accessor over raw four-byte elements and returns its index. */
         public int AddBytes(byte[] values, string type, int componentType)
         {
             accessors.Add(new { bufferView = View(values), componentType, count = values.Length / 4, type });
             return accessors.Count - 1;
         }
 
+        /** Adds a 16-bit index accessor and returns its index. */
         public int AddIndices(ushort[] values)
         {
             var bytes = new byte[values.Length * 2];
@@ -334,6 +339,7 @@ public static class WeaponArmsRig
             return views.Count - 1;
         }
 
+        /** Writes the glb with the collected buffers, views and accessors. */
         public void Write(string path, Dictionary<string, object> document)
         {
             while (data.Length % 4 != 0) data.WriteByte(0);

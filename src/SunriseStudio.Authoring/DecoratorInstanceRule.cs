@@ -17,6 +17,7 @@ internal sealed class DecoratorInstanceRule : IObjectEditRule
 
     public ObjectEditLayout Layout => ObjectEditLayout.DecoratorInstance;
 
+    /** Rewrites the edited decorator records in the CPU block and the vertex buffer, then their boxes. */
     public void Apply(ObjectEditContext context, IReadOnlyList<ObjectEdit> edits)
     {
         foreach (var group in edits.GroupBy(edit => edit.Target.Identity).OrderBy(group => group.Key))

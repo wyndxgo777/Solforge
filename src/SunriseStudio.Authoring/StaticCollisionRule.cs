@@ -21,6 +21,7 @@ internal sealed class StaticCollisionRule : IObjectEditRule
     /** Static instance edits and direct collision instance edits patch the same compounds, so they run together. */
     public IReadOnlyCollection<ObjectEditLayout> Layouts => [ObjectEditLayout.StaticInstance, ObjectEditLayout.CollisionInstance];
 
+    /** Moves the compound instances matching each edited render row, then refits the compound tree. */
     public void Apply(ObjectEditContext context, IReadOnlyList<ObjectEdit> edits)
     {
         var patches = new SortedDictionary<uint, CompoundPatch>();
@@ -177,6 +178,7 @@ internal sealed class StaticCollisionRule : IObjectEditRule
         a.W * b.Z + a.X * b.Y - a.Y * b.X + a.Z * b.W,
         a.W * b.W - a.X * b.X - a.Y * b.Y - a.Z * b.Z);
 
+    /** True when two rotations match within tolerance, ignoring quaternion sign. */
     internal static bool SameRotation(Quaternion a, Quaternion b)
     {
         a = Quaternion.Normalize(a); b = Quaternion.Normalize(b);
@@ -186,12 +188,15 @@ internal sealed class StaticCollisionRule : IObjectEditRule
             && MathF.Abs(x.W - y.W) < RotationTolerance;
     }
 
+    /** True when two transforms match within tolerance. */
     internal static bool Same(QsTransform a, QsTransform b) =>
         SameTranslation(a.Translation, b.Translation) && SameRotation(a.Rotation, b.Rotation) && SameScale(a.Scale, b.Scale);
 
+    /** True when two translations match within tolerance. */
     internal static bool SameTranslation(Vector3 a, Vector3 b) => MathF.Abs(a.X - b.X) < TranslationTolerance
         && MathF.Abs(a.Y - b.Y) < TranslationTolerance && MathF.Abs(a.Z - b.Z) < TranslationTolerance;
 
+    /** True when two scales match within a relative tolerance. */
     internal static bool SameScale(Vector3 a, Vector3 b) =>
         Near(a.X, b.X) && Near(a.Y, b.Y) && Near(a.Z, b.Z);
 
@@ -224,6 +229,7 @@ internal sealed class StaticCollisionRule : IObjectEditRule
                 }
         }
 
+        /** Placed payloads that use a table. */
         internal IReadOnlyList<PlacedPayload> TableOwners(uint table) => tableOwners.TryGetValue(table, out var owners) ? owners : [];
 
         /** The one static entity that places this compound; a direct instance edit needs it. */
@@ -361,6 +367,7 @@ internal sealed class StaticCollisionRule : IObjectEditRule
     {
         internal SortedDictionary<int, QsTransform> Transforms { get; } = [];
 
+        /** Writes the moved leaves and the refit tree back to the compound asset. */
         internal void Write(ObjectEditContext context)
         {
             uint tag = entity.Owner.CompoundTag;

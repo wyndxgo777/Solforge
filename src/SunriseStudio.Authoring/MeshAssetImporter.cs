@@ -8,10 +8,13 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Authoring;
 
+/** Result of a mesh import: the model asset, tags, counts and every added asset. */
 public sealed record MeshImportResult(AddedProjectAsset ModelAsset, uint ModelTag, uint TemplateTag,
     int VertexCount, int TriangleCount, IReadOnlyList<AddedProjectAsset> Assets);
+/** Position, attribute and index buffers with the offsets and scales that decode them. */
 public sealed record EncodedStaticGeometry(byte[] Positions, byte[] Attributes, byte[] Indices,
     Vector3 PositionOffset, float PositionScale, Vector2 UvOffset, float UvScale);
+/** Compiled static model ready to add to a project. */
 public sealed record PreparedStaticModel(uint ModelTag, uint TemplateTag, int VertexCount, int TriangleCount,
     IReadOnlyList<ProjectAssetAddition> Assets);
 
@@ -23,6 +26,7 @@ public static class MeshAssetImporter
     private const uint PreferredTemplate = 0x80B9EEE1;
     private const int EntryCount = 8;
 
+    /** Reads a mesh file, compiles it and adds the assets to the project at the next free entry index. */
     public static MeshImportResult ImportFile(StudioProject project, PackageCatalog catalog,
         string path, string name, ushort packageId, uint? templateTag = null,
         CancellationToken cancellationToken = default)

@@ -44,6 +44,7 @@ public sealed record WeaponFiringRow(uint Root, uint Hud, int Row, uint BaseHud,
     /** The raw tag at this slot of the installed base row; 0 when empty. Not checked to be an entity. */
     public uint StockTag(PackageCatalog catalog, int slot) => U32(catalog.ReadOriginal(BaseHud), BaseRow + slot);
 
+    /** Tag of a native asset from its package id and entry index. */
     public static uint NativeTag(NativeAssetMetadata native) =>
         checked(0x80800000u + ((uint)native.PackageId << 13) + (uint)native.EntryIndex!.Value);
 

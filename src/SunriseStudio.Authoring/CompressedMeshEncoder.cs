@@ -196,12 +196,15 @@ public static class CompressedMeshEncoder
             | (ulong)QuantizeRange(v.Z, min.Z, max.Z, SharedMaxZ) << 42;
     }
 
+    /** Rounds a value onto a stepped grid starting at offset, clamped to 0..max. */
     internal static uint Quantize(float value, float offset, float step, uint max) =>
         step <= 0 ? 0 : (uint)Math.Clamp(Math.Round(((double)value - offset) / step), 0, max);
 
+    /** Maps a value in [min, max] onto 0..steps, clamped. */
     internal static uint QuantizeRange(double value, double min, double max, uint steps) =>
         max <= min ? 0 : (uint)Math.Clamp(Math.Round((value - min) / (max - min) * steps), 0, steps);
 
+    /** Compound box enclosing the points. */
     internal static CompoundBox Box(IEnumerable<Vector3> points)
     {
         var list = points.ToArray();
@@ -274,6 +277,7 @@ public static class CompressedMeshEncoder
         return (low, high);
     }
 
+    /** Largest absolute component of two vectors, never below 1. */
     internal static float MaxAbs(Vector3 a, Vector3 b) =>
         new[] { 1f, MathF.Abs(a.X), MathF.Abs(a.Y), MathF.Abs(a.Z), MathF.Abs(b.X), MathF.Abs(b.Y), MathF.Abs(b.Z) }.Max();
 
