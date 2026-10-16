@@ -180,6 +180,7 @@ public sealed partial class NativeSceneRenderer
         catch (Exception error) { tfxErrors[index] = error; }
     }
 
+    /** Binds one material stage; rethrows an error captured while preparing its TFX request. */
     private void Bind(MaterialGpu material, MaterialStageData stage, int request)
     {
         if (request < 0) return;

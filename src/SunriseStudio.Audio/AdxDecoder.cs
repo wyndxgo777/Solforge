@@ -1,3 +1,7 @@
+/**
+ * File: CRI ADX audio: header parsing and decoding to PCM/WAV. Used by UsmContainer/UsmExport for movie audio and by
+ * the audio tools in Solforge.Mcp (SolforgeTools.Media.cs).
+ */
 using System.Buffers.Binary;
 
 namespace SunriseStudio.Audio;
@@ -6,8 +10,10 @@ namespace SunriseStudio.Audio;
 public sealed record AdxHeader(int DataOffset, int Encoding, int BlockSize, int BitDepth, int Channels, int SampleRate,
     long TotalSamples, int HighpassFrequency, int Version, int Flags)
 {
+    /** Whether the bytes start with the ADX signature (0x80 0x00). */
     public static bool IsAdx(ReadOnlySpan<byte> bytes) => bytes.Length >= 0x14 && bytes[0] == 0x80 && bytes[1] == 0x00;
 
+    /** Reads the big-endian ADX header; throws InvalidDataException when the data is not ADX. */
     public static AdxHeader Parse(ReadOnlySpan<byte> adx)
     {
         if (!IsAdx(adx)) throw new InvalidDataException("Not a CRI ADX stream.");
@@ -29,6 +35,7 @@ public sealed record AdxHeader(int DataOffset, int Encoding, int BlockSize, int 
  */
 public static class AdxDecoder
 {
+    /** Header facts (rate, channels, length) without decoding any samples. */
     public static AudioStreamInfo Inspect(ReadOnlySpan<byte> adx)
     {
         var header = AdxHeader.Parse(adx);

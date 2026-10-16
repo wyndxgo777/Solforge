@@ -1,3 +1,7 @@
+/**
+ * File: Reads Havok Cloth collidables from a packfile. Part of the collision stack: CollisionShapes.cs decodes
+ * shapes, CollisionSceneLoader.cs places them, HavokInspector.cs summarises a packfile.
+ */
 using System.Numerics;
 using System.Text;
 
@@ -58,6 +62,7 @@ public static class ClothCollidables
         }
     }
 
+    /** Reads a NUL-terminated string at an offset (capped at 256 characters). */
     private static string CString(HavokPackfile file, int offset)
     {
         var text = new StringBuilder();

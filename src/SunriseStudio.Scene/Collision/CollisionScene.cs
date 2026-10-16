@@ -1,3 +1,7 @@
+/**
+ * File: Collision scene model (entities, pieces, placements, roles). CollisionSceneLoader.cs builds it,
+ * CollisionSceneUpdate.cs refreshes it after project edits, CollisionShapes.cs decodes the shapes.
+ */
 using System.Numerics;
 using SunriseStudio.Packages;
 
@@ -150,6 +154,7 @@ public sealed class CollisionScene
         _ => shapeClass
     };
 
+    /** Counts something that could not be decoded, by kind, for diagnostics. */
     internal void Count(string kind, int amount = 1)
     {
         if (amount > 0) Undecoded[kind] = Undecoded.GetValueOrDefault(kind) + amount;

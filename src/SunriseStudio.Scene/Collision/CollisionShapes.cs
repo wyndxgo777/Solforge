@@ -1,3 +1,7 @@
+/**
+ * File: Decodes Havok collision shape classes (box, capsule, convex, mesh...) from a packfile into CollisionShape.
+ * Placement is in CollisionSceneLoader.cs; HavokInspector.cs wraps this for tools.
+ */
 using System.Numerics;
 
 namespace SunriseStudio.Scene.Collision;
@@ -47,6 +51,7 @@ public static class CollisionShapes
     /** The local box that encloses the shape object at a data offset, convex radius included. */
     public static (Vector3 Min, Vector3 Max) Bounds(HavokPackfile file, int offset) => Bounds(file, offset, 0);
 
+    /** Decodes the shape object at an offset by its class name; throws when the class is missing. */
     private static CollisionShape Decode(HavokPackfile file, int offset, int depth)
     {
         string type = file.ClassAt(offset) ?? throw new InvalidDataException("Collision shape has no class.");
@@ -78,6 +83,7 @@ public static class CollisionShapes
         }
     }
 
+    /** Axis-aligned bounds of the shape at an offset (recursing into children up to a depth limit). */
     private static (Vector3 Min, Vector3 Max) Bounds(HavokPackfile file, int offset, int depth)
     {
         string type = file.ClassAt(offset) ?? throw new InvalidDataException("Collision shape has no class.");
@@ -317,6 +323,7 @@ public static class CollisionShapes
         for (int i = 1; i + 1 < ordered.Length; i++) indices.AddRange([ordered[0], ordered[i], ordered[i + 1]]);
     }
 
+    /** Decodes a Havok box shape. */
     private static CollisionShape DecodeBox(HavokPackfile file, int offset)
     {
         var bounds = Bounds(file, offset, 0);
@@ -326,6 +333,7 @@ public static class CollisionShapes
     /** A box about the origin; corner i takes x from bit 0, y from bit 1, z from bit 2. */
     public static CollisionShape BoxShape(Vector3 half) => BoxShape(half, 0, (-half, half));
 
+    /** Builds the eight-corner box shape from half extents and a convex radius. */
     private static CollisionShape BoxShape(Vector3 half, float radius, (Vector3 Min, Vector3 Max) bounds)
     {
         var vertices = Enumerable.Range(0, 8).Select(i => new Vector3((i & 1) == 0 ? -half.X : half.X,
@@ -353,6 +361,7 @@ public static class CollisionShapes
     public static CollisionShape TaperedCapsuleShape(Vector3 a, float radiusA, Vector3 b, float radiusB, string shapeClass) =>
         CapsuleShape(a, b, radiusA, radiusB, shapeClass);
 
+    /** Builds a capsule (or cylinder) shape between two axis points with one or two radii. */
     private static CollisionShape CapsuleShape(Vector3 a, Vector3 b, float radius, float radiusB, string shapeClass)
     {
         var line = b - a;

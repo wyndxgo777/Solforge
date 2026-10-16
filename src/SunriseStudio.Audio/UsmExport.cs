@@ -1,3 +1,4 @@
+/** File: Writes the streams of a USM to disk; built on UsmContainer.cs and AdxDecoder.cs. */
 namespace SunriseStudio.Audio;
 
 /** Writes a USM's streams as files: the video elementary stream, each audio track raw and as WAV, subtitles raw. */
