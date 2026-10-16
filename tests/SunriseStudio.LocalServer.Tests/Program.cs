@@ -258,7 +258,10 @@ async Task Tools()
     Expect(badRollback.IsError, "rollback id validated");
 
     Expect(LocalServerTools.QuickLine(new JsonObject { ["action"] = "give", ["player"] = "Seth", ["item"] = "Reverie Dawn", ["amount"] = 2 }).Line == "give Seth \"Reverie Dawn\" 2", "give");
-    Expect(LocalServerTools.QuickLine(new JsonObject { ["action"] = "reset_character", ["player"] = "Seth" }).Line == "clear inventory Seth confirm", "reset");
+    Expect(LocalServerTools.QuickLine(new JsonObject { ["action"] = "reset_character", ["player"] = "Seth" }).Line == "reset character Seth confirm", "reset");
+    Expect(LocalServerTools.QuickLine(new JsonObject { ["action"] = "reset_character", ["player"] = "Seth", ["character"] = "Hunter" }).Line == "reset character Seth hunter confirm", "reset one class");
+    Expect(LocalServerTools.QuickLine(new JsonObject { ["action"] = "reset_character", ["player"] = "Seth", ["character"] = "2" }).Line == "reset character Seth 2 confirm", "reset one slot");
+    Expect(LocalServerTools.QuickLine(new JsonObject { ["action"] = "reset_character", ["player"] = "Seth", ["character"] = "confirm" }).Problem is not null, "reset character validated");
     Expect(LocalServerTools.QuickLine(new JsonObject { ["action"] = "set_activity", ["target"] = "find glimmer" }).Line == "activity find glimmer", "activity");
     Expect(LocalServerTools.QuickLine(new JsonObject { ["action"] = "give", ["player"] = "Seth" }).Problem is not null, "give needs item");
     Expect(LocalServerTools.QuickLine(new JsonObject { ["action"] = "stop" }).Problem is not null, "unknown action");

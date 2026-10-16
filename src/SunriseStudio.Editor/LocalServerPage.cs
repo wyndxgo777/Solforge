@@ -34,7 +34,7 @@ public sealed class LocalServerPage
     private bool restartAfterDeploy = true;
     private int selectedConfig = -1;
     private string configText = "", configLoaded = "";
-    private string commandLine = "", player = "", item = "", target = "";
+    private string commandLine = "", player = "", item = "", target = "", character = "";
     private int amount = 1;
 
     /**
@@ -351,7 +351,9 @@ public sealed class LocalServerPage
         ImGui.BeginDisabled(busy.Length > 0);
         if (ImGui.Button("Give item")) Quick("give");
         ImGui.SameLine();
-        if (ImGui.Button("Reset character (clear unequipped gear)")) Quick("reset_character");
+        ImGui.SetNextItemWidth(150); ImGui.InputTextWithHint("##qa-character", "class or slot 1-3", ref character, 16);
+        ImGui.SameLine();
+        if (ImGui.Button("Reset character (all gear, level, progress)")) Quick("reset_character");
         ImGui.SameLine();
         if (ImGui.Button("Set next activity")) Quick("set_activity");
         ImGui.SameLine();
@@ -368,7 +370,7 @@ public sealed class LocalServerPage
     {
         var args = new System.Text.Json.Nodes.JsonObject
         {
-            ["action"] = action, ["player"] = player, ["item"] = item, ["amount"] = amount, ["target"] = target,
+            ["action"] = action, ["player"] = player, ["item"] = item, ["amount"] = amount, ["target"] = target, ["character"] = character,
         };
         var (line, problem) = LocalServerTools.QuickLine(args);
         if (problem is not null) { Report(false, problem, ""); return; }

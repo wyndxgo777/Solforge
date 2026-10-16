@@ -130,11 +130,13 @@ public static class LocalServerTools
                 args => string.IsNullOrWhiteSpace(McpJson.String(args, "line")) ? "Give a command line." : null,
                 args => "/" + McpJson.String(args, "line"),
                 (args, cancel) => server.CommandAsync(McpJson.String(args, "line")!, cancel)),
-            Act("local_server_quick_action", "A common test action: give (player, item, amount), reset_character (empties the player's " +
-                "unequipped gear, backed up by the server), set_activity (the next launch goes to an activity name or index), goto (a place).",
+            Act("local_server_quick_action", "A common test action: give (player, item, amount), reset_character (resets one of the " +
+                "player's characters to new: all gear, level, subclass and progress; the server backs the record up first; " +
+                "the player must be offline), set_activity (the next launch goes to an activity name or index), goto (a place).",
                 Schema(("action", "string", "give | reset_character | set_activity | goto", true), ("player", "string", "Account name", false),
                     ("item", "string", "Item name or hash (give)", false), ("amount", "integer", "Amount (give, default 1)", false),
-                    ("target", "string", "Activity or place (set_activity, goto)", false)),
+                    ("target", "string", "Activity or place (set_activity, goto)", false),
+                    ("character", "string", "titan, hunter, warlock or slot 1-3 (reset_character; needed when the account has more than one)", false)),
                 args => QuickLine(args).Problem, args => "/" + QuickLine(args).Line,
                 (args, cancel) => server.CommandAsync(QuickLine(args).Line!, cancel)),
         ];
@@ -146,12 +148,15 @@ public static class LocalServerTools
         string action = McpJson.String(args, "action") ?? "";
         string? player = Word(McpJson.String(args, "player")), item = Word(McpJson.String(args, "item")), target = Word(McpJson.String(args, "target"));
         int amount = Math.Max(1, McpJson.Int(args, "amount", 1));
+        string? character = Word(McpJson.String(args, "character"))?.ToLowerInvariant();
         return action switch
         {
             "give" when player is null || item is null => (null, "give needs player and item."),
             "give" => ($"give {player} {item} {amount}", null),
             "reset_character" when player is null => (null, "reset_character needs player."),
-            "reset_character" => ($"clear inventory {player} confirm", null),
+            "reset_character" when character is not null && character is not ("titan" or "hunter" or "warlock" or "1" or "2" or "3")
+                => (null, "character must be titan, hunter, warlock or 1-3."),
+            "reset_character" => ($"reset character {player}{(character is null ? "" : " " + character)} confirm", null),
             "set_activity" when target is null => (null, "set_activity needs target (name, index or 'find <text>')."),
             "set_activity" => ($"activity {target}", null),
             "goto" when target is null => (null, "goto needs target (tower, edz, moon...)."),
