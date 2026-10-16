@@ -2,6 +2,7 @@ using System.Numerics;
 
 namespace SunriseStudio.Formats;
 
+/** Tile node tree used while editing. */
 public static partial class TomeEditor
 {
     private sealed class Node

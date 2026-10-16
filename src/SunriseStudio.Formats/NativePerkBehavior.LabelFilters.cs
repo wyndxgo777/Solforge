@@ -1,5 +1,6 @@
 namespace SunriseStudio.Formats;
 
+/** Label filter compilation: converts authored label lists into the native mask form. */
 public static partial class NativePerkBehavior
 {
     // Compiled filters: kind 0 holds any-of and none-of masks, kind 1 all four; 0xFF means no filter.

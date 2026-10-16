@@ -2,14 +2,17 @@ using System.Numerics;
 
 namespace SunriseStudio.Formats;
 
+/** How a widget is positioned along one axis inside its parent. */
 public enum CuiAnchor { Stored, Start, Center, End, Stretch }
 
+/** Anchoring rules of a widget: per-axis anchor, margin (start/end per axis), minimum size and optional maximum size. */
 public sealed record CuiAnchors(CuiAnchor Horizontal = CuiAnchor.Start, CuiAnchor Vertical = CuiAnchor.Start,
     Vector4 Margin = default, Vector2 Minimum = default, Vector2? Maximum = null);
 
 /** Container anchors use parent padding, child margins and authored size limits. */
 public static class CuiLayoutRules
 {
+    /** Resolves a stored rectangle (x, y, width, height) against the parent's size and padding, clamping size and position per axis. */
     public static Vector4 Resolve(Vector2 parentSize, Vector4 parentPadding, Vector4 stored, CuiAnchors anchors)
     {
         var maximum = anchors.Maximum ?? new Vector2(float.MaxValue);

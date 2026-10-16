@@ -4,8 +4,11 @@ using System.Numerics;
 
 namespace SunriseStudio.Formats;
 
+/** A behavior expression input: selector byte and channel hash, with its offset in the tag. */
 public sealed record BehaviorInput(byte Selector, uint Hash, int Offset);
+/** One constant register of an expression (a Vector4) and where it is stored. */
 public sealed record BehaviorConstant(int Index, int Offset, Vector4 Value);
+/** One decoded opcode and operand of an expression, with its readable name. */
 public sealed record BehaviorInstruction(int Offset, byte Opcode, int Operand, string Name);
 
 /** This reader describes serialized expressions without running package code. */
@@ -17,6 +20,7 @@ public sealed record BehaviorExpression(int Offset, int NativeOverride, IReadOnl
     private const int MaximumTextLength = 16384, MaximumStackDepth = 32;
     public bool Supported => Diagnostic is null && NativeOverride == 0 && Output is not null;
 
+    /** Decodes the expression at offset into inputs, constants and instructions; throws on truncated data. channelName labels input hashes. */
     public static BehaviorExpression Read(ReadOnlyMemory<byte> bytes, int offset,
         Func<uint, string?>? channelName = null)
     {

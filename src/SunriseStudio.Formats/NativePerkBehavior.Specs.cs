@@ -1,5 +1,6 @@
 namespace SunriseStudio.Formats;
 
+/** Node spec table: the editable properties each supported native node class exposes. */
 public static partial class NativePerkBehavior
 {
     private const uint AllGroupsClass = 0x80803E04, GroupClass = 0x80803E06, ExtendTimersClass = 0x80803E3B;

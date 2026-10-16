@@ -6,6 +6,7 @@ namespace SunriseStudio.Formats;
 /** Reimport keeps native texture headers intact and replaces their payload entries. */
 public static class TextureEdits
 {
+    /** Builds the tag changes (by tag hash) that replace the texture of a header with new texture data. */
     public static IReadOnlyDictionary<uint, byte[]> Apply(PackageCatalog catalog, uint headerTag,
         TextureData replacement)
     {

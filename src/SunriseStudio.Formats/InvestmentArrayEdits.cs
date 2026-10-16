@@ -2,12 +2,14 @@ using System.Buffers.Binary;
 
 namespace SunriseStudio.Formats;
 
+/** Add/remove edits for item stat and perk arrays. */
 public sealed partial class InvestmentCatalog
 {
     private const uint StatsBlockClass = 0x808077B9, StatRowClass = 0x80803033, PerkRowClass = 0x808077BC;
     /** The editor bounds array work without changing the native index spaces. */
     private const int MaximumAuthoredRows = 4096;
 
+    /** Returns the item tag with a new stat row (stat index and value) added; throws if the stat is not in this installation. */
     public byte[] AddStat(uint tag, ReadOnlyMemory<byte> current, byte index, int value)
     {
         if (!statNames.ContainsKey(index)) throw new InvalidDataException("Choose a stat from this installation.");
@@ -16,12 +18,14 @@ public sealed partial class InvestmentCatalog
         return RewriteStatRows(tag, current, false, row, null);
     }
 
+    /** Returns the item tag with the stat row removed; throws if the item changed since it was read. */
     public byte[] RemoveStat(uint tag, ReadOnlyMemory<byte> current, InvestmentStat stat)
     {
         if (!ReadItem(tag, current).Stats.Contains(stat)) throw new InvalidDataException("This stat changed. Reopen its editor.");
         return RewriteStatRows(tag, current, false, null, stat.Field.Offset - 4);
     }
 
+    /** Returns the item tag with a sandbox perk row added; throws if the perk index is not in this installation. */
     public byte[] AddPerk(uint tag, ReadOnlyMemory<byte> current, ushort index)
     {
         if (index >= PerkCount) throw new InvalidDataException("Choose a sandbox perk from this installation.");
@@ -29,6 +33,7 @@ public sealed partial class InvestmentCatalog
         return RewriteStatRows(tag, current, true, row, null);
     }
 
+    /** Returns the item tag with the perk row removed; throws if the item changed since it was read. */
     public byte[] RemovePerk(uint tag, ReadOnlyMemory<byte> current, InvestmentPerk perk)
     {
         if (!ReadItem(tag, current).Perks.Contains(perk)) throw new InvalidDataException("This perk changed. Reopen its editor.");

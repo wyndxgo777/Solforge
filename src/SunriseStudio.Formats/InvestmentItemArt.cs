@@ -14,6 +14,7 @@ public static class InvestmentItemArt
         [(HandlesField, HandleClass, 4), (IntegersField, IntegerClass, 4), (FieldsField, FieldClass, FieldStride),
          (ItemsField, ItemClass, ItemStride)];
 
+    /** Number of item rows in the table. */
     public static int Count(ReadOnlyMemory<byte> table) => new TagReader(table).Array(ItemsField, ItemClass, ItemStride).Count;
 
     /** Type-five fields name sandbox displays whose text and icons the UI must load. */

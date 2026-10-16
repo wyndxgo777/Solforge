@@ -4,7 +4,9 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Formats;
 
+/** Counts of vendors, sales and categories a vendor table currently holds. */
 public sealed record InvestmentVendorBudget(int Vendors, long Sales, long Categories);
+/** A vendor interaction tag: the vendor hash it targets, where that hash is stored, and the SHA-256 of the source bytes. */
 public sealed record InvestmentVendorInteraction(uint Tag, uint VendorHash, int HashOffset, string SourceSha256);
 
 /** Derived vendors retain base policy fields while their indexed identity and display text are authored. */
@@ -52,6 +54,7 @@ public static class InvestmentVendorAuthoring
         return new(definitions.Count, sales, categories);
     }
 
+    /** Throws if adding the given vendors, sales or categories would exceed the table limits. */
     public static void ValidateBudget(InvestmentVendorBudget current, int addedVendors, int addedSales, int addedCategories)
     {
         if (addedVendors < 0 || current.Vendors + (long)addedVendors > MaximumVendors)
@@ -99,6 +102,7 @@ public static class InvestmentVendorAuthoring
         return result;
     }
 
+    /** Reads the (bank, hash) name or subtitle reference of the display with the given identity; other offsets throw. */
     public static (ushort Bank, uint Hash) ReadText(ReadOnlyMemory<byte> display, uint identity, int offset)
     {
         var data = Display(display, identity);
@@ -106,6 +110,7 @@ public static class InvestmentVendorAuthoring
         return (data.U16(offset), data.U32(offset + 4));
     }
 
+    /** Returns the display with its icon copied from another vendor's display. */
     public static byte[] CopyIcon(ReadOnlyMemory<byte> display, uint identity,
         ReadOnlyMemory<byte> source, uint sourceIdentity)
     {
@@ -134,6 +139,7 @@ public static class InvestmentVendorAuthoring
         return new(tag, data.U32(offset), offset, Convert.ToHexString(SHA256.HashData(bytes.Span)));
     }
 
+    /** Returns the interaction bytes with the vendor hash replaced; throws if the interaction changed or the hash is empty. */
     public static byte[] RetargetInteraction(PackageCatalog catalog, ReadOnlyMemory<byte> bytes,
         InvestmentVendorInteraction target, uint hash)
     {

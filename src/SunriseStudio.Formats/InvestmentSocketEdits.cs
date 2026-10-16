@@ -3,6 +3,7 @@ using System.Globalization;
 
 namespace SunriseStudio.Formats;
 
+/** Socket editing. */
 public sealed partial class InvestmentCatalog
 {
     /** Ordinary socket blocks hold 80-byte rows and at most 12 instance lanes. */

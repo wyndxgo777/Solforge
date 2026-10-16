@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 
 namespace SunriseStudio.Formats;
 
+/** Owner-row part of property editing. */
 public static partial class CuiPropertyEdits
 {
     /** A logical property edit detaches shared owner rows before detaching its pooled value. */

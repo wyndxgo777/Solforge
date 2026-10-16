@@ -7,7 +7,9 @@ internal static class TomeBits
 {
     private static readonly uint[] CrcTable = BuildCrcTable();
 
+    /** Bit count needed to represent the value. */
     internal static int Length(uint value) => 32 - System.Numerics.BitOperations.LeadingZeroCount(value);
+    /** 32-bit words needed to hold the given number of bits. */
     internal static int Words(long bits) => checked((int)((bits + 31) >> 5));
 
     /**
@@ -75,6 +77,7 @@ internal static class TomeBits
         return data;
     }
 
+    /** Word count of the data of a k-d structure over n entries (base bits plus its summary levels). */
     internal static int KdDataWords(int n) =>
         Words(2L * n) + (n >> 16) + ((n >> 8) - (n >> 16) + 1 >> 1) + ((n >> 4) - (n >> 8) + 3 >> 2);
 
@@ -109,6 +112,7 @@ internal sealed class TomeBitWriter
         }
     }
 
+    /** Returns the written bits as little-endian 32-bit words, in bytes. */
     internal byte[] ToBytes()
     {
         int count = TomeBits.Words(position);

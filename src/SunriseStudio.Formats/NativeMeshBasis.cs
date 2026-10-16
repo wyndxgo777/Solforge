@@ -6,6 +6,7 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Formats;
 
+/** Decoded per-vertex normals and tangents of a mesh. */
 public sealed record NativeSurfaceBasis(Vector3[] Normals, Vector4[] Tangents);
 
 /** Authored tangent frames are decoded only when their input declaration and shader agree. */

@@ -2,6 +2,7 @@ using System.Numerics;
 
 namespace SunriseStudio.Formats;
 
+/** Opening voxels: removing solid geometry. */
 public static partial class TomeEditor
 {
     /**

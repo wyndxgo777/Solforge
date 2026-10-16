@@ -13,8 +13,10 @@ public static class InvestmentStatGroups
     // The native group index is a signed byte checked against the table's row count.
     public const int MaximumGroups = 128;
 
+    /** Number of stat group rows. */
     public static int Count(ReadOnlyMemory<byte> table) => new TagReader(table).Array(GroupsField, GroupClass, GroupStride).Count;
 
+    /** Hashes of every stat group. */
     public static IReadOnlyList<uint> Hashes(ReadOnlyMemory<byte> table)
     {
         var reader = new TagReader(table);

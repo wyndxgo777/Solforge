@@ -2,6 +2,7 @@ using System.Numerics;
 
 namespace SunriseStudio.Formats;
 
+/** A widget type key with its parent type and whether it uses the standard constructor defaults. */
 public sealed record CuiTypeDescriptor(ulong Key, ulong ParentKey, bool StandardDefaults);
 
 /** Widget type inheritance and constructor defaults of build 86657. */
@@ -29,8 +30,11 @@ public sealed partial class CuiTypeRegistry
         new(rows.ToDictionary(row => row.Key, row => row.ParentKey),
             rows.Where(row => row.StandardDefaults).Select(row => row.Key).ToHashSet(), defaultSize);
 
+    /** True when the widget type derives from the layout base type. */
     public bool HasLayout(uint type, uint auxiliary) => Derives(Key(type, auxiliary), LayoutBase);
+    /** True when the widget type derives from the container type. */
     public bool IsContainer(uint type, uint auxiliary) => Derives(Key(type, auxiliary), ContainerType);
+    /** True when the default size is known and the type has verified constructor defaults (or is text or bitmap). */
     public bool HasVerifiedDefaults(uint type, uint auxiliary) => DefaultSize is not null
         && (defaults.Contains(Key(type, auxiliary)) || Key(type, auxiliary) is TextType or BitmapType);
     private static ulong Key(uint type, uint auxiliary) => ((ulong)auxiliary << 32) | type;

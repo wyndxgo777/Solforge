@@ -5,11 +5,14 @@ using SunriseStudio.Animation;
 
 namespace SunriseStudio.Formats;
 
+/** Skinned-mesh glTF reading and writing. One skin joint: bind pose, inverse bind and the source package bone/entity it came from, if any. */
 public sealed record InterchangeSkinJoint(string Name, int ParentIndex, Matrix4x4 BindObject,
     Matrix4x4 InverseBindObject, int? SourceBoneIndex, uint? SourceEntityTag);
+/** A mesh with its skin joints and per-vertex influences. */
 public sealed record InterchangeSkinnedMesh(InterchangeMesh Geometry,
     IReadOnlyList<InterchangeSkinJoint> Joints, IReadOnlyList<VertexSkinWeights> Influences);
 
+/** Skinned-mesh part of the glTF interchange. */
 public static partial class GltfInterchange
 {
     /** Reads one four-weight primitive; joint transforms and inverse binds define its bind shape. */

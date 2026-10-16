@@ -3,10 +3,12 @@ using System.Numerics;
 
 namespace SunriseStudio.Formats;
 
+/** A property value together with the document that supplied it. */
 public sealed record CuiAuthoredProperty(CuiDocument Source, CuiProperty Property);
 /** One placement of a widget resource in a hierarchy; its local node IDs start at Start. */
 public sealed record CuiResourceInstance(uint Resource, int Start, int Count, bool Root);
 
+/** A node of the composed hierarchy: its definition, owning resource, parent link and resolved properties. */
 public sealed class CuiComposedNode
 {
     public required int Id { get; init; }
@@ -42,6 +44,7 @@ public sealed class CuiComposition
         return exists(id) ? id : null;
     }
 
+    /** Composes a hierarchy document with the resource documents it instantiates; throws unless given a hierarchy (0x8080496A). */
     public static CuiComposition Read(CuiDocument program, Func<uint, CuiDocument> readResource)
     {
         if (program.ClassHash != 0x8080496A) throw new InvalidDataException("Select a CUI hierarchy.");

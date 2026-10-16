@@ -6,7 +6,9 @@ namespace SunriseStudio.Formats;
 /** DDS preserves native compressed blocks, mip chains, cube faces and volume slices. */
 public static class DdsInterchange
 {
+    /** Writes a texture to a DDS file. */
     public static void Write(string path, TextureData texture) => File.WriteAllBytes(path, Write(texture));
+    /** Reads a texture from a DDS file. */
     public static TextureData Read(string path) => Read(File.ReadAllBytes(path));
 
     /** The DX10 header keeps DXGI formats explicit instead of guessing legacy bit masks. */

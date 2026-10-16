@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 
 namespace SunriseStudio.Formats;
 
+/** Vendor sale and cost editing. */
 public sealed partial class InvestmentCatalog
 {
     private const uint SaleRowClass = 0x80807861, CostRowClass = 0x80807865;
@@ -105,9 +106,11 @@ public sealed partial class InvestmentCatalog
         void U(int at, uint value) => BinaryPrimitives.WriteUInt32LittleEndian(output.AsSpan(at), value);
     }
 
+    /** Returns the vendor tag with a copy of the cost added to the sale. */
     public byte[] DuplicateCost(uint tag, ReadOnlyMemory<byte> current, InvestmentSale sale, InvestmentCost cost)
         => RewriteCosts(tag, current, sale, cost, CostOperation.Duplicate, null);
 
+    /** Returns the vendor tag with the cost removed from the sale. */
     public byte[] RemoveCost(uint tag, ReadOnlyMemory<byte> current, InvestmentSale sale, InvestmentCost cost)
         => RewriteCosts(tag, current, sale, cost, CostOperation.Remove, null);
 

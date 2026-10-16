@@ -5,9 +5,11 @@ public sealed class CuiInspector : IAssetInspector
 {
     public string Id => "sunrise.cui";
     public string DisplayName => "CUI";
+    /** True for CUI widget resources (0x80804825) and hierarchies (0x8080496A). */
     public bool CanInspect(AssetInspectionContext context) =>
         context.ClassHash is 0x80804825 or 0x8080496A;
 
+    /** Inspects a hierarchy as a program of nodes and bindings, and a resource as a widget definition. */
     public AssetInspection Inspect(AssetInspectionContext context) => context.ClassHash == 0x8080496A
         ? Program(context) : Resource(context);
 

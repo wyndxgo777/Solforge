@@ -2,7 +2,9 @@ using System.Buffers.Binary;
 
 namespace SunriseStudio.Formats;
 
+/** A localized text reference: string bank and string hash. */
 public readonly record struct InvestmentString(uint Bank, uint Hash);
+/** A lore entry: title, subtitle and body text references. */
 public sealed record InvestmentLoreRow(int Index, uint Hash, InvestmentString Title, InvestmentString Subtitle,
     InvestmentString Body);
 
@@ -35,9 +37,11 @@ public static class InvestmentLore
         return (int)at;
     }
 
+    /** Lore row index an item definition points at, or null if it has no lore block. */
     public static ushort? ReadIndex(ReadOnlySpan<byte> definition) =>
         BlockOffset(definition) is { } at ? BinaryPrimitives.ReadUInt16LittleEndian(definition[at..]) : null;
 
+    /** Returns the definition with its lore index changed; throws if the item has no lore block. */
     public static byte[] SetIndex(ReadOnlySpan<byte> definition, ushort index)
     {
         int at = BlockOffset(definition) ?? throw new InvalidDataException("The item has no lore block.");
@@ -46,8 +50,10 @@ public static class InvestmentLore
         return output;
     }
 
+    /** Number of lore rows in the client table. */
     public static int Count(ReadOnlyMemory<byte> client) => new TagReader(client).Array(RowsField, stride: ClientStride).Count;
 
+    /** Reads one lore row. */
     public static InvestmentLoreRow ReadRow(ReadOnlyMemory<byte> client, int index)
     {
         var reader = new TagReader(client);
@@ -58,6 +64,7 @@ public static class InvestmentLore
         return new(index, reader.U32(row + HashField), Read(TitleField), Read(SubtitleField), Read(BodyField));
     }
 
+    /** Hashes of all lore rows. */
     public static IReadOnlySet<uint> Hashes(ReadOnlyMemory<byte> client)
     {
         var reader = new TagReader(client);
@@ -86,6 +93,7 @@ public static class InvestmentLore
             InvestmentItemClone.AppendRow(exe, RowsField, ExeStride, exeRow), clientRows.Count);
     }
 
+    /** Returns the client table with a row's title, subtitle and body references replaced. */
     public static byte[] SetStrings(ReadOnlyMemory<byte> client, int index, InvestmentString title,
         InvestmentString subtitle, InvestmentString body)
     {

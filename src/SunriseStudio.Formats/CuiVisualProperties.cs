@@ -4,14 +4,19 @@ using System.Runtime.InteropServices;
 
 namespace SunriseStudio.Formats;
 
+/** Visual property kinds that the editor can add or change. */
 public enum CuiVisualPropertyKind { Text, Style, Bitmap, Group, Frame, FontSize, TextCase, Alignment, AutoWidth, Palette, Tint }
+/** A found visual property with its kind and decoded value. */
 public sealed record CuiVisualProperty(string Name, CuiVisualPropertyKind Kind, CuiProperty Property, uint Value);
+/** A text colour property and its value. */
 public sealed record CuiTintProperty(CuiProperty Property, Vector4 Value);
+/** A visual property a widget does not store yet, with the selector and pool needed to add it. */
 public sealed record CuiOverrideChoice(string Name, CuiVisualPropertyKind Kind, ulong Selector, int PoolDescriptor, uint InitialValue = 0);
 
 /** Visual edits use verified selectors and preserve other widgets' stored values. */
 public static class CuiVisualProperties
 {
+    /** Lists the visual properties the widget could add but does not store. */
     public static IReadOnlyList<CuiOverrideChoice> Missing(CuiNode node, CuiComponent component)
     {
         if (node.AuxiliaryTypeHash != 0) return [];
@@ -83,6 +88,7 @@ public static class CuiVisualProperties
         }
     }
 
+    /** Reads a property value as an unsigned integer, using the width of its value class (8, 16 or 32 bit). */
     public static uint ReadUInt(CuiDocument document, CuiProperty property) => property.ValueClass switch
     {
         0x8080468D => document.Data.Span[property.ValueOffset],
@@ -90,6 +96,7 @@ public static class CuiVisualProperties
         _ => BinaryPrimitives.ReadUInt32LittleEndian(document.Data.Span[property.ValueOffset..])
     };
 
+    /** Reads the text colour property; null unless the node is a plain text widget with a stored tint. */
     public static CuiTintProperty? ReadTint(CuiDocument document, CuiNode node, CuiComponent component)
     {
         if (node.TypeHash != CuiTypeRegistry.TextType || node.AuxiliaryTypeHash != 0) return null;

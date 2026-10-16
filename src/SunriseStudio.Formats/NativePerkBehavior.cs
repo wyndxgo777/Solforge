@@ -76,6 +76,7 @@ public static partial class NativePerkBehavior
     /** True for the kinds an in-game perk has used; every other kind is untested in game. */
     public static bool IsTested(string primitive) => primitive is "always" or "timer" or "ammo-drop";
 
+    /** Creates an empty graph. */
     public static PerkBehaviorGraph New() => new();
 
     /** Defaults are authored inputs; no installed perk supplies the new node's bytes. */

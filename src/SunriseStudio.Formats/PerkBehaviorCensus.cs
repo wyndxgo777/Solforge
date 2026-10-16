@@ -32,6 +32,7 @@ public sealed class PerkCensus(IReadOnlyList<PerkInstalledKind> kinds) : IReadOn
 
     public int Count => kinds.Count;
     public PerkInstalledKind this[int index] => kinds[index];
+    /** Enumerates the installed node kinds. */
     public IEnumerator<PerkInstalledKind> GetEnumerator() => kinds.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
@@ -62,6 +63,7 @@ public static class PerkBehaviorCensus
         (0x80802D0A, 16, "behaviors"), (0x80803E46, 16, "configs")
     ];
 
+    /** Scans every perk behavior in the packages and counts the nodes and programs of each kind. */
     public static PerkCensus Read(PackageCatalog catalog, CancellationToken token = default)
     {
         var nodes = new Dictionary<(PerkBehaviorNodeKind, uint, byte), (int Nodes, HashSet<uint> Programs)>();

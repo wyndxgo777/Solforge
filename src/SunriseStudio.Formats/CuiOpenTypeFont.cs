@@ -140,6 +140,7 @@ public sealed class CuiOpenTypeFont
         return glyph < glyphCount ? (int)glyph : 0;
     }
 
+    /** Horizontal advance of the scalar's glyph in pixels at the given em size. */
     public float Advance(int scalar, float emPixels)
     {
         int glyph = GlyphIndex(scalar);

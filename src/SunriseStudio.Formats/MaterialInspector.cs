@@ -5,6 +5,7 @@ public sealed class MaterialInspector : IAssetInspector
 {
     public string Id => "sunrise.material";
     public string DisplayName => "Material";
+    /** True for the material class (0x808071E8). */
     public bool CanInspect(AssetInspectionContext context) => context.ClassHash == 0x808071E8;
 
     /** Texture assignments and inline constants can be edited without changing shader bytecode. */

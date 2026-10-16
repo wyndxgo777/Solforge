@@ -4,10 +4,13 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Formats;
 
+/** An existing perk to copy from: index, definition hash and its gameplay tag with bytes. */
 public sealed record SandboxPerkSource(int Index, uint DefinitionHash, uint GameplayTag, byte[] Gameplay);
 
+/** New perk rows ready to write: the definition, display and runtime-name tables, all at Index. */
 public sealed record SandboxPerkRegistration(int Index, byte[] Definitions, byte[] Displays,
     byte[] RuntimeNames);
+/** Whether a new perk is shown as an ordinary or an exotic perk. */
 public enum SandboxPerkPresentation { Normal, Exotic }
 
 /** New perk definitions join both native index tables at the same index. */
@@ -285,6 +288,7 @@ public static class InvestmentSandboxPerkAuthoring
         throw new InvalidDataException($"Gameplay name {nameHash:X8} is absent from the runtime map.");
     }
 
+    /** Makes a new unique runtime-name hash from key that does not collide with existing runtime names. */
     public static uint NewRuntimeNameHash(ReadOnlyMemory<byte> current, string key) =>
         InvestmentItemClone.NewDefinitionHash(key, ReadRuntimeNames(current).Select(row => row.Name).ToHashSet());
 

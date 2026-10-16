@@ -5,16 +5,21 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Formats;
 
+/** Exports a material to an editable JSON bundle and reads edits back. One texture slot of a shader stage: where it is stored and its original and current texture tags. */
 public sealed record MaterialSlot(string Stage, uint Slot, int Offset,
     uint SourceTextureTag, uint TextureTag);
+/** One constant of a shader stage, by bank, vector and component, with its stored value as text. */
 public sealed record MaterialScalar(string Stage, string Bank, int Vector, string Component,
     int Offset, string Value);
+/** A texture exported with a material: tag, DDS and preview paths, hashes of the base files and any edited path. */
 public sealed record MaterialTextureFile(uint TagHash, string Name, string? DdsPath,
     string? PreviewPath, string? BaseSha256, string? PreviewSha256, string? EditedPath = null,
     string? Error = null);
+/** The material JSON document: format, base and schema hashes, slots, constants and textures. */
 public sealed record MaterialDocument(string Format, int Version, uint TagHash, uint ClassHash,
     string Name, string BaseSha256, string SchemaSha256, IReadOnlyList<MaterialSlot> Slots,
     IReadOnlyList<MaterialScalar> Constants, IReadOnlyList<MaterialTextureFile> Textures);
+/** Outcome of a bundle export: manifest path, texture count and diagnostics. */
 public sealed record MaterialBundleResult(string ManifestPath, int TextureCount, IReadOnlyList<string> Diagnostics);
 
 /** Native slots and constants retain their identities without assigning guessed shader roles. */
@@ -142,12 +147,14 @@ public static class MaterialInterchange
         return result;
     }
 
+    /** True when the JSON file at path is a material document. */
     public static bool IsMaterialDocument(string path)
     {
         using var json = JsonDocument.Parse(File.ReadAllBytes(path));
         return json.RootElement.TryGetProperty("Format", out var format) && format.GetString() == Format;
     }
 
+    /** Reads the material tag hash recorded in the document at path. */
     public static uint ReadMaterialTag(string path)
     {
         path = Path.GetFullPath(path);

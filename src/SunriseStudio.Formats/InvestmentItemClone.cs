@@ -2,7 +2,9 @@ using System.Buffers.Binary;
 
 namespace SunriseStudio.Formats;
 
+/** A row of an index table: row index, definition hash and tag. */
 public sealed record InvestmentIndexRow(int Index, uint Hash, uint Tag);
+/** A row of a string-bank index: bank name hash and container tag. */
 public sealed record InvestmentBankRow(int Index, uint NameHash, uint ContainerTag);
 
 /** Rows to append to the typed array whose descriptor is at Field. */
@@ -29,6 +31,7 @@ public static class InvestmentItemClone
     private const int TableArray = 8;
     private const uint ArrayMarker = 0x80809FBD;
 
+    /** Reads the rows of an index table. */
     public static IReadOnlyList<InvestmentIndexRow> ReadIndexRows(ReadOnlyMemory<byte> table)
     {
         var reader = new TagReader(table);
@@ -40,6 +43,7 @@ public static class InvestmentItemClone
         }).ToArray();
     }
 
+    /** Reads the rows of a string-bank index table. */
     public static IReadOnlyList<InvestmentBankRow> ReadBankRows(ReadOnlyMemory<byte> table)
     {
         var reader = new TagReader(table);
@@ -79,6 +83,7 @@ public static class InvestmentItemClone
         return (AppendRow(table, TableArray, IndexStride, row), index);
     }
 
+    /** Appends a bank row; returns the new table and the new row's index. */
     public static (byte[] Table, int Index) AppendBankRow(ReadOnlyMemory<byte> table, uint nameHash, uint containerTag)
     {
         int index = new TagReader(table).Array(TableArray, stride: BankStride).Count;
@@ -230,6 +235,7 @@ public static class InvestmentItemClone
     /** One array of an AppendRows call, read and checked before any byte is written. */
     private sealed record Grown(int Index, int Count, int Data, int Header, int Start, int End, int NewCount)
     {
+        /** Validates an append request and reads the target array; throws on stride, source-row or array-ownership mismatch. */
         public static Grown Read(TagReader reader, RowAppend append)
         {
             if (append.Stride <= 0 || append.Rows.Any(row => row.Length != append.Stride))
@@ -268,6 +274,7 @@ public static class InvestmentItemClone
         }
     }
 
+    /** Reads the (bank, hash) text reference stored at offset in a display. */
     public static (uint Bank, uint Hash) ReadDisplayString(ReadOnlySpan<byte> display, int offset)
     {
         RequireDisplay(display, offset);
@@ -285,6 +292,7 @@ public static class InvestmentItemClone
         return output;
     }
 
+    /** Reads a display's icon index. */
     public static ushort ReadDisplayIcon(ReadOnlySpan<byte> display)
     {
         RequireDisplay(display, DisplayIcon);

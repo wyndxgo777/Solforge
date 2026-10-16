@@ -10,6 +10,7 @@ public static class InvestmentPerkDisplayEdits
     private const uint ArrayMarker = 0x80809FBD, ExpressionClass = 0x80807D31;
     private const int BlockPointer = 96, Stride = 32;
 
+    /** Number of perk display rows. */
     public static int ReadCount(ReadOnlyMemory<byte> display) => Read(display).Count;
 
     /** Fresh perks have no inherited text override, visibility expression or activation-display mode. */

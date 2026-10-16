@@ -5,6 +5,7 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Formats;
 
+/** Wavefront OBJ reading and writing for meshes. A mesh as OBJ stores it: positions, normals, texture coordinates and triangle indices. */
 public sealed record InterchangeMesh(string Name, Vector3[] Positions, Vector3[] Normals,
     Vector2[] TexCoords, uint[] Indices)
 {
@@ -16,11 +17,13 @@ public static class ObjInterchange
 {
     private static readonly CultureInfo Culture = CultureInfo.InvariantCulture;
 
+    /** Converts a package mesh to an interchange mesh. */
     public static InterchangeMesh FromMesh(MeshData mesh, string name = "Mesh") =>
         new(name, mesh.Vertices.Select(x => x.Position).ToArray(),
             mesh.Vertices.Select(x => x.Normal).ToArray(),
             mesh.Vertices.Select(x => x.TexCoord).ToArray(), (uint[])mesh.Indices.Clone());
 
+    /** Writes one mesh to an OBJ file. */
     public static void Write(string path, MeshData mesh, string name = "Mesh") =>
         Write(path, [FromMesh(mesh, name)]);
 
@@ -72,6 +75,7 @@ public static class ObjInterchange
         }
     }
 
+    /** Reads every object of an OBJ file as a mesh. */
     public static IReadOnlyList<InterchangeMesh> Read(string path)
     {
         using var reader = File.OpenText(path);
@@ -166,6 +170,7 @@ public static class ObjInterchange
         return meshes;
     }
 
+    /** Converts an interchange mesh to package mesh data after validating it. */
     public static MeshData ToMesh(InterchangeMesh mesh)
     {
         Validate(mesh);

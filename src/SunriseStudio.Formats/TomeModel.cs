@@ -5,9 +5,11 @@ namespace SunriseStudio.Formats;
 /** A box in a 16-bit grid that spans its owner's box: the tile for cells, the tome for clusters. */
 public readonly record struct TomeGridBox(ushort MinX, ushort MinY, ushort MinZ, ushort MaxX, ushort MaxY, ushort MaxZ)
 {
+    /** Unpacks a grid box from three packed words. */
     internal static TomeGridBox Unpack(uint a, uint b, uint c) =>
         new((ushort)(a >> 16), (ushort)a, (ushort)(b >> 16), (ushort)b, (ushort)(c >> 16), (ushort)c);
 
+    /** Packs a grid box into three words (min/max pairs per 16-bit axis). */
     internal (uint, uint, uint) Pack() =>
         ((uint)MinX << 16 | MinY, (uint)MinZ << 16 | MaxX, (uint)MaxY << 16 | MaxZ);
 }
@@ -111,7 +113,9 @@ public sealed class TomeKdTree
         }
     }
 
+    /** Reads a vector component by axis index. */
     internal static float Get(Vector3 value, int axis) => axis == 0 ? value.X : axis == 1 ? value.Y : value.Z;
+    /** Returns a vector with one component replaced by axis index. */
     internal static Vector3 Set(Vector3 value, int axis, float v) =>
         axis == 0 ? value with { X = v } : axis == 1 ? value with { Y = v } : value with { Z = v };
 }
@@ -137,7 +141,9 @@ public sealed class TomeTile
     public int? MapWidthOverride { get; set; }
 
     public bool IsLeaf => (Flags & LeafFlag) != 0;
+    /** BSP node reference stored in a cell-map entry (the mapping is its own inverse). */
     public static int BspReference(int node) => -2 - node;
+    /** BSP node a cell-map entry refers to. */
     public static int BspNodeOf(int entry) => -2 - entry;
 
     /** Every cell a cell-map entry names, in the runtime's collection order; a point takes the first. */
@@ -177,10 +183,12 @@ public sealed class TomeTile
         return 1 + TomeBits.Length((uint)top);
     }
 
+    /** Maps a 16-bit grid coordinate into the tile's Min/Max world bounds. */
     public Vector3 GridToWorld(ushort x, ushort y, ushort z) =>
         Min + new Vector3(x, y, z) * ((Max - Min) * (1f / 65535f));
 }
 
+/** A cluster of cells and the portals that link it to others. */
 public sealed class TomeCluster
 {
     public List<TomePortal> Portals { get; init; } = [];
@@ -190,6 +198,7 @@ public sealed class TomeCluster
 /** A run of consecutive ids: Value, Value + 1, up to Count ids. */
 public readonly record struct TomeRun(uint Value, uint Count);
 
+/** World bounds of one object. */
 public readonly record struct TomeObjectBounds(Vector3 Min, Vector3 Max);
 
 /** Umbra tome format 18; every byte the writer emits is derived from these fields. */
@@ -259,6 +268,7 @@ public sealed class Tome
         return count == 0 ? -1 : (int)tile.Cells[cell].ClusterIndex;
     }
 
+    /** Maps a 16-bit grid coordinate into the Min/Max world bounds. */
     public Vector3 GridToWorld(ushort x, ushort y, ushort z) =>
         Min + new Vector3(x, y, z) * ((Max - Min) * (1f / 65535f));
 }

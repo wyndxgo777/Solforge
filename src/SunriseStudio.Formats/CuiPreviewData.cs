@@ -3,6 +3,7 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Formats;
 
+/** Text and bitmap content of one widget in the preview. */
 public sealed record CuiWidgetContent(uint TextHash = 0, string Text = "", uint BitmapTag = 0,
     uint TextureTag = 0, string Error = "", int Group = 0, int Frame = 0, uint StyleHash = 0, ushort FontSize = 0)
 {
@@ -21,10 +22,12 @@ public sealed partial class CuiPreviewData
     public IReadOnlyDictionary<uint, TextureData> Textures { get; private init; } = new Dictionary<uint, TextureData>();
     public IReadOnlyList<string> Diagnostics { get; private init; } = [];
 
+    /** Builds preview data (text, bitmaps, rectangles) for a CUI tag; returns null for classes CUI does not handle. */
     public static CuiPreviewData? Read(PackageCatalog catalog, uint tag, uint classHash, ReadOnlyMemory<byte> bytes,
         Func<uint, string?>? resolveHash = null, CancellationToken cancellationToken = default) =>
         Read(catalog, tag, classHash, bytes, resolveHash, cancellationToken, null);
 
+    /** As above, with a callback that reads configured tags; returns null for classes CUI does not handle. */
     public static CuiPreviewData? Read(PackageCatalog catalog, uint tag, uint classHash, ReadOnlyMemory<byte> bytes,
         Func<uint, string?>? resolveHash, CancellationToken cancellationToken, Func<uint, byte[]>? readConfigured)
     {
@@ -134,6 +137,7 @@ public sealed partial class CuiPreviewData
 /** Bitmap groups contain frame arrays; the selected frame stores the native texture tag. */
 public static class CuiBitmap
 {
+    /** Texture header tag of one frame of a bitmap source; throws if the group or frame is out of range. */
     public static uint ReadTexture(ReadOnlyMemory<byte> bytes, int group = 0, int frame = 0)
     {
         var groups = ReadGroups(bytes);
@@ -142,6 +146,7 @@ public static class CuiBitmap
         return groups[group][frame];
     }
 
+    /** Reads all frame groups of a CUI bitmap source; each frame is a texture header tag. */
     public static IReadOnlyList<IReadOnlyList<uint>> ReadGroups(ReadOnlyMemory<byte> bytes)
     {
         var reader = new TagReader(bytes);

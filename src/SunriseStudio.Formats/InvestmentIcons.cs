@@ -2,8 +2,10 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Formats;
 
+/** A display icon: its container and bitmap tags and the decoded texture. */
 public sealed record InvestmentIcon(uint ContainerTag, uint BitmapTag, TextureData Texture);
 
+/** Icon reading. */
 public sealed partial class InvestmentCatalog
 {
     /** Display icon indices select shared rows; their hashes need not match the item hash. */
@@ -18,6 +20,7 @@ public sealed partial class InvestmentCatalog
         return index == ushort.MaxValue ? null : ReadIcon(index, token);
     }
 
+    /** Reads a perk's icon; null when it has none or the icon table is missing. */
     public InvestmentIcon? ReadPerkIcon(int perk, CancellationToken token = default) =>
         perk >= 0 && perk < PerkDefinitions.Count && PerkDefinitions[perk].IconIndex != ushort.MaxValue
         && catalog.ContainsTag(sources.Icons) ? ReadIcon(PerkDefinitions[perk].IconIndex, token) : null;

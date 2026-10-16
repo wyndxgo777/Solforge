@@ -246,6 +246,7 @@ public static class TomeWriter
         private readonly List<(int Offset, byte[] Data)> blocks = [];
         internal int Position { get; private set; } = start;
 
+        /** Appends a data block aligned to 16 bytes and returns its offset; empty data returns 0. */
         internal int Add(byte[] data)
         {
             if (data.Length == 0) return 0;
@@ -255,6 +256,7 @@ public static class TomeWriter
             return offset;
         }
 
+        /** Swaps the contents of an existing block for data of the same length. */
         internal void Replace(int offset, byte[] data)
         {
             int index = blocks.FindIndex(block => block.Offset == offset);
@@ -262,6 +264,7 @@ public static class TomeWriter
             blocks[index] = (offset, data);
         }
 
+        /** Copies every block to its offset in the target. */
         internal void CopyTo(Span<byte> target)
         {
             foreach (var (offset, data) in blocks) data.CopyTo(target[offset..]);
