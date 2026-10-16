@@ -303,6 +303,7 @@ public static partial class SolforgeTools
                     : $"Edit {McpJson.String(args, "path")}: replace {Quote(McpJson.String(args, "find"))} with {Quote(McpJson.String(args, "replace"))}"),
             .. ProjectTools(host, Read, Act),
             .. DataTools(host),
+            .. MediaTools(host),
             .. ContentTools(host, Read),
             .. UiTools(host, Read),
             .. PlayerTools(host, Read),

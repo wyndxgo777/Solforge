@@ -146,6 +146,7 @@ public sealed class CollisionScene
         CollisionShapes.Sphere => "Sphere",
         CollisionShapes.Capsule => "Capsule",
         CollisionShapes.Cylinder => "Cylinder",
+        CollisionShapes.List => "List",
         _ => shapeClass
     };
 

@@ -34,6 +34,12 @@ The index is cached at `%LOCALAPPDATA%\Solforge\decomp\index-*.bin` and rebuilt 
 | read_tag_bytes / dump_tag | hex dump; generic decode of root fields and typed arrays |
 | infer_tag_schema | per-offset layout for a class, built from many samples |
 | export_data | runs any read tool over all pages and writes JSON or CSV to `<project>\exports` |
+| havok_packfile | a Havok 2012 packfile (26/7): root, kind, class counts, imports, every collision shape decoded, cloth collidables, notes |
+| export_collision_obj | the collision a packfile places by itself, as OBJ under `exports\collision` |
+| audio_info | a Wwise event, bank (26/5) or stream (26/6): media ids, codec, rate, channels, length |
+| export_audio_wav | Wwise media decoded to PCM16 WAV under `exports\audio` |
+| video_info | a CRI USM cutscene (type 27): video, ADX audio tracks and subtitle streams |
+| export_video | USM demux under `exports\video`: MPEG-1 `.m2v`, each ADX track as `.adx` plus decoded `.wav`, `.sbt` subtitles |
 
 ## Paging
 
@@ -42,6 +48,8 @@ Results come back as `{cursor, count, total | total_at_least, next_cursor, rows}
 ## Known gaps
 
 - No dedicated decoders yet for activity and director tags, dialog tables, or loot tables. `infer_tag_schema` and `dump_tag` cover these generically.
-- Havok, Criware USM and D1 script bytecode are not decoded.
+- Havok: every collision shape class in build 86657 decodes (BV compressed mesh, static compound, list, convex vertices incl. plane-less hulls, box/sphere/capsule/cylinder/transform, shape arrays, physics bodies) and cloth collidables are drawn at rest. Ragdoll/hinge constraint data, cloth simulation data, cloth planes and cloth convex geometry are counted, not decoded. The build has no Havok animation.
+- USM: the container, ADX audio (type 3, unencrypted) and subtitles decode; MPEG-1 video is exported as an elementary stream for an external player, not decoded in SolForge. HCA audio and encrypted USM/ADX are refused (none ship in this build).
+- D1 script bytecode is not decoded.
 - The decompiled code has no auto-analysis types. Struct inference works one function at a time, and RTTI class names are stripped in this build.
 - The protector's second `.text` section (RVA 0x3CC9000+) is not decompiled.
