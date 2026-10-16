@@ -1,3 +1,7 @@
+/**
+ * File: Base model of a content document (id, name, validation, references) and the issue list. Concrete families are
+ * in Families.cs and Subclass.cs; the registry is ContentFamilies.cs; disk storage is ContentStore.cs.
+ */
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -7,13 +11,16 @@ namespace Solforge.Content;
 /** One problem in a content document. Path is a JSON-ish path such as "trees[1].nodes[2].entry". */
 public sealed record ContentIssue(string Path, string Message, bool Error = true)
 {
+    /** Readable one-line form: severity, path and message. */
     public override string ToString() => $"{(Error ? "error" : "warning")}: {Path}: {Message}";
 }
 
 /** Collects issues while a document validates. */
 public sealed class ContentIssues : List<ContentIssue>
 {
+    /** Adds an error issue. */
     public void Error(string path, string message) => Add(new(path, message));
+    /** Adds a warning issue. */
     public void Warn(string path, string message) => Add(new(path, message, false));
     public bool HasErrors => this.Any(issue => issue.Error);
 }
@@ -56,12 +63,16 @@ public abstract partial class ContentDocument
         return issues;
     }
 
+    /** Family-specific validation: adds issues for anything the server would refuse. */
     protected abstract void ValidateFamily(ContentIssues issues);
 
+    /** Other content this document points at (checked by validate_content); none by default. */
     public virtual IEnumerable<ContentReference> References() => [];
 
+    /** Whether an id is 1 to 64 characters of the allowed pattern. */
     public static bool IsValidId(string? id) => id is { Length: >= 1 and <= 64 } && IdPattern().IsMatch(id);
 
+    /** Regex of valid ids (generated at compile time). */
     [GeneratedRegex("^[a-z0-9][a-z0-9_.-]*$")]
     private static partial Regex IdPattern();
 
@@ -75,5 +86,6 @@ public abstract partial class ContentDocument
         return uint.TryParse(text, out uint number) ? number : null;
     }
 
+    /** Formats a hash as 0x%08X. */
     public static string Hex(uint value) => "0x" + value.ToString("X8");
 }

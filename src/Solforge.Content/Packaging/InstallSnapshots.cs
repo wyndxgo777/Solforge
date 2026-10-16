@@ -2,6 +2,7 @@ using System.Globalization;
 
 namespace Solforge.Content.Packaging;
 
+/** A saved snapshot of an installed mod: id, stamp, folder, bytes and file count. */
 public sealed record InstallSnapshot(string ModId, string Stamp, string Path, long Bytes, int Files);
 
 /**
@@ -12,6 +13,7 @@ public sealed record InstallSnapshot(string ModId, string Stamp, string Path, lo
  */
 public sealed class InstallSnapshots(string snapshotRoot)
 {
+    /** The snapshot root folder. */
     public string Root { get; } = Path.GetFullPath(snapshotRoot);
 
     /** Copies modsRoot/<modId>; null when the mod is not installed. */
@@ -70,12 +72,14 @@ public sealed class InstallSnapshots(string snapshotRoot)
         return removed;
     }
 
+    /** Throws when a mod id is not safe to use as a folder name. */
     private static void RequireId(string modId)
     {
         if (string.IsNullOrWhiteSpace(modId) || modId.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || modId is "." or "..")
             throw new ArgumentException($"'{modId}' is not a mod folder name.");
     }
 
+    /** Copies a folder tree and returns the bytes and file count. */
     private static (long Bytes, int Files) Copy(string source, string target)
     {
         long bytes = 0; int files = 0;

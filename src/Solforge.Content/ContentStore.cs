@@ -1,3 +1,7 @@
+/**
+ * File: Reads and writes content documents as JSON files under the project content folder; ContentDocument.cs defines
+ * the model.
+ */
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -8,6 +12,7 @@ namespace Solforge.Content;
 /** The one JSON shape every content file uses: snake_case members and enums, indented, nulls left out. */
 public static class ContentJson
 {
+    /** The serializer options shared by every content file. */
     public static readonly JsonSerializerOptions Options = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
@@ -19,15 +24,18 @@ public static class ContentJson
         AllowTrailingCommas = true
     };
 
+    /** Serialises a document to JSON text. */
     public static string Serialize(ContentDocument document) =>
         JsonSerializer.Serialize(document, document.GetType(), Options).ReplaceLineEndings("\n") + "\n";
 
+    /** Parses JSON text into the document class of a family. */
     public static ContentDocument Parse(string family, string json)
     {
         var type = ContentFamilies.Find(family)?.DocumentType ?? throw new ArgumentException($"Unknown content family '{family}'.");
         return (ContentDocument?)JsonSerializer.Deserialize(json, type, Options) ?? throw new InvalidDataException("The document is empty.");
     }
 
+    /** A document as a JSON node. */
     public static JsonObject ToNode(ContentDocument document) =>
         JsonSerializer.SerializeToNode(document, document.GetType(), Options) as JsonObject ?? new JsonObject();
 
@@ -51,8 +59,10 @@ public static class ContentJson
 public sealed class ContentStore(string projectRoot)
 {
     public const string FolderName = "content";
+    /** The content folder inside the project. */
     public string Root { get; } = Path.Combine(projectRoot, FolderName);
 
+    /** The file path of a document (family folder plus id). */
     public string PathOf(string family, string id)
     {
         if (ContentFamilies.Find(family) is null) throw new ArgumentException($"Unknown content family '{family}'.");
@@ -60,6 +70,7 @@ public sealed class ContentStore(string projectRoot)
         return Path.Combine(Root, family, id + ".json");
     }
 
+    /** Lists stored documents as (family, id, path), optionally for one family. */
     public IReadOnlyList<(string Family, string Id, string Path)> List(string? family = null)
     {
         var rows = new List<(string, string, string)>();
@@ -76,8 +87,10 @@ public sealed class ContentStore(string projectRoot)
         return rows;
     }
 
+    /** Whether a document exists. */
     public bool Exists(string family, string id) => File.Exists(PathOf(family, id));
 
+    /** Loads one document. */
     public ContentDocument Load(string family, string id)
     {
         string path = PathOf(family, id);
@@ -87,6 +100,7 @@ public sealed class ContentStore(string projectRoot)
         return document;
     }
 
+    /** Saves a document and returns its path. */
     public string Save(ContentDocument document)
     {
         string path = PathOf(document.Family, document.Id);
@@ -97,6 +111,7 @@ public sealed class ContentStore(string projectRoot)
         return path;
     }
 
+    /** Deletes a document; false when it did not exist. */
     public bool Delete(string family, string id)
     {
         string path = PathOf(family, id);
@@ -129,6 +144,7 @@ public sealed class ContentStore(string projectRoot)
         return results;
     }
 
+    /** Loads every document, optionally for one family. */
     public IReadOnlyList<ContentDocument> LoadAll(string? family = null)
     {
         var documents = new List<ContentDocument>();

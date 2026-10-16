@@ -1,3 +1,7 @@
+/**
+ * File: Reads and writes the .solmod container (a zip with solmod.json, content and file hashes); installing it is
+ * covered by InstallSnapshots.cs.
+ */
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text.Json;
@@ -5,6 +9,7 @@ using System.Text.Json.Nodes;
 
 namespace Solforge.Content.Packaging;
 
+/** One file in a .solmod: path, size and SHA-256. */
 public sealed record SolmodFile(string Path, long Size, string Sha256);
 
 /** solmod.json: what a .solmod holds and what it needs. */
@@ -74,6 +79,7 @@ public static class SolmodContainer
         return ReadManifest(outputPath);
     }
 
+    /** The manifest as solmod.json text. */
     public static string ManifestJson(SolmodManifest manifest) => new JsonObject
     {
         ["format"] = SolmodManifest.Format, ["id"] = manifest.Id, ["name"] = manifest.Name, ["version"] = manifest.Version,
@@ -83,12 +89,14 @@ public static class SolmodContainer
             { ["path"] = file.Path, ["size"] = file.Size, ["sha256"] = file.Sha256 }).ToArray())
     }.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
 
+    /** Reads the manifest of a .solmod file. */
     public static SolmodManifest ReadManifest(string containerPath)
     {
         using var zip = ZipFile.OpenRead(containerPath);
         return ReadManifest(zip);
     }
 
+    /** Reads the manifest from an open archive. */
     private static SolmodManifest ReadManifest(ZipArchive zip)
     {
         var entry = zip.GetEntry(SolmodManifest.FileName) ?? throw new InvalidDataException("Not a .solmod: solmod.json is missing.");
@@ -151,6 +159,7 @@ public static class SolmodContainer
         return target;
     }
 
+    /** Whether a path is a safe relative path (no backslash, root or parent parts). */
     public static bool SafeRelative(string path) => path.Length > 0 && !path.Contains('\\') && !path.StartsWith('/') && !path.Contains(':')
         && path.Split('/').All(part => part.Length > 0 && part != "." && part != "..");
 }

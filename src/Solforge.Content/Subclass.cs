@@ -1,7 +1,12 @@
+/**
+ * File: Subclass content model (nodes, trees, limits); rules are in SubclassRules.cs and conversion from the server
+ * layout in SubclassInterop.cs.
+ */
 using System.Text.Json.Serialization;
 
 namespace Solforge.Content;
 
+/** The guardian class a subclass belongs to. */
 public enum GuardianClass { Titan, Hunter, Warlock, Any }
 
 /**
@@ -100,6 +105,7 @@ public sealed class SubclassDefinition : ContentDocument
     public string? BaseItemHash { get; set; }
     /** The game's socket-entry list for this subclass, when known (server log / api). */
     public int? SocketEntryList { get; set; }
+    /** The selection limits of this subclass. */
     public SubclassLimits Limits { get; set; } = new();
     public List<SubclassColumn> Columns { get; set; } = [];
     public List<SubclassTree> Trees { get; set; } = [];
@@ -122,10 +128,13 @@ public sealed class SubclassDefinition : ContentDocument
         for (int f = 0; f < Fragments.Count; f++) yield return (Fragments[f], $"fragments[{f}]", null, null);
     }
 
+    /** Finds a node by id, or null. */
     public SubclassNode? FindNode(string? id) => id is null ? null : AllNodes().Select(row => row.Node).FirstOrDefault(node => node.Id == id);
 
+    /** Runs the subclass rules (SubclassRules.cs). */
     protected override void ValidateFamily(ContentIssues issues) => SubclassRules.Validate(this, issues);
 
+    /** Content this subclass points at. */
     public override IEnumerable<ContentReference> References()
     {
         if (!DamageTypeDefinition.IsBuiltIn(Element)) yield return new(ContentFamilies.DamageType, Element, "element");

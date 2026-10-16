@@ -1,3 +1,7 @@
+/**
+ * File: Registry of the content families (id, title, document type, runtime support). The MCP content tools
+ * (Solforge.Mcp/SolforgeTools.Content.cs) list and look up families here.
+ */
 namespace Solforge.Content;
 
 /**
@@ -14,6 +18,7 @@ public enum RuntimeSupport
     AuthoringOnly
 }
 
+/** One content family: id, title, its document class, how far the game honours it and its output. */
 public sealed record ContentFamily(string Id, string Title, Type DocumentType, RuntimeSupport Support, string Output, string Notes);
 
 /** Every content family Solforge edits, and the content that should be moddable but is not yet. */
@@ -43,6 +48,7 @@ public static class ContentFamilies
             "Columns of mods with unlock thresholds (Studio.md Phase 38)."),
     ];
 
+    /** Finds a family by id (case-insensitive); null when unknown. */
     public static ContentFamily? Find(string? id) => All.FirstOrDefault(family => string.Equals(family.Id, id, StringComparison.OrdinalIgnoreCase));
 
     /** Content the docs plan as moddable that Solforge cannot edit yet, and why. */
