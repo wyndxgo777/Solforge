@@ -241,11 +241,19 @@ public sealed class ClinePassProxy : IAsyncDisposable
     private static Task WriteError(NetworkStream stream, int status, string type, string message) =>
         Write(stream, status, "application/json", AnthropicTranslator.Error(type, message).ToJsonString());
 
+    /** The standard reason phrase for the statuses the translator sends (401 bad token, 429 rate limit, ...). */
+    private static string ReasonPhrase(int status) => status switch
+    {
+        200 => "OK", 400 => "Bad Request", 401 => "Unauthorized", 403 => "Forbidden", 404 => "Not Found",
+        405 => "Method Not Allowed", 413 => "Payload Too Large", 429 => "Too Many Requests", 500 => "Internal Server Error",
+        502 => "Bad Gateway", 503 => "Service Unavailable", 504 => "Gateway Timeout", _ => "Error"
+    };
+
     /** Writes a complete HTTP response with a body. */
     private static async Task Write(NetworkStream stream, int status, string type, string body)
     {
         byte[] content = Encoding.UTF8.GetBytes(body);
-        string head = $"HTTP/1.1 {status} {(status == 200 ? "OK" : "Error")}\r\nContent-Type: {type}; charset=utf-8\r\nContent-Length: {content.Length}\r\nConnection: close\r\n\r\n";
+        string head = $"HTTP/1.1 {status} {ReasonPhrase(status)}\r\nContent-Type: {type}; charset=utf-8\r\nContent-Length: {content.Length}\r\nConnection: close\r\n\r\n";
         await stream.WriteAsync(Encoding.ASCII.GetBytes(head));
         await stream.WriteAsync(content);
         await stream.FlushAsync();
