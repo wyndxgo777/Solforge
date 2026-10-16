@@ -1,3 +1,7 @@
+/**
+ * File: Evaluates data nodes of a flattened graph to constant values with per-pin memoisation; used by the material
+ * and weapon compilers.
+ */
 namespace Solforge.Graphs;
 
 /**
@@ -6,7 +10,9 @@ namespace Solforge.Graphs;
  */
 public sealed class GraphEvaluator(FlatGraph graph)
 {
+    /** Cache of already computed outputs, keyed by node id and pin. */
     private readonly Dictionary<(string, string), GraphValue> memo = new();
+    /** Pins being computed right now; re-entry means a data cycle. */
     private readonly HashSet<(string, string)> busy = new();
     public FlatGraph Graph => graph;
 
@@ -24,8 +30,10 @@ public sealed class GraphEvaluator(FlatGraph graph)
         return GraphValue.Parse(type == PinType.Any ? PinType.Float : type, text);
     }
 
+    /** Whether anything is wired into this input. */
     public bool Linked(GraphNode node, string pin) => graph.Sources(node.Id, pin).Any();
 
+    /** Value of a node output pin, computed once and cached. */
     public GraphValue Output(GraphNode node, string pin)
     {
         var key = (node.Id, pin);
@@ -37,6 +45,7 @@ public sealed class GraphEvaluator(FlatGraph graph)
         return value;
     }
 
+    /** Computes one output of a node by node type. */
     private GraphValue Compute(GraphNode node, string pin)
     {
         GraphValue In(string id) => Input(node, id);
@@ -111,6 +120,7 @@ public sealed class GraphEvaluator(FlatGraph graph)
             case "mat.srgb_to_linear":
             {
                 var color = In("color").As(PinType.Color);
+                /** sRGB-to-linear conversion for one channel. */
                 static double Linear(double c) => c <= 0.04045 ? c / 12.92 : Math.Pow((c + 0.055) / 1.055, 2.4);
                 return GraphValue.Rgba(Linear(color.X), Linear(color.Y), Linear(color.Z), color.W);
             }
@@ -132,12 +142,14 @@ public sealed class GraphEvaluator(FlatGraph graph)
         return GraphValue.Ref(type, "");
     }
 
+    /** The result type when two operands combine. */
     private static PinType Widest(GraphValue a, GraphValue b)
     {
         if (a.Width == 1 && b.Width == 1) return a.Type == PinType.Int && b.Type == PinType.Int ? PinType.Int : PinType.Float;
         return a.Width >= b.Width ? a.Type : b.Type;
     }
 
+    /** Applies a scalar operation per component, widening to the larger operand. */
     public static GraphValue Binary(GraphValue a, GraphValue b, Func<double, double, double> op)
     {
         var type = Widest(a, b);
@@ -149,6 +161,7 @@ public sealed class GraphEvaluator(FlatGraph graph)
         return new(type, parts[0], parts[1], parts[2], parts[3]);
     }
 
+    /** Applies a scalar operation to each component of one value. */
     public static GraphValue Unary(GraphValue a, Func<double, double> op)
     {
         var type = a.Width == 1 ? (a.Type == PinType.Int ? PinType.Int : PinType.Float) : a.Type;

@@ -1,3 +1,7 @@
+/**
+ * File: ImGui view of the AI terminal: draws the VtScreen.cs buffer, forwards keyboard input to ConPtyTerminal.cs and
+ * uses TerminalSelection.cs for copy.
+ */
 using System.Numerics;
 using ImGuiNET;
 using SunriseStudio.Viewport;
@@ -14,8 +18,11 @@ namespace SunriseStudio.Editor.Ai;
  */
 internal sealed class TerminalView : IDisposable
 {
+    /** Typed characters waiting to be sent. */
     private readonly Queue<char> typed = new();
+    /** Current mouse selection. */
     private readonly TerminalSelection selection = new();
+    /** Detects a double press of the interrupt key. */
     private readonly DoublePress interrupt = new();
     private int scroll;
     private bool restart;
@@ -29,6 +36,7 @@ internal sealed class TerminalView : IDisposable
     /** Ctrl+C twice ended the engine; its last screen stays for reading and copying until Restart or Start. */
     public bool Stopped { get; private set; }
 
+    /** Starts the command in a folder with a screen size and environment. */
     public void Start(string commandLine, string folder, int columns, int rows, IReadOnlyDictionary<string, string>? environment = null)
     {
         Stop();
@@ -38,6 +46,7 @@ internal sealed class TerminalView : IDisposable
         { Failure = exception.Message; Terminal = null; }
     }
 
+    /** Stops the session. */
     public void Stop()
     {
         Terminal?.Dispose();
@@ -78,6 +87,7 @@ internal sealed class TerminalView : IDisposable
         return true;
     }
 
+    /** Selects all text in the buffer. */
     public void SelectAll()
     {
         if (Terminal is not { } terminal) return;
@@ -91,6 +101,7 @@ internal sealed class TerminalView : IDisposable
         if (Focused && Terminal is not null) typed.Enqueue(c);
     }
 
+    /** Pastes text into the terminal. */
     public void Paste(string text)
     {
         if (Terminal is not { } terminal || Stopped || text.Length == 0) return;
@@ -108,6 +119,7 @@ internal sealed class TerminalView : IDisposable
         return bracketed ? "\x1b[200~" + text.Replace("\x1b[201~", "") + "\x1b[201~" : text;
     }
 
+    /** Draws the terminal and handles mouse and resize. */
     public void Draw(ImFontPtr font, Vector2 size)
     {
         if (Stopped && Terminal is not null)
@@ -215,6 +227,7 @@ internal sealed class TerminalView : IDisposable
         else selection.Drag(caret, under);
     }
 
+    /** Draws the right-click menu. */
     private void DrawMenu(bool open)
     {
         if (open) ImGui.OpenPopup(MenuId);
@@ -225,6 +238,7 @@ internal sealed class TerminalView : IDisposable
         ImGui.EndPopup();
     }
 
+    /** Draws one line of cells with colours and styles. */
     private static void DrawLine(ImDrawListPtr draw, ImFontPtr font, float fontSize, Vector2 at, Vector2 cell, VtCell[] line)
     {
         uint defaultText = SolTheme.U32(SolTheme.Text);
@@ -270,6 +284,7 @@ internal sealed class TerminalView : IDisposable
     private static uint Abgr(uint argb, uint fallback) => argb == 0 ? fallback
         : argb & 0xFF00FF00 | (argb & 0xFF) << 16 | (argb >> 16) & 0xFF;
 
+    /** Reads keyboard input and sends it to the terminal. */
     private void Input(ConPtyTerminal terminal)
     {
         var io = ImGui.GetIO();
@@ -309,5 +324,6 @@ internal sealed class TerminalView : IDisposable
         if (io.KeyShift && ImGui.IsKeyPressed(ImGuiKey.Tab)) terminal.Send("\x1b[Z");
     }
 
+    /** Stops the session. */
     public void Dispose() => Stop();
 }

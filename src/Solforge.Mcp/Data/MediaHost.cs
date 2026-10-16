@@ -1,3 +1,7 @@
+/**
+ * File: ISolforgeMediaHost, the interface the editor implements for the media tools in SolforgeTools.Media.cs (Havok,
+ * Wwise audio and USM decoding).
+ */
 using System.Text.Json.Nodes;
 
 namespace Solforge.Mcp.Data;

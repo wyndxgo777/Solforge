@@ -1,3 +1,7 @@
+/**
+ * File: Builds a CollisionScene for a scene document: collects the physics models, hitboxes and triggers a scene uses
+ * and places their Havok shapes in world space. Model is in CollisionScene.cs.
+ */
 using System.Numerics;
 using SunriseStudio.Animation;
 using SunriseStudio.Packages;
@@ -20,6 +24,7 @@ public sealed partial class CollisionSceneLoader(PackageCatalog catalog)
 
     private readonly Dictionary<uint, HavokPackfile?> packfiles = [];
     private readonly Dictionary<(uint Tag, int Offset), int> pieces = [];
+    /** The scene being built by the current Load call. */
     private CollisionScene scene = new();
 
     /** The collision of a scene. Runs on a worker; the catalog reads through the project overlay. */
@@ -378,6 +383,7 @@ public sealed partial class CollisionSceneLoader(PackageCatalog catalog)
             : $"Joined: none of {placedRows} placed rows in {tables.Count} packages");
     }
 
+    /** Joins a static model to its placed payloads from the object tables and counts the rows placed. */
     private bool JoinStaticModel(uint model, ushort package, HashSet<uint> tables, ref int placedRows, CancellationToken token)
     {
         var owners = new SortedDictionary<uint, List<PlacedPayload>>();
@@ -441,6 +447,10 @@ public sealed partial class CollisionSceneLoader(PackageCatalog catalog)
     // Join cells are whole metres; a join looks in the 27 cells around the row.
     private static (int, int, int) Cell(Vector3 at) => ((int)MathF.Floor(at.X), (int)MathF.Floor(at.Y), (int)MathF.Floor(at.Z));
 
+    /**
+     * Registers a collision entity (a source tag plus its optional placement frame, imports and trigger flag) in the
+     * scene.
+     */
     private CollisionEntity AddEntity(CollisionSource source, uint tag, PlacedPayload? payload, SceneMarker? marker,
         Matrix4x4? frame = null, uint compoundTag = 0, IReadOnlyList<uint>? imports = null, uint listTag = 0, int listRow = -1,
         bool inlineTrigger = false)
@@ -457,8 +467,10 @@ public sealed partial class CollisionSceneLoader(PackageCatalog catalog)
         return entity;
     }
 
+    /** Records how many placements the entity added. */
     private void Finish(CollisionEntity entity) => entity.PlacementCount = scene.Placements.Count - entity.FirstPlacement;
 
+    /** Adds one placed piece of an entity to the scene with its local and world transforms, role and region. */
     private void Place(CollisionEntity entity, int piece, uint compoundTag, int compoundOffset, int instance, QsTransform local,
         Matrix4x4 world, CollisionRole role = CollisionRole.World, uint region = 0, int bone = -1, bool? initiallyEnabled = null)
     {
@@ -493,6 +505,7 @@ public sealed partial class CollisionSceneLoader(PackageCatalog catalog)
         return Piece(tag, offset, shape);
     }
 
+    /** World matrix of a rigid placement (rotation, then translation). */
     private static Matrix4x4 RigidMatrix(QsTransform placement) =>
         Matrix4x4.CreateFromQuaternion(Quaternion.Normalize(placement.Rotation)) * Matrix4x4.CreateTranslation(placement.Translation);
 
@@ -501,12 +514,14 @@ public sealed partial class CollisionSceneLoader(PackageCatalog catalog)
         StaticCollisionReader.PlacedPayloads(objectList, listTag)
             .Where(p => p.Marker is StaticCollisionReader.CollisionMarker or ShapeArrayMarker).ToArray();
 
+    /** Reads a tag through the catalog and records it in the scene ReadSet (so updates know what to re-read). */
     private byte[] Read(uint tag)
     {
         scene.ReadSet.Add(tag);
         return catalog.Read(tag);
     }
 
+    /** Loads and caches the Havok packfile of a tag, or null when it is not one. */
     private HavokPackfile? Packfile(uint tag)
     {
         if (packfiles.TryGetValue(tag, out var file))

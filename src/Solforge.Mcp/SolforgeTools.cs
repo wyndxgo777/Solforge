@@ -1,3 +1,10 @@
+/**
+ * File: Entry point of the MCP tool list. SolforgeTools.Create builds every tool from the per-area partial files:
+ * Project (editor/project/items), Content (content families), Data (decomp + tag data), Graphs, Media
+ * (havok/audio/video), Assets (shaders/animations/audio), Ui (UI control driving, viewport frames, OCR), Player
+ * (position tracking); LocalServer/LocalServerTools.cs is registered separately. Tool names are public API for AI
+ * clients.
+ */
 using System.Globalization;
 using System.Text.Json.Nodes;
 
@@ -54,6 +61,7 @@ public interface ISolforgeHost
 /** A page of a panel: path picks a node or section, filter narrows rows. */
 public sealed record PanelQuery(string? Path, string? Filter, int Offset, int Limit);
 
+/** The MCP tool catalogue for the editor (partial: one file per tool area, see the file header). */
 public static partial class SolforgeTools
 {
     public const string Instructions =
@@ -83,6 +91,7 @@ public static partial class SolforgeTools
     public static readonly string[] Panels =
         ["hierarchy", "inspector", "selection", "assets", "mission", "mission_graph", "report", "changes", "live", "attention"];
 
+    /** Builds the full tool list for a host; each area method yields its tools and Read() wraps a read-only tool. */
     public static IReadOnlyList<McpTool> Create(ISolforgeHost host)
     {
         McpTool Read(string name, string description, JsonObject schema, Func<JsonObject, CancellationToken, Task<McpToolResult>> run) =>
@@ -98,6 +107,7 @@ public static partial class SolforgeTools
                     return McpToolResult.Error("The user declined this in Solforge.");
                 return McpToolResult.Text(await host.RunActionAsync(name, args, cancel).ConfigureAwait(false));
             });
+        /** Shorthand for a JSON schema from (name, type, description, required) tuples. */
         static JsonObject Schema(params (string, string, string, bool)[] properties) => McpJson.Schema(properties);
         string? NeedId(JsonObject args) => string.IsNullOrWhiteSpace(McpJson.String(args, "id")) ? "Give an object id from find_object." : null;
 
@@ -317,6 +327,7 @@ public static partial class SolforgeTools
     private const string NoMission = "No mission is open in Solforge. list_missions lists the open map's missions; open_map with " +
         "mission=<tag> opens one (its map is found for you).";
 
+    /** Parses a tag hash given as 0x hex or decimal; null when it is neither. */
     public static uint? ParseHash(string? text)
     {
         if (string.IsNullOrWhiteSpace(text)) return null;
@@ -327,5 +338,6 @@ public static partial class SolforgeTools
         return uint.TryParse(text, NumberStyles.HexNumber, null, out uint bare) ? bare : null;
     }
 
+    /** Quotes text for error messages, truncating long values to 60 characters. */
     private static string Quote(string? text) => text is null ? "\"\"" : "\"" + (text.Length > 60 ? text[..60] + "..." : text) + "\"";
 }

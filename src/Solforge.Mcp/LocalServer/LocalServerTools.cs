@@ -1,3 +1,7 @@
+/**
+ * File: MCP tools for the local game server (local_server_status, log, subsystems, backups, config, deploy,
+ * start/stop/restart, rollback, selftest, command, quick_action). Mutating tools ask for approval first.
+ */
 using System.Text.Json.Nodes;
 
 namespace Solforge.Mcp.LocalServer;
@@ -20,10 +24,16 @@ public static class LocalServerTools
         "local_server_rollback", "local_server_config_write", "local_server_selftest", "local_server_command", "local_server_quick_action",
     ];
 
+    /**
+     * Builds the local server tool list; projectRoot supplies the open project and approve asks the user to confirm
+     * risky actions.
+     */
     public static IReadOnlyList<McpTool> Create(LocalServerManager server, Func<string?> projectRoot,
         Func<string, string, CancellationToken, Task<bool>> approve)
     {
+        /** Shorthand for a JSON schema. */
         static JsonObject Schema(params (string, string, string, bool)[] properties) => McpJson.Schema(properties);
+        /** Wraps a read-only tool so exceptions become tool errors. */
         static McpTool Read(string name, string description, JsonObject schema, Func<JsonObject, CancellationToken, Task<McpToolResult>> run) =>
             new(name, description, schema, false, async (args, cancel) =>
             {
@@ -46,6 +56,7 @@ public static class LocalServerTools
                 catch (Exception error) when (error is IOException or InvalidOperationException or ArgumentException or InvalidDataException or DirectoryNotFoundException)
                 { return McpToolResult.Error(error.Message); }
             });
+        /** Precondition that always passes. */
         static string? None(JsonObject _) => null;
         string? NeedProject(JsonObject _) => projectRoot() is null ? "Open a Solforge project first; deploy copies its scripts, sdk and build." : null;
         bool Restart(JsonObject args) => McpJson.Bool(args, "restart", false);

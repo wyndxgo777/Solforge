@@ -1,3 +1,8 @@
+/**
+ * File: Live material overrides (constant and texture writes) the viewport applies on top of the authored material;
+ * the renderer side is Viewport/NativeSceneRenderer.Overrides.cs, producers are the material graph preview and MCP
+ * tools.
+ */
 using System.Numerics;
 using SunriseStudio.Packages;
 
@@ -28,16 +33,21 @@ public sealed record MaterialOverrideReport(int Materials, int Parts, IReadOnlyL
  */
 public sealed class MaterialOverrideSet
 {
+    /** Empty snapshot. */
     private static readonly IReadOnlyDictionary<uint, MaterialOverride> None = new Dictionary<uint, MaterialOverride>();
+    /** Guards the current snapshot and revision. */
     private readonly object gate = new();
     // Replaced, never changed in place, so a snapshot stays valid after later edits.
     private IReadOnlyDictionary<uint, MaterialOverride> current = None;
     private readonly Dictionary<(object Renderer, uint Material), MaterialOverrideReport> reports = [];
     private int revision;
 
+    /** Counter that changes with every edit, so the renderer knows to rebuild. */
     public int Revision { get { lock (gate) return revision; } }
+    /** Number of materials with an override. */
     public int Count { get { lock (gate) return current.Count; } }
 
+    /** The override of one material, or null. */
     public MaterialOverride? Get(uint material) { lock (gate) return current.GetValueOrDefault(material); }
 
     /** Replaces the override of one material. */

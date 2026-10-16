@@ -20,6 +20,7 @@ public sealed partial class StudioForm
     private int aiStreamBusy;
     private bool aiStreamIdle = true;
 
+    /** Copies the viewport region for the live feed when someone is watching. */
     private void StreamAiViewport()
     {
         if (aiHost is not { } host || renderer is null) return;
@@ -62,6 +63,7 @@ public sealed partial class StudioForm
         });
     }
 
+    /** Scales and JPEG-encodes a grabbed frame into the feed on a worker. */
     private static void EncodeAiFrame(ViewportFeed feed, Dx11Renderer.GrabbedPixels pixels, long frame, int maxWidth, int quality)
     {
         byte[] grid = ViewportFeed.Measure(pixels.Bgra, pixels.Width, pixels.Height, pixels.Width * 4);
@@ -90,5 +92,6 @@ public sealed partial class StudioForm
         });
     }
 
+    /** The JPEG encoder used for frames. */
     private static readonly ImageCodecInfo JpegCodec = ImageCodecInfo.GetImageEncoders().First(codec => codec.FormatID == ImageFormat.Jpeg.Guid);
 }

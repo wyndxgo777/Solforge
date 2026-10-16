@@ -1,3 +1,4 @@
+/** File: Material-graph node types. */
 namespace Solforge.Graphs;
 
 /**
@@ -14,6 +15,7 @@ public static partial class NodeLibrary
     public static readonly string[] Stages = ["Pixel", "Vertex", "Compute"];
     public static readonly string[] Banks = ["Constant template", "Expression constants"];
 
+    /** Yields the material node type definitions. */
     private static IEnumerable<NodeType> MaterialTypes()
     {
         const GraphKind kind = GraphKind.Material;

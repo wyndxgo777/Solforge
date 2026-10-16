@@ -1,8 +1,13 @@
+/**
+ * File: Compiles Mission graphs to a Sunrise mission script (Lua) module; validation is in GraphValidation.cs, nodes
+ * in NodeLibrary.Mission.cs.
+ */
 using System.Globalization;
 using System.Text;
 
 namespace Solforge.Graphs;
 
+/** Compiled Lua text, the handler names it defines, and diagnostics. */
 public sealed record MissionCompileResult(string Lua, IReadOnlyList<string> Handlers, IReadOnlyList<GraphDiagnostic> Diagnostics);
 
 /**
@@ -74,6 +79,7 @@ public static class MissionGraphCompiler
         return builder.ToString(0, MaxKeyLength - 9) + "." + hash.ToString("x8", CultureInfo.InvariantCulture);
     }
 
+    /** Validates and flattens the graph, then emits one Lua handler per event node. */
     public static MissionCompileResult Compile(GraphDocument document)
     {
         var diagnostics = GraphValidation.Validate(document).ToList();
@@ -148,8 +154,10 @@ public static class MissionGraphCompiler
         return new(lua.ToString(), [.. handlers.Keys], diagnostics);
     }
 
+    /** Lua handler name for an event callback. */
     private static string HandlerName(string callback) => callback is "on_start" or "on_load" ? callback : "on_event_" + callback;
 
+    /** Quotes text as a Lua string literal with escapes. */
     public static string Quote(string text)
     {
         var builder = new StringBuilder("\"");
@@ -162,9 +170,11 @@ public static class MissionGraphCompiler
         return builder.Append('"').ToString();
     }
 
+    /** Formats a number invariantly without trailing zeros. */
     private static string Number(double value) =>
         double.IsFinite(value) ? value.ToString("0.######", CultureInfo.InvariantCulture) : "0";
 
+    /** Emits the Lua body: walks exec chains for statements and builds data expressions on demand. */
     private sealed class Writer(FlatGraph graph, List<GraphDiagnostic> diagnostics)
     {
         private const int MaxDepth = 64;
@@ -175,8 +185,13 @@ public static class MissionGraphCompiler
             foreach (var (node, _) in graph.Targets(nodeId, pin)) Statement(lua, node, indent, path);
         }
 
+        /** Appends an indented line of Lua. */
         private void Line(StringBuilder lua, int indent, string text) => lua.Append(' ', indent * 4).AppendLine(text);
 
+        /**
+         * Emits the statement for an exec node and follows its exec outputs; stops with a comment on loops or depth
+         * overflow.
+         */
         private void Statement(StringBuilder lua, GraphNode node, int indent, HashSet<string> path)
         {
             if (path.Contains(node.Id) || path.Count > MaxDepth)
@@ -309,6 +324,7 @@ public static class MissionGraphCompiler
             return Literal(GraphValue.Parse(type, text));
         }
 
+        /** Lua literal for a constant value by pin type. */
         private static string Literal(GraphValue value) => value.Type switch
         {
             PinType.Bool => value.X != 0 ? "true" : "false",
@@ -320,6 +336,7 @@ public static class MissionGraphCompiler
             _ => Quote(value.Text ?? "")
         };
 
+        /** Lua expression for a node data output pin, recursing into its inputs. */
         private string Value(GraphNode node, string pin, int depth)
         {
             string In(string id) => Expr(node, id, depth);

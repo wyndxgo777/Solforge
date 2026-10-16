@@ -1,3 +1,7 @@
+/**
+ * File: The saved graph file model: nodes, links, comments and functions, with JSON load/save. Edit operations are in
+ * GraphEditor.cs; node types in NodeTypes.cs and NodeLibrary.*.cs.
+ */
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -13,7 +17,9 @@ public sealed class GraphNode
     public bool Collapsed { get; set; }
     public Dictionary<string, string> Properties { get; set; } = new(StringComparer.Ordinal);
 
+    /** Property value by id, or the fallback when unset. */
     public string Get(string id, string fallback = "") => Properties.TryGetValue(id, out var value) ? value : fallback;
+    /** Deep copy of this node, including its property dictionary. */
     public GraphNode Clone() => new() { Id = Id, Type = Type, X = X, Y = Y, Collapsed = Collapsed, Properties = new(Properties, StringComparer.Ordinal) };
 }
 
@@ -30,6 +36,7 @@ public sealed class GraphComment
     public float Width { get; set; } = 400;
     public float Height { get; set; } = 200;
     public string Color { get; set; } = "#3A4A5A";
+    /** Shallow copy of this comment box. */
     public GraphComment Clone() => (GraphComment)MemberwiseClone();
 }
 
@@ -62,14 +69,17 @@ public sealed class GraphDocument
     public List<GraphComment> Comments { get; set; } = [];
     public List<GraphFunction> Functions { get; set; } = [];
 
+    /** Shared serializer settings: indented, camelCase, enums as strings. */
     private static readonly JsonSerializerOptions json = new()
     {
         WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         Converters = { new JsonStringEnumConverter() }
     };
 
+    /** Serialises the document to indented JSON. */
     public string ToJson() => JsonSerializer.Serialize(this, json);
 
+    /** Parses a document; throws InvalidDataException when the format marker does not match. */
     public static GraphDocument FromJson(string text)
     {
         var document = JsonSerializer.Deserialize<GraphDocument>(text, json) ?? throw new InvalidDataException("Empty graph file.");
@@ -82,8 +92,10 @@ public sealed class GraphDocument
         return document;
     }
 
+    /** Reads a document from a .json file. */
     public static GraphDocument Load(string path) => FromJson(File.ReadAllText(path));
 
+    /** Writes the document through a temp file (see the body) rather than directly. */
     public void Save(string path)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
@@ -92,9 +104,12 @@ public sealed class GraphDocument
         File.Move(temp, path, true);
     }
 
+    /** Deep copy via a JSON round trip. */
     public GraphDocument Clone() => FromJson(ToJson());
 
+    /** Finds a top-level node by id, or null. */
     public GraphNode? Node(string id) => Nodes.FirstOrDefault(node => node.Id == id);
+    /** Finds a function definition by id, or null. */
     public GraphFunction? Function(string id) => Functions.FirstOrDefault(function => function.Id == id);
 
     /** A fresh id with this prefix not used by any node, comment or function. */
@@ -157,6 +172,7 @@ public sealed class GraphDocument
         }
     }
 
+    /** Resolves a reroute node pin type by following its incoming link upstream (depth-capped to stop cycles). */
     private PinType ResolveReroute(GraphNode node, List<GraphNode> nodes, List<GraphLink> links, GraphFunction? scope, int depth)
     {
         if (depth > 32) return PinType.Any;
@@ -176,6 +192,7 @@ public sealed class GraphDocument
         return PinType.Any;
     }
 
+    /** Looks up one pin of a node (input or output) in the given function scope, or null. */
     public PinDef? Pin(GraphNode node, string pin, bool output, GraphFunction? scope = null) =>
         PinsOf(node, scope).FirstOrDefault(def => def.Output == output && def.Id == pin);
 }

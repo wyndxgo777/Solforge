@@ -1,3 +1,7 @@
+/**
+ * File: Reader for CRI @UTF tables, the column/row container used inside USM headers and other CRI formats. Consumed
+ * by UsmContainer.cs.
+ */
 using System.Buffers.Binary;
 using System.Text;
 
@@ -15,10 +19,13 @@ public sealed class CriUtfTable
     public string Name { get; }
     public IReadOnlyList<IReadOnlyDictionary<string, object?>> Rows { get; }
 
+    /** Private; instances come from Parse. */
     private CriUtfTable(string name, List<IReadOnlyDictionary<string, object?>> rows) { Name = name; Rows = rows; }
 
+    /** Whether the bytes start with the "@UTF" signature. */
     public static bool IsTable(ReadOnlySpan<byte> bytes) => bytes.Length >= 32 && bytes[..4].SequenceEqual("@UTF"u8);
 
+    /** Parses the table into row dictionaries; throws InvalidDataException when it is not an @UTF table. */
     public static CriUtfTable Parse(ReadOnlySpan<byte> bytes)
     {
         if (!IsTable(bytes)) throw new InvalidDataException("Not a CRI @UTF table.");
@@ -102,9 +109,11 @@ public sealed class CriUtfTable
             float f => (long)f, double d => (long)d, _ => fallback
         } : fallback;
 
+    /** A string cell by column name and row, or null when absent or not a string. */
     public string? String(string column, int row = 0) =>
         row < Rows.Count && Rows[row].TryGetValue(column, out var value) ? value as string : null;
 
+    /** Byte width of an @UTF column value type; throws for unknown types. */
     private static int Width(int type) => type switch
     {
         0 or 1 => 1, 2 or 3 => 2, 4 or 5 or 8 or 0xA => 4, 6 or 7 or 9 or 0xB => 8,

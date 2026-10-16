@@ -1,3 +1,8 @@
+/**
+ * File: MCP tools over the decompiled game code (decomp_status, search_functions, get_function, xrefs_*, find_string,
+ * grep_decomp, get_struct, get_vtables, get_class, tag_type_handlers, rename_function) and export_data; indexes are
+ * in Decomp/.
+ */
 using System.Globalization;
 using System.Text;
 using System.Text.Json.Nodes;
@@ -25,6 +30,7 @@ public static partial class SolforgeTools
         "get_string", "search_strings", "list_tag_classes", "list_tags_of_class", "read_tag_bytes", "dump_tag", "infer_tag_schema", "export_data"
     ];
 
+    /** Error shown when no decompiled-code folder can be found. */
     private const string NoDecomp = "No decompiled code found. Set SOLFORGE_DECOMP to the analysis folder (the one holding decomp\\all\\decomp_*.c), " +
         "or keep it at <sol>\\04-reverse-engineering\\analysis above the project or Solforge folder.";
 
@@ -33,12 +39,16 @@ public static partial class SolforgeTools
         ? Path.Combine(projectRoot, "exports")
         : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Solforge", "exports");
 
+    /** Locates the decomp folder (project, SDK roots, reference folder, app folder, or SOLFORGE_DECOMP), or null. */
     public static string? DecompRoot(ISolforgeHost host) =>
         DecompIndex.Locate([host.ProjectRoot, .. host.SdkRoots, host.ReferenceFolder, AppContext.BaseDirectory, Environment.CurrentDirectory]);
 
+    /** Yields the decomp and data-export tools. */
     private static IEnumerable<McpTool> DataTools(ISolforgeHost host)
     {
+        /** Schema with the standard paging arguments added. */
         static JsonObject Paged(params (string, string, string, bool)[] properties) => McpJson.Schema([.. properties, .. DataPages.Args]);
+        /** String argument or empty text. */
         static string A(JsonObject args, string name) => McpJson.String(args, name) ?? "";
 
         McpTool Code(string name, string description, JsonObject schema, Func<DecompIndex, JsonObject, CancellationToken, McpToolResult> run) =>
@@ -557,18 +567,22 @@ public static partial class SolforgeTools
             });
     }
 
+    /** JSON row for a decompiled function (rva, name, size, signature, caller counts). */
     private static JsonObject FunctionRow(DecompIndex index, DecompFunction function) => new()
     {
         ["rva"] = Hex(function.Rva), ["name"] = index.NameOf(function.Rva), ["size"] = function.Size,
         ["signature"] = function.Signature, ["callers"] = index.CallerCount(function.Rva)
     };
 
+    /** JSON row for a tag summary (hash, name, class, package, size). */
     private static JsonObject TagRow(TagSummary tag) => new()
     {
         ["hash"] = Hex(tag.Hash), ["name"] = tag.Name, ["class"] = Hex(tag.Class), ["class_name"] = tag.ClassName,
         ["package"] = tag.Package, ["size"] = tag.Size
     };
 
+    /** Formats a uint as 0x%08X. */
     private static string Hex(uint value) => "0x" + value.ToString("X8", CultureInfo.InvariantCulture);
+    /** Formats an int as 0x hex. */
     private static string Hex(int value) => "0x" + value.ToString("X", CultureInfo.InvariantCulture);
 }

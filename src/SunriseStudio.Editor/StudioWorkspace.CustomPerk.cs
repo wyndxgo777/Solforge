@@ -1,3 +1,7 @@
+/**
+ * File: StudioWorkspace partial: builds custom perks from weapon graphs into the project (uses
+ * Creation/CustomPerkAuthoring.cs and Solforge.Graphs.PerkLowering).
+ */
 using Solforge.Graphs;
 using SunriseStudio.Editor.Creation;
 using SunriseStudio.Packages;
@@ -5,6 +9,7 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Editor;
 
+/** Workspace operations for custom perk authoring (part of StudioWorkspace). */
 public sealed partial class StudioWorkspace
 {
     /** The last node graph custom perks installed, for the apply_graph reply and get_editor_state. */

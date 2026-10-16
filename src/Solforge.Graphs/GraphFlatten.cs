@@ -1,3 +1,7 @@
+/**
+ * File: Flattens a document for compiling: inlines function calls into a FlatGraph that compilers query by node and
+ * pin.
+ */
 namespace Solforge.Graphs;
 
 /**
@@ -11,6 +15,7 @@ public sealed class FlatGraph
     public required List<GraphLink> Links { get; init; }
     private Dictionary<string, GraphNode>? byId;
 
+    /** Finds a flattened node by id (index built on first use). */
     public GraphNode? Node(string id) => (byId ??= Nodes.GroupBy(node => node.Id).ToDictionary(group => group.Key, group => group.First()))
         .GetValueOrDefault(id);
 
@@ -42,9 +47,11 @@ public sealed class FlatGraph
         }
     }
 
+    /** All nodes of one type. */
     public IEnumerable<GraphNode> OfType(string type) => Nodes.Where(node => node.Type == type);
 }
 
+/** Builds FlatGraphs from documents. */
 public static class GraphFlatten
 {
     private const int MaxDepth = 16;
@@ -76,7 +83,9 @@ public static class GraphFlatten
             external.Where(link => link.ToNode == call.Id && link.ToPin == pin).Select(link => (link.FromNode, link.FromPin));
         IEnumerable<(string Node, string Pin)> TargetsFor(string pin) =>
             external.Where(link => link.FromNode == call.Id && link.FromPin == pin).Select(link => (link.ToNode, link.ToPin));
+        /** Maps a function boundary pin name to the call node input name (then becomes exec). */
         static string CallIn(string boundaryPin) => boundaryPin == "then" ? "exec" : boundaryPin;
+        /** Maps a function boundary pin name to the call node output name (exec becomes then). */
         static string CallOut(string boundaryPin) => boundaryPin == "exec" ? "then" : boundaryPin;
 
         var added = new List<GraphNode>();

@@ -1,3 +1,4 @@
+/** File: Screen text reading for read_screen_text via Windows OCR through the ScreenOcr.ps1 helper process. */
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
@@ -15,8 +16,10 @@ namespace Solforge.Mcp;
  */
 public sealed class ScreenOcr : IDisposable
 {
+    /** The shared instance used by the tools. */
     public static ScreenOcr Shared { get; } = new();
 
+    /** Serialises requests so only one is in flight. */
     private readonly SemaphoreSlim gate = new(1, 1);
     private Process? process;
     private string lastError = "";
@@ -115,8 +118,10 @@ public sealed class ScreenOcr : IDisposable
         return Failure("Unexpected OCR helper output: " + (line.Length > 200 ? line[..200] : line));
     }
 
+    /** Builds a failed reply with an error message. */
     public static JsonObject Failure(string message) => new() { ["ok"] = false, ["error"] = message };
 
+    /** Whether a reply reports success. */
     public static bool Ok(JsonObject reply) => reply["ok"] is JsonValue value && value.TryGetValue(out bool ok) && ok;
 
     /**
@@ -169,6 +174,7 @@ public sealed class ScreenOcr : IDisposable
         return values.Select(value => (int)Math.Round(value)).ToArray();
     }
 
+    /** Starts the OCR process if it is not running and returns it. */
     private Process Start()
     {
         if (process is { HasExited: false }) return process;
@@ -195,6 +201,7 @@ public sealed class ScreenOcr : IDisposable
         return started;
     }
 
+    /** Kills the OCR process. */
     private void Stop()
     {
         var old = process;
@@ -209,6 +216,7 @@ public sealed class ScreenOcr : IDisposable
         old.Dispose();
     }
 
+    /** Stops the process and releases the request gate. */
     public void Dispose()
     {
         Stop();

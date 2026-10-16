@@ -1,3 +1,7 @@
+/**
+ * File: MCP media tools: havok_packfile, export_collision_obj, audio_info, export_audio_wav, video_info, export_video
+ * (decoders in SunriseStudio.Audio and Scene/Collision, host in Data/MediaHost.cs).
+ */
 using System.Globalization;
 using System.Text.Json.Nodes;
 using Solforge.Mcp.Data;
@@ -17,6 +21,7 @@ public static partial class SolforgeTools
 
     private const string NoMedia = "This Solforge host has no Havok/audio/video decoders.";
 
+    /** Yields the media tools. */
     private static IEnumerable<McpTool> MediaTools(ISolforgeHost host)
     {
         McpTool Media(string name, string description, JsonObject schema,
@@ -36,6 +41,7 @@ public static partial class SolforgeTools
             });
 
         string Folder(string kind) => Path.Combine(ExportFolder(host.ProjectRoot), kind);
+        /** Timestamp used to name export files. */
         static string Stamp() => DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
 
         yield return Media("havok_packfile", "Decode a Havok 2012 packfile tag (type 26/7: map collision compounds, trigger shape " +

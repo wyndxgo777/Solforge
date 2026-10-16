@@ -1,3 +1,7 @@
+/**
+ * File: Authoring of exotic weapons: definitions, template cloning and project planning (a plan catalog layers edits
+ * over the package catalog). Perk data is shared with CustomPerkAuthoring.cs.
+ */
 using SunriseStudio.Authoring;
 using SunriseStudio.Formats;
 using SunriseStudio.Packages;
@@ -7,21 +11,25 @@ using System.Security.Cryptography;
 
 namespace SunriseStudio.Editor.Creation;
 
+/** An exotic perk: name, description and its behavior graph. */
 public sealed record ExoticPerkDefinition(string Name, string Description, PerkBehaviorGraph Behavior,
     int Socket, ushort TemplatePlug)
 {
     public string? IconPath { get; init; }
 }
+/** A custom perk authored from scratch: name, description and behavior graph. */
 public sealed record AuthoredPerkDefinition(string Name, string Description, PerkBehaviorGraph Behavior)
 {
     public string? IconPath { get; init; }
 }
+/** An exotic catalyst: its name, description and perks. */
 public sealed record ExoticCatalystDefinition(string Name, string Description, ushort NormalPerk,
     IReadOnlyDictionary<byte, int> Stats, int Socket, ushort TemplatePlug)
 {
     public AuthoredPerkDefinition? AuthoredBonus { get; init; }
     public string? IconPath { get; init; }
 }
+/** Everything needed to author an exotic weapon: names, archetype, perks, catalyst and assets. */
 public sealed record ExoticWeaponDefinition(string Name, string Description, string ArchetypeName,
     uint BaseWeaponTag, ExoticPerkDefinition FirstPerk, ExoticPerkDefinition SecondPerk,
     ExoticCatalystDefinition Catalyst, ushort PackageId, int? CollectionNode,
@@ -30,10 +38,12 @@ public sealed record ExoticWeaponDefinition(string Name, string Description, str
     public string? IconPath { get; init; }
     public string? HudIconPath { get; init; }
 }
+/** The assets prepared for an exotic weapon before they are added to the project. */
 public sealed record PreparedExoticWeaponAssets(IReadOnlyList<ProjectAssetAddition> Assets,
     IReadOnlyDictionary<int, uint> VariantEntities, OriginalAssetInspection? SurfaceReport = null,
     IReadOnlyDictionary<string, string>? SourceHashes = null, uint? GameplayEntityTag = null,
     uint? AnimationEntityTag = null, IReadOnlyDictionary<string, uint>? AnimationClips = null);
+/** A prepared exotic weapon: its tags and hashes plus the project additions. */
 public sealed record PreparedExoticWeapon(uint WeaponTag, uint WeaponHash, uint CatalystTag,
     IReadOnlyList<uint> PerkTags, IReadOnlyList<ProjectAssetAddition> Assets,
     IReadOnlyDictionary<uint, byte[]> Changes, OriginalAssetInspection? SurfaceReport = null,
@@ -319,6 +329,7 @@ public static partial class ExoticWeaponAuthoring
         return bytes;
     }
 
+    /** Throws when a template tag is missing or has unexpected bytes. */
     private static void RequireTemplate(InvestmentCatalog investment, uint tag, byte[] bytes,
         InvestmentItemDetail item, int index, ushort template)
     {
@@ -374,6 +385,7 @@ public static partial class ExoticWeaponAuthoring
         public int NextEntry { get; private set; }
         public uint TagAtNextEntry => ProjectTags.Tag(package, NextEntry);
 
+        /** Wraps a package catalog and project so planned additions can be read as if built. */
         public PlanCatalog(PackageCatalog source, StudioProject project, ushort package)
         {
             this.package = package;
@@ -385,6 +397,7 @@ public static partial class ExoticWeaponAuthoring
             Catalog.ReadOverride = tag => bytes.TryGetValue(tag, out var planned) ? planned.ToArray() : source.Read(tag);
         }
 
+        /** Adds planned new assets to the catalog overlay. */
         public void Add(IReadOnlyList<ProjectAssetAddition> additions)
         {
             foreach (var asset in additions)
@@ -406,6 +419,7 @@ public static partial class ExoticWeaponAuthoring
             Catalog.SetOverlayEntries(metadata.Values);
         }
 
+        /** Adds planned edits (new bytes for existing tags) to the catalog overlay. */
         public void Edit(IReadOnlyDictionary<uint, byte[]> edits)
         {
             foreach (var (tag, data) in edits)
@@ -422,6 +436,7 @@ public static partial class ExoticWeaponAuthoring
             Catalog.SetOverlayEntries(metadata.Values);
         }
 
+        /** Disposes the wrapped catalog. */
         public void Dispose() => Catalog.Dispose();
     }
 }

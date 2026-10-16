@@ -1,3 +1,7 @@
+/**
+ * File: CRI USM movie container: lists the CRID chunks and streams and extracts a stream payload. UsmExport.cs writes
+ * the streams to files; AdxDecoder.cs decodes the audio.
+ */
 using System.Buffers.Binary;
 
 namespace SunriseStudio.Audio;
@@ -37,6 +41,7 @@ public sealed record UsmInfo(string FileName, IReadOnlyList<UsmStream> Streams, 
  */
 public static class UsmContainer
 {
+    /** Whether the bytes start with the "CRID" signature. */
     public static bool IsUsm(ReadOnlySpan<byte> bytes) => bytes.Length >= 32 && bytes[..4].SequenceEqual("CRID"u8);
 
     /** Reads every chunk header and the stream header tables; no payload is copied. */
@@ -84,6 +89,7 @@ public static class UsmContainer
         if (written == 0) throw new InvalidDataException($"USM has no {signature} channel {channel} data.");
     }
 
+    /** Returns one stream payload (by signature and channel) as a byte array. */
     public static byte[] Extract(ReadOnlySpan<byte> usm, string signature, int channel)
     {
         using var memory = new MemoryStream();
@@ -103,6 +109,7 @@ public static class UsmContainer
         _ => ".bin"
     };
 
+    /** Whether the first bytes of a stream look like valid data for its codec (false suggests an encrypted USM). */
     private static bool KnownStart(UsmStream stream)
     {
         var b = stream.FirstBytes;
@@ -112,8 +119,10 @@ public static class UsmContainer
             : b[0] == 0x80 && b[1] == 0 || b.AsSpan().StartsWith("HCA\0"u8) || (b[0] & 0x7F) == 'H' && (b[1] & 0x7F) == 'C';
     }
 
+    /** One chunk located in the file: signature, kind, channel, payload offset and length. */
     private readonly record struct Chunk(string Signature, int Kind, int Channel, int Payload, int Length);
 
+    /** Walks the file and lists every chunk header without copying payloads. */
     private static List<Chunk> Chunks(ReadOnlySpan<byte> usm)
     {
         var list = new List<Chunk>();

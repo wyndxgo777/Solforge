@@ -1,3 +1,8 @@
+/**
+ * File: Localhost translator that lets Claude Code talk to ClinePass: ClinePassProxy (HTTP listener),
+ * AnthropicTranslator (request/response conversion) and AnthropicStream (streaming events). Launched through
+ * EngineLaunch.cs with settings from EngineProviders.cs.
+ */
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
@@ -25,6 +30,7 @@ public sealed class ClinePassProxy : IAsyncDisposable
     private const int MaximumBody = 32 << 20;
 
     private readonly TcpListener listener;
+    /** Cancelled when the proxy shuts down. */
     private readonly CancellationTokenSource stop = new();
     private readonly HttpClient http;
     private readonly Func<string?> apiKey;
@@ -54,12 +60,14 @@ public sealed class ClinePassProxy : IAsyncDisposable
     public bool Running => acceptLoop is { IsCompleted: false };
     public event Action<string>? Log;
 
+    /** Whether a CLINE_API_KEY is available (environment or saved setting). */
     public static bool HasApiKey() => !string.IsNullOrWhiteSpace(ReadApiKey());
 
     /** The user's own CLINE_API_KEY: this process's environment, else the saved user environment (set after Solforge started). */
     private static string? ReadApiKey() => Environment.GetEnvironmentVariable(ApiKeyVariable) is { Length: > 0 } key ? key.Trim()
         : OperatingSystem.IsWindows() ? Environment.GetEnvironmentVariable(ApiKeyVariable, EnvironmentVariableTarget.User)?.Trim() : null;
 
+    /** Starts listening on localhost and begins accepting connections. */
     public void Start()
     {
         if (acceptLoop is not null) return;
@@ -92,6 +100,7 @@ public sealed class ClinePassProxy : IAsyncDisposable
         return name.Contains('/') ? name : ClineDelegate.Provider + "/" + name;
     }
 
+    /** Accepts connections until stopped and serves each on its own task. */
     private async Task AcceptLoop()
     {
         while (!stop.IsCancellationRequested)
@@ -104,6 +113,7 @@ public sealed class ClinePassProxy : IAsyncDisposable
         }
     }
 
+    /** Reads one HTTP request from a client and passes it to Respond; errors are answered, not thrown. */
     private async Task Serve(TcpClient client)
     {
         using var _ = client;
@@ -117,6 +127,7 @@ public sealed class ClinePassProxy : IAsyncDisposable
         catch (Exception exception) { Log?.Invoke("ClinePass proxy request failed: " + exception.GetType().Name); }
     }
 
+    /** Routes a request: health GET, auth check, then POST /v1/messages. */
     private async Task Respond(NetworkStream stream, HttpRequest request)
     {
         if (request.Method is "GET" or "HEAD" && request.Path == "/") { await Write(stream, 200, "text/plain", "ok"); return; }
@@ -141,6 +152,7 @@ public sealed class ClinePassProxy : IAsyncDisposable
         }
     }
 
+    /** Whether the request carries this run local token (x-api-key or Bearer authorization). */
     private bool Authorized(HttpRequest request)
     {
         string given = request.Header("x-api-key") ?? "";
@@ -149,6 +161,10 @@ public sealed class ClinePassProxy : IAsyncDisposable
         return CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(given), Encoding.UTF8.GetBytes(LocalToken));
     }
 
+    /**
+     * Translates an Anthropic Messages body to Chat Completions, calls Cline, and streams or returns the converted
+     * answer.
+     */
     private async Task Messages(NetworkStream stream, JsonObject body)
     {
         if (apiKey() is not { Length: > 0 } key)
@@ -211,6 +227,7 @@ public sealed class ClinePassProxy : IAsyncDisposable
         await WriteEvents(stream, translator.Finish());
     }
 
+    /** Writes server-sent events to the client. */
     private async Task WriteEvents(NetworkStream stream, IEnumerable<(string Event, JsonObject Data)> events)
     {
         var text = new StringBuilder();
@@ -220,9 +237,11 @@ public sealed class ClinePassProxy : IAsyncDisposable
         await stream.FlushAsync(stop.Token);
     }
 
+    /** Writes an Anthropic-format error response. */
     private static Task WriteError(NetworkStream stream, int status, string type, string message) =>
         Write(stream, status, "application/json", AnthropicTranslator.Error(type, message).ToJsonString());
 
+    /** Writes a complete HTTP response with a body. */
     private static async Task Write(NetworkStream stream, int status, string type, string body)
     {
         byte[] content = Encoding.UTF8.GetBytes(body);
@@ -232,6 +251,7 @@ public sealed class ClinePassProxy : IAsyncDisposable
         await stream.FlushAsync();
     }
 
+    /** Stops the listener and cancels any running requests. */
     public async ValueTask DisposeAsync()
     {
         stop.Cancel();
@@ -243,6 +263,7 @@ public sealed class ClinePassProxy : IAsyncDisposable
 }
 
 /** Anthropic Messages <-> OpenAI Chat Completions, request and whole-reply shapes. */
+/** Pure conversion functions between the Anthropic Messages format and OpenAI Chat Completions. */
 public static class AnthropicTranslator
 {
     /** An Anthropic Messages request as an OpenAI Chat Completions request for @param model. */
@@ -320,6 +341,7 @@ public static class AnthropicTranslator
         return request;
     }
 
+    /** Builds an OpenAI assistant message (text plus tool calls) from Anthropic content blocks. */
     private static JsonObject Assistant(List<JsonObject> blocks)
     {
         string text = string.Join("\n\n", blocks.Where(block => Text(block, "type") == "text").Select(block => Text(block, "text")).Where(t => t is { Length: > 0 }));
@@ -335,6 +357,7 @@ public static class AnthropicTranslator
         return message;
     }
 
+    /** Converts an Anthropic image block to a URL or data URL; null when unsupported. */
     private static string? ImageUrl(JsonObject block) => block["source"] as JsonObject is { } source
         ? Text(source, "type") switch
         {
@@ -389,6 +412,7 @@ public static class AnthropicTranslator
         catch (JsonException) { return new JsonObject(); }
     }
 
+    /** Maps an OpenAI finish reason to an Anthropic stop_reason. */
     public static string StopReason(string? finish) => finish switch
     {
         "length" => "max_tokens",
@@ -396,6 +420,7 @@ public static class AnthropicTranslator
         _ => "end_turn"
     };
 
+    /** Maps an HTTP status to an Anthropic error type. */
     public static string ErrorType(int status) => status switch
     {
         400 or 422 => "invalid_request_error",
@@ -407,19 +432,24 @@ public static class AnthropicTranslator
         _ => "api_error"
     };
 
+    /** Builds an Anthropic error body. */
     public static JsonObject Error(string type, string message) =>
         new() { ["type"] = "error", ["error"] = new JsonObject { ["type"] = type, ["message"] = message } };
 
+    /** A random id with a prefix. */
     internal static string NewId(string prefix) => prefix + Convert.ToHexString(RandomNumberGenerator.GetBytes(12)).ToLowerInvariant();
 
+    /** An integer field of a JSON object, or 0. */
     internal static int Number(JsonObject? node, string key) =>
         node?[key] is JsonValue value && value.TryGetValue(out int number) ? number : 0;
 
+    /** A string field of a JSON object, or null. */
     public static string? Text(JsonObject? node, string key) =>
         node?[key] is JsonValue value && value.TryGetValue(out string? text) ? text : null;
 }
 
 /** OpenAI chat.completion.chunk events in, Anthropic Messages stream events out. */
+/** Converts a stream of OpenAI chunks into Anthropic streaming events, one instance per response. */
 public sealed class AnthropicStream(string model)
 {
     private readonly Dictionary<int, int> toolBlocks = [];
@@ -428,6 +458,7 @@ public sealed class AnthropicStream(string model)
     private bool openIsText;
     private string stopReason = "end_turn";
 
+    /** Events that open the response (message_start). */
     public IEnumerable<(string Event, JsonObject Data)> Start() =>
     [
         ("message_start", new JsonObject
@@ -442,6 +473,7 @@ public sealed class AnthropicStream(string model)
         })
     ];
 
+    /** Converts one upstream chunk into zero or more Anthropic events. */
     public List<(string Event, JsonObject Data)> Feed(JsonObject chunk)
     {
         var events = new List<(string, JsonObject)>();
@@ -497,6 +529,7 @@ public sealed class AnthropicStream(string model)
         return events;
     }
 
+    /** Closes any open block and emits the final message events. */
     public List<(string Event, JsonObject Data)> Finish()
     {
         var events = new List<(string, JsonObject)>();
@@ -510,6 +543,7 @@ public sealed class AnthropicStream(string model)
         return events;
     }
 
+    /** Emits a stop event for the currently open content block. */
     private void Close(List<(string, JsonObject)> events)
     {
         if (openBlock is not { } block) return;
@@ -517,6 +551,7 @@ public sealed class AnthropicStream(string model)
         openBlock = null;
     }
 
+    /** Builds a content_block_delta event. */
     private static JsonObject Delta(int index, JsonObject delta) =>
         new() { ["type"] = "content_block_delta", ["index"] = index, ["delta"] = delta };
 }

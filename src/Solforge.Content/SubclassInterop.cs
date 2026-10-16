@@ -1,3 +1,7 @@
+/**
+ * File: Builds and converts subclass definitions starting from the shipped layout; shapes are in Subclass.cs, checks
+ * in SubclassRules.cs.
+ */
 using System.Text;
 using System.Text.Json.Nodes;
 
@@ -6,6 +10,7 @@ namespace Solforge.Content;
 /** New subclasses start from the shipped entry layout, so the server's rules apply to them unchanged. */
 public static class SubclassTemplates
 {
+    /** A new subclass for a class and element, starting from the shipped entry layout. */
     public static SubclassDefinition New(string id, string name, GuardianClass guardianClass, string element)
     {
         SubclassNode Node(string nodeId, string label, SubclassRole role, int? entry, string description = "") =>
@@ -105,6 +110,7 @@ public static class SubclassInterop
         subclass.Columns.RemoveAll(column => column.Nodes.Count == 0);
         return subclass;
 
+        /** Reads one subclass node from JSON. */
         static SubclassNode Node(JsonObject node)
         {
             int? entry = (int?)node["entry"];
@@ -163,10 +169,13 @@ public static class SubclassInterop
             text.Append(Clean(key)).Append('\t').Append(slot).Append('\t').Append(Clean(name)).Append('\t').Append(Clean(description)).Append('\n');
     }
 
+    /** Collapses runs of whitespace into single spaces. */
     private static string Clean(string text) => string.Join(' ', text.Replace('\t', ' ').Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
 
+    /** Parses a guardian class name. */
     public static GuardianClass ParseClass(string? text) => Enum.TryParse<GuardianClass>(text, true, out var value) ? value : GuardianClass.Hunter;
 
+    /** Column title for a slot name. */
     private static string ColumnTitle(string slot) => slot switch
     {
         "super" => "Super", "grenade" => "Grenade", "melee" => "Melee", "class" => "Class ability", "jump" => "Movement", _ => slot

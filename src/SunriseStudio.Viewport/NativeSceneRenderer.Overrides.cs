@@ -1,3 +1,7 @@
+/**
+ * File: Part of NativeSceneRenderer: applies live MaterialOverrides (Rendering/MaterialOverrides.cs) to draws, with
+ * GPU textures for override images.
+ */
 using SunriseStudio.Rendering;
 using Vortice.Direct3D11;
 using Vortice.DXGI;
@@ -12,6 +16,7 @@ namespace SunriseStudio.Viewport;
  */
 public sealed partial class NativeSceneRenderer
 {
+    /** Empty override map used when no source is set. */
     private static readonly IReadOnlyDictionary<uint, MaterialOverride> NoOverrides = new Dictionary<uint, MaterialOverride>();
     private MaterialOverrideSet? overrideSource;
     private int overrideRevision;
@@ -181,6 +186,7 @@ public sealed partial class NativeSceneRenderer
         }
     }
 
+    /** Disposes and clears the GPU textures made for overrides. */
     private void DisposeLiveOverrides()
     {
         foreach (var texture in overrideTextures.Values) texture.Dispose();

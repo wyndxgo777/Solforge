@@ -1,3 +1,4 @@
+/** File: Rules that decide whether a subclass build is valid, mirroring the server so it refuses the same things. */
 namespace Solforge.Content;
 
 /**
@@ -32,12 +33,14 @@ public static class SubclassLayout
     }
 }
 
+/** The rules applied to subclass definitions. */
 public static class SubclassRules
 {
     private static readonly SubclassRole[] ColumnRoles =
         [SubclassRole.Lane, SubclassRole.Super, SubclassRole.Grenade, SubclassRole.Jump, SubclassRole.Class, SubclassRole.Melee, SubclassRole.Passive, SubclassRole.Perk];
     private static readonly SubclassRole[] TreeRoles = [SubclassRole.Super, SubclassRole.Variant, SubclassRole.Melee, SubclassRole.Perk];
 
+    /** Adds issues for everything wrong with the subclass. */
     public static void Validate(SubclassDefinition subclass, ContentIssues issues)
     {
         if (subclass.Class == GuardianClass.Any) issues.Error("class", "A subclass belongs to titan, hunter or warlock.");

@@ -1,3 +1,7 @@
+/**
+ * File: Windows pseudo-console (ConPTY) host for the AI terminal: starts a child process attached to a pseudo console
+ * and exchanges text with it. Shown by TerminalView.cs, parsed by VtScreen.cs.
+ */
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -83,6 +87,7 @@ internal sealed class ConPtyTerminal : IDisposable
         return Marshal.StringToHGlobalUni(text.Append('\0').ToString());
     }
 
+    /** Writes text to the child process input. */
     public void Send(string text)
     {
         if (disposed || Exited || text.Length == 0) return;
@@ -95,6 +100,7 @@ internal sealed class ConPtyTerminal : IDisposable
         catch (IOException) { Exited = true; }
     }
 
+    /** Resizes the pseudo console. */
     public void Resize(int columns, int rows)
     {
         if (disposed || columns < 2 || rows < 2 || columns == Screen.Columns && rows == Screen.Rows) return;
@@ -102,6 +108,7 @@ internal sealed class ConPtyTerminal : IDisposable
         _ = ResizePseudoConsole(console, new Coord((short)columns, (short)rows));
     }
 
+    /** Reads child output on a background thread and feeds it to the screen. */
     private void Read()
     {
         var buffer = new byte[16384];
@@ -148,6 +155,7 @@ internal sealed class ConPtyTerminal : IDisposable
         Dispose();
     }
 
+    /** Closes the console and terminates the child process. */
     public void Dispose()
     {
         if (disposed) return;
@@ -165,9 +173,11 @@ internal sealed class ConPtyTerminal : IDisposable
     private const int PseudoConsoleAttribute = 0x00020016;
     private const uint ExtendedStartupInfoPresent = 0x00080000, CreateUnicodeEnvironment = 0x00000400;
 
+    /** Windows COORD (column, row). */
     [StructLayout(LayoutKind.Sequential)]
     private readonly record struct Coord(short X, short Y);
 
+    /** Native STARTUPINFO. */
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     private struct StartupInfo
     {
@@ -178,6 +188,7 @@ internal sealed class ConPtyTerminal : IDisposable
         public IntPtr lpReserved2, hStdInput, hStdOutput, hStdError;
     }
 
+    /** Native STARTUPINFOEX. */
     [StructLayout(LayoutKind.Sequential)]
     private struct StartupInfoEx
     {
@@ -185,6 +196,7 @@ internal sealed class ConPtyTerminal : IDisposable
         public IntPtr lpAttributeList;
     }
 
+    /** Native PROCESS_INFORMATION. */
     [StructLayout(LayoutKind.Sequential)]
     private struct ProcessInformation
     {

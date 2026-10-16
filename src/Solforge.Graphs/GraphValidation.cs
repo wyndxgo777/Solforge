@@ -1,16 +1,20 @@
+/** File: Live graph validation shown in the editor and run before every compile. */
 namespace Solforge.Graphs;
 
+/** Severity of a diagnostic; Error blocks compiling. */
 public enum DiagnosticSeverity { Info, Warning, Error }
 
 /** A problem shown on a node (NodeId) or on the graph; Scope is the function id when it is inside one. */
 public sealed record GraphDiagnostic(DiagnosticSeverity Severity, string Message, string? NodeId = null, string? Scope = null)
 {
+    /** Readable one-line form: severity, optional scope/node, message. */
     public override string ToString() => $"{Severity}: {(NodeId is null ? "" : $"[{(Scope is null ? "" : Scope + "/")}{NodeId}] ")}{Message}";
 }
 
 /** Live validation: structure and types for every graph, plus the rules of each graph kind. */
 public static class GraphValidation
 {
+    /** Checks the main graph and every function, then the rules for the document kind. */
     public static IReadOnlyList<GraphDiagnostic> Validate(GraphDocument document)
     {
         var result = new List<GraphDiagnostic>();
@@ -26,8 +30,10 @@ public static class GraphValidation
         return result;
     }
 
+    /** Whether any diagnostic is an Error. */
     public static bool HasErrors(IEnumerable<GraphDiagnostic> diagnostics) => diagnostics.Any(item => item.Severity == DiagnosticSeverity.Error);
 
+    /** Structure and type checks for one scope (main graph or one function). */
     private static void CheckScope(GraphDocument document, GraphFunction? scope, List<GraphDiagnostic> result)
     {
         var nodes = scope?.Nodes ?? document.Nodes;
@@ -96,6 +102,7 @@ public static class GraphValidation
                 result.Add(new(DiagnosticSeverity.Error, $"Calls a missing function '{call.Get("function")}'.", call.Id, scopeId));
     }
 
+    /** Display name of a pin (name, else id). */
     private static string Display(PinDef pin) => pin.Name.Length > 0 ? pin.Name : pin.Id;
 
     /** Functions may call each other but not recursively (they are inlined). */
@@ -114,6 +121,10 @@ public static class GraphValidation
         }
     }
 
+    /**
+     * Material rules: exactly one Material Output (a missing target tag is a warning) and checks on SetConstant
+     * nodes.
+     */
     private static void CheckMaterial(GraphDocument document, List<GraphDiagnostic> result)
     {
         var flat = GraphFlatten.Flatten(document);
@@ -133,6 +144,7 @@ public static class GraphValidation
             if (TagText(node.Get("tag")) is null) result.Add(new(DiagnosticSeverity.Warning, "Texture has no tag.", node.Id));
     }
 
+    /** Weapon rules: exactly one Weapon Output with a target item, plus the node-specific checks. */
     private static void CheckWeapon(GraphDocument document, List<GraphDiagnostic> result)
     {
         var flat = GraphFlatten.Flatten(document);
@@ -160,6 +172,7 @@ public static class GraphValidation
                 result.Add(new(DiagnosticSeverity.Warning, "Custom Perk has no event; link it to On Hit, On Kill and so on.", perk.Id));
     }
 
+    /** Mission rules: needs at least one event node, and exec nodes should be reachable from an event. */
     private static void CheckMission(GraphDocument document, List<GraphDiagnostic> result)
     {
         var flat = GraphFlatten.Flatten(document);
@@ -190,6 +203,7 @@ public static class GraphValidation
                 result.Add(new(DiagnosticSeverity.Error, "Parallel node id must name a Parallel All node.", node.Id));
     }
 
+    /** Whether text is a valid Lua identifier. */
     internal static bool LuaName(string text) =>
         text.Length > 0 && (char.IsAsciiLetter(text[0]) || text[0] == '_') && text.All(c => char.IsAsciiLetterOrDigit(c) || c == '_');
 

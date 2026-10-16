@@ -1,3 +1,4 @@
+/** File: Infers struct field layouts (offset and type) from field accesses in the decompiled C; serves get_struct. */
 using System.Globalization;
 using System.Text.RegularExpressions;
 
@@ -20,6 +21,7 @@ public static partial class StructLayouts
 {
     private static readonly string[] Extensions = [".h", ".hpp", ".hh", ".hxx", ".inl", ".c", ".cc", ".cpp", ".cxx"];
 
+    /** The decompiled source files under the given roots (empty when a folder cannot be read). */
     public static IEnumerable<string> SourceFiles(IEnumerable<string> roots) => roots.SelectMany(root =>
     {
         try { return Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories).Where(file => Extensions.Contains(Path.GetExtension(file), StringComparer.OrdinalIgnoreCase)); }
@@ -92,7 +94,9 @@ public static partial class StructLayouts
             entry.Types[type] = entry.Types.GetValueOrDefault(type) + 1;
             fields[offset] = (entry.Types, entry.Uses + 1);
         }
+        /** Strips a trailing pointer star from a type name. */
         static string Pointee(string type) => Regex.Replace(type.Trim(), @"\s*\*$", "").Trim();
+        /** Parses a decimal or 0x hex number. */
         static int Number(string text) => text.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
             ? (int.TryParse(text[2..], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out int hex) ? hex : -1)
             : (int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out int number) ? number : -1);
@@ -103,6 +107,7 @@ public static partial class StructLayouts
         [.. VariableUse().Matches(source).Select(match => match.Groups["name"].Value).GroupBy(name => name)
             .OrderByDescending(group => group.Count()).Select(group => group.Key)];
 
+    /** Index of the brace that closes the one at open, or -1. */
     private static int MatchingBrace(string text, int open)
     {
         if (open < 0) return -1;
@@ -115,6 +120,7 @@ public static partial class StructLayouts
         return -1;
     }
 
+    /** 1-based line number of a character index. */
     private static int Line(string text, int index)
     {
         int line = 1;
@@ -122,9 +128,11 @@ public static partial class StructLayouts
         return line;
     }
 
+    /** Compile-time generated regex matching a definition in decompiled C (see its attribute above). */
     [GeneratedRegex(@"\b(?:struct|class|union)\s+(?:alignas\s*\([^)]*\)\s*)?(?<name>[A-Za-z_]\w*)\s*(?:final\s*)?(?::[^{;]*)?\{", RegexOptions.Multiline)]
     private static partial Regex Definition();
 
+    /** Compile-time generated regex matching a field access such as (param_1 + 0x390). */
     [GeneratedRegex(@"\)\(\s*(?:\([^()]*\)\s*)?(?<name>[A-Za-z_]\w*)\s*\+\s*(?:0x[0-9a-fA-F]+|\d+)\s*\)")]
     private static partial Regex VariableUse();
 }

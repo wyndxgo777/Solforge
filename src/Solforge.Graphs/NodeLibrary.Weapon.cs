@@ -1,3 +1,7 @@
+/**
+ * File: Weapon, item and custom-perk node types; compiled by GraphCompilers.cs (WeaponGraphCompiler) and
+ * PerkLowering.cs.
+ */
 namespace Solforge.Graphs;
 
 /**
@@ -29,6 +33,7 @@ public static partial class NodeLibrary
         [("on_hit", "On Hit"), ("on_precision_hit", "On Precision Hit"), ("on_kill", "On Kill"), ("on_precision_kill", "On Precision Kill"),
          ("on_reload", "On Reload"), ("on_ability_use", "On Ability Use")];
 
+    /** Yields the weapon/item and custom-perk node type definitions. */
     private static IEnumerable<NodeType> ItemNodeTypes()
     {
         const GraphKind kind = GraphKind.Weapon;

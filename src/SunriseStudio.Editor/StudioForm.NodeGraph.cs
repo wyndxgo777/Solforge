@@ -1,3 +1,8 @@
+/**
+ * File: Node graph panel inside StudioForm: the canvas and toolbar (NodeGraphPanel) plus the apply helpers that send
+ * compiled weapon/material graphs through the editor. Model is Solforge.Graphs; the live material preview is
+ * NodeGraphLivePreview.cs.
+ */
 using System.Globalization;
 using System.Numerics;
 using System.Text.Json;
@@ -12,9 +17,11 @@ namespace SunriseStudio.Editor;
 /** The Node Graph panel: material, weapon/item and mission graphs (*.solgraph.json) on the Blueprint canvas. */
 public sealed partial class StudioForm
 {
+    /** The node graph panel instance. */
     private readonly NodeGraphPanel nodeGraph = new();
     private bool nodeGraphActive;
 
+    /** Draws the node graph panel in its region. */
     private void DrawNodeGraphPanel(Vector2 position, Vector2 size)
     {
         BeginPanel("Node graph area", position, size);
@@ -43,6 +50,7 @@ public sealed partial class StudioForm
         return "Mission graphs apply as a Lua file (apply_project_edit).";
     }
 
+    /** Compiles a weapon graph and applies its item edits and custom perks; returns result text. */
     private string AiApplyWeaponGraph(GraphDocument document)
     {
         var result = WeaponGraphCompiler.Compile(document);
@@ -81,6 +89,7 @@ public sealed partial class StudioForm
             + "in its socket. Build the project, deploy the packages and build_data.bin, then get a fresh drop or /perk force the old copy.";
     }
 
+    /** Compiles a material graph and applies its constant and texture writes; returns result text. */
     private string AiApplyMaterialGraph(GraphDocument document)
     {
         var result = MaterialGraphCompiler.Compile(document);
@@ -130,6 +139,7 @@ public sealed partial class StudioForm
 /** File handling, toolbar and details for the node graph panel; the canvas draws and edits the graph. */
 internal sealed class NodeGraphPanel
 {
+    /** The blueprint-style canvas control. */
     private readonly BlueprintCanvas canvas = new();
     private GraphEditor? editor;
     private string? path;
@@ -139,6 +149,7 @@ internal sealed class NodeGraphPanel
     private string output = "", newName = "new_graph", root = "";
     private int newKind;
     private MaterialPreview? preview;
+    /** Unsaved property text edits per node and key. */
     private readonly Dictionary<string, string> drafts = new(StringComparer.Ordinal);
     private double nextScan;
     private List<string> files = [];
@@ -153,9 +164,12 @@ internal sealed class NodeGraphPanel
     public bool CanUndo => editor?.CanUndo == true;
     public bool CanRedo => editor?.CanRedo == true;
     public bool CanSave => editor is not null && path is not null;
+    /** Undoes the last graph edit. */
     public void Undo() => editor?.Undo();
+    /** Redoes the last graph edit. */
     public void Redo() => editor?.Redo();
 
+    /** Saves the open graph file. */
     public void Save()
     {
         if (editor is null || path is null) return;
@@ -164,6 +178,7 @@ internal sealed class NodeGraphPanel
         stamp = File.GetLastWriteTimeUtc(path);
     }
 
+    /** Loads a graph file into the editor. */
     private void Open(string file)
     {
         try
@@ -221,6 +236,7 @@ internal sealed class NodeGraphPanel
         catch (Exception exception) when (exception is IOException or InvalidDataException or JsonException) { canvas.Say("Cannot reload: " + exception.Message); }
     }
 
+    /** Draws the panel: toolbar, canvas and details. */
     public void Draw(string? projectRoot, Func<JsonObject, string> applyGraph, Func<string, string, string> writeFile)
     {
         root = projectRoot ?? "";
@@ -261,6 +277,7 @@ internal sealed class NodeGraphPanel
         ImGui.EndChild();
     }
 
+    /** Draws the toolbar: file, undo/redo, validation and apply. */
     private void DrawToolbar(Func<JsonObject, string> applyGraph, Func<string, string, string> writeFile)
     {
         string label = editor is null ? "No graph" : Path.GetFileName(path) + (editor.Dirty ? " *" : "");
@@ -347,6 +364,7 @@ internal sealed class NodeGraphPanel
         }
     }
 
+    /** Draws the details side panel for the selected node. */
     private void DrawDetails(GraphEditor graph)
     {
         if (preview is { } swatch)
@@ -461,6 +479,7 @@ internal sealed class NodeGraphPanel
         else graph.AddNode(NodeLibrary.MaterialOutput, 0, 0, new Dictionary<string, string> { ["target"] = value });
     }
 
+    /** Draws one node property editor by its kind. */
     private void DrawProperty(GraphEditor graph, GraphNode node, string key, string name, PropertyKind kind, string fallback, IReadOnlyList<string>? choices)
     {
         string id = node.Id + "/" + key, value = node.Get(key, fallback);

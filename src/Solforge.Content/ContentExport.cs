@@ -1,3 +1,7 @@
+/**
+ * File: Exports content documents as plain-data Lua modules for the server settings; used by the export_content tool
+ * and Packaging.
+ */
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
@@ -8,6 +12,7 @@ namespace Solforge.Content;
 /** Writes plain-data Lua (no code, no globals): what the server's settings modules load. */
 public static class LuaData
 {
+    /** Renders a JSON value as a Lua module with a header comment. */
     public static string Module(JsonNode? value, string header)
     {
         var text = new StringBuilder();
@@ -18,6 +23,7 @@ public static class LuaData
         return text.ToString();
     }
 
+    /** Writes a JSON value as a Lua table or literal at a nesting depth. */
     public static void Write(StringBuilder text, JsonNode? value, int depth)
     {
         switch (value)
@@ -62,9 +68,11 @@ public static class LuaData
         "repeat", "return", "then", "true", "until", "while"
     ];
 
+    /** Whether a key can be written as a bare Lua identifier (not a keyword). */
     public static bool IsIdentifier(string key) => key.Length > 0 && !Keywords.Contains(key) && (char.IsAsciiLetter(key[0]) || key[0] == '_')
         && key.All(c => char.IsAsciiLetterOrDigit(c) || c == '_');
 
+    /** Quotes text as a Lua string literal. */
     public static string Quote(string text)
     {
         var quoted = new StringBuilder("\"");
@@ -78,6 +86,7 @@ public static class LuaData
         return quoted.Append('"').ToString();
     }
 
+    /** Appends two spaces per depth level. */
     private static void Indent(StringBuilder text, int depth) => text.Append(' ', depth * 2);
 }
 
@@ -91,6 +100,7 @@ public sealed record ExportedFile(string RelativePath, string Text);
  */
 public static class ContentExport
 {
+    /** Builds the export files (path and text) for a set of documents. */
     public static IReadOnlyList<ExportedFile> Build(IReadOnlyList<ContentDocument> documents)
     {
         var files = new List<ExportedFile>();

@@ -58,6 +58,7 @@ while (await input.ReadLineAsync() is { } line)
 await Task.WhenAll(pending);
 return 0;
 
+/** Sends one stdin line to the editor MCP endpoint and writes the reply to stdout. */
 async Task Forward(string message)
 {
     string? id = null;
@@ -99,6 +100,7 @@ async Task Forward(string message)
     }
 }
 
+/** Writes the reply line (or a JSON-RPC error); notifications get nothing. */
 async Task Reply(string? id, string? raw, string? error)
 {
     // Notifications get no reply, even on failure.

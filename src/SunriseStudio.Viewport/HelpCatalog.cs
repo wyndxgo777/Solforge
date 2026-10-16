@@ -1,8 +1,10 @@
+/** File: Data behind the Help window and the get_help MCP tool: keybind rows from the shortcut table plus topic tips. */
 namespace SunriseStudio.Viewport;
 
 /** One keybind row: area, what it does, its current keys (the user's map), and whether Edit > Shortcuts rebinds it. */
 public sealed record HelpKey(string Area, string Action, string Keys, string Id, bool Rebindable);
 
+/** One help tip: topic, title and body text. */
 public sealed record HelpTip(string Topic, string Title, string Text);
 
 /**
@@ -18,6 +20,7 @@ public static class HelpCatalog
 
     public static IReadOnlyList<string> Areas { get; } = [General, Viewport, Hierarchy, Inspector, Graphs, Ai, Live];
 
+    /** Maps shortcut action ids to their help area heading. */
     private static readonly Dictionary<string, string> AreaById = new(StringComparer.Ordinal)
     {
         [ShortcutActions.OpenAiWorkspace] = Ai,
@@ -79,12 +82,15 @@ public static class HelpCatalog
         Keys(map).Where(key => (string.IsNullOrEmpty(area) || string.Equals(key.Area, area, StringComparison.OrdinalIgnoreCase))
             && Matches(query, key.Area + " " + key.Action + " " + key.Keys + " " + key.Id)).ToArray();
 
+    /** Tips matching every word of the query. */
     public static IReadOnlyList<HelpTip> SearchTips(string? query) =>
         Tips.Where(tip => Matches(query, tip.Topic + " " + tip.Title + " " + tip.Text)).ToArray();
 
+    /** Whether text contains every space-separated word of the query (an empty query matches). */
     public static bool Matches(string? query, string text) => string.IsNullOrWhiteSpace(query)
         || query.Split(' ', StringSplitOptions.RemoveEmptyEntries).All(word => text.Contains(word, StringComparison.OrdinalIgnoreCase));
 
+    /** Sort position of an area name; unknown areas sort last. */
     private static int AreaIndex(string area)
     {
         for (int i = 0; i < Areas.Count; i++) if (Areas[i] == area) return i;

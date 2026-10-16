@@ -1,3 +1,7 @@
+/**
+ * File: Turns lowered custom perks (Solforge.Graphs.PerkLowering plans) into perk tags and plug items for a weapon,
+ * using the exotic authoring helpers in ExoticWeaponAuthoring.cs.
+ */
 using Solforge.Graphs;
 using SunriseStudio.Authoring;
 using SunriseStudio.Formats;
@@ -10,6 +14,7 @@ namespace SunriseStudio.Editor.Creation;
 /** One installed custom perk: its sandbox perk row (-1 for stats-only), the new plug item and the weapon socket. */
 public sealed record PreparedCustomPerk(string Name, int PerkIndex, uint? ProgramTag, uint PlugTag, uint PlugHash,
     int PlugIndex, int Socket, string ReplacedPlug);
+/** The perks prepared for one weapon: tags, bytes and project additions. */
 public sealed record PreparedCustomPerks(uint WeaponTag, IReadOnlyList<PreparedCustomPerk> Perks,
     IReadOnlyList<ProjectAssetAddition> Assets, IReadOnlyDictionary<uint, byte[]> Changes);
 
@@ -39,6 +44,7 @@ public static class CustomPerkAuthoring
         return graph;
     }
 
+    /** Builds a perk behavior graph node from a native step. */
     private static PerkBehaviorNode Node(NativePerkStep step)
     {
         var node = NativePerkBehavior.CreateNode(step.Primitive);
@@ -59,6 +65,7 @@ public static class CustomPerkAuthoring
         return node;
     }
 
+    /** Writes a step values into the node properties. */
     private static void Set(PerkBehaviorNode node, IReadOnlyDictionary<string, double> values)
     {
         foreach (var (key, value) in values)

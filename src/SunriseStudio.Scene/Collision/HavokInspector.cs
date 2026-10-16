@@ -1,3 +1,7 @@
+/**
+ * File: Summarises a Havok packfile (classes, shapes, placed shapes) for the havok MCP tools and exports; decoding is
+ * in CollisionShapes.cs.
+ */
 using System.Globalization;
 using System.Numerics;
 
@@ -25,12 +29,14 @@ public sealed record HavokInspection(int UserTag, string RootClass, int RootOffs
  */
 public static class HavokInspector
 {
+    /** Shape class names the decoder understands. */
     public static readonly IReadOnlySet<string> ShapeClasses = new HashSet<string>(StringComparer.Ordinal)
     {
         CollisionShapes.CompressedMesh, CollisionShapes.ConvexVertices, CollisionShapes.Box, CollisionShapes.Sphere,
         CollisionShapes.Capsule, CollisionShapes.Cylinder, CollisionShapes.ConvexTranslate, CollisionShapes.List
     };
 
+    /** Inspects a packfile: lists its objects, counts classes and optionally decodes every shape. */
     public static HavokInspection Inspect(HavokPackfile file, bool decodeShapes = true)
     {
         var objects = file.Objects.OrderBy(pair => pair.Key).Select(pair => (pair.Key, pair.Value)).ToList();

@@ -1,3 +1,7 @@
+/**
+ * File: Incremental refresh of a collision scene after a project edit: re-decodes only changed tags and reports moved
+ * placements.
+ */
 using System.Numerics;
 using SunriseStudio.Packages;
 
@@ -134,6 +138,7 @@ public static class CollisionSceneUpdate
         return child != uint.MaxValue && catalog.TryGetEntry(child, out _) && HavokPackfile.IsPackfile(catalog.Read(child));
     }
 
+    /** The import tag at an index of an entity, or 0 when out of range. */
     private static uint ImportTag(CollisionEntity entity, int index) =>
         entity.ImportTags is { } tags && index >= 0 && index < tags.Count ? tags[index] : uint.MaxValue;
 
@@ -163,6 +168,7 @@ public static class CollisionSceneUpdate
         else scene.Undecoded.Remove(kind);
     }
 
+    /** Whether two decoded shapes are equal for update purposes. */
     private static bool SameShape(CollisionShape a, CollisionShape b) =>
         a.Class == b.Class && a.Undecoded == b.Undecoded && a.MeshTriangleCount == b.MeshTriangleCount
         && a.CustomPrimitives == b.CustomPrimitives && a.UndecodedCustomPrimitives == b.UndecodedCustomPrimitives
@@ -175,7 +181,9 @@ public static class CollisionSceneUpdate
         && SameBits(a.Scale, b.Scale) && Bits(a.Rotation.X) == Bits(b.Rotation.X) && Bits(a.Rotation.Y) == Bits(b.Rotation.Y)
         && Bits(a.Rotation.Z) == Bits(b.Rotation.Z) && Bits(a.Rotation.W) == Bits(b.Rotation.W);
 
+    /** Bitwise equality of two vectors (so NaN and -0 compare exactly). */
     private static bool SameBits(Vector3 a, Vector3 b) => Bits(a.X) == Bits(b.X) && Bits(a.Y) == Bits(b.Y) && Bits(a.Z) == Bits(b.Z);
 
+    /** The raw bits of a float. */
     private static uint Bits(float value) => BitConverter.SingleToUInt32Bits(value);
 }

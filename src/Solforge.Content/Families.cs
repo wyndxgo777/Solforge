@@ -1,8 +1,13 @@
+/**
+ * File: The content families as data classes with validation: abilities, and the other families listed in
+ * ContentFamilies.cs (enemies, activities, artifacts and more). Subclasses are in Subclass.cs.
+ */
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace Solforge.Content;
 
+/** The ability categories. */
 public enum AbilityKind { Super, Grenade, Melee, ClassAbility, Movement, Aspect, Fragment, Passive }
 
 /** A super, grenade, melee, class ability, movement mode, aspect, fragment or passive as data. */
@@ -24,6 +29,7 @@ public sealed class AbilityDefinition : ContentDocument
     public string? PlugHash { get; set; }
     public Dictionary<string, int> Stats { get; set; } = [];
 
+    /** Checks this ability for problems the server would refuse. */
     protected override void ValidateFamily(ContentIssues issues)
     {
         if (CooldownSeconds is < 0 or > 1800) issues.Error("cooldown_seconds", "Must be 0..1800.");
@@ -38,6 +44,7 @@ public sealed class AbilityDefinition : ContentDocument
             issues.Warn("sandbox_perks", "No sandbox perk or plug: the ability is a description only until one is referenced.");
     }
 
+    /** Content this ability points at. */
     public override IEnumerable<ContentReference> References()
     {
         if (!DamageTypeDefinition.IsBuiltIn(Element)) yield return new(ContentFamilies.DamageType, Element, "element");
@@ -48,6 +55,7 @@ public sealed class AbilityDefinition : ContentDocument
 public sealed partial class DamageTypeDefinition : ContentDocument
 {
     public static readonly string[] BuiltIn = ["kinetic", "arc", "solar", "void", "stasis", "strand"];
+    /** Whether an id names a built-in rather than user content. */
     public static bool IsBuiltIn(string? id) => id is not null && BuiltIn.Contains(id);
 
     [JsonIgnore] public override string Family => ContentFamilies.DamageType;
@@ -59,6 +67,7 @@ public sealed partial class DamageTypeDefinition : ContentDocument
     /** Damage multiplier against other damage types' shields or resistances, by type id. */
     public Dictionary<string, double> Against { get; set; } = [];
 
+    /** Checks this family for problems the server would refuse. */
     protected override void ValidateFamily(ContentIssues issues)
     {
         if (IsBuiltIn(Id)) issues.Error("id", $"'{Id}' is built in; give a custom type its own id.");
@@ -68,9 +77,11 @@ public sealed partial class DamageTypeDefinition : ContentDocument
         foreach (var (other, value) in Against) if (value is < 0 or > 10) issues.Error("against." + other, "Must be 0..10.");
     }
 
+    /** Content this document points at. */
     public override IEnumerable<ContentReference> References() =>
         Against.Keys.Where(key => !IsBuiltIn(key)).Select(key => new ContentReference(ContentFamilies.DamageType, key, "against." + key));
 
+    /** Regex of valid colours (generated at compile time). */
     [GeneratedRegex("^#[0-9A-Fa-f]{6}$")]
     private static partial Regex ColorPattern();
 }
@@ -112,6 +123,7 @@ public sealed class LootPoolDefinition : ContentDocument
     public bool? Profile { get; set; }
     public List<LootKillRule> EnemyKill { get; set; } = [];
 
+    /** Checks this family for problems the server would refuse. */
     protected override void ValidateFamily(ContentIssues issues)
     {
         if (Id.Contains('.')) issues.Error("id", "Pool ids are Lua keys: use a-z, 0-9, '_' or '-'.");
@@ -140,6 +152,7 @@ public sealed class LootPoolDefinition : ContentDocument
     }
 }
 
+/** Enemy ranks, from minor to champions. */
 public enum EnemyRank { Minor, Elite, Major, Ultra, Boss, ChampionBarrier, ChampionOverload, ChampionUnstoppable }
 
 /** Combatant tuning as data: health, shield, resistances, abilities and loot. */
@@ -163,6 +176,7 @@ public sealed class EnemyDefinition : ContentDocument
     public string? LootPool { get; set; }
     public int Level { get; set; }
 
+    /** Checks this enemy family for problems the server would refuse. */
     protected override void ValidateFamily(ContentIssues issues)
     {
         if (!Races.Contains(Race)) issues.Warn("race", $"Known races: {string.Join(", ", Races)}.");
@@ -175,6 +189,7 @@ public sealed class EnemyDefinition : ContentDocument
         if (Rank is EnemyRank.Boss or EnemyRank.Ultra && Health < 1000) issues.Warn("health", "Bosses usually have far more health.");
     }
 
+    /** Content this enemy points at. */
     public override IEnumerable<ContentReference> References()
     {
         if (ShieldElement is not null && !DamageTypeDefinition.IsBuiltIn(ShieldElement)) yield return new(ContentFamilies.DamageType, ShieldElement, "shield_element");
@@ -184,14 +199,17 @@ public sealed class EnemyDefinition : ContentDocument
     }
 }
 
+/** The activity types. */
 public enum ActivityType { Patrol, Story, Strike, Nightfall, Raid, Dungeon, LostSector, PublicEvent, Crucible, Gambit, Custom }
 
+/** One encounter of an activity. */
 public sealed class ActivityEncounter
 {
     public string Enemy { get; set; } = "";
     public int Count { get; set; } = 1;
 }
 
+/** One objective of an activity. */
 public sealed class ActivityObjective
 {
     public string Id { get; set; } = "";
@@ -206,6 +224,7 @@ public sealed class ActivityObjective
     public List<string> Next { get; set; } = [];
 }
 
+/** Rewards of an activity. */
 public sealed class ActivityReward
 {
     public List<string> LootPools { get; set; } = [];
@@ -227,8 +246,10 @@ public sealed class ActivityDefinition : ContentDocument
     public int RecommendedPower { get; set; }
     public string Start { get; set; } = "";
     public List<ActivityObjective> Objectives { get; set; } = [];
+    /** The activity rewards. */
     public ActivityReward Rewards { get; set; } = new();
 
+    /** Checks this activity for problems the server would refuse. */
     protected override void ValidateFamily(ContentIssues issues)
     {
         int cap = Type switch { ActivityType.Raid => 6, ActivityType.Crucible => 6, ActivityType.Gambit => 4, ActivityType.Patrol or ActivityType.PublicEvent => 9, _ => 3 };
@@ -276,6 +297,7 @@ public sealed class ActivityDefinition : ContentDocument
         }
     }
 
+    /** Content this activity points at. */
     public override IEnumerable<ContentReference> References()
     {
         for (int i = 0; i < Objectives.Count; i++)
@@ -287,6 +309,7 @@ public sealed class ActivityDefinition : ContentDocument
     }
 }
 
+/** One perk of a seasonal artifact column. */
 public sealed class ArtifactPerk
 {
     public string Id { get; set; } = "";
@@ -296,6 +319,7 @@ public sealed class ArtifactPerk
     public List<int> SandboxPerks { get; set; } = [];
 }
 
+/** One column of artifact perks. */
 public sealed class ArtifactColumn
 {
     /** Perks unlocked in earlier columns before this column opens. */
@@ -310,6 +334,7 @@ public sealed class ArtifactDefinition : ContentDocument
     public int MaxUnlocks { get; set; } = 12;
     public List<ArtifactColumn> Columns { get; set; } = [];
 
+    /** Checks this artifact for problems the server would refuse. */
     protected override void ValidateFamily(ContentIssues issues)
     {
         if (Columns.Count is < 1 or > 5) issues.Error("columns", "An artifact has 1..5 columns.");

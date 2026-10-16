@@ -1,3 +1,7 @@
+/**
+ * File: Stdio MCP server exposing ask_clinepass; sibling of AgyDelegate.cs (see its header for how the shim starts
+ * these).
+ */
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
@@ -18,6 +22,7 @@ public static class ClineDelegate
     public const int MaxPrompt = AgyDelegate.MaxPrompt, DefaultTimeout = AgyDelegate.DefaultTimeout, MaxTimeout = AgyDelegate.MaxTimeout;
     public const string Instructions = "ask_clinepass delegates a task to a ClinePass model via the user's own Cline CLI sign-in.";
 
+    /** The MCP tool definition (name, description, input schema) for ask_clinepass. */
     public static JsonObject Tool() => new()
     {
         ["name"] = ToolName,
