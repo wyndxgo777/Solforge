@@ -6,6 +6,7 @@ using static Checks;
 /** Phase 13: grid, angle, scale and surface-normal snapping of the transform handles. */
 internal static class SnapChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(List<string> checks)
     {
         Grid();

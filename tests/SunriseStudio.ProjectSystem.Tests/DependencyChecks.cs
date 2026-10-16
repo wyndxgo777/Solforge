@@ -9,6 +9,7 @@ namespace SunriseStudio.ProjectSystem.Tests;
 /** Phase 18: dependency crawl + missing-reference manifest, and package ids from 0x0100-0x0CFF. */
 internal static class DependencyChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(string root, List<string> checks)
     {
         var fixture = new Fixture(Path.Combine(root, "install"), 6, 1801);

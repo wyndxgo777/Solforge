@@ -15,6 +15,7 @@ internal static class EffectPlacementChecks
     // Authored fx_jetpack offset from bone 9 in point set 0x80BFDB3C.
     private static readonly Vector3 JetpackOffset = new(0.047701f, 0, 0);
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string gameRoot)
     {
         using var catalog = PackageCatalog.Open(gameRoot);

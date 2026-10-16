@@ -5,6 +5,7 @@ using static Checks;
 /** Phase 12: cubemap SH projection (ambient diffuse) and box reflection probes. */
 internal static class ProbeChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(List<string> checks)
     {
         Directions();

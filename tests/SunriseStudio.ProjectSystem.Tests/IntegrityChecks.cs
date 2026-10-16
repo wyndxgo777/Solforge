@@ -14,6 +14,7 @@ internal static class IntegrityChecks
 {
     private const int Tags = 60, Modified = 50, Added = 20, NativeAdded = 15;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(string root, List<string> checks)
     {
         var fixture = new Fixture(Path.Combine(root, "install"), Tags, 1901);

@@ -1,6 +1,7 @@
 using System.Numerics;
 using SunriseStudio.Scene;
 
+/** Checks the world hierarchy: canonical placement owners, reused sources and hide state. */
 internal static class HierarchyChecks
 {
     /** Reused sources stay separate while parts and their exact owner marker share one node. */

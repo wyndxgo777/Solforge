@@ -4,6 +4,7 @@ using SunriseStudio.Authoring;
 using SunriseStudio.Packages;
 using SunriseStudio.Scene;
 
+/** Checks cubemap placement rows: transform edits are refused without embedded matrices, extents are stable and matrices compose once. */
 internal static class CubemapChecks
 {
     /** Invalid siblings cannot remove valid volumes or change their authored world matrices. */

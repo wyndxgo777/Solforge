@@ -1,3 +1,4 @@
+// Console test runner for package replacement: startup filename and replacement edits.
 using System.Security.Cryptography;
 using System.Text.Json;
 using SunriseStudio.Packages;

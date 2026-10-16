@@ -1,6 +1,7 @@
 using System.Numerics;
 using SunriseStudio.Packages;
 
+/** Builds a small synthetic world installation (map, bubbles, instances) used by the world tests. */
 internal static class WorldFixture
 {
     internal const uint Base = 0x80A00000, BubbleA = 0x11111111, BubbleB = 0x22222222;
@@ -104,25 +105,36 @@ internal static class WorldFixture
     private sealed class Bytes(int initial)
     {
         private readonly List<byte> bytes = new(new byte[initial]);
+        /** Returns the finished bytes. */
         internal byte[] ToArray() => bytes.ToArray();
+        /** Appends a zeroed block aligned to 16 bytes and returns its offset. */
         internal int Allocate(int count)
         {
             while (bytes.Count % 16 != 0) bytes.Add(0);
             int start = bytes.Count; bytes.AddRange(new byte[count]); return start;
         }
+        /** Writes an array header (count, relative offset, marker, type) at the field and returns the offset of its data. */
         internal int Array(int field, uint type, int stride, int count)
         {
             int header = Allocate(32 + stride * count); U32(header + 12, 0x80809FBD);
             I64(header + 16, count); U32(header + 24, type);
             I64(field, count); I64(field + 8, header + 16 - field - 8); return header + 32;
         }
+        /** Writes a unit-rotation position and scale record at the offset. */
         internal void Qts(int p, Vector3 position, float scale) { F32(p + 12, 1); V3(p + 16, position); F32(p + 28, scale); }
+        /** Writes three floats at the offset. */
         internal void V3(int p, Vector3 v) { F32(p, v.X); F32(p + 4, v.Y); F32(p + 8, v.Z); }
+        /** Writes four floats at the offset. */
         internal void V4(int p, Vector4 v) { V3(p, new(v.X, v.Y, v.Z)); F32(p + 12, v.W); }
+        /** Writes a little-endian float at the offset. */
         internal void F32(int p, float x) => U32(p, BitConverter.SingleToUInt32Bits(x));
+        /** Writes a byte at the offset. */
         internal void U8(int p, byte x) => bytes[p] = x;
+        /** Writes a little-endian 32-bit value at the offset. */
         internal void U32(int p, uint x) => Put(p, BitConverter.GetBytes(x));
+        /** Writes a little-endian 64-bit value at the offset. */
         internal void U64(int p, ulong x) => Put(p, BitConverter.GetBytes(x));
+        /** Writes a little-endian signed 64-bit value at the offset. */
         internal void I64(int p, long x) => Put(p, BitConverter.GetBytes(x));
         private void Put(int p, byte[] value) { for (int i = 0; i < value.Length; i++) bytes[p + i] = value[i]; }
     }

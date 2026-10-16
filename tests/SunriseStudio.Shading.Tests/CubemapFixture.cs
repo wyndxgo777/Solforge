@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using SunriseStudio.Rendering;
 using Vortice.DXGI;
 
+/** Checks native cubemap lighting on owned cube colors: stencil coverage, box fades, interior lighting and rejection of foreground and outside samples. */
 internal static class CubemapFixture
 {
     /** Owned cube colors and geometry test stencil coverage, box fades, and foreground rejection. */

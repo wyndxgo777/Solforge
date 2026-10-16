@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 /** This validator resolves serialized relative pointers without using the production reader. */
 internal static class PackageFormatValidation
 {
+    /** Reads the wide-hash table of a package file. */
     internal static (ulong Hash, uint Tag, uint Class)[] WideHashes(string path)
     {
         Check(path);
@@ -14,6 +15,7 @@ internal static class PackageFormatValidation
                 U32(misc, start + index * 16 + 12))).ToArray();
     }
 
+    /** Validates the layout of a package file. */
     internal static void Check(string path)
     {
         byte[] file = File.ReadAllBytes(path);
@@ -59,6 +61,7 @@ internal static class PackageFormatValidation
         }
     }
 
+    /** Validates that a patch inherits every entry of its source except the replaced ones. */
     internal static void CheckInheritance(string sourcePath, string patchPath, IReadOnlySet<int> replaced)
     {
         byte[] source = File.ReadAllBytes(sourcePath), patch = File.ReadAllBytes(patchPath);

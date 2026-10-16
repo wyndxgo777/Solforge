@@ -3,6 +3,7 @@ using SunriseStudio.Rendering;
 using SunriseStudio.Scene;
 using SunriseStudio.Viewport;
 
+/** Checks the animation palette shader code and its bit-packing against expected disassembly. */
 internal static class PaletteChecks
 {
     /** The palette form follows the index scale on the lanes an instruction writes. */

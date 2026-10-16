@@ -1,3 +1,4 @@
+// Console test runner for the project package layer: delta encoding and randomized insert/delete/replace checks.
 using System.Buffers.Binary;
 using System.Security.Cryptography;
 using System.Text;

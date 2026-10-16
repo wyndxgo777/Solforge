@@ -5,6 +5,7 @@ using SunriseStudio.Rendering;
 using SunriseStudio.Scene;
 using SunriseStudio.Viewport;
 
+/** Console test runner for viewport rendering: output folder, game directory, animation-only mode and wind reference comparison. */
 internal static class Program
 {
     [STAThread]

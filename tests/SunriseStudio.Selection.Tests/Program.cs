@@ -4,6 +4,7 @@ using SunriseStudio.Rendering;
 using SunriseStudio.Scene;
 using SunriseStudio.Viewport;
 
+/** Console test runner for selection and picking: spatial queries and nearest-triangle hits. */
 internal static partial class Program
 {
     private static readonly Vector2 Size = new(320, 240);

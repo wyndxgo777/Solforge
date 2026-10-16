@@ -5,6 +5,7 @@ using SunriseStudio.Editor;
 using SunriseStudio.Rendering;
 using SunriseStudio.Viewport;
 
+/** Checks shortcut input routing: inactive windows and mouse input must not trigger shortcuts or canvas actions. */
 internal static class ShortcutInputChecks
 {
     private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;

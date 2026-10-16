@@ -45,6 +45,7 @@ internal static class GuardianChecks
     // The first armor item with art of each slot, for the full-armor render.
     private static readonly uint[] FirstArmor = new uint[5];
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string install, string output)
     {
         Directory.CreateDirectory(output);

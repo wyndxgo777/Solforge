@@ -3,6 +3,7 @@ using System.Text;
 using SunriseStudio.Packages;
 using SunriseStudio.Projects;
 
+/** Checks project transactions: staged additions stay invisible until their linked edits land, and coupled creation is atomic. */
 internal static class TransactionChecks
 {
     /** A private clone and its owning reference must enter and leave the manifest together. */

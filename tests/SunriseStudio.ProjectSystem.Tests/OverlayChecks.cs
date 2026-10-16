@@ -7,6 +7,7 @@ namespace SunriseStudio.ProjectSystem.Tests;
 /** Phase 16: overlay reads, base-vs-authored diff and revert to base, without writing the installation. */
 internal static class OverlayChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(string root, List<string> checks)
     {
         var fixture = new Fixture(Path.Combine(root, "install"), 4, 1601);

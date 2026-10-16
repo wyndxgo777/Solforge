@@ -6,6 +6,7 @@ namespace SunriseStudio.ProjectSystem.Tests;
 /** Phase 15: ProjectWatcher reports external adds, edits and removals and ignores generated folders. */
 internal static class WatcherChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(string folder, List<string> checks)
     {
         StudioProject.Create(folder, "Watcher fixture");

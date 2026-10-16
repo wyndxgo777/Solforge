@@ -10,6 +10,7 @@ internal static class ModInstallChecks
         "What the mod does.", ["Name"], "https://example.com/mod",
         [new("dev.projectsunrise.base", "1.2.0", "1.9.0")], ["dev.other.mod"]);
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string parent)
     {
         Validation();

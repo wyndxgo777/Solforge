@@ -14,6 +14,7 @@ internal static class MergeSidecarChecks
     private const uint ArrayMarker = 0x80809FBD, PlugClass = 0x80802E03;
     private const int IndexStride = 24, StockRows = 3;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string parent)
     {
         RoundTrip();

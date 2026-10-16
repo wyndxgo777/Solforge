@@ -12,6 +12,7 @@ internal static class LightChecks
     private static readonly Vector3 LampPosition = new(-138.31058f, -1428.6404f, -3.8873444f);
     private const int Width = 400, Height = 250;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string install)
     {
         using var catalog = PackageCatalog.Open(install, cacheOptions: new() { Enabled = false });

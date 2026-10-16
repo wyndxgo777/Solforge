@@ -6,6 +6,7 @@ using SunriseStudio.Rendering;
 using SunriseStudio.Scene;
 using SunriseStudio.Viewport;
 
+/** Checks that live-transformed meshes leave their authored grid cell for culling, camera, outline and framing. */
 internal static partial class Program
 {
     /** Live snapshots move visible geometry and hit tests while authored fields remain byte-stable. */

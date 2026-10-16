@@ -273,4 +273,5 @@ static void AssertChangedOnly(byte[] before, byte[] after, int start, int length
         if (i < start || i >= start + length) Check(before[i] == after[i], "Placement edit changed an unrelated byte.");
 }
 
+/** Minimal selection proxy keyed by an arbitrary object. */
 internal sealed record SelectionProxy(object Key) : ISceneSelectionProxy;

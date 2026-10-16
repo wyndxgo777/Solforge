@@ -4,6 +4,7 @@ using SunriseStudio.Packages;
 /** The dependency codec reproduces the client layout and applies every edit in one encode. */
 internal static class DependencyTableChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run()
     {
         byte[] misc = Build();

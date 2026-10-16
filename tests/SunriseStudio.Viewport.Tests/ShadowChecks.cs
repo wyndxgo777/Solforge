@@ -14,6 +14,7 @@ internal static class ShadowChecks
     private static readonly Vector3 TreeBase = new(-11.413317f, -1222.9293f, -78.321365f);
     private const int Width = 400, Height = 250;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string install)
     {
         Math();

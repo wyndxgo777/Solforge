@@ -12,6 +12,7 @@ internal static class ClothAnimationChecks
     private const uint Centurion = 0x80C19B1F, Clip = 0x80C19B62;
     private const int Width = 320, Height = 240;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string gameRoot)
     {
         using var catalog = PackageCatalog.Open(gameRoot);

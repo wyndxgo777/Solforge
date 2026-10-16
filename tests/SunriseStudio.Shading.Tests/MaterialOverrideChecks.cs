@@ -4,6 +4,7 @@ using SunriseStudio.Rendering;
 /** Live material overrides (the node graph preview): what they patch, what they leave alone, and the shared set. */
 internal static class MaterialOverrideChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run()
     {
         Vector4[] tfx = [new(1, 2, 3, 4)], template = [new(10, 20, 30, 40), new(5, 6, 7, 8)];

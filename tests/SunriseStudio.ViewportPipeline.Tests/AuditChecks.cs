@@ -23,6 +23,7 @@ internal static class AuditChecks
     private const long MaximumVideoGrowthBytes = 64L * 1024 * 1024;
     private const long TextureBudgetBytes = 256L * 1024 * 1024;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string? game, List<string> checks)
     {
         if (game is null)

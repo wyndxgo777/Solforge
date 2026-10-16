@@ -2,6 +2,7 @@ using System.Numerics;
 using System.Text.Json;
 using SunriseStudio.Rendering;
 
+/** Checks managed object fog against native reference values within a relative error bound. */
 internal static class ObjectFogChecks
 {
     /** Compares with native results on the same synthetic inputs, read from a JSON file the caller supplies. */

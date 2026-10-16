@@ -8,6 +8,7 @@ using SunriseStudio.Rendering;
 using SunriseStudio.Scene;
 using SunriseStudio.Viewport;
 
+/** Performance and equivalence checks for frame visibility and line buffer modes; optimized paths must match the reference draw order. */
 internal static class FramePerformance
 {
     private sealed record CameraView(string Name, Vector3 Eye, Vector3 Pivot);

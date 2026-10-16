@@ -7,6 +7,7 @@ namespace SunriseStudio.ProjectSystem.Tests;
 /** Phase 17: WEM media exports as a WAV mix plus one mono WAV stem per channel. */
 internal static class StemChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(string folder, List<string> checks)
     {
         Directory.CreateDirectory(folder);
