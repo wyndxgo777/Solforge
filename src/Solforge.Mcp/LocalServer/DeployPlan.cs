@@ -118,7 +118,7 @@ public static class DeployPlanner
             n=0
             while IFS=$'\t' read -r s d; do mkdir -p "$(dirname -- "$d")"; cp -f -- "$s" "$d"; n=$((n+1)); done < "$B/plan.tsv"
             echo "DEPLOYED=$n EXISTED=$(wc -l < "$B/existed.txt") CREATED=$(wc -l < "$B/created.txt") BACKUP=$B"
-            """ + "\n";
+            """.ReplaceLineEndings("\n") + "\n";
     }
 
     /** Restores the tar over Sunrise and deletes files the deploy created (relative paths only, never with ..). */
@@ -141,7 +141,7 @@ public static class DeployPlanner
             fi
             date -u +%FT%TZ > "$B/rolled-back"
             echo "ROLLED_BACK=$B REMOVED=$removed"
-            """ + "\n";
+            """.ReplaceLineEndings("\n") + "\n";
     }
 
     /** id, file count, rolled-back flag and project per backup, newest first. */
@@ -152,7 +152,7 @@ public static class DeployPlanner
           [ -f "$B/$d/plan.tsv" ] || continue
           printf '%s\t%s\t%s\t%s\n' "$d" "$(wc -l < "$B/$d/plan.tsv")" "$( [ -f "$B/$d/rolled-back" ] && echo rolled-back || echo active)" "$(cat "$B/$d/source.txt" 2>/dev/null)"
         done
-        """ + "\n";
+        """.ReplaceLineEndings("\n") + "\n";
 }
 
 public sealed record BackupEntry(string Id, int Files, bool RolledBack, string Project);

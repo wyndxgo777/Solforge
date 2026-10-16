@@ -50,7 +50,7 @@ public sealed partial class LocalServerManager(IWslShell shell, LocalServerOptio
         echo '{{LocalServerParse.CensusMark}}'
         tail -n 20000 "$RUN/stdout.log" 2>/dev/null | grep -a 'stage=census' | tail -n 400 || true
         echo '{{LocalServerParse.EndMark}}'
-        """ + "\n";
+        """.ReplaceLineEndings("\n") + "\n";
 
     public async Task<LocalServerStatus> StatusAsync(CancellationToken cancel = default)
     {
@@ -84,7 +84,7 @@ public sealed partial class LocalServerManager(IWslShell shell, LocalServerOptio
         {{PidLine}}
         if [ -n "$pid" ]; then echo "STARTED_NO_PORT=$pid"; exit 0; fi
         echo "EXITED"; tail -n 20 stdout.log; exit 6
-        """ + "\n";
+        """.ReplaceLineEndings("\n") + "\n";
 
     /** SIGTERM, up to 10 s grace, then SIGKILL, then wait for the kernel to release the BAP port. */
     public string StopScript() => $$"""
@@ -95,7 +95,7 @@ public sealed partial class LocalServerManager(IWslShell shell, LocalServerOptio
         if pgrep -x {{Exe}} >/dev/null; then pkill -9 -x {{Exe}} || true; echo "KILLED"; sleep 1; fi
         for i in $(seq 1 20); do ss -H -tuln 2>/dev/null | grep -q ':{{Options.BapPort}} ' || break; sleep 0.5; done
         echo "STOPPED=$pid"
-        """ + "\n";
+        """.ReplaceLineEndings("\n") + "\n";
 
     public Task<ActionResult> StartAsync(CancellationToken cancel = default) => Exclusive(StartScript(), "Started", cancel);
     public Task<ActionResult> StopAsync(CancellationToken cancel = default) => Exclusive(StopScript(), "Stopped", cancel);
@@ -140,7 +140,7 @@ public sealed partial class LocalServerManager(IWslShell shell, LocalServerOptio
           n=$((s-o)); [ "$n" -gt 262144 ] && n=262144
           echo "NEXT=$((o+n))"; echo "---LOG"; tail -c +$((o+1)) "$f" | head -c "$n"
         fi
-        """ + "\n";
+        """.ReplaceLineEndings("\n") + "\n";
 
     public async Task<LogChunk> ReadLogAsync(long offset, int lines = 200, CancellationToken cancel = default)
     {
@@ -250,7 +250,7 @@ public sealed partial class LocalServerManager(IWslShell shell, LocalServerOptio
             printf '%s' '{{base64}}' | base64 -d > {{Shell.Quote(path + ".solforge-tmp")}}
             mv -f {{Shell.Quote(path + ".solforge-tmp")}} {{Shell.Quote(path)}}
             echo "WROTE={{path}}"
-            """ + "\n";
+            """.ReplaceLineEndings("\n") + "\n";
     }
 
     public static string? ConfigProblem(string path, string content)
@@ -284,7 +284,7 @@ public sealed partial class LocalServerManager(IWslShell shell, LocalServerOptio
         cd {{Run}}
         timeout {{(int)Options.SelftestTimeout.TotalSeconds}} ./{{Options.Executable}} --selftest 2>&1 | tail -n 200
         echo "SELFTEST_EXIT=${PIPESTATUS[0]}"
-        """ + "\n";
+        """.ReplaceLineEndings("\n") + "\n";
 
     public async Task<ActionResult> SelftestAsync(CancellationToken cancel = default)
     {
