@@ -292,7 +292,7 @@ public static partial class SolforgeTools
                 args => args["content"] is not null ? $"Write {McpJson.String(args, "path")} ({McpJson.String(args, "content")?.Length ?? 0} chars)"
                     : $"Edit {McpJson.String(args, "path")}: replace {Quote(McpJson.String(args, "find"))} with {Quote(McpJson.String(args, "replace"))}"),
             .. ProjectTools(host, Read, Act),
-            .. DataTools(host)
+            .. DataTools(host),
             .. ContentTools(host, Read)
         ];
     }
