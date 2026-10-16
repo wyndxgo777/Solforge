@@ -16,6 +16,11 @@ public sealed class StudioSettings
     public string SunrisePath { get; set; } = "";
     public string KeySource { get; set; } = "";
     public List<string> RecentProjects { get; set; } = [];
+    /** The project opened last; reopened at startup when AutoOpenLastProject is on. */
+    public string LastProjectPath { get; set; } = "";
+    public bool AutoOpenLastProject { get; set; } = true;
+    /** Fallback when no project was saved yet. */
+    public const string DefaultProjectPath = @"C:\Users\Seth\Desktop\sol\10-Project Sol\Project Sol\sunrise.project.json";
     public float BrowserWidth { get; set; } = 300;
     public float InspectorWidth { get; set; } = 300;
     public float ChangesHeight { get; set; } = 190;
@@ -151,6 +156,7 @@ public sealed class StudioSettings
     public void RememberProject(string path)
     {
         path = Path.GetFullPath(path);
+        LastProjectPath = path;
         RecentProjects.RemoveAll(item => string.Equals(item, path, StringComparison.OrdinalIgnoreCase));
         RecentProjects.Insert(0, path);
         if (RecentProjects.Count > 8) RecentProjects.RemoveRange(8, RecentProjects.Count - 8);
