@@ -124,9 +124,23 @@ internal static class LayoutChecks
                         form.EditorLayout.SetPanel(tree.Id, StudioPanelKind.ObjectTree);
                         phase++;
                     }
+                    else if (phase == 5)
+                    {
+                        CheckTitleBar(form, "default width");
+                        // Narrower than the window allows by hand, so the title bar must fold groups into its menu.
+                        form.MinimumSize = new System.Drawing.Size(400, 300);
+                        form.ClientSize = new System.Drawing.Size(640, form.ClientSize.Height);
+                        phase++;
+                    }
+                    else if (phase == 6)
+                    {
+                        CheckTitleBar(form, "640 px");
+                        Check(form.TitleBarOverflow.Count > 0, "A 640 px title bar moved nothing into its overflow menu.");
+                        phase++;
+                    }
                 };
                 System.Windows.Forms.Application.Run(form);
-                Check(form.Failure is null && phase == 5, form.Failure ?? "Layout UI did not finish.");
+                Check(form.Failure is null && phase == 7, form.Failure ?? "Layout UI did not finish.");
             }
             catch (Exception error) { failure = error; }
         });
@@ -134,7 +148,31 @@ internal static class LayoutChecks
         thread.Start();
         Check(thread.Join(TimeSpan.FromSeconds(90)), "Layout UI timed out.");
         if (failure is not null) throw new InvalidOperationException("Layout UI failed.", failure);
-        Console.WriteLine("editor_layout_ui saved=pass swap=pass close=pass reopen=pass reset=pass");
+        Console.WriteLine("editor_layout_ui saved=pass swap=pass close=pass reopen=pass reset=pass titlebar=pass");
+    }
+
+    /**
+     * Every control of the two bars before the one-row title bar (696fa0c: the menu bar and the toolbar), and the
+     * title bar group that now holds it. Each must be on the row or in its overflow menu, never both, never neither.
+     */
+    private static readonly (string Control, string Group)[] OldBarControls =
+    [
+        ("File", "File"), ("Edit", "Edit"), ("Assets", "Assets"), ("Build", "Build"), ("View", "View"),
+        ("Window", "Window"), ("Window > Layouts", "Window"), ("Window > Reset layout", "Window"), ("Help", "Help"),
+        ("navigate-back", "Navigation"), ("navigate-forward", "Navigation"), ("project name", "Project"),
+        ("tb-new", "Project"), ("tb-add", "Project"), ("tb-build", "Project"), ("tb-render", "Render"),
+        ("tb-shaders", "Shaders"), ("##quality", "Quality"), ("tb-detail", "Detail"), ("##lighting", "Lighting"),
+        ("tb-settings", "Settings"), ("window buttons", "WindowButtons"), ("tb-relay", "Relay")
+    ];
+
+    private static void CheckTitleBar(StudioForm form, string width)
+    {
+        var reachable = form.TitleBarReachable;
+        foreach (var (control, group) in OldBarControls)
+            Check(reachable.Contains(group), $"Title bar at {width}: '{control}' ({group}) is not reachable.");
+        Check(form.TitleBarOverflow.Distinct().Count() == form.TitleBarOverflow.Count
+            && form.TitleBarOverflow.All(reachable.Contains), $"Title bar at {width}: the overflow menu repeats or invents a group.");
+        Check(!form.TitleBarOverflow.Contains("WindowButtons"), $"Title bar at {width}: the window buttons left the row.");
     }
 
     private static void Check(bool valid, string message)

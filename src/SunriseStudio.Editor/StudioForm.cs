@@ -693,8 +693,7 @@ public sealed partial class StudioForm : Form
         // One title bar row: brand, menus, toolbar and window buttons; it is the caption wherever no control sits.
         chrome.Scale = scale;
         chrome.CaptionHeight = toolbar;
-        DrawToolbar(0, toolbar);
-        DrawMenu(menuStripX, toolbar);
+        DrawTitleBar(toolbar);
         float top = toolbar;
         float contentHeight = Math.Max(100, height - top - status);
         DrawLayout(new(0, top), new(width, contentHeight));

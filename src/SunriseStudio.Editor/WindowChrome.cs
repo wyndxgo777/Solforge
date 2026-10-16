@@ -102,13 +102,16 @@ internal sealed class WindowChrome(Form form)
         return point.Y >= 0 && point.Y < CaptionHeight && !overItem ? HTCAPTION : HTCLIENT;
     }
 
+    /** Width of the minimize, maximize and close buttons together. */
+    public float ButtonsWidth => 3 * 46 * Scale;
+
     /**
      * Minimize, maximize or restore, and close, at the right end of the current window's row.
      * @param close What the close button does; the window's own close when null.
      */
     public void DrawButtons(float height, Action? close = null)
     {
-        float width = 46 * Scale;
+        float width = ButtonsWidth / 3;
         ImGui.SetCursorPos(new(ImGui.GetWindowWidth() - 3 * width, 0));
         var draw = ImGui.GetWindowDrawList();
         uint glyph = ImGui.GetColorU32(ImGuiCol.Text);

@@ -18,179 +18,135 @@ public sealed partial class StudioForm
     private int addKind, addType = 8, addSubType;
     private StudioDocument? cloneSource;
 
-    // Width the menus took last frame; the title bar keeps that much room for them after the brand.
-    private float menuStripWidth;
+    /**
+     * Title bar groups in bar order. The menus come first; groups that do not fit at the window's width move into
+     * the "»" menu from the right end, so nothing on the row ever overlaps.
+     */
+    internal enum TitleGroup
+    {
+        File, Edit, Assets, Build, View, Window, Help,
+        Relay, Navigation, Project, Render, Shaders, Quality, Detail, Lighting, Settings
+    }
+
+    private static readonly TitleGroup[] TitleGroups = Enum.GetValues<TitleGroup>();
+
+    // Width each group took when last drawn on the row (0 until then), used to decide what fits.
+    private readonly float[] titleWidths = new float[TitleGroups.Length];
+    private readonly HashSet<string> titleReachable = [];
+    private readonly List<string> titleOverflow = [];
+
+    /** Groups (and "WindowButtons") the last frame offered, on the row or in the "»" menu. */
+    internal IReadOnlyCollection<string> TitleBarReachable => titleReachable;
+
+    /** Groups the last frame moved into the "»" menu. */
+    internal IReadOnlyList<string> TitleBarOverflow => titleOverflow;
 
     /**
-     * The menus, drawn into the title bar's row at x; each item is disabled while its command cannot run.
-     * A transparent window over the title bar holds them; its menu bar is the row's full height.
+     * The title bar: brand, the menus, the toolbar and the window buttons on one row, all in one window's menu bar
+     * (no overlay window). Wherever no control sits it is the window's caption.
      */
-    private void DrawMenu(float x, float height)
+    private void DrawTitleBar(float height)
     {
-        // Only as wide as the menus, so the toolbar controls beside it still take the clicks.
-        float width = Math.Clamp(menuStripWidth > 0 ? menuStripWidth : 400 * scale, 1, Math.Max(1, ClientSize.Width - x));
-        ImGui.SetNextWindowPos(new(x, 0));
-        ImGui.SetNextWindowSize(new(width, height));
-        // The menu bar's height comes from the frame padding at Begin and BeginMenuBar; the menus keep the normal padding.
-        var padding = ImGui.GetStyle().FramePadding;
-        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
+        var style = ImGui.GetStyle();
+        float normalPad = style.FramePadding.Y;
+        // The menu bar is as tall as the frame padding at Begin and BeginMenuBar makes it; controls use the normal padding.
+        float barPad = Math.Max(normalPad, (height - ImGui.GetFontSize()) / 2);
         ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, Vector2.One);
-        ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
-        ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(padding.X, Math.Max(padding.Y, (height - ImGui.GetFontSize()) / 2)));
+        ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(style.FramePadding.X, barPad));
         ImGui.PushStyleColor(ImGuiCol.MenuBarBg, Vector4.Zero);
-        bool open = ImGui.Begin("Menus", PanelFlags | ImGuiWindowFlags.MenuBar | ImGuiWindowFlags.NoBackground
-            | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
-        UiAuto.SetWindow("Menus");
-        bool bar = open && ImGui.BeginMenuBar();
+        BeginPanel("Toolbar", Vector2.Zero, new(ClientSize.Width, height),
+            ImGuiWindowFlags.MenuBar | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
+        // A frame whose bar fails to open offers nothing, so the layout checks see it.
+        titleReachable.Clear();
+        titleOverflow.Clear();
+        bool bar = ImGui.BeginMenuBar();
         ImGui.PopStyleVar();
         if (!bar)
         {
-            ImGui.End(); ImGui.PopStyleColor(); ImGui.PopStyleVar(3);
+            ImGui.End(); ImGui.PopStyleColor(); ImGui.PopStyleVar();
             return;
         }
-        if (UiAuto.BeginMenu("File"))
+        // BeginMenuBar aligns the row's text to the bar padding; text items start this much higher to sit centred.
+        float row = (height - ImGui.GetFrameHeight()) / 2;
+        float textTop = row + normalPad - barPad;
+        float x = DrawTitleBrand(height);
+        float right = ClientSize.Width - chrome.ButtonsWidth - 8 * scale;
+
+        // Which groups fit, from last frame's widths; the rest go to the "»" menu, the right-most first.
+        float overflowWidth = ImGui.CalcTextSize("»").X + style.ItemSpacing.X * 2;
+        int fit = TitleGroups.Length;
+        if (x + TitleGroups.Sum(TitleWidth) > right)
         {
-            if (UiAuto.MenuItem("New project", ShortcutInput.Text(ShortcutActions.NewProject), false, !workspace.IsBusy)) projectDialog = true;
-            if (UiAuto.MenuItem("Open project...", ShortcutInput.Text(ShortcutActions.OpenProject), false, !workspace.IsBusy)) OpenProjectDialog();
-            if (UiAuto.BeginMenu("Recent projects", settings.RecentProjects.Count != 0 && !workspace.IsBusy))
+            float used = x + overflowWidth;
+            fit = 0;
+            while (fit < TitleGroups.Length && used + TitleWidth(TitleGroups[fit]) <= right) used += TitleWidth(TitleGroups[fit++]);
+        }
+        for (int i = 0; i < fit; i++)
+        {
+            var group = TitleGroups[i];
+            float start = x;
+            x += TitleLead(group);
+            ImGui.SetCursorPos(new(x, IsMenu(group) ? textTop : row));
+            DrawTitleGroup(group, row, textTop);
+            // On a menu bar row each item's ItemSize steps the cursor past it (and the item spacing).
+            x = ImGui.GetCursorPosX();
+            titleWidths[(int)group] = x - start;
+            titleReachable.Add(group.ToString());
+        }
+        if (fit < TitleGroups.Length)
+        {
+            ImGui.SetCursorPos(new(x, textTop));
+            if (UiAuto.BeginMenu("»##title-overflow"))
             {
-                foreach (string path in settings.RecentProjects.ToArray())
-                {
-                    ImGui.PushID(path);
-                    // A moved or deleted project stays listed but cannot be opened.
-                    bool exists = IconChecks.Exists(path);
-                    if (UiAuto.MenuItem(Path.GetFileName(Path.GetDirectoryName(path)) ?? path, "", false, exists)) OpenProject(path);
-                    if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-                        ImGui.SetTooltip(exists ? path : path + " (missing)");
-                    ImGui.PopID();
-                }
+                for (int i = fit; i < TitleGroups.Length; i++) DrawTitleOverflowItem(TitleGroups[i]);
                 UiAuto.EndMenu();
             }
-            if (UiAuto.MenuItem("New mission script...", ShortcutInput.Text(ShortcutActions.CreateMissionScript), false,
-                workspace.Catalog is not null && !workspace.IsBusy))
-                NewMissionScript();
-            if (UiAuto.MenuItem(missionGraphActive ? "Save script" : "Save project",
-                ShortcutInput.Text(ShortcutActions.SaveProject), false, CanSaveActive))
-                SaveActiveDocument();
-            if (UiAuto.MenuItem("Close project", "", false, workspace.CanEdit)) workspace.Run(() =>
-            { if (ConfirmMissionDraft()) workspace.CloseProject(); });
-            if (UiAuto.MenuItem("Close world", "", false, workspace.World is not null && !workspace.IsBusy)) workspace.Run(workspace.CloseWorld);
-            ImGui.Separator();
-            if (UiAuto.MenuItem("Sunrise location...", "", false, !workspace.IsBusy)) settingsDialog = true;
-            if (UiAuto.MenuItem("Cache...", "", false, !workspace.IsBusy)) cacheDialog = true;
-            if (UiAuto.MenuItem("Settings...", ShortcutInput.Text(ShortcutActions.OpenSettings))) preferencesOpen = true;
-            ImGui.Separator();
-            if (UiAuto.MenuItem("Exit")) BeginInvoke(Close);
-            UiAuto.EndMenu();
+            x = ImGui.GetCursorPosX();
+            for (int i = fit; i < TitleGroups.Length; i++)
+            {
+                titleReachable.Add(TitleGroups[i].ToString());
+                titleOverflow.Add(TitleGroups[i].ToString());
+            }
         }
-        if (UiAuto.BeginMenu("Edit"))
+        if (workspace.IsBusy && x + ImGui.CalcTextSize("Working").X <= right)
         {
-            if (UiAuto.MenuItem("Undo", ShortcutInput.Text(ShortcutActions.Undo), false, CanUndoActive)) UndoActive();
-            if (UiAuto.MenuItem("Redo", ShortcutInput.Text(ShortcutActions.Redo), false, CanRedoActive)) RedoActive();
-            ImGui.Separator();
-            if (UiAuto.MenuItem("Convert placement deltas to object edits", "", false,
-                workspace.CanEdit && workspace.Project?.Changes.Count > 0))
-                workspace.Run(() => workspace.ConvertPlacementDeltas());
-            ImGui.Separator();
-            if (UiAuto.MenuItem("Shortcuts...")) shortcutsDialog = true;
-            if (UiAuto.MenuItem("Settings...", ShortcutInput.Text(ShortcutActions.OpenSettings))) preferencesOpen = true;
-            UiAuto.EndMenu();
+            ImGui.SetCursorPos(new(x, textTop));
+            ImGui.TextDisabled("Working");
         }
-        if (UiAuto.BeginMenu("Assets"))
-        {
-            if (UiAuto.MenuItem("Export full asset to Blender...", "", false, CanExportBundle)) ExportFullAsset();
-            MapBundleTooltip();
-            if (UiAuto.MenuItem("Export world to Blender...", "", false,
-                !workspace.IsBusy && workspace.World is not null)) ExportWorldScene();
-            if (UiAuto.MenuItem("Import Blender asset...", "", false, workspace.CanEdit)) BeginBundleImport();
-            if (UiAuto.MenuItem("Import skinned model...", "", false, CanReplaceSkin)) BeginSkinImport();
-            ImGui.Separator();
-            if (UiAuto.MenuItem("Export...", "", false, workspace.Document is not null && !workspace.IsBusy)) ExportSelected();
-            if (UiAuto.MenuItem("Export animation...", "", false,
-                AssetPreviewViewport?.Animation is { Source.Binding: not null, Clip: not null })) ExportAnimation();
-            if (UiAuto.MenuItem("Export editable animation...", "", false, SelectedClipTag() is not null
-                && !workspace.IsBusy)) ExportAnimationControls();
-            if (UiAuto.MenuItem("Import animation controls...", "", false, SelectedClipTag() is not null
-                && workspace.CanEdit)) ImportAnimationControls();
-            if (UiAuto.MenuItem("Export material to Blender...", "", false,
-                workspace.Document?.Entry.Reference == 0x808071E8 && !workspace.IsBusy)) ExportMaterialBundle();
-            if (UiAuto.MenuItem("Export collision...", "", false, CanExportCollision)) ExportCollision();
-            if (UiAuto.MenuItem("Import collision...", "", false, workspace.CanEdit && CanExportCollision)) ImportCollision();
-            if (UiAuto.MenuItem("Import as delta...", "", false, workspace.CanEdit && workspace.Document is not null)) ImportDelta();
-            if (UiAuto.MenuItem("Add asset...", "", false, workspace.CanEdit)) addDialog = true;
-            if (UiAuto.MenuItem("Edit perk behavior...", "", false,
-                workspace.Catalog is not null && !workspace.IsBusy)) OpenPerkBehaviorPicker();
-            ImGui.Separator();
-            if (UiAuto.MenuItem("Resolve asset names", "", false, workspace.Catalog is not null && !workspace.IsBusy))
-                workspace.Run(workspace.IndexNames);
-            UiAuto.EndMenu();
-        }
-        if (UiAuto.BeginMenu("Build"))
-        {
-            if (UiAuto.MenuItem("Build packages", ShortcutInput.Text(ShortcutActions.BuildPackages), false, workspace.CanEdit))
-                workspace.Run(() => workspace.Build());
-            if (UiAuto.MenuItem("Build and install", ShortcutInput.Text(ShortcutActions.BuildAndInstall), false, workspace.CanEdit)) InstallMod();
-            if (UiAuto.MenuItem("Update running game", ShortcutInput.Text(ShortcutActions.UpdateRunningGame), false, workspace.CanEdit))
-                UpdateRunningGame();
-            if (UiAuto.MenuItem("Build to folder...", "", false, workspace.CanEdit))
-                PickFolder("Build output", folder => workspace.Build(folder));
-            ImGui.Separator();
-            if (UiAuto.MenuItem("Mod details...", "", false, workspace.CanEdit)) workspace.Run(OpenModDialog);
-            DrawPackagingMenuItems();
-            UiAuto.EndMenu();
-        }
-        if (UiAuto.BeginMenu("View"))
-        {
-            if (UiAuto.MenuItem("Mission Graph")) focusMissionGraph = true;
-            if (UiAuto.MenuItem("Live")) focusLive = true;
-            if (UiAuto.MenuItem("Local Server")) focusLocalServer = true;
-            if (UiAuto.MenuItem("Items", "", false, workspace.Catalog is not null)) ShowItems();
-            if (UiAuto.MenuItem("Data explorer (decomp, tags, strings)")) dataExplorerOpen = true;
-            ImGui.Separator();
-            if (UiAuto.MenuItem("Frame selection", ShortcutInput.Text(ShortcutActions.FrameSelection3D), false,
-                viewport?.Camera.PivotFree == true)) viewport?.FocusSelection();
-            if (UiAuto.MenuItem("Set cursor to selection", ShortcutInput.Text(ShortcutActions.SetCursor3D), false,
-                (viewport?.SelectedObject is not null || viewport?.SelectedCollision >= 0) && viewport!.Camera.PivotFree))
-                viewport?.SetCursorToSelection();
-            bool wire = viewport?.Wireframe ?? false, grid = viewport?.ShowGrid ?? true;
-            if (UiAuto.MenuItem("Wireframe", "", ref wire)) viewport!.Wireframe = wire;
-            if (UiAuto.MenuItem("Grid", "", ref grid)) viewport!.ShowGrid = grid;
-            ImGui.Separator();
-            DrawRenderingMenuItem();
-            DrawPhoneStreamMenuItems();
-            UiAuto.EndMenu();
-        }
-        DrawWindowMenu();
-        if (UiAuto.BeginMenu("Help"))
-        {
-            DrawHelpMenuItems();
-            if (UiAuto.MenuItem("Third-party notices")) noticesDialog = true;
-            if (ImGui.IsItemHovered()) ImGui.SetTooltip("Licenses of the libraries and code Studio includes");
-            // About: Solforge is a fork; the upstream author keeps the credit.
-            ImGui.Separator();
-            ImGui.TextDisabled($"Solforge {StudioVersion.Text}");
-            ImGui.TextDisabled(AboutCredit);
-            UiAuto.EndMenu();
-        }
-        menuStripWidth = ImGui.GetCursorPosX();
+        chrome.DrawButtons(height);
+        titleReachable.Add("WindowButtons");
         ImGui.EndMenuBar();
-        ImGui.End(); ImGui.PopStyleColor(); ImGui.PopStyleVar(3);
+        ImGui.End(); ImGui.PopStyleColor(); ImGui.PopStyleVar();
     }
 
-    /** Pixels from a text line's top to its baseline in the current font. */
-    private static float FontAscent() => ImGui.GetFont().Ascent * ImGui.GetFontSize() / ImGui.GetFont().FontSize;
+    private static bool IsMenu(TitleGroup group) => group <= TitleGroup.Help;
 
-    // Where the menus start on the title bar row (after the brand); DrawMenu draws them there.
-    private float menuStripX;
-
-    /**
-     * The title bar: logo, title, room for the menus, navigation, project actions, shading controls and the
-     * window buttons, centred on one line. Wherever no control sits it is the window's caption.
-     */
-    private void DrawToolbar(float top, float height)
+    // Extra room before a group: the toolbar starts apart from the menus, and the project apart from navigation.
+    private float TitleLead(TitleGroup group) => group switch
     {
-        BeginPanel("Toolbar", new(0, top), new(ClientSize.Width, height), ImGuiWindowFlags.NoScrollbar);
-        // Every item on the row is centred on the toolbar's middle line.
+        TitleGroup.Relay => 12 * scale,
+        TitleGroup.Project => 16 * scale,
+        _ => 0
+    };
+
+    /** A group's width when last drawn, or a guess before its first frame on the row. */
+    private float TitleWidth(TitleGroup group)
+    {
+        float width = titleWidths[(int)group];
+        if (width > 0) return width;
+        var style = ImGui.GetStyle();
+        return IsMenu(group) ? ImGui.CalcTextSize(group.ToString()).X + style.ItemSpacing.X * 2
+            : group is TitleGroup.Quality or TitleGroup.Lighting ? 150 * scale
+            : group is TitleGroup.Project ? 200 * scale
+            : ImGui.GetFrameHeight() * 2 + style.ItemSpacing.X + TitleLead(group);
+    }
+
+    /** Logo, SOLFORGE and the version, drawn without clickable items so the brand stays part of the drag caption. */
+    private float DrawTitleBrand(float height)
+    {
+        var draw = ImGui.GetWindowDrawList();
+        Vector2 origin = ImGui.GetWindowPos();
+        float x = ImGui.GetStyle().WindowPadding.X;
         ImGui.PushFont(gui!.TitleFont);
         int mark = (int)MathF.Round(ImGui.GetTextLineHeight() * 1.2f);
         if (toolbarLogo?.Width != mark && renderer is not null)
@@ -201,113 +157,343 @@ public sealed partial class StudioForm
         if (toolbarLogo is { } logo)
         {
             // Whole pixels keep the 1:1 logo from being resampled again.
-            ImGui.SetCursorPosY((height - mark) / 2);
-            ImGui.SetCursorScreenPos(Vector2.Round(ImGui.GetCursorScreenPos()));
+            ImGui.SetCursorScreenPos(Vector2.Round(origin + new Vector2(x, (height - mark) / 2)));
             ImGui.Image(logo.ImGuiId, new(mark));
-            ImGui.SameLine(0, 8 * scale);
+            x += mark + 8 * scale;
         }
-        // SameLine re-applies the line's text offset, so each word sets its own top to share one baseline.
         float titleTop = (height - ImGui.GetTextLineHeight()) / 2;
         float baseline = titleTop + FontAscent();
-        ImGui.SetCursorPosY(titleTop);
-        ImGui.TextColored(StudioTheme.Accent, "SOL");
-        ImGui.SameLine(0, 0);
-        ImGui.SetCursorPosY(titleTop);
-        ImGui.TextUnformatted("FORGE");
+        draw.AddText(origin + new Vector2(x, titleTop), ImGui.GetColorU32(StudioTheme.Accent), "SOL");
+        x += ImGui.CalcTextSize("SOL").X;
+        draw.AddText(origin + new Vector2(x, titleTop), ImGui.GetColorU32(ImGuiCol.Text), "FORGE");
+        x += ImGui.CalcTextSize("FORGE").X;
         ImGui.PopFont();
-        ImGui.SameLine(0, 6 * scale);
-        ImGui.SetCursorPosY(baseline - FontAscent());
-        ImGui.TextDisabled(StudioVersion.Text);
+        x += 6 * scale;
+        var version = ImGui.CalcTextSize(StudioVersion.Text);
+        ImGui.SetCursorPos(new(x, baseline - FontAscent()));
+        ImGui.Dummy(version);
+        draw.AddText(ImGui.GetItemRectMin(), ImGui.GetColorU32(ImGuiCol.TextDisabled), StudioVersion.Text);
         if (ImGui.IsItemHovered()) ImGui.SetTooltip(AboutCredit);
-        float brandEnd = ImGui.GetItemRectMax().X - ImGui.GetWindowPos().X;
-        menuStripX = brandEnd + 10 * scale;
-        // SameLine returns to the top of the line's first item (the taller logo), so every control below sets its own
-        // top on the toolbar's centre line; text aligns to the frame padding from there.
-        float row = (height - ImGui.GetFrameHeight()) / 2;
-        ImGui.SameLine(menuStripX + Math.Max(menuStripWidth, 0) + 12 * scale);
-        ImGui.SetCursorPosY(row);
-        DrawNavigationButtons(row);
-        float navigationEnd = ImGui.GetItemRectMax().X - ImGui.GetWindowPos().X;
-        ImGui.SameLine(MathF.Max(230 * scale, navigationEnd + 16 * scale));
-        ImGui.SetCursorPosY(row);
-        ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted(workspace.Project?.Name ?? "View only");
-        ToolbarNext(row);
-        if (workspace.Project is null)
-        {
-            if (ImGuiIcons.Button("tb-new", StudioIcon.Plus, "New project")) projectDialog = true;
-        }
-        else
-        {
-            ImGui.BeginDisabled(!workspace.CanEdit);
-            if (ImGuiIcons.Button("tb-add", StudioIcon.Plus, "Add asset")) addDialog = true;
-            ToolbarNext(row);
-            string build = ShortcutInput.Text(ShortcutActions.BuildPackages);
-            // Solforge: the primary action uses the sun-grad button (SolTheme).
-            if (SolTheme.PrimaryButton("Build##tb-build")) workspace.Run(() => workspace.Build());
-            StudioUi.Tip(build.Length == 0 ? "Build packages" : $"Build packages ({build})");
-            ImGui.EndDisabled();
-        }
-        ToolbarNext(row);
-        DrawRenderingToolbarButton();
-        ToolbarNext(row);
-        bool shading = settings.GameShaders;
-        string? shaderProblem = GameShaderProblem();
-        if (ImGuiIcons.Toggle("tb-shaders", StudioIcon.Shader,
-            "Game shaders: the game's materials and lighting (Quality High or Full)" + (shaderProblem is null ? "" : "\n" + shaderProblem),
-            ref shading))
-            SetGameShaders(shading);
-        ToolbarNext(row);
-        DrawQualityToolbarCombo();
-        ToolbarNext(row);
-        bool fullDetail = settings.FullDetail;
-        if (ImGuiIcons.Toggle("tb-detail", StudioIcon.Detail,
-            "Full detail: draw static objects at full detail at every distance, with no far cull.\nOff switches detail and culls with distance, as the game does."
-            + "\nIn the map viewport this applies at Quality High; Full always draws full detail, Low and Medium never do.",
-            ref fullDetail))
-        {
-            settings.FullDetail = fullDetail;
-            if (viewport is not null) viewport.FullDetail = fullDetail;
-            if (assetViewport is not null) assetViewport.FullDetail = fullDetail;
-            if (fullDetail && settings.ViewportQuality < ViewportQuality.High) SetViewportQuality(ViewportQuality.High);
-            else SaveSettings();
-        }
-        ToolbarNext(row);
-        int lighting = Math.Clamp((int)settings.LightingMode, 0, LightingNames.Length - 1);
-        // The preview names the setting so a bare "Studio" doesn't read as the app or layout name.
-        ImGui.SetNextItemWidth(ImGui.CalcTextSize("Lighting: Ambient").X + ImGui.GetFrameHeight() + ImGui.GetStyle().FramePadding.X * 2);
-        if (UiAuto.BeginCombo("##lighting", "Lighting: " + LightingNames[lighting]))
-        {
-            for (int i = 0; i < LightingNames.Length; i++)
-                if (UiAuto.Selectable(LightingNames[i], i == lighting) && i != lighting)
-                {
-                    lighting = i;
-                    settings.LightingMode = (SunriseStudio.Rendering.NativeLightingMode)lighting;
-                    if (viewport?.NativeRenderer is { } scene) scene.LightingMode = settings.LightingMode;
-                    if (assetViewport?.NativeRenderer is { } asset) asset.LightingMode = settings.LightingMode;
-                    // Lighting is part of game shading; picking a mode turns it on so the choice shows.
-                    if (!settings.GameShaders || settings.ViewportQuality < ViewportQuality.High) SetGameShaders(true);
-                    else SaveSettings();
-                }
-            UiAuto.EndCombo();
-        }
-        if (ImGui.IsItemHovered()) ImGui.SetTooltip((lighting == 1
-            ? "Lighting: atmosphere preview\nLocal probes and shadows are not drawn"
-            : "Lighting: editor lights with game materials") + (shaderProblem is null ? "" : "\n" + shaderProblem));
-        ToolbarNext(row);
-        string settingsKeys = ShortcutInput.Text(ShortcutActions.OpenSettings);
-        if (ImGuiIcons.Button("tb-settings", StudioIcon.Gear, settingsKeys.Length > 0 ? $"Settings ({settingsKeys})" : "Settings"))
-            preferencesOpen = true;
-        if (workspace.IsBusy) { ToolbarNext(row); ImGui.AlignTextToFramePadding(); ImGui.TextDisabled("Working"); }
-        chrome.DrawButtons(height);
-        ImGui.End();
+        return x + version.X + 10 * scale;
     }
+
+    /** One group on the row; the cursor is at its start, its top at row (textTop for text). */
+    private void DrawTitleGroup(TitleGroup group, float row, float textTop)
+    {
+        switch (group)
+        {
+            case TitleGroup.File: DrawFileMenu(); break;
+            case TitleGroup.Edit: DrawEditMenu(); break;
+            case TitleGroup.Assets: DrawAssetsMenu(); break;
+            case TitleGroup.Build: DrawBuildMenu(); break;
+            case TitleGroup.View: DrawViewMenu(); break;
+            case TitleGroup.Window: DrawWindowMenu(); break;
+            case TitleGroup.Help: DrawHelpMenu(); break;
+            case TitleGroup.Relay: DrawScreenRelayButton(row); break;
+            case TitleGroup.Navigation: DrawNavigationButtons(row); break;
+            case TitleGroup.Project:
+                ImGui.SetCursorPosY(textTop);
+                ImGui.TextUnformatted(workspace.Project?.Name ?? "View only");
+                ToolbarNext(row);
+                if (workspace.Project is null)
+                {
+                    if (ImGuiIcons.Button("tb-new", StudioIcon.Plus, "New project")) projectDialog = true;
+                }
+                else
+                {
+                    ImGui.BeginDisabled(!workspace.CanEdit);
+                    if (ImGuiIcons.Button("tb-add", StudioIcon.Plus, "Add asset")) addDialog = true;
+                    ToolbarNext(row);
+                    string build = ShortcutInput.Text(ShortcutActions.BuildPackages);
+                    // Solforge: the primary action uses the sun-grad button (SolTheme).
+                    if (SolTheme.PrimaryButton("Build##tb-build")) workspace.Run(() => workspace.Build());
+                    StudioUi.Tip(build.Length == 0 ? "Build packages" : $"Build packages ({build})");
+                    ImGui.EndDisabled();
+                }
+                break;
+            case TitleGroup.Render: DrawRenderingToolbarButton(); break;
+            case TitleGroup.Shaders:
+            {
+                bool shading = settings.GameShaders;
+                string? shaderProblem = GameShaderProblem();
+                if (ImGuiIcons.Toggle("tb-shaders", StudioIcon.Shader,
+                    "Game shaders: the game's materials and lighting (Quality High or Full)" + (shaderProblem is null ? "" : "\n" + shaderProblem),
+                    ref shading))
+                    SetGameShaders(shading);
+                break;
+            }
+            case TitleGroup.Quality: DrawQualityToolbarCombo(); break;
+            case TitleGroup.Detail:
+            {
+                bool fullDetail = settings.FullDetail;
+                if (ImGuiIcons.Toggle("tb-detail", StudioIcon.Detail,
+                    "Full detail: draw static objects at full detail at every distance, with no far cull.\nOff switches detail and culls with distance, as the game does."
+                    + "\nIn the map viewport this applies at Quality High; Full always draws full detail, Low and Medium never do.",
+                    ref fullDetail))
+                    SetFullDetail(fullDetail);
+                break;
+            }
+            case TitleGroup.Lighting:
+            {
+                int lighting = Math.Clamp((int)settings.LightingMode, 0, LightingNames.Length - 1);
+                // The preview names the setting so a bare "Studio" doesn't read as the app or layout name.
+                ImGui.SetNextItemWidth(ImGui.CalcTextSize("Lighting: Ambient").X + ImGui.GetFrameHeight() + ImGui.GetStyle().FramePadding.X * 2);
+                if (UiAuto.BeginCombo("##lighting", "Lighting: " + LightingNames[lighting]))
+                {
+                    for (int i = 0; i < LightingNames.Length; i++)
+                        if (UiAuto.Selectable(LightingNames[i], i == lighting) && i != lighting) SetLighting(i);
+                    UiAuto.EndCombo();
+                }
+                string? shaderProblem = GameShaderProblem();
+                if (ImGui.IsItemHovered()) ImGui.SetTooltip((lighting == 1
+                    ? "Lighting: atmosphere preview\nLocal probes and shadows are not drawn"
+                    : "Lighting: editor lights with game materials") + (shaderProblem is null ? "" : "\n" + shaderProblem));
+                break;
+            }
+            case TitleGroup.Settings:
+            {
+                string settingsKeys = ShortcutInput.Text(ShortcutActions.OpenSettings);
+                if (ImGuiIcons.Button("tb-settings", StudioIcon.Gear, settingsKeys.Length > 0 ? $"Settings ({settingsKeys})" : "Settings"))
+                    preferencesOpen = true;
+                break;
+            }
+        }
+    }
+
+    /** One group inside the "»" menu: menus become submenus, buttons become menu items. */
+    private void DrawTitleOverflowItem(TitleGroup group)
+    {
+        switch (group)
+        {
+            case TitleGroup.File: DrawFileMenu(); break;
+            case TitleGroup.Edit: DrawEditMenu(); break;
+            case TitleGroup.Assets: DrawAssetsMenu(); break;
+            case TitleGroup.Build: DrawBuildMenu(); break;
+            case TitleGroup.View: DrawViewMenu(); break;
+            case TitleGroup.Window: DrawWindowMenu(); break;
+            case TitleGroup.Help: DrawHelpMenu(); break;
+            case TitleGroup.Relay:
+                if (UiAuto.BeginMenu("Screen relay")) { DrawScreenRelayItems(); UiAuto.EndMenu(); }
+                break;
+            case TitleGroup.Navigation:
+                if (UiAuto.MenuItem("Back", ShortcutInput.Text(ShortcutActions.NavigateBack), false, workspace.CanNavigateBack)) NavigateBack();
+                if (UiAuto.MenuItem("Forward", ShortcutInput.Text(ShortcutActions.NavigateForward), false, workspace.CanNavigateForward))
+                    NavigateForward();
+                break;
+            case TitleGroup.Project:
+                ImGui.Separator();
+                ImGui.TextDisabled(workspace.Project?.Name ?? "View only");
+                if (workspace.Project is null)
+                {
+                    if (UiAuto.MenuItem("New project")) projectDialog = true;
+                }
+                else
+                {
+                    if (UiAuto.MenuItem("Add asset", "", false, workspace.CanEdit)) addDialog = true;
+                    if (UiAuto.MenuItem("Build packages", ShortcutInput.Text(ShortcutActions.BuildPackages), false, workspace.CanEdit))
+                        workspace.Run(() => workspace.Build());
+                }
+                break;
+            case TitleGroup.Render: DrawRenderingMenuItem(); break;
+            case TitleGroup.Shaders:
+            {
+                bool shading = settings.GameShaders;
+                if (UiAuto.MenuItem("Game shaders", "", ref shading)) SetGameShaders(shading);
+                break;
+            }
+            case TitleGroup.Quality:
+                if (UiAuto.BeginMenu("Quality"))
+                {
+                    for (int i = 0; i < QualityNames.Length; i++)
+                        if (UiAuto.MenuItem(QualityNames[i], "", i == (int)settings.ViewportQuality)) SetViewportQuality((ViewportQuality)i);
+                    UiAuto.EndMenu();
+                }
+                break;
+            case TitleGroup.Detail:
+            {
+                bool fullDetail = settings.FullDetail;
+                if (UiAuto.MenuItem("Full detail", "", ref fullDetail)) SetFullDetail(fullDetail);
+                break;
+            }
+            case TitleGroup.Lighting:
+                if (UiAuto.BeginMenu("Lighting"))
+                {
+                    int lighting = Math.Clamp((int)settings.LightingMode, 0, LightingNames.Length - 1);
+                    for (int i = 0; i < LightingNames.Length; i++)
+                        if (UiAuto.MenuItem(LightingNames[i], "", i == lighting) && i != lighting) SetLighting(i);
+                    UiAuto.EndMenu();
+                }
+                break;
+            case TitleGroup.Settings:
+                if (UiAuto.MenuItem("Settings...", ShortcutInput.Text(ShortcutActions.OpenSettings))) preferencesOpen = true;
+                break;
+        }
+    }
+
+    private void SetFullDetail(bool fullDetail)
+    {
+        settings.FullDetail = fullDetail;
+        if (viewport is not null) viewport.FullDetail = fullDetail;
+        if (assetViewport is not null) assetViewport.FullDetail = fullDetail;
+        if (fullDetail && settings.ViewportQuality < ViewportQuality.High) SetViewportQuality(ViewportQuality.High);
+        else SaveSettings();
+    }
+
+    private void SetLighting(int lighting)
+    {
+        settings.LightingMode = (SunriseStudio.Rendering.NativeLightingMode)lighting;
+        if (viewport?.NativeRenderer is { } scene) scene.LightingMode = settings.LightingMode;
+        if (assetViewport?.NativeRenderer is { } asset) asset.LightingMode = settings.LightingMode;
+        // Lighting is part of game shading; picking a mode turns it on so the choice shows.
+        if (!settings.GameShaders || settings.ViewportQuality < ViewportQuality.High) SetGameShaders(true);
+        else SaveSettings();
+    }
+
+    /** Pixels from a text line's top to its baseline in the current font. */
+    private static float FontAscent() => ImGui.GetFont().Ascent * ImGui.GetFontSize() / ImGui.GetFont().FontSize;
 
     /** The next toolbar control on this row, its top at row (the centre line less half a frame). */
     private static void ToolbarNext(float row)
     {
         ImGui.SameLine();
         ImGui.SetCursorPosY(row);
+    }
+
+    // The title bar menus; each item is disabled while its command cannot run. The » menu reuses them as submenus.
+
+    private void DrawFileMenu()
+    {
+        if (!UiAuto.BeginMenu("File")) return;
+        if (UiAuto.MenuItem("New project", ShortcutInput.Text(ShortcutActions.NewProject), false, !workspace.IsBusy)) projectDialog = true;
+        if (UiAuto.MenuItem("Open project...", ShortcutInput.Text(ShortcutActions.OpenProject), false, !workspace.IsBusy)) OpenProjectDialog();
+        if (UiAuto.BeginMenu("Recent projects", settings.RecentProjects.Count != 0 && !workspace.IsBusy))
+        {
+            foreach (string path in settings.RecentProjects.ToArray())
+            {
+                ImGui.PushID(path);
+                // A moved or deleted project stays listed but cannot be opened.
+                bool exists = IconChecks.Exists(path);
+                if (UiAuto.MenuItem(Path.GetFileName(Path.GetDirectoryName(path)) ?? path, "", false, exists)) OpenProject(path);
+                if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+                    ImGui.SetTooltip(exists ? path : path + " (missing)");
+                ImGui.PopID();
+            }
+            UiAuto.EndMenu();
+        }
+        if (UiAuto.MenuItem("New mission script...", ShortcutInput.Text(ShortcutActions.CreateMissionScript), false,
+            workspace.Catalog is not null && !workspace.IsBusy))
+            NewMissionScript();
+        if (UiAuto.MenuItem(missionGraphActive ? "Save script" : "Save project",
+            ShortcutInput.Text(ShortcutActions.SaveProject), false, CanSaveActive))
+            SaveActiveDocument();
+        if (UiAuto.MenuItem("Close project", "", false, workspace.CanEdit)) workspace.Run(() =>
+        { if (ConfirmMissionDraft()) workspace.CloseProject(); });
+        if (UiAuto.MenuItem("Close world", "", false, workspace.World is not null && !workspace.IsBusy)) workspace.Run(workspace.CloseWorld);
+        ImGui.Separator();
+        if (UiAuto.MenuItem("Sunrise location...", "", false, !workspace.IsBusy)) settingsDialog = true;
+        if (UiAuto.MenuItem("Cache...", "", false, !workspace.IsBusy)) cacheDialog = true;
+        if (UiAuto.MenuItem("Settings...", ShortcutInput.Text(ShortcutActions.OpenSettings))) preferencesOpen = true;
+        ImGui.Separator();
+        if (UiAuto.MenuItem("Exit")) BeginInvoke(Close);
+        UiAuto.EndMenu();
+    }
+
+    private void DrawEditMenu()
+    {
+        if (!UiAuto.BeginMenu("Edit")) return;
+        if (UiAuto.MenuItem("Undo", ShortcutInput.Text(ShortcutActions.Undo), false, CanUndoActive)) UndoActive();
+        if (UiAuto.MenuItem("Redo", ShortcutInput.Text(ShortcutActions.Redo), false, CanRedoActive)) RedoActive();
+        ImGui.Separator();
+        if (UiAuto.MenuItem("Convert placement deltas to object edits", "", false,
+            workspace.CanEdit && workspace.Project?.Changes.Count > 0))
+            workspace.Run(() => workspace.ConvertPlacementDeltas());
+        ImGui.Separator();
+        if (UiAuto.MenuItem("Shortcuts...")) shortcutsDialog = true;
+        if (UiAuto.MenuItem("Settings...", ShortcutInput.Text(ShortcutActions.OpenSettings))) preferencesOpen = true;
+        UiAuto.EndMenu();
+    }
+
+    private void DrawAssetsMenu()
+    {
+        if (!UiAuto.BeginMenu("Assets")) return;
+        if (UiAuto.MenuItem("Export full asset to Blender...", "", false, CanExportBundle)) ExportFullAsset();
+        MapBundleTooltip();
+        if (UiAuto.MenuItem("Export world to Blender...", "", false,
+            !workspace.IsBusy && workspace.World is not null)) ExportWorldScene();
+        if (UiAuto.MenuItem("Import Blender asset...", "", false, workspace.CanEdit)) BeginBundleImport();
+        if (UiAuto.MenuItem("Import skinned model...", "", false, CanReplaceSkin)) BeginSkinImport();
+        ImGui.Separator();
+        if (UiAuto.MenuItem("Export...", "", false, workspace.Document is not null && !workspace.IsBusy)) ExportSelected();
+        if (UiAuto.MenuItem("Export animation...", "", false,
+            AssetPreviewViewport?.Animation is { Source.Binding: not null, Clip: not null })) ExportAnimation();
+        if (UiAuto.MenuItem("Export editable animation...", "", false, SelectedClipTag() is not null
+            && !workspace.IsBusy)) ExportAnimationControls();
+        if (UiAuto.MenuItem("Import animation controls...", "", false, SelectedClipTag() is not null
+            && workspace.CanEdit)) ImportAnimationControls();
+        if (UiAuto.MenuItem("Export material to Blender...", "", false,
+            workspace.Document?.Entry.Reference == 0x808071E8 && !workspace.IsBusy)) ExportMaterialBundle();
+        if (UiAuto.MenuItem("Export collision...", "", false, CanExportCollision)) ExportCollision();
+        if (UiAuto.MenuItem("Import collision...", "", false, workspace.CanEdit && CanExportCollision)) ImportCollision();
+        if (UiAuto.MenuItem("Import as delta...", "", false, workspace.CanEdit && workspace.Document is not null)) ImportDelta();
+        if (UiAuto.MenuItem("Add asset...", "", false, workspace.CanEdit)) addDialog = true;
+        if (UiAuto.MenuItem("Edit perk behavior...", "", false,
+            workspace.Catalog is not null && !workspace.IsBusy)) OpenPerkBehaviorPicker();
+        ImGui.Separator();
+        if (UiAuto.MenuItem("Resolve asset names", "", false, workspace.Catalog is not null && !workspace.IsBusy))
+            workspace.Run(workspace.IndexNames);
+        UiAuto.EndMenu();
+    }
+
+    private void DrawBuildMenu()
+    {
+        if (!UiAuto.BeginMenu("Build")) return;
+        if (UiAuto.MenuItem("Build packages", ShortcutInput.Text(ShortcutActions.BuildPackages), false, workspace.CanEdit))
+            workspace.Run(() => workspace.Build());
+        if (UiAuto.MenuItem("Build and install", ShortcutInput.Text(ShortcutActions.BuildAndInstall), false, workspace.CanEdit)) InstallMod();
+        if (UiAuto.MenuItem("Update running game", ShortcutInput.Text(ShortcutActions.UpdateRunningGame), false, workspace.CanEdit))
+            UpdateRunningGame();
+        if (UiAuto.MenuItem("Build to folder...", "", false, workspace.CanEdit))
+            PickFolder("Build output", folder => workspace.Build(folder));
+        ImGui.Separator();
+        if (UiAuto.MenuItem("Mod details...", "", false, workspace.CanEdit)) workspace.Run(OpenModDialog);
+        DrawPackagingMenuItems();
+        UiAuto.EndMenu();
+    }
+
+    private void DrawViewMenu()
+    {
+        if (!UiAuto.BeginMenu("View")) return;
+        if (UiAuto.MenuItem("Mission Graph")) focusMissionGraph = true;
+        if (UiAuto.MenuItem("Live")) focusLive = true;
+        if (UiAuto.MenuItem("Local Server")) focusLocalServer = true;
+        if (UiAuto.MenuItem("Items", "", false, workspace.Catalog is not null)) ShowItems();
+        if (UiAuto.MenuItem("Data explorer (decomp, tags, strings)")) dataExplorerOpen = true;
+        ImGui.Separator();
+        if (UiAuto.MenuItem("Frame selection", ShortcutInput.Text(ShortcutActions.FrameSelection3D), false,
+            viewport?.Camera.PivotFree == true)) viewport?.FocusSelection();
+        if (UiAuto.MenuItem("Set cursor to selection", ShortcutInput.Text(ShortcutActions.SetCursor3D), false,
+            (viewport?.SelectedObject is not null || viewport?.SelectedCollision >= 0) && viewport!.Camera.PivotFree))
+            viewport?.SetCursorToSelection();
+        bool wire = viewport?.Wireframe ?? false, grid = viewport?.ShowGrid ?? true;
+        if (UiAuto.MenuItem("Wireframe", "", ref wire)) viewport!.Wireframe = wire;
+        if (UiAuto.MenuItem("Grid", "", ref grid)) viewport!.ShowGrid = grid;
+        ImGui.Separator();
+        DrawRenderingMenuItem();
+        DrawPhoneStreamMenuItems();
+        UiAuto.EndMenu();
+    }
+
+    private void DrawHelpMenu()
+    {
+        if (!UiAuto.BeginMenu("Help")) return;
+        DrawHelpMenuItems();
+        if (UiAuto.MenuItem("Third-party notices")) noticesDialog = true;
+        if (ImGui.IsItemHovered()) ImGui.SetTooltip("Licenses of the libraries and code Studio includes");
+        // About: Solforge is a fork; the upstream author keeps the credit.
+        ImGui.Separator();
+        ImGui.TextDisabled($"Solforge {StudioVersion.Text}");
+        ImGui.TextDisabled(AboutCredit);
+        UiAuto.EndMenu();
     }
 
     private static readonly string[] LightingNames = ["Studio", "Sky", "Ambient"];
