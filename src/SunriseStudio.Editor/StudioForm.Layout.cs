@@ -21,6 +21,7 @@ public sealed partial class StudioForm
         StudioPanelKind.ObjectTree => "Object tree",
         StudioPanelKind.Changes => "Project changes",
         StudioPanelKind.MissionGraph => "Mission Graph",
+        StudioPanelKind.NodeGraph => "Node Graph",
         StudioPanelKind.Empty => "Choose editor",
         _ => kind.ToString()
     };
@@ -57,6 +58,8 @@ public sealed partial class StudioForm
         if (root is not { IsLeaf: true }) { root = layout.Root; maximizedPanel = null; }
         if (layout.Find(StudioPanelKind.MissionGraph) is null && !IsPoppedOut(StudioPanelKind.MissionGraph))
             missionGraphActive = false;
+        if (layout.Find(StudioPanelKind.NodeGraph) is null && !IsPoppedOut(StudioPanelKind.NodeGraph))
+            nodeGraphActive = false;
         DrawLayoutNode(root, position, size);
         if (pendingLayoutChange is { } change)
         {
@@ -180,11 +183,12 @@ public sealed partial class StudioForm
             case StudioPanelKind.Inspector: DrawInspector(position, size); break;
             case StudioPanelKind.Changes: DrawChanges(position, size); break;
             case StudioPanelKind.AI: DrawAiWorkspace(position, size); break;
+            case StudioPanelKind.NodeGraph: DrawNodeGraphPanel(position, size); break;
             case StudioPanelKind.MissionGraph:
                 if (focusMissionGraph) ImGui.SetNextWindowFocus();
                 BeginPanel("Mission graph area", position, size);
                 if (focusMissionGraph || ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows))
-                    missionGraphActive = true;
+                    missionGraphActive = true; nodeGraphActive = false;
                 focusMissionGraph = false;
                 missionGraph.Draw(workspace);
                 ImGui.End();
@@ -296,6 +300,6 @@ public sealed partial class StudioForm
 
     private void TrackAreaFocus(bool mission = false)
     {
-        if (ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows)) missionGraphActive = mission;
+        if (ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows)) { missionGraphActive = mission; nodeGraphActive = false; }
     }
 }

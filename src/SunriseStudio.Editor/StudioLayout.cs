@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace SunriseStudio.Editor;
 
-public enum StudioPanelKind { Empty, Workspace, Browser, Inspector, Changes, ObjectTree, MissionGraph, AI }
+public enum StudioPanelKind { Empty, Workspace, Browser, Inspector, Changes, ObjectTree, MissionGraph, AI, NodeGraph }
 public enum StudioSplitAxis { Columns, Rows }
 
 public sealed class StudioLayoutNode

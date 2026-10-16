@@ -23,5 +23,6 @@
     <ProjectReference Include="../SunriseStudio.Audio/SunriseStudio.Audio.csproj" />
     <ProjectReference Include="../SunriseStudio.Viewport/SunriseStudio.Viewport.csproj" />
     <ProjectReference Include="../Solforge.Mcp/Solforge.Mcp.csproj" />
+    <ProjectReference Include="../Solforge.Graphs/Solforge.Graphs.csproj" />
   </ItemGroup>
 </Project>
