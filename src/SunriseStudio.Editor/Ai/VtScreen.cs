@@ -139,6 +139,25 @@ internal sealed class VtScreen(int columns, int rows)
     }
 
     /**
+     * The last count lines as plain text (scrollback then screen), trailing blank screen rows dropped, for the phone
+     * remote control's AI chat (StudioForm.Ai.Remote.cs).
+     */
+    public string[] Tail(int count)
+    {
+        lock (Gate)
+        {
+            int last = lines.Length - 1;
+            while (last >= 0 && lines[last].All(cell => cell.Char is ' ' or Continuation)) last--;
+            var rows = new List<string>(count);
+            for (long line = Pushed + last; line >= FirstLine && rows.Count < count; line--)
+                if (LineAt(line) is { } cells)
+                    rows.Add(new string(cells.Where(cell => cell.Char != Continuation).Select(cell => cell.Char).ToArray()).TrimEnd());
+            rows.Reverse();
+            return [.. rows];
+        }
+    }
+
+    /**
      * The bottom lastRows rows as text, with each character's drawn background (the background colour, or the
      * complemented foreground for inverse cells; 0 is the default), for ApprovalPrompts. Wide characters' right
      * halves are left out of both, so indexes line up.
