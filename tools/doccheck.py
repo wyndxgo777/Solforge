@@ -104,7 +104,9 @@ def main():
             full = os.path.join(tp, d)
             if not os.path.isdir(full) or not any(x.endswith(".csproj") for x in os.listdir(full)): continue
             if os.path.exists(os.path.join(full, "README.md")): continue
-            if d in arch: continue
+            short = d.replace("SunriseStudio.", "", 1)
+            if d in arch or re.search(r"^\|\s*" + re.escape(short) + r"\s*\|", arch, re.M): continue
+            if top == "tests" and re.search(r"(?<![\w.])" + re.escape(short) + r"(?!\w)", arch): continue
             miss.append(f"{top}/{d}")
     print(f"projects w/o README or ARCHITECTURE mention: {len(miss)}")
     if verbose:
