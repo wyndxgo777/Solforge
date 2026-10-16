@@ -203,6 +203,11 @@ public sealed partial class StudioForm
             bool allow = settings.AiAutoAllow;
             if (UiAuto.MenuItem("Auto-allow one-time prompts", "", ref allow)) { settings.AiAutoAllow = allow; aiAllowSeen = null; SaveSettings(); }
             if (ImGui.IsItemHovered()) ImGui.SetTooltip(AutoAllowTip);
+            bool clinePass = settings.AiAskClinePass;
+            if (UiAuto.MenuItem("Give Claude Code ask_clinepass", "", ref clinePass)) { settings.AiAskClinePass = clinePass; SaveSettings(); }
+            if (ImGui.IsItemHovered())
+                ImGui.SetTooltip("Claude Code gets an ask_clinepass tool that runs your own Cline CLI on ClinePass (cline -P cline-pass) "
+                    + "for a task. Needs Cline installed and signed in to ClinePass. Takes effect on the next Start.");
             ImGui.Separator();
             ImGui.BeginDisabled(!CanAskAi);
             if (UiAuto.MenuItem("Ask about this")) AskAiAboutContext();
@@ -456,6 +461,11 @@ public sealed partial class StudioForm
         if (AiResolved(engine.Command) is not { } executable) return;
         var (preset, choice) = AiProvider(engine.Command);
         foreach (var (name, value) in EngineProviders.Environment(preset, choice)) environment[name] = value;
+        if (preset?.Id == EngineProviders.ClaudeClinePass)
+        {
+            if (AiClinePassEnvironment(EngineProviders.Model(preset, choice)) is not { } proxyEnvironment) return;
+            foreach (var (name, value) in proxyEnvironment) environment[name] = value;
+        }
         string arguments = workspace.Project is null ? "" : engine.Command switch
         {
             "claude" => AiClaudeArguments(folder),

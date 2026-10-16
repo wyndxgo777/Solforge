@@ -13,6 +13,7 @@
     <Compile Include="../Solforge.Mcp/McpDiscovery.cs" Link="McpDiscovery.cs" />
     <Compile Include="../Solforge.Mcp/ContextSummary.cs" Link="ContextSummary.cs" />
     <Compile Include="../Solforge.Mcp/AgyDelegate.cs" Link="AgyDelegate.cs" />
+    <Compile Include="../Solforge.Mcp/ClineDelegate.cs" Link="ClineDelegate.cs" />
     <Compile Include="../Solforge.Mcp/EngineCommands.cs" Link="EngineCommands.cs" />
   </ItemGroup>
 </Project>

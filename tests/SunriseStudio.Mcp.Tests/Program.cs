@@ -30,6 +30,8 @@ try
     checks.Add("resume: claude --continue only when ~/.claude/projects/<folder> has a session; agy --conversation and cline --id pick the newest session for the same folder; none means a fresh start");
     DualEngines();
     checks.Add("dual engines: ask_gemini builds agy -p argv and reads its JSON reply; its MCP stdio answers initialize, list and call; the gemini server and prompt join Claude's config only on request; claude/agy first prompts; handoff note from the last session");
+    ClinePassEngines();
+    checks.Add("clinepass: ask_clinepass builds cline --json -P cline-pass argv, reads its JSONL result and finds cline without cmd.exe; its MCP stdio answers; the clinepass server and prompt join Claude's config only on request; Claude Code on ClinePass strips Claude logins, translates Anthropic requests, replies and streams, and its localhost proxy takes only its local token and sends only CLINE_API_KEY");
     ContextText();
     checks.Add("context summary: compact lines under 2 KB with map, hovered, selected values, open documents; nothing when paused");
     MissionObjects();
@@ -666,6 +668,160 @@ void DualEngines()
         "handoff without a session");
 }
 
+void ClinePassEngines()
+{
+    // ask_clinepass argv: cline --json on the cline-pass provider, plan by default, clamped timeout, the prompt last after --.
+    var (argv, error) = ClineDelegate.Arguments(new JsonObject { ["prompt"] = " review x ", ["model"] = "kimi-k3", ["timeout_seconds"] = 5 });
+    Expect(error is null && argv!.SequenceEqual(["--json", "-P", "cline-pass", "-m", "cline-pass/kimi-k3", "-p", "-t", "30", "--", "review x"]),
+        "cline argv: " + string.Join(" | ", argv ?? []));
+    var act = ClineDelegate.Arguments(new JsonObject { ["prompt"] = "-x", ["mode"] = "act", ["model"] = "cline-pass/glm-5.3", ["timeout_seconds"] = 99999 }).Arguments!;
+    Expect(act.SequenceEqual(["--json", "-P", "cline-pass", "-m", "cline-pass/glm-5.3", "-t", "1800", "--", "-x"]), "cline act argv: " + string.Join(" | ", act));
+    Expect(ClineDelegate.Arguments(new JsonObject { ["prompt"] = "x", ["mode"] = "yolo" }).Error is not null, "yolo mode refused");
+    Expect(ClineDelegate.Arguments(new JsonObject()).Error is not null && ClineDelegate.Arguments(null).Error is not null, "cline prompt required");
+    Expect(ClineDelegate.Arguments(new JsonObject { ["prompt"] = new string('a', ClineDelegate.MaxPrompt + 1) }).Error is not null, "cline long prompt refused");
+    // A real cline 3.0.71 --json run, trimmed.
+    string run = string.Join("\n",
+        """{"ts":"t","type":"hook_event","hookEventName":"agent_start","taskId":"conv_1"}""",
+        """{"ts":"t","type":"agent_event","event":{"type":"content_start","contentType":"text","text":"OK","accumulated":"OK"}}""",
+        """{"ts":"t","type":"agent_event","event":{"type":"done","reason":"completed","text":"OK","iterations":1}}""",
+        """{"ts":"t","type":"run_result","finishReason":"completed","iterations":1,"text":"OK","model":{"id":"cline-pass/deepseek-v4.1-flash","provider":"cline-pass"}}""");
+    var ok = ClineDelegate.Result(run, "", 0);
+    Expect(!ok.Error && ok.Text == "OK\n\n[cline cline-pass/deepseek-v4.1-flash completed]", "cline reply: " + ok.Text);
+    var refused = ClineDelegate.Result("""{"ts":"t","type":"error","message":"Not signed in to cline-pass"}""", "", 1);
+    Expect(refused.Error && refused.Text.Contains("Not signed in"), "cline error line: " + refused.Text);
+    Expect(ClineDelegate.Result("""{"type":"run_result","finishReason":"aborted","text":""}""", "", 0).Error
+        && ClineDelegate.Result("garbage", "boom", 2).Text.Contains("boom"), "cline failures");
+
+    // cline resolves to a native cline.exe, else node.exe + npm's bin/cline script; never cline.cmd through cmd.exe.
+    string npm = Path.Combine(scratch, "npm bin"), nodeDir = Path.Combine(scratch, "node dir"), native = Path.Combine(scratch, "native");
+    Directory.CreateDirectory(Path.Combine(npm, "node_modules", "cline", "bin"));
+    Directory.CreateDirectory(nodeDir);
+    Directory.CreateDirectory(native);
+    File.WriteAllText(Path.Combine(npm, "cline.cmd"), "");
+    File.WriteAllText(Path.Combine(npm, "node_modules", "cline", "bin", "cline"), "");
+    File.WriteAllText(Path.Combine(nodeDir, "node.exe"), "");
+    File.WriteAllText(Path.Combine(native, "cline.exe"), "");
+    var viaNode = ClineDelegate.FindCline(npm + ";" + nodeDir);
+    Expect(viaNode is { } found && found.Program.EndsWith("node.exe", StringComparison.OrdinalIgnoreCase)
+        && found.Prefix.SequenceEqual([Path.Combine(npm, "node_modules", "cline", "bin", "cline")]), "cline via node");
+    Expect(ClineDelegate.FindCline(native + ";" + npm)?.Program.EndsWith("cline.exe", StringComparison.OrdinalIgnoreCase) == true
+        && ClineDelegate.FindCline(npm) is null && ClineDelegate.FindCline(nodeDir) is null, "native cline.exe; no node or no cline is null");
+
+    // Its own stdio server: initialize, list, call, an unknown tool.
+    var input = new StringReader(string.Join("\n",
+        """{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26"}}""",
+        """{"jsonrpc":"2.0","method":"notifications/initialized"}""",
+        """{"jsonrpc":"2.0","id":2,"method":"tools/list"}""",
+        """{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"ask_clinepass","arguments":{"prompt":"hi"}}}""",
+        """{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"ask_gemini","arguments":{"prompt":"hi"}}}""") + "\n");
+    var output = new StringWriter();
+    ClineDelegate.Serve(input, output, (args, _) => Task.FromResult(("pass " + args?["prompt"], false))).GetAwaiter().GetResult();
+    var replies = output.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(line => JsonNode.Parse(line)!)
+        .ToDictionary(node => (int)node["id"]!);
+    Expect(replies.Count == 4 && replies[1]["result"]?["serverInfo"]?["name"]?.ToString() == "solforge-clinepass"
+        && replies[2]["result"]?["tools"]?.AsArray().Count == 1 && replies[2]["result"]?["tools"]?[0]?["name"]?.ToString() == ClineDelegate.ToolName
+        && replies[3]["result"]?["content"]?[0]?["text"]?.ToString() == "pass hi"
+        && (int?)replies[4]["error"]?["code"] == -32602, "clinepass stdio: " + output);
+
+    // Claude's config gets the clinepass server and prompt only when asked.
+    string project = Path.Combine(scratch, "clinepass project"), shim = Path.Combine(scratch, "solforge-mcp.exe");
+    Directory.CreateDirectory(project);
+    var plain = EngineLaunch.WriteClaudeFiles(project, shim, Path.Combine(scratch, "clinepass-mcp-a"), gemini: true);
+    Expect(JsonNode.Parse(File.ReadAllText(plain.McpConfig))!["mcpServers"]?[ClineDelegate.ServerName] is null
+        && !EngineLaunch.ClaudeArguments(plain, []).Contains("ask_clinepass"), "no clinepass unless asked");
+    var both = EngineLaunch.WriteClaudeFiles(project, shim, Path.Combine(scratch, "clinepass-mcp-b"), gemini: true, clinePass: true);
+    var servers = JsonNode.Parse(File.ReadAllText(both.McpConfig))!["mcpServers"]!;
+    Expect(servers[ClineDelegate.ServerName]?["command"]?.ToString() == shim && servers[ClineDelegate.ServerName]?["args"]?[0]?.ToString() == "--clinepass"
+        && servers[AgyDelegate.ServerName] is not null
+        && Argv("claude.exe " + EngineLaunch.ClaudeArguments(both, [])).Contains(
+            EngineLaunch.SystemPrompt + " " + EngineLaunch.GeminiPrompt + " " + EngineLaunch.ClinePassPrompt), "clinepass server + prompt");
+    Expect(!EngineLaunch.ClinePassPrompt.Contains('"') && !EngineLaunch.ClinePassPrompt.Contains('%'), "clinepass prompt is safe through cmd");
+
+    // "Claude Code on ClinePass": no Claude login reaches the run; the editor adds the translator's URL and local token.
+    var onPass = EngineProviders.Resolve("claude", EngineProviders.ClaudeClinePass)!;
+    var stripped = EngineProviders.Environment(onPass, null);
+    Expect(stripped.Count == 4 && stripped.Values.All(value => value.Length == 0) && stripped.ContainsKey("CLAUDE_CODE_OAUTH_TOKEN")
+        && EngineProviders.Arguments(onPass, null).Length == 0 && EngineProviders.Model(onPass, null) == ClinePassProxy.DefaultModel, "claude on clinepass preset");
+
+    // Anthropic Messages -> OpenAI Chat Completions.
+    var request = AnthropicTranslator.Request(JsonNode.Parse("""
+        {"model":"claude-sonnet-4-5","max_tokens":100,"stream":true,"system":[{"type":"text","text":"be brief"}],
+         "tools":[{"name":"Read","description":"read a file","input_schema":{"type":"object","properties":{"path":{"type":"string"}}}},{"type":"web_search_20250305","name":"web_search"}],
+         "tool_choice":{"type":"any"},
+         "messages":[{"role":"user","content":"hi"},
+           {"role":"assistant","content":[{"type":"thinking","thinking":"hm","signature":"s"},{"type":"text","text":"reading"},{"type":"tool_use","id":"tu1","name":"Read","input":{"path":"a.txt"}}]},
+           {"role":"user","content":[{"type":"tool_result","tool_use_id":"tu1","content":[{"type":"text","text":"file body"}]},{"type":"text","text":"now?"}]}]}
+        """)!.AsObject(), "cline-pass/kimi-k3");
+    var messages = request["messages"]!.AsArray();
+    Expect(request["model"]?.ToString() == "cline-pass/kimi-k3" && (bool?)request["stream"] == true && (bool?)request["stream_options"]?["include_usage"] == true
+        && request["tool_choice"]?.ToString() == "required" && request["tools"]!.AsArray().Count == 1
+        && request["tools"]![0]!["function"]!["name"]!.ToString() == "Read" && messages.Count == 5
+        && messages[0]!["role"]!.ToString() == "system" && messages[0]!["content"]!.ToString() == "be brief"
+        && messages[2]!["content"]!.ToString() == "reading" && messages[2]!["tool_calls"]![0]!["function"]!["arguments"]!.ToString() == """{"path":"a.txt"}"""
+        && messages[3]!["role"]!.ToString() == "tool" && messages[3]!["tool_call_id"]!.ToString() == "tu1" && messages[3]!["content"]!.ToString() == "file body"
+        && messages[4]!["content"]!.ToString() == "now?", "translated request: " + request.ToJsonString());
+    // OpenAI reply (in Cline's envelope) -> Anthropic message.
+    var reply = AnthropicTranslator.Response(JsonNode.Parse("""
+        {"success":true,"data":{"id":"c1","choices":[{"message":{"content":"ok","tool_calls":[{"id":"call_1","type":"function","function":{"name":"Read","arguments":"{\"path\":\"b\"}"}}]},"finish_reason":"tool_calls"}],
+         "usage":{"prompt_tokens":12,"completion_tokens":3}}}
+        """)!.AsObject(), "cline-pass/kimi-k3");
+    Expect(reply["stop_reason"]?.ToString() == "tool_use" && reply["content"]![0]!["text"]!.ToString() == "ok"
+        && reply["content"]![1]!["type"]!.ToString() == "tool_use" && reply["content"]![1]!["input"]!["path"]!.ToString() == "b"
+        && (int?)reply["usage"]?["input_tokens"] == 12 && (int?)reply["usage"]?["output_tokens"] == 3, "translated reply: " + reply.ToJsonString());
+    // Stream chunks -> Anthropic SSE events.
+    var stream = new AnthropicStream("cline-pass/kimi-k3");
+    var events = stream.Start().Concat(stream.Feed(JsonNode.Parse("""{"choices":[{"delta":{"content":"Hel"}}]}""")!.AsObject()))
+        .Concat(stream.Feed(JsonNode.Parse("""{"choices":[{"delta":{"content":"lo"}}]}""")!.AsObject()))
+        .Concat(stream.Feed(JsonNode.Parse("""{"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_9","function":{"name":"Read","arguments":"{\"pa"}}]}}]}""")!.AsObject()))
+        .Concat(stream.Feed(JsonNode.Parse("""{"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"arguments":"th\":1}"}}]},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":7,"completion_tokens":5}}""")!.AsObject()))
+        .Concat(stream.Finish()).ToList();
+    Expect(events.Select(item => item.Event).SequenceEqual(["message_start", "content_block_start", "content_block_delta", "content_block_delta",
+            "content_block_stop", "content_block_start", "content_block_delta", "content_block_delta", "content_block_stop", "message_delta", "message_stop"])
+        && events[5].Data["content_block"]!["id"]!.ToString() == "call_9" && (int?)events[5].Data["index"] == 1
+        && events[7].Data["delta"]!["partial_json"]!.ToString() == "th\":1}"
+        && events[9].Data["delta"]!["stop_reason"]!.ToString() == "tool_use" && (int?)events[9].Data["usage"]!["output_tokens"] == 5,
+        "stream events: " + string.Join(",", events.Select(item => item.Event)));
+
+    // The localhost translator end to end with a fake ClinePass: only the local token gets in, only CLINE_API_KEY goes out.
+    var upstream = new FakeClinePass();
+    string? key = "test-cline-key";
+    var proxy = new ClinePassProxy("https://cline.test/api/v1", () => key, upstream);
+    try
+    {
+        proxy.Start();
+        var environment = proxy.ClaudeEnvironment();
+        Expect(environment["ANTHROPIC_BASE_URL"] == proxy.Url && proxy.Url.StartsWith("http://127.0.0.1:", StringComparison.Ordinal)
+            && environment["ANTHROPIC_AUTH_TOKEN"] == proxy.LocalToken && environment["ANTHROPIC_API_KEY"] == "" && environment["CLAUDE_CODE_OAUTH_TOKEN"] == ""
+            && !environment.Values.Contains(key), "claude environment");
+        Expect(proxy.MapModel("claude-haiku-4-5") == ClinePassProxy.DefaultFastModel && proxy.MapModel("claude-opus-4-1") == ClinePassProxy.DefaultModel
+            && proxy.MapModel("qwen3.8-max") == "cline-pass/qwen3.8-max" && proxy.MapModel("cline-pass/glm-5.3") == "cline-pass/glm-5.3", "model mapping");
+        using var http = new HttpClient();
+        string Post(string token, string json, out int code)
+        {
+            using var message = new HttpRequestMessage(HttpMethod.Post, proxy.Url + "/v1/messages?beta=true")
+            { Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json") };
+            message.Headers.TryAddWithoutValidation("Authorization", "Bearer " + token);
+            using var response = http.Send(message);
+            code = (int)response.StatusCode;
+            return response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+        }
+        string body = """{"model":"claude-sonnet-4-5","max_tokens":50,"stream":true,"messages":[{"role":"user","content":"hi"}]}""";
+        Post("someone-elses-oauth-token", body, out int denied);
+        Expect(denied == 401 && upstream.Requests == 0, "wrong token refused before ClinePass");
+        string sse = Post(proxy.LocalToken, body, out int status);
+        Expect(status == 200 && sse.Contains("event: message_start") && sse.Contains("\"text\":\"Hi there\"") && sse.Contains("event: message_stop"), "proxied stream: " + sse);
+        Expect(upstream.Authorization == "Bearer test-cline-key" && upstream.Url == "https://cline.test/api/v1/chat/completions"
+            && upstream.Body?["model"]?.ToString() == ClinePassProxy.DefaultModel && upstream.Body?["messages"]?[0]?["content"]?.ToString() == "hi"
+            && upstream.Body?.ToJsonString().Contains(proxy.LocalToken) == false, "upstream request");
+        string whole = Post(proxy.LocalToken, body.Replace("\"stream\":true", "\"stream\":false"), out int plainStatus);
+        Expect(plainStatus == 200 && JsonNode.Parse(whole)?["content"]?[0]?["text"]?.ToString() == "Hi there", "proxied reply: " + whole);
+        key = null;
+        string missing = Post(proxy.LocalToken, body, out int noKey);
+        Expect(noKey == 401 && missing.Contains("CLINE_API_KEY") && upstream.Requests == 2, "missing key: " + missing);
+    }
+    finally { proxy.DisposeAsync().AsTask().GetAwaiter().GetResult(); }
+}
+
 void ResumeSessions()
 {
     string home = Path.Combine(scratch, "resume home");
@@ -1189,5 +1345,27 @@ sealed class FixtureHost(string project) : ISolforgeHost
             "get_item" => new JsonObject { ["error"] = "Solforge is reading the item catalog (loading); call again shortly." },
             _ => new JsonObject { ["total"] = 0, ["rows"] = new JsonArray() }
         });
+    }
+}
+
+/** A stand-in for api.cline.bot's Chat Completions: records the last request and answers "Hi there". */
+sealed class FakeClinePass : HttpMessageHandler
+{
+    public int Requests;
+    public string? Authorization, Url;
+    public JsonObject? Body;
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancel)
+    {
+        Interlocked.Increment(ref Requests);
+        Authorization = request.Headers.Authorization?.ToString();
+        Url = request.RequestUri?.ToString();
+        Body = JsonNode.Parse(await request.Content!.ReadAsStringAsync(cancel)) as JsonObject;
+        bool stream = Body?["stream"] is JsonValue flag && flag.TryGetValue(out bool on) && on;
+        string text = stream
+            ? "data: {\"choices\":[{\"delta\":{\"content\":\"Hi there\"}}]}\n\ndata: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":3,\"completion_tokens\":2}}\n\ndata: [DONE]\n\n"
+            : "{\"id\":\"c2\",\"choices\":[{\"message\":{\"content\":\"Hi there\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":3,\"completion_tokens\":2}}";
+        return new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+        { Content = new StringContent(text, System.Text.Encoding.UTF8, stream ? "text/event-stream" : "application/json") };
     }
 }
