@@ -101,6 +101,7 @@ public sealed partial class StudioForm
             AiNote(SolTheme.Sun, $"{engine.Name} is not installed. Stop the running session to install it.");
         else if (card) DrawAiInstallCard(engine);
         if (gui is not null && (!card || aiTerminal.Terminal is not null)) aiTerminal.Draw(gui.MonospaceFont, ImGui.GetContentRegionAvail());
+        if (aiTerminal.TakeRestart()) RestartAiEngine();
         ImGui.EndChild();
         UiAuto.PopBlocked();
         ImGui.End();
@@ -428,6 +429,15 @@ public sealed partial class StudioForm
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) { prompt = null; }
         SelectAiEngine(target);
         StartAiEngine(AiEngines[target], AiEngines[target].Command, resume: false, prompt);
+    }
+
+    /** The terminal's "engine stopped" Restart (after Ctrl+C twice): starts the picked engine as the toolbar's Start does. */
+    private void RestartAiEngine()
+    {
+        var engine = AiEngines[aiEngine];
+        string command = engine.Command.Length == 0 ? aiCustomCommand.Trim() : engine.Command;
+        if (command.Length > 0 && (engine.Command.Length == 0 || AiResolved(engine.Command) is not null))
+            StartAiEngine(engine, command, settings.AiResumeSessions);
     }
 
     /** Engines run by full path with the refreshed PATH, so an install made after Solforge started works at once. */

@@ -8,17 +8,26 @@ namespace SunriseStudio.Editor.Ai;
  * Solforge Phase 47B: draws a ConPTY screen with ImGui and turns keys into terminal input while the
  * terminal has focus. Characters come from the form's KeyPress (control characters included); keys
  * that make no character (arrows, Home, Delete...) come from ImGui.
+ * The mouse selects (drag, double-click a word, triple-click a line, Shift+click extends, also into the
+ * scrollback); Ctrl+Shift+C copies, Ctrl+Shift+V pastes and right-click opens Copy/Paste/Select all.
+ * Ctrl+C sends ^C; a second Ctrl+C within a second kills the engine's process tree (HelpCatalog lists these keys).
  */
 internal sealed class TerminalView : IDisposable
 {
     private readonly Queue<char> typed = new();
+    private readonly TerminalSelection selection = new();
+    private readonly DoublePress interrupt = new();
     private int scroll;
+    private bool restart;
+    private const string MenuId = "##ai-terminal-menu";
     /** Measured once per frame to get the font's fractional advance; CalcTextSize rounds one "M" up to a whole pixel. */
     private static readonly string Ruler = new('M', 256);
 
     public ConPtyTerminal? Terminal { get; private set; }
     public bool Focused { get; private set; }
     public string? Failure { get; private set; }
+    /** Ctrl+C twice ended the engine; its last screen stays for reading and copying until Restart or Start. */
+    public bool Stopped { get; private set; }
 
     public void Start(string commandLine, string folder, int columns, int rows, IReadOnlyDictionary<string, string>? environment = null)
     {
@@ -33,7 +42,47 @@ internal sealed class TerminalView : IDisposable
     {
         Terminal?.Dispose();
         Terminal = null;
+        Stopped = false;
         typed.Clear();
+        selection.Clear();
+        interrupt.Reset();
+        scroll = 0;
+    }
+
+    /** Kills the engine with every process it started and keeps the screen; Draw then offers Restart. */
+    public void StopEngine()
+    {
+        if (Terminal is not { } terminal || Stopped) return;
+        terminal.KillTree();
+        Stopped = true;
+        typed.Clear();
+        interrupt.Reset();
+    }
+
+    /** True once after the "engine stopped" Restart button was pressed. */
+    public bool TakeRestart()
+    {
+        bool value = restart;
+        restart = false;
+        return value;
+    }
+
+    /** Puts the selection on the clipboard; false when nothing is selected. */
+    public bool Copy()
+    {
+        if (Terminal is not { } terminal) return false;
+        string text;
+        lock (terminal.Screen.Gate) text = selection.Text(terminal.Screen.LineAt);
+        if (text.Length == 0) return false;
+        ImGui.SetClipboardText(text);
+        return true;
+    }
+
+    public void SelectAll()
+    {
+        if (Terminal is not { } terminal) return;
+        var screen = terminal.Screen;
+        lock (screen.Gate) selection.SelectAll(screen.FirstLine, screen.Pushed + screen.Rows - 1);
     }
 
     /** From the form's KeyPress; only kept while the terminal has focus. */
@@ -44,19 +93,43 @@ internal sealed class TerminalView : IDisposable
 
     public void Paste(string text)
     {
-        if (Terminal is not { } terminal || text.Length == 0) return;
-        terminal.Send(terminal.Screen.BracketedPaste ? "\x1b[200~" + text + "\x1b[201~" : text);
+        if (Terminal is not { } terminal || Stopped || text.Length == 0) return;
+        terminal.Send(PasteText(text, terminal.Screen.BracketedPaste));
+        scroll = 0;
+    }
+
+    /**
+     * What a paste sends: line breaks become Enter (CR) as Windows Terminal sends them, and in bracketed mode the text is
+     * wrapped in 200~/201~ with any end marker inside it removed, so pasted text cannot end the paste early.
+     */
+    internal static string PasteText(string text, bool bracketed)
+    {
+        text = text.Replace("\r\n", "\r").Replace('\n', '\r');
+        return bracketed ? "\x1b[200~" + text.Replace("\x1b[201~", "") + "\x1b[201~" : text;
     }
 
     public void Draw(ImFontPtr font, Vector2 size)
     {
+        if (Stopped && Terminal is not null)
+        {
+            // A row above the kept screen rather than a band over it, so its button gets the clicks.
+            ImGui.AlignTextToFramePadding();
+            ImGui.TextColored(SolTheme.Sun, "Engine stopped.");
+            ImGui.SameLine();
+            if (SolTheme.PrimaryButton("Restart##ai-terminal-restart")) restart = true;
+            size.Y = Math.Max(1, size.Y - ImGui.GetFrameHeightWithSpacing());
+        }
         var draw = ImGui.GetWindowDrawList();
         var origin = ImGui.GetCursorScreenPos();
         draw.AddRectFilled(origin, origin + size, SolTheme.U32(SolTheme.Bg));
         ImGui.InvisibleButton("##ai-terminal", Vector2.Max(size, Vector2.One));
-        if (ImGui.IsItemClicked()) Focused = true;
-        else if (ImGui.IsMouseClicked(ImGuiMouseButton.Left) && !ImGui.IsItemHovered()) Focused = false;
-        if (ImGui.IsItemHovered()) { scroll = Math.Max(0, scroll + (int)(ImGui.GetIO().MouseWheel * 3)); }
+        bool hovered = ImGui.IsItemHovered(), pressed = ImGui.IsItemClicked(ImGuiMouseButton.Left),
+            menu = ImGui.IsItemClicked(ImGuiMouseButton.Right);
+        if (pressed || menu) Focused = true;
+        // A click in the terminal's own menu keeps focus, so a Paste from it can be followed by typing.
+        else if ((ImGui.IsMouseClicked(ImGuiMouseButton.Left) || ImGui.IsMouseClicked(ImGuiMouseButton.Right)) && !hovered
+            && !ImGui.IsPopupOpen(MenuId)) Focused = false;
+        if (hovered) { scroll = Math.Max(0, scroll + (int)(ImGui.GetIO().MouseWheel * 3)); }
         if (Terminal is not { } terminal)
         {
             draw.AddText(origin + new Vector2(8), SolTheme.U32(SolTheme.Dim), Failure ?? "Pick an engine and press Start.");
@@ -76,11 +149,22 @@ internal sealed class TerminalView : IDisposable
         {
             scroll = Math.Min(scroll, screen.Scrollback.Count);
             var start = new Vector2(MathF.Floor(origin.X + 4), MathF.Floor(origin.Y + 4));
+            Select(screen, start, cell, pressed);
             for (int row = 0; row < screen.Rows; row++)
             {
                 int source = row - scroll;
                 var line = source < 0 ? screen.Scrollback[screen.Scrollback.Count + source] : screen.Line(source);
                 DrawLine(draw, font, fontSize, start + new Vector2(0, row * cell.Y), cell, line);
+            }
+            if (selection.Span(screen.LineAt) is { } span)
+            {
+                uint shade = SolTheme.U32(SolTheme.Sun) & 0x60FFFFFF;
+                for (int row = 0; row < screen.Rows; row++)
+                    if (TerminalSelection.Columns(span, screen.Pushed + row - scroll, screen.Columns) is { } selected)
+                    {
+                        var from = start + new Vector2(selected.From * cell.X, row * cell.Y);
+                        draw.AddRectFilled(from, from + new Vector2((selected.To - selected.From) * cell.X, cell.Y), shade);
+                    }
             }
             if (scroll == 0 && screen.CursorVisible && Focused && (ImGui.GetTime() % 1.0) < .6)
             {
@@ -88,7 +172,14 @@ internal sealed class TerminalView : IDisposable
                 draw.AddRectFilled(at, at + cell, SolTheme.U32(SolTheme.Sun) & 0xB0FFFFFF);
             }
         }
-        if (terminal.HasExited)
+        if (!Stopped && Focused && interrupt.Pending(ImGui.GetTime()))
+        {
+            const string hint = "Ctrl+C again stops the engine";
+            var at = new Vector2(origin.X + size.X - ImGui.CalcTextSize(hint).X - 10, origin.Y + 4);
+            draw.AddRectFilled(at - new Vector2(4, 0), at + ImGui.CalcTextSize(hint) + new Vector2(4, 0), SolTheme.U32(SolTheme.Bg));
+            draw.AddText(at, SolTheme.U32(SolTheme.Sun), hint);
+        }
+        if (terminal.HasExited && !Stopped)
         {
             // Sits on the last grid row over a cleared band rather than overprinting that row's text.
             var at = new Vector2(MathF.Floor(origin.X + 4), MathF.Floor(origin.Y + 4) + (rows - 1) * cell.Y);
@@ -97,6 +188,41 @@ internal sealed class TerminalView : IDisposable
         }
         if (!Focused) draw.AddRect(origin, origin + size, SolTheme.U32(SolTheme.Line));
         else draw.AddRect(origin, origin + size, SolTheme.U32(SolTheme.Sun) & 0x80FFFFFF);
+        DrawMenu(menu);
+    }
+
+    /**
+     * Left press, drag and release over the grid. Character mode follows the gap nearest the mouse, word and line modes
+     * the cell under it; dragging past the top or bottom edge scrolls a line a frame, so the selection reaches scrollback.
+     */
+    private void Select(VtScreen screen, Vector2 start, Vector2 cell, bool pressed)
+    {
+        var io = ImGui.GetIO();
+        var mouse = io.MousePos;
+        if (selection.Dragging)
+        {
+            if (!ImGui.IsMouseDown(ImGuiMouseButton.Left)) { selection.Release(); return; }
+            if (mouse.Y < start.Y) scroll = Math.Min(screen.Scrollback.Count, scroll + 1);
+            else if (mouse.Y >= start.Y + screen.Rows * cell.Y) scroll = Math.Max(0, scroll - 1);
+        }
+        if (!pressed && !selection.Dragging) return;
+        float x = (mouse.X - start.X) / cell.X;
+        int row = Math.Clamp((int)MathF.Floor((mouse.Y - start.Y) / cell.Y), 0, screen.Rows - 1);
+        long line = screen.Pushed + row - scroll;
+        var caret = new TerminalPoint(line, Math.Clamp((int)MathF.Round(x), 0, screen.Columns));
+        var under = new TerminalPoint(line, Math.Clamp((int)MathF.Floor(x), 0, screen.Columns - 1));
+        if (pressed) selection.Press(caret, under, ImGui.GetMouseClickedCount(ImGuiMouseButton.Left), io.KeyShift);
+        else selection.Drag(caret, under);
+    }
+
+    private void DrawMenu(bool open)
+    {
+        if (open) ImGui.OpenPopup(MenuId);
+        if (!ImGui.BeginPopup(MenuId)) return;
+        if (ImGui.MenuItem("Copy", "Ctrl+Shift+C", false, selection.Active)) Copy();
+        if (ImGui.MenuItem("Paste", "Ctrl+Shift+V", false, !Stopped && Terminal is { HasExited: false })) Paste(ImGui.GetClipboardText() ?? "");
+        if (ImGui.MenuItem("Select all")) SelectAll();
+        ImGui.EndPopup();
     }
 
     private static void DrawLine(ImDrawListPtr draw, ImFontPtr font, float fontSize, Vector2 at, Vector2 cell, VtCell[] line)
@@ -151,11 +277,26 @@ internal sealed class TerminalView : IDisposable
         io.WantTextInput = true;
         while (typed.TryDequeue(out char c))
         {
-            if (c == '\b') terminal.Send("\x7f");
-            else if (c == 22 && io.KeyCtrl) Paste(ImGui.GetClipboardText() ?? "");
-            else terminal.Send(c.ToString());
+            // Ctrl+Shift+C arrives as the same ^C character as Ctrl+C; Shift makes it Copy.
+            if (c == 3 && io.KeyShift) { Copy(); continue; }
+            if (Stopped) continue;
+            if (c == 3)
+            {
+                if (interrupt.Press(ImGui.GetTime())) { StopEngine(); return; }
+                terminal.Send("\x03");
+            }
+            else
+            {
+                interrupt.Reset();
+                // Ctrl+V and Ctrl+Shift+V both arrive as ^V.
+                if (c == '\b') terminal.Send("\x7f");
+                else if (c == 22 && io.KeyCtrl) Paste(ImGui.GetClipboardText() ?? "");
+                else terminal.Send(c.ToString());
+            }
+            selection.Clear();
             scroll = 0;
         }
+        if (Stopped) return;
         string arrows = terminal.Screen.ApplicationCursor ? "\x1bO" : "\x1b[";
         (ImGuiKey Key, string Text)[] keys =
         [
