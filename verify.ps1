@@ -57,6 +57,8 @@ $studioChecks = [ordered]@{
     'OriginalAsset.Tests' = 'net9.0'; 'Shortcuts.Tests' = 'net9.0-windows'
     # Solforge Phase 47B: MCP tools over the stdio shim, find_object, attention log, client configs.
     'Mcp.Tests' = 'net9.0'
+    # Local server manager: WSL sol-server status, ghost check, deploy/rollback scripts and local_server_* MCP tools (no WSL needed).
+    'LocalServer.Tests' = 'net9.0'
 }
 # Solforge Phases 15-19: project system, overlay, interchange packaging, dependencies, integrity audit (no install).
 $studioChecks['ProjectSystem.Tests'] = 'net9.0-windows'
