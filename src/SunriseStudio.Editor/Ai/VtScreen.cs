@@ -46,6 +46,23 @@ internal sealed class VtScreen(int columns, int rows)
     public long Revision { get; private set; }
     public IReadOnlyList<VtCell[]> Scrollback => scrollback;
     public VtCell[] Line(int row) => lines[row];
+    /**
+     * Lines ever pushed into scrollback. Line numbers that count from the first line ever written stay put while output
+     * scrolls (scrollback[i] is line Pushed - Scrollback.Count + i, screen row r is line Pushed + r), so a selection
+     * keeps its text.
+     */
+    public long Pushed { get; private set; }
+    /** The oldest line still held. */
+    public long FirstLine => Pushed - scrollback.Count;
+    /** A line by its number (see Pushed), or null once it has left the scrollback or is below the screen. Lock Gate. */
+    public VtCell[]? LineAt(long line)
+    {
+        long index = line - FirstLine;
+        if (index < 0) return null;
+        if (index < scrollback.Count) return scrollback[(int)index];
+        index -= scrollback.Count;
+        return index < Rows ? lines[(int)index] : null;
+    }
     /** The right half of a wide character; drawn as nothing. */
     public const char Continuation = '\0';
     /** Stands in for characters outside the BMP (emoji), which the 16-bit font atlas cannot hold. */
@@ -314,6 +331,7 @@ internal sealed class VtScreen(int columns, int rows)
     private void PushScrollback(VtCell[] line)
     {
         scrollback.Add(line);
+        Pushed++;
         if (scrollback.Count > ScrollbackLimit) scrollback.RemoveRange(0, scrollback.Count - ScrollbackLimit);
     }
 

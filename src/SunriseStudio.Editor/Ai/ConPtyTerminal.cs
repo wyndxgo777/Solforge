@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Win32.SafeHandles;
@@ -21,6 +22,7 @@ internal sealed class ConPtyTerminal : IDisposable
     public VtScreen Screen { get; }
     public string CommandLine { get; }
     public bool Exited { get; private set; }
+    public int ProcessId { get; }
     public event Action? Changed;
 
     /** @param environment Variables set or replaced for the child; the rest are inherited. */
@@ -52,6 +54,7 @@ internal sealed class ConPtyTerminal : IDisposable
                     block, workingDirectory, ref startup, out var information))
                 throw new Win32Exception(Marshal.GetLastWin32Error(), $"Could not start {commandLine}.");
             process = information.hProcess;
+            ProcessId = information.dwProcessId;
             thread = information.hThread;
         }
         finally
@@ -124,10 +127,29 @@ internal sealed class ConPtyTerminal : IDisposable
 
     public bool HasExited => Exited || process != IntPtr.Zero && WaitForSingleObject(process, 0) == 0;
 
+    /**
+     * Ends the client and every process it started (node, shells, stdio MCP servers), then closes the console. The tree
+     * is killed before the console closes, because Windows does not re-parent orphans and a dead root hides its children;
+     * the open process handle keeps the id from being reused meanwhile.
+     */
+    public void KillTree()
+    {
+        if (disposed) return;
+        try
+        {
+            using var root = Process.GetProcessById(ProcessId);
+            root.Kill(entireProcessTree: true);
+        }
+        catch (Exception error) when (error is ArgumentException or InvalidOperationException or Win32Exception
+            or AggregateException or NotSupportedException) { }
+        Dispose();
+    }
+
     public void Dispose()
     {
         if (disposed) return;
         disposed = true;
+        Exited = true;
         // Closing the console ends the client and breaks the reader's pipe.
         ClosePseudoConsole(console);
         if (process != IntPtr.Zero && WaitForSingleObject(process, 500) != 0) TerminateProcess(process, 1);

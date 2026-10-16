@@ -8,8 +8,8 @@ public sealed record HelpTip(string Topic, string Title, string Text);
 /**
  * Help > Keybinds & Tips (F1) and the get_help MCP tool. Keybinds come from ShortcutActions.All and
  * the user's ShortcutMap at call time, so a new or rebound action shows up without touching this file;
- * an action's area comes from its id (AreaOf). FixedInputs lists the few held keys the viewports read
- * directly (fly and player movement), which no preset can rebind.
+ * an action's area comes from its id (AreaOf). FixedInputs lists the keys the viewports (fly and player
+ * movement) and the AI terminal (selection, copy/paste, ^C) read directly, which no preset can rebind.
  */
 public static class HelpCatalog
 {
@@ -45,7 +45,7 @@ public static class HelpCatalog
         return action.Section switch { ShortcutSection.View3D => Viewport, ShortcutSection.View2D => Graphs, _ => General };
     }
 
-    /** Held keys the viewports read directly; listed here so Help shows them. */
+    /** Keys the viewports and the AI terminal read directly; listed here so Help shows them. */
     public static IReadOnlyList<HelpKey> FixedInputs { get; } =
     [
         new(Viewport, "Fly: forward, left, back, right (hold Right mouse)", "W A S D", "fixed.fly_move", false),
@@ -57,6 +57,14 @@ public static class HelpCatalog
         new(Viewport, "Perspective or orthographic", "Numpad 5", "fixed.ortho", false),
         new(General, "Cancel a shortcut capture or close a dialog", "Escape", "fixed.escape", false),
         new(Ai, "Terminal: reverse tab", "Shift+Tab", "fixed.terminal_back_tab", false),
+        new(Ai, "Terminal: select text (wheel or drag past an edge for scrollback)", "Left drag", "fixed.terminal_select", false),
+        new(Ai, "Terminal: select a word, a line", "Double-click / Triple-click", "fixed.terminal_select_word", false),
+        new(Ai, "Terminal: extend the selection", "Shift+Click", "fixed.terminal_select_extend", false),
+        new(Ai, "Terminal: copy the selection", "Ctrl+Shift+C", "fixed.terminal_copy", false),
+        new(Ai, "Terminal: paste (bracketed when the engine asks for it)", "Ctrl+Shift+V / Ctrl+V", "fixed.terminal_paste", false),
+        new(Ai, "Terminal: Copy, Paste, Select all menu", "Right-click", "fixed.terminal_menu", false),
+        new(Ai, "Terminal: interrupt the engine (^C)", "Ctrl+C", "fixed.terminal_interrupt", false),
+        new(Ai, "Terminal: stop the engine and every process it started", "Ctrl+C twice within 1 s", "fixed.terminal_stop", false),
     ];
 
     /** Every keybind with the user's current keys, grouped in Areas order. */

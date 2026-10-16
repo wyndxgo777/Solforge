@@ -43,6 +43,89 @@ internal static class TerminalChecks
 
         WrapChecks();
         SequenceChecks();
+        SelectionChecks();
+    }
+
+    /** Mouse selection, copy text, paste bytes and the Ctrl+C double press of the AI terminal. */
+    private static void SelectionChecks()
+    {
+        var screen = new VtScreen(20, 3);
+        screen.Feed("one two-three four\r\nsee src/a.cs (ok)\r\nthird");
+        Func<long, VtCell[]?> lineAt = screen.LineAt;
+        Check(screen.Pushed == 0 && screen.FirstLine == 0 && screen.LineAt(3) is null, "A fresh screen numbered its lines wrong.");
+        TerminalPoint At(long line, int column) => new(line, column);
+
+        var selection = new TerminalSelection();
+        selection.Press(At(0, 4), At(0, 4), 1, false);
+        Check(!selection.Active && selection.Text(lineAt) == "", "A plain click selected something.");
+        selection.Drag(At(0, 7), At(0, 6));
+        selection.Release();
+        Check(selection.Text(lineAt) == "two", "A drag did not select the characters between its carets.");
+        selection.Press(At(0, 7), At(0, 7), 1, false);
+        selection.Drag(At(0, 4), At(0, 4));
+        Check(selection.Text(lineAt) == "two", "A drag to the left did not select the same text.");
+        selection.Drag(At(0, 7), At(0, 7));
+        selection.Release();
+        selection.Drag(At(0, 0), At(0, 0));
+        Check(selection.Text(lineAt) == "", "The selection moved after the button was released.");
+
+        selection.Press(At(1, 6), At(1, 6), 2, false);
+        Check(selection.Text(lineAt) == "src/a.cs", "Double-click did not take a whole path as one word.");
+        selection.Press(At(1, 13), At(1, 13), 2, false);
+        Check(selection.Text(lineAt) == "(", "Double-click on a bracket did not select the bracket alone.");
+        selection.Press(At(0, 6), At(0, 5), 2, false);
+        Check(selection.Text(lineAt) == "two-three", "Double-click split a hyphenated word.");
+        selection.Drag(At(0, 16), At(0, 15));
+        Check(selection.Text(lineAt) == "two-three four", "A word drag did not grow by whole words.");
+        selection.Release();
+
+        selection.Press(At(0, 2), At(0, 2), 3, false);
+        selection.Release();
+        Check(selection.Text(lineAt) == "one two-three four", "Triple-click did not select the line.");
+        selection.Press(At(1, 0), At(1, 0), 1, true);
+        selection.Release();
+        Check(selection.Mode == TerminalSelectMode.Line && selection.Text(lineAt) == "one two-three four\r\nsee src/a.cs (ok)",
+            "Shift+click did not extend a line selection by whole lines.");
+        selection.Press(At(2, 0), At(2, 0), 3, false);
+        Check(selection.Text(lineAt) == "third", "A line selection kept the row's trailing blanks.");
+
+        selection.Press(At(0, 14), At(0, 14), 1, false);
+        selection.Drag(At(1, 3), At(1, 2));
+        var span = selection.Span(lineAt)!.Value;
+        Check(selection.Text(lineAt) == "four\r\nsee", "A two-line drag did not join its lines with CRLF.");
+        Check(TerminalSelection.Columns(span, 0, 20) == (14, 20) && TerminalSelection.Columns(span, 1, 20) == (0, 3)
+            && TerminalSelection.Columns(span, 2, 20) is null, "The highlight columns disagree with the selection.");
+        selection.Clear();
+        Check(!selection.Active && selection.Span(lineAt) is null, "Clear left a selection.");
+
+        // Lines keep their numbers while output scrolls, so a selection stays on its text and reaches into scrollback.
+        var scrolling = new VtScreen(10, 2);
+        scrolling.Feed("a1\r\nb2\r\nc3");
+        Func<long, VtCell[]?> scrolled = scrolling.LineAt;
+        Check(scrolling.Pushed == 1 && scrolling.FirstLine == 0 && scrolling.LineAt(0)![0].Char == 'a'
+            && scrolling.LineAt(2)![0].Char == 'c', "Scrollback and screen lines are not numbered in one sequence.");
+        selection.Press(At(0, 0), At(0, 0), 3, false);
+        selection.Release();
+        scrolling.Feed("\r\nd4\r\ne5");
+        Check(selection.Text(scrolled) == "a1", "A selection drifted when output scrolled.");
+        selection.SelectAll(scrolling.FirstLine, scrolling.Pushed + scrolling.Rows - 1);
+        Check(selection.Text(scrolled) == "a1\r\nb2\r\nc3\r\nd4\r\ne5", "Select all missed scrollback or the screen.");
+
+        var wide = new VtScreen(10, 1);
+        wide.Feed("a中b");
+        selection.Press(At(0, 0), At(0, 0), 1, false);
+        selection.Drag(At(0, 4), At(0, 3));
+        Check(selection.Text(wide.LineAt) == "a中b", "A wide character was copied twice or not at all.");
+
+        Check(TerminalView.PasteText("a\r\nb\nc", false) == "a\rb\rc", "Pasted line breaks were not sent as Enter.");
+        Check(TerminalView.PasteText("x\x1b[201~y", true) == "\x1b[200~xy\x1b[201~",
+            "Bracketed paste was not wrapped, or pasted text could end it early.");
+
+        var press = new DoublePress(1.0);
+        Check(!press.Press(10) && press.Pending(10.5) && press.Press(10.5), "A second Ctrl+C inside a second did not stop the engine.");
+        Check(!press.Pending(10.6) && !press.Press(10.7) && !press.Press(11.9), "A Ctrl+C after the stop or after a second counted as a double.");
+        press.Reset();
+        Check(!press.Press(12), "Reset kept the first press.");
     }
 
     /** The last-column wrap flag survives SGR and modes, as ConPTY assumes when it soft-wraps a row. */

@@ -48,6 +48,11 @@ static void HelpPage()
     Require(HelpCatalog.Search(sunrise, "help").Any(key => key.Id == OpenHelp), "Search does not find the Help action.");
     Require(HelpCatalog.Search(sunrise, null, HelpCatalog.Viewport).All(key => key.Area == HelpCatalog.Viewport), "The area filter leaks.");
     Require(HelpCatalog.AreaOf(ShortcutActions.All.Single(action => action.Id == OpenAiWorkspace)) == HelpCatalog.Ai, "AI workspace is not in AI / MCP.");
+    Require(HelpCatalog.Search(sunrise, "terminal copy").Any(key => key.Keys == "Ctrl+Shift+C" && key.Area == HelpCatalog.Ai && !key.Rebindable)
+        && HelpCatalog.Search(sunrise, "terminal paste").Any(key => key.Keys.Contains("Ctrl+Shift+V", StringComparison.Ordinal))
+        && HelpCatalog.Search(sunrise, "terminal stop").Any(key => key.Keys.Contains("Ctrl+C twice", StringComparison.Ordinal))
+        && HelpCatalog.Search(sunrise, "terminal menu").Any(key => key.Keys == "Right-click"), "F1 Help misses the AI terminal's keys.");
+    Require(HelpCatalog.Keys(sunrise).GroupBy(key => key.Id).All(group => group.Count() == 1), "Two Help rows share an id.");
     Require(HelpCatalog.SearchTips("mcp").Count >= 3 && HelpCatalog.Tips.All(tip => tip.Text.Length > 0), "Tips are missing MCP setup.");
 }
 
