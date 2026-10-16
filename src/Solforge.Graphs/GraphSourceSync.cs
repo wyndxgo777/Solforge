@@ -3,7 +3,6 @@
  * (a mission script's Lua and a node graph's .solgraph.json). UI-free so the rules are tested without ImGui.
  */
 using System.Text.Json;
-using SunriseStudio.Missions;
 
 namespace Solforge.Graphs;
 
@@ -126,9 +125,6 @@ public static class GraphModels
             throw new InvalidDataException($"The source changes the graph kind from {expected} to {document.Kind}; create a new graph instead.");
         return document;
     }
-
-    /** Parses mission script source; throws InvalidDataException on Lua the mission model cannot read. */
-    public static MissionGraphDocument ParseMissionSource(string text) => MissionGraphDocument.Parse(text);
 
     /** The compiled text a node graph produces: Lua for mission graphs, the compile JSON (ops, writes) otherwise. */
     public static string Compiled(GraphDocument document)

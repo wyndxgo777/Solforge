@@ -326,8 +326,8 @@ sync.Sync(syncGraph.Document.ToJson());
 Expect(sync.Draft == broken && sync.Stale && sync.Error.Length > 0, "a node edit never clobbers a pending draft");
 sync.Revert();
 Expect(sync.Draft == syncGraph.Document.ToJson() && sync.Error.Length == 0 && !sync.Stale, "revert takes the nodes again");
-string material = GraphDocument.Create(GraphKind.Material, "M").ToJson();
-sync.Edit(material, 10.0);
+string materialJson = GraphDocument.Create(GraphKind.Material, "M").ToJson();
+sync.Edit(materialJson, 10.0);
 Expect(!sync.TryApply(ApplyWeapon, 11.0, force: true) && sync.Error.Contains("kind", StringComparison.OrdinalIgnoreCase)
     && syncGraph.Document.Kind == GraphKind.Weapon, "source cannot change the graph kind");
 sync.Live = false;
@@ -343,10 +343,10 @@ Expect(GraphModels.Compiled(missionNodes) == MissionGraphCompiler.Compile(missio
 Expect(GraphModels.Compiled(GraphDocument.Create(GraphKind.Weapon, "W")).Contains("\"ok\""), "other node graphs show the compile JSON");
 // Mission script source through the same sync: bad Lua is refused and kept.
 var missionSync = new GraphSourceSync();
-var script = GraphModels.ParseMissionSource("return {}\n");
+var script = SunriseStudio.Missions.MissionGraphDocument.Parse("return {}\n");
 missionSync.Reset(script.Source);
 missionSync.Edit("return {\n", 0);
-Expect(!missionSync.TryApply(text => script = GraphModels.ParseMissionSource(text), 5, force: true) && script.Source == "return {}\n"
+Expect(!missionSync.TryApply(text => script = SunriseStudio.Missions.MissionGraphDocument.Parse(text), 5, force: true) && script.Source == "return {}\n"
     && missionSync.Error.Length > 0 && missionSync.Draft == "return {\n", "bad mission Lua stays in the source view");
 
 Console.WriteLine($"Solforge.Graphs checks: {passed} passed, {failures.Count} failed.");
