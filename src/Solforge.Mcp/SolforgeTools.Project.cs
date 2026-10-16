@@ -1,3 +1,7 @@
+/**
+ * File: MCP tools for editor state, project files and changes, build status, settings, maps, missions, packages,
+ * item/perk/vendor search and creation types.
+ */
 using System.Text.Json.Nodes;
 
 namespace Solforge.Mcp;
@@ -20,9 +24,11 @@ public static partial class SolforgeTools
     /** Reads about the open map; they stop while context publishing is paused. */
     public static readonly string[] WorldTools = ["find_world_objects", "get_placement"];
 
+    /** Standard paging arguments (offset, limit). */
     private static readonly (string Name, string Type, string Description, bool Required)[] PageArgs =
         [("offset", "integer", "First row (default 0)", false), ("limit", "integer", "Rows per page (default 50, max 500)", false)];
 
+    /** Schema with the paging arguments and vector array properties added. */
     private static JsonObject Paged(params (string, string, string, bool)[] properties) =>
         Vectors(McpJson.Schema([.. properties, .. PageArgs]));
 
@@ -34,6 +40,7 @@ public static partial class SolforgeTools
         return schema;
     }
 
+    /** Yields the project and catalogue tools. */
     private static IEnumerable<McpTool> ProjectTools(ISolforgeHost host,
         Func<string, string, JsonObject, Func<JsonObject, CancellationToken, Task<McpToolResult>>, McpTool> read,
         Func<string, string, JsonObject, Func<JsonObject, string?>, Func<JsonObject, string>, McpTool> act)
@@ -43,7 +50,9 @@ public static partial class SolforgeTools
             var result = await host.QueryAsync(name, args, cancel).ConfigureAwait(false);
             return result["error"] is JsonValue error ? McpToolResult.Error(error.ToString()) : McpToolResult.Json(result);
         });
+        /** Error text when a required argument is blank; null when present. */
         static string? Need(JsonObject args, string name, string message) => string.IsNullOrWhiteSpace(McpJson.String(args, name)) ? message : null;
+        /** String argument or empty text. */
         static string Arg(JsonObject args, string name) => McpJson.String(args, name) ?? "";
 
         // Editor and project.

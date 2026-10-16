@@ -1,3 +1,7 @@
+/**
+ * File: Per-engine model provider presets for the AI workspace (Claude Code, Cline); engine launching is in
+ * EngineLaunch.cs and the ClinePass translator in ClinePassProxy.cs.
+ */
 namespace Solforge.Mcp;
 
 /**
@@ -58,6 +62,7 @@ public static class EngineProviders
             "cline auth", "", UsesModel: true)
     ];
 
+    /** Presets available to one engine. */
     public static IEnumerable<Preset> For(string engine) => Presets.Where(preset => preset.Engine == engine);
 
     /** The saved preset for the engine, else its first; null for engines without presets (agy, custom). */
@@ -99,6 +104,7 @@ public static class EngineProviders
         return env;
     }
 
+    /** Model name to pass for a preset (empty when the preset does not use one). */
     public static string Model(Preset preset, Choice? choice) =>
         !preset.UsesModel ? "" : choice?.Model.Trim() is { Length: > 0 } model ? model : preset.DefaultModel;
 }

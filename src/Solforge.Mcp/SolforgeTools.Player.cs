@@ -1,3 +1,4 @@
+/** File: MCP tools get_player_position and wait_for_player_near; sources are combined in PlayerTracking.cs. */
 using System.Diagnostics;
 using System.Numerics;
 using System.Text.Json.Nodes;
@@ -7,6 +8,7 @@ namespace Solforge.Mcp;
 /** Live player position: the host merges the Live link, the test recorder and the local server; these tools read it. */
 public static partial class SolforgeTools
 {
+    /** Yields the player tracking tools. */
     private static IEnumerable<McpTool> PlayerTools(ISolforgeHost host,
         Func<string, string, JsonObject, Func<JsonObject, CancellationToken, Task<McpToolResult>>, McpTool> read)
     {
@@ -59,9 +61,11 @@ public static partial class SolforgeTools
             });
     }
 
+    /** Turns a host reply into a tool result (error text when it carries an error). */
     private static McpToolResult Reply(JsonObject result) =>
         result["error"] is JsonValue error ? McpToolResult.Error(error.ToString()) : McpToolResult.Json(result);
 
+    /** Number argument or fallback. */
     private static double Seconds(JsonObject args, string name, double fallback) =>
         args[name] is JsonValue value && value.TryGetValue(out double number) && double.IsFinite(number) ? number : fallback;
 }

@@ -1,3 +1,7 @@
+/**
+ * File: MCP graph tools (list_graph_node_types, list_graphs, get_graph, compile_graph, create_graph, edit_graph,
+ * apply_graph) over Solforge.Graphs; graphs are project files with the GraphDocument extension.
+ */
 using System.Text.Json.Nodes;
 using Solforge.Graphs;
 
@@ -14,6 +18,7 @@ public static partial class SolforgeTools
     public static readonly string[] GraphToolNames =
         ["list_graph_node_types", "list_graphs", "get_graph", "compile_graph", "create_graph", "edit_graph", "apply_graph"];
 
+    /** Resolves the graph file path argument inside the project; on failure returns null and sets reason. */
     private static string? GraphPath(ISolforgeHost host, JsonObject args, out string? reason)
     {
         string relative = McpJson.String(args, "path") ?? "";
@@ -22,6 +27,10 @@ public static partial class SolforgeTools
         return ProjectFiles.EditablePath(host.ProjectRoot, relative, out reason);
     }
 
+    /**
+     * Loads the graph named by the arguments and runs the callback on it, returning tool errors for missing or bad
+     * files.
+     */
     private static McpToolResult WithGraph(ISolforgeHost host, JsonObject args, Func<GraphDocument, McpToolResult> run)
     {
         if (GraphPath(host, args, out string? reason) is not { } path) return McpToolResult.Error(reason ?? "Refused.");
@@ -31,6 +40,7 @@ public static partial class SolforgeTools
         { return McpToolResult.Error("Cannot read the graph: " + exception.Message); }
     }
 
+    /** Schema of edit_graph: path plus an ops array. */
     private static JsonObject OpsSchema()
     {
         var schema = McpJson.Schema(("path", "string", "Project-relative path ending .solgraph.json", true), ("ops", "array", "Edit ops (objects)", true));
@@ -38,8 +48,10 @@ public static partial class SolforgeTools
         return schema;
     }
 
+    /** Yields the graph tools. */
     private static IEnumerable<McpTool> GraphTools(ISolforgeHost host)
     {
+        /** Shorthand for a JSON schema. */
         static JsonObject Schema(params (string, string, string, bool)[] properties) => McpJson.Schema(properties);
         McpTool Read(string name, string description, JsonObject schema, Func<JsonObject, McpToolResult> run) =>
             new(name, description, schema, false, (args, _) => Task.FromResult(run(args)));

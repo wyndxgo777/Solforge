@@ -1,3 +1,7 @@
+/**
+ * File: MCP content tools (list/get/validate/create/update/delete/export content, subclass layout checks, get_help);
+ * the data model is the Solforge.Content project.
+ */
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Solforge.Content;
@@ -29,9 +33,11 @@ public static partial class SolforgeTools
         return null;
     }
 
+    /** JSON array of validation issues (path and message). */
     private static JsonArray IssuesJson(IEnumerable<ContentIssue> issues) =>
         new(issues.Select(issue => (JsonNode)new JsonObject { ["path"] = issue.Path, ["message"] = issue.Message, ["error"] = issue.Error }).ToArray());
 
+    /** Yields the content-family tools (see the file header). */
     private static IEnumerable<McpTool> ContentTools(ISolforgeHost host,
         Func<string, string, JsonObject, Func<JsonObject, CancellationToken, Task<McpToolResult>>, McpTool> read)
     {
@@ -54,7 +60,9 @@ public static partial class SolforgeTools
                 try { return McpToolResult.Text(run(store, args)); }
                 catch (Exception error) when (Recoverable(error)) { return McpToolResult.Error(error.Message); }
             });
+        /** String argument or empty text. */
         static string Arg(JsonObject args, string name) => McpJson.String(args, name) ?? "";
+        /** Error text when the family argument is not a known content family; null when valid. */
         static string? NeedFamily(JsonObject args) => ContentFamilies.Find(McpJson.String(args, "family")) is null ? $"family must be {FamilyList}." : null;
 
         yield return Local("list_content_families", "Every content family Solforge edits (subclass, ability, damage_type, loot_pool, enemy, " +
@@ -246,11 +254,14 @@ public static partial class SolforgeTools
             });
     }
 
+    /** JSON array of integers. */
     private static JsonArray Ints(IEnumerable<int> values) => new(values.Select(value => (JsonNode)value).ToArray());
 
+    /** Whether text contains every space-separated word of the query (an empty query matches). */
     private static bool Matches(string? query, string text) => query is not { Length: > 0 }
         || query.Split(' ', StringSplitOptions.RemoveEmptyEntries).All(word => text.Contains(word, StringComparison.OrdinalIgnoreCase));
 
+    /** Whether an exception is an expected file or argument problem to report as a tool error instead of crashing. */
     private static bool Recoverable(Exception error) => error is IOException or UnauthorizedAccessException or JsonException or InvalidDataException
         or ArgumentException or InvalidOperationException or NotSupportedException or KeyNotFoundException;
 }

@@ -1,3 +1,7 @@
+/**
+ * File: MCP tools list_shaders, get_shader, list_animations, get_animation, list_audio, get_audio (asset browsing
+ * through ISolforgeHost).
+ */
 using System.Text.Json.Nodes;
 
 namespace Solforge.Mcp;
@@ -12,6 +16,7 @@ public static partial class SolforgeTools
     /** Install-wide asset reads; they keep working while context publishing is paused. */
     public static readonly string[] AssetReadTools = ["list_shaders", "get_shader", "list_animations", "get_animation", "list_audio", "get_audio"];
 
+    /** Yields the asset tools: shaders, animations and audio. */
     private static IEnumerable<McpTool> AssetTools(ISolforgeHost host,
         Func<string, string, JsonObject, Func<JsonObject, CancellationToken, Task<McpToolResult>>, McpTool> read)
     {
@@ -22,6 +27,7 @@ public static partial class SolforgeTools
                 var result = await host.QueryAsync(name, args, cancel).ConfigureAwait(false);
                 return result["error"] is JsonValue error ? McpToolResult.Error(error.ToString()) : McpToolResult.Json(result);
             });
+        /** Error text when the tag argument is missing or not a hash; null when valid. */
         static string? NeedTag(JsonObject args, string what) =>
             ParseHash(McpJson.String(args, "tag")) is null ? $"Give a {what} tag such as 0x80A1B2C3." : null;
 

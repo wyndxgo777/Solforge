@@ -1,3 +1,7 @@
+/**
+ * File: MCP tools that drive and watch the editor UI: list_ui_controls and ui_* actions, viewport frames and change
+ * waits, read_screen_text (ScreenOcr.cs) and viewport streaming (FrameRelay.cs).
+ */
 using System.Text.Json.Nodes;
 
 namespace Solforge.Mcp;
@@ -10,6 +14,7 @@ namespace Solforge.Mcp;
  */
 public static partial class SolforgeTools
 {
+    /** Argument schema for tools that target a control by id. */
     private static readonly (string, string, string, bool)[] Target =
     [
         ("id", "string", "Control id from list_ui_controls, e.g. 'main:1A2B3C4D'", false),
@@ -18,6 +23,7 @@ public static partial class SolforgeTools
         ("window", "string", "Optional panel name to narrow the query, e.g. 'Inspector'", false)
     ];
 
+    /** Yields the UI, viewport and OCR tools. */
     private static IEnumerable<McpTool> UiTools(ISolforgeHost host,
         Func<string, string, JsonObject, Func<JsonObject, CancellationToken, Task<McpToolResult>>, McpTool> read)
     {
@@ -224,6 +230,7 @@ public static partial class SolforgeTools
             });
     }
 
+    /** Applies the width, quality and fps arguments to the viewport feed (width is capped while streaming). */
     private static void Tune(ViewportFeed feed, JsonObject args)
     {
         feed.Want();
@@ -241,10 +248,12 @@ public static partial class SolforgeTools
         result.Texts.Add(new JsonObject { ["screenText"] = summary }.ToJsonString(McpJson.Indented));
     }
 
+    /** Tool error for when the viewport feed has produced no frame yet. */
     private static McpToolResult NoFrames(ViewportFeed feed) => McpToolResult.Error(
         $"No live viewport frame yet ({feed.Status}). The capture starts on this call; try again in a second. If the 3D viewport " +
         "is off, see get_editor_state and set_viewport_rendering.");
 
+    /** Builds the tool result for viewport frames (images and metadata). */
     private static McpToolResult FrameResult(ISolforgeHost host, IReadOnlyList<ViewportFrame> frames, string? note, bool images, bool describe)
     {
         var now = DateTimeOffset.UtcNow;

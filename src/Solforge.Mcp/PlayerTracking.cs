@@ -1,3 +1,7 @@
+/**
+ * File: Player position model and sources: PlayerFix readings, yaw/facing helpers, recorder-line parsing and the
+ * breadcrumb PlayerTrail. Used by SolforgeTools.Player.cs and the editor player overlay.
+ */
 using System.Globalization;
 using System.Numerics;
 using System.Text;
@@ -30,8 +34,10 @@ public static class PlayerSources
     /** A third-person camera stays within a few metres of the body; farther means pos is frozen. */
     public const float ThirdPersonReach = 8f;
 
+    /** Yaw in degrees from a forward vector (atan2 of y over x). */
     public static float YawFromForward(Vector3 forward) => MathF.Atan2(forward.Y, forward.X) * 180 / MathF.PI;
 
+    /** Unit facing vector (Z = 0) for a yaw in degrees. */
     public static Vector3 Facing(float yaw) => new(MathF.Cos(yaw * MathF.PI / 180), MathF.Sin(yaw * MathF.PI / 180), 0);
 
     /** Where test-recorder sessions are written: SOLFORGE_RECORDER, else the client's bin\x64\Sunrise\logs\recorder. */
@@ -62,6 +68,7 @@ public static class PlayerSources
         return string.Equals(name, activity, StringComparison.OrdinalIgnoreCase);
     }
 
+    /** Parses one recorder snapshot line into a PlayerFix; null when it does not hold a position. */
     public static PlayerFix? ParseRecorder(string line, DateTimeOffset fallbackTime)
     {
         JsonObject? snap;
@@ -132,8 +139,10 @@ public static class PlayerSources
         node is JsonArray { Count: >= 3 } array && Number(array[0]) is { } x && Number(array[1]) is { } y && Number(array[2]) is { } z
             ? new Vector3(x, y, z) : null;
 
+    /** A vector as a JSON array of rounded numbers. */
     public static JsonArray Json(Vector3 value) => new(Round(value.X), Round(value.Y), Round(value.Z));
 
+    /** Rounds to two places. */
     public static double Round(float value) => Math.Round(value, 2);
 
     /** Any JSON number, including whole numbers built in-process (a JsonValue<int> refuses TryGetValue<double>). */
@@ -145,6 +154,7 @@ public static class PlayerSources
         return double.IsFinite(number) ? (float)number : null;
     }
 
+    /** A JSON node as text, or empty. */
     private static string Text(JsonNode? node) => node is JsonValue value && value.TryGetValue(out string? text) ? text : "";
 }
 
@@ -155,6 +165,7 @@ public sealed class PlayerTrail(int capacity = 240, float spacing = .75f, float 
     public IReadOnlyList<Vector3> Points => points;
     public int Revision { get; private set; }
 
+    /** Adds a point if it is far enough from the last one, dropping the oldest past capacity. */
     public void Add(Vector3 point)
     {
         if (points.Count > 0)
@@ -168,5 +179,6 @@ public sealed class PlayerTrail(int capacity = 240, float spacing = .75f, float 
         Revision++;
     }
 
+    /** Empties the trail. */
     public void Clear() { if (points.Count == 0) return; points.Clear(); Revision++; }
 }
