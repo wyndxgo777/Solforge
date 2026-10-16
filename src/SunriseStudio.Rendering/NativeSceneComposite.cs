@@ -239,6 +239,7 @@ public sealed class NativeSceneComposite : IDisposable
         context.PSSetShaderResources(0, new ID3D11ShaderResourceView[4]);
     }
 
+    /** Releases the GPU resources this pass owns. */
     public void Dispose()
     {
         if (disposed) return;

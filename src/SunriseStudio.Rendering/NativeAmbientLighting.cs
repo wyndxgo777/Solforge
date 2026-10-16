@@ -13,6 +13,7 @@ public sealed record NativeAmbientLightingInputs(GpuTexture Third, GpuTexture No
     Matrix4x4 WorldToView, Matrix4x4 Projection, NativeFrameDepthInputs Depth,
     double SimulationSeconds, float ExposureEv, float TimeOfDay = NativeFrameInputs.ViewerTimeOfDay);
 
+/** Result of comparing GPU ambient lighting against the CPU reference over sampled pixels. */
 public sealed record NativeAmbientLightingCheck(int Checked, int SkyPixels, int LitPixels,
     float MaximumError, float MaximumDiffuse, IReadOnlyList<string> Samples, IReadOnlyList<string> PixelConstants)
 {
@@ -439,6 +440,7 @@ public sealed class NativeAmbientLighting : IDisposable
         Matrix4x4.Invert(matrix, out var inverse) ? inverse
             : throw new ArgumentException("Ambient lighting camera matrix is singular.");
 
+    /** Releases the GPU resources this pass owns. */
     public void Dispose()
     {
         if (disposed) return;
@@ -452,8 +454,10 @@ public sealed class NativeAmbientLighting : IDisposable
 /** A CPU port of pixel shader 0x80B357A6, instruction for instruction. */
 public static class NativeAmbientLightingReference
 {
+    /** One sampled pixel: its G-buffer third target, normal, depth and SSAO value. */
     public sealed record Sample(int X, int Y, Vector4 Third, Vector4 Normal, float Depth, float Ssao);
 
+    /** CPU reference of the ambient shader for one pixel; used to check the GPU output. */
     public static Vector3 Evaluate(Vector4[] cb0, Vector4 cb13Row4, int width, int height,
         Matrix4x4 inverseProjection, Matrix4x4 inverseView, Sample sample)
     {

@@ -4,17 +4,22 @@ using System.Runtime.Intrinsics.X86;
 
 namespace SunriseStudio.Rendering;
 
+/** Float helpers and constants that reproduce the native TFX wave and spline maths exactly (SSE order). */
 internal static class TfxWaveMath
 {
+    /** SSE add in the native operand order. */
     public static Vector4 Add(Vector4 top, Vector4 previous) =>
         FromVector(Sse.Add(ToVector(top), ToVector(previous)));
 
+    /** SSE multiply in the native operand order. */
     public static Vector4 Multiply(Vector4 top, Vector4 previous) =>
         FromVector(Sse.Multiply(ToVector(top), ToVector(previous)));
 
+    /** SSE multiply-add in the native operand order. */
     public static Vector4 MultiplyAdd(Vector4 first, Vector4 second, Vector4 top) =>
         FromVector(Sse.Add(ToVector(top), Sse.Multiply(ToVector(second), ToVector(first))));
 
+    /** SSE lerp in the native operand order. */
     public static Vector4 Lerp(Vector4 first, Vector4 second, Vector4 amount) =>
         FromVector(Sse.Add(Sse.Multiply(Sse.Subtract(ToVector(second), ToVector(first)), ToVector(amount)), ToVector(first)));
 

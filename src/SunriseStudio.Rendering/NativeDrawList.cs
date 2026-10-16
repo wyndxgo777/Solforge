@@ -51,6 +51,7 @@ public sealed unsafe class NativeDrawList : IDisposable
         fallback = renderer.CreateNativeConstantBuffer(new byte[MaximumWindowVectors * 16]);
     }
 
+    /** Empties every pass and resets the instance-vector reservation. */
     public void Clear()
     {
         foreach (var pass in passes) pass.Clear();
@@ -106,6 +107,7 @@ public sealed unsafe class NativeDrawList : IDisposable
     /** Vectors of draws Reserve recorded; writers of different draws may run on different threads. */
     public Span<Vector4> Vectors(int first, int count) => vectors.AsSpan(first, count);
 
+    /** Number of draws recorded for the pass. */
     public int ItemCount(int pass) => passes[pass].Count;
 
     /** One discard upload holds every recorded draw's instance vectors. */
@@ -236,6 +238,7 @@ public sealed unsafe class NativeDrawList : IDisposable
         context.VSSetShaderResource(0, null!);
     }
 
+    /** Zeroes the draw and index counters, e.g. at the start of a frame. */
     public void ResetCounters() { DrawCount = 0; IndexCount = 0; }
 
     // The pointer form of VSSetConstantBuffers1; the public overloads marshal a buffer array on every draw.
@@ -243,6 +246,7 @@ public sealed unsafe class NativeDrawList : IDisposable
     private static extern void SetConstantWindow(ID3D11DeviceContext1 context, uint startSlot, uint numBuffers,
         void* buffers, void* firstConstants, void* numConstants);
 
+    /** Releases the constant buffers and the draw list's context interface. */
     public void Dispose()
     {
         if (disposed) return;

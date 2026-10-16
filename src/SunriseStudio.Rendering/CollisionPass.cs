@@ -25,6 +25,7 @@ public sealed class CollisionGeometry : IDisposable
     internal CollisionGeometry(ID3D11Buffer vertices, ID3D11Buffer indices, long vertexCount, long indexCount) =>
         (Vertices, Indices, VertexCount, IndexCount) = (vertices, indices, vertexCount, indexCount);
 
+    /** Releases the GPU vertex and index buffers. */
     public void Dispose()
     {
         Indices.Dispose();
@@ -183,6 +184,7 @@ public sealed unsafe class CollisionPass : IDisposable
         context.VSSetConstantBuffer(0, constants);
     }
 
+    /** Releases the GPU resources this pass owns. */
     public void Dispose()
     {
         if (disposed) return;

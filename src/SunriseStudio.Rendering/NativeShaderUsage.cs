@@ -24,6 +24,7 @@ public sealed partial class NativeShaderUsage
 
     private NativeShaderUsage(string digest) => Digest = digest;
 
+    /** SHA-256 of the bytecode as upper-case hex; the cache key. */
     public static string DigestOf(ReadOnlySpan<byte> bytecode) => Convert.ToHexString(SHA256.HashData(bytecode));
 
     /** The result is cached by SHA-256 digest; the same image always gives the same usage. */

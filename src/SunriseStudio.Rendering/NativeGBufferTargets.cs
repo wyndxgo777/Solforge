@@ -4,6 +4,7 @@ using Vortice.DXGI;
 
 namespace SunriseStudio.Rendering;
 
+/** The G-buffer textures and depth view that later passes read. This file also owns the G-buffer targets. */
 public sealed record NativeGBufferInputs(GpuTexture Albedo,
     GpuTexture Normal, GpuTexture Third,
     ID3D11ShaderResourceView Depth);
@@ -101,5 +102,6 @@ public sealed class NativeGBufferTargets : IDisposable
         finally { renderer.Context.Unmap(staging, 0); }
     }
 
+    /** Releases the read, write and stencil views. */
     public void Dispose() { StencilRead.Dispose(); readTargets.Dispose(); WriteTargets.Dispose(); }
 }

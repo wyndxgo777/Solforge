@@ -7,7 +7,9 @@ public sealed record NativeViewParameters(ushort Width, ushort Height, Matrix4x4
     Matrix4x4 Projection, bool ReversePerspectiveDepth, uint SourceFlags100,
     float SourceScalar0C, float SourceScalar10);
 
+/** Evaluated vertex and pixel constants of the view scope. */
 public sealed record NativeViewScopeConstants(TfxEvaluation Vertex, TfxEvaluation Pixel);
+/** Camera scope constants for the vertex and pixel stages; the pixel buffer has one extra row (PixelPass). */
 public sealed record NativeCameraScopeConstants(Vector4[] Vertex, Vector4[] Pixel)
 {
     /** PS row 13; only lanes X and Y are known, see NativeViewInputs.UnknownPixelWords. */
@@ -16,6 +18,7 @@ public sealed record NativeCameraScopeConstants(Vector4[] Vertex, Vector4[] Pixe
     public Vector4[] PixelRows => [.. Pixel, PixelPass];
 }
 
+/** Builds the view and camera scope inputs and constants from a camera description. */
 public static class NativeViewInputs
 {
     public static IReadOnlyDictionary<uint, uint> UnknownVertexWords { get; } =
@@ -99,6 +102,7 @@ public static class NativeViewInputs
         NativeViewParameters parameters, uint scopeTag = 0x80B356A5) =>
         EvaluateScope(reader.ReadScopeExecution(scopeTag), parameters);
 
+    /** Runs the scope's vertex and pixel TFX programs; throws if an input they read is missing. */
     public static NativeViewScopeConstants EvaluateScope(GameScopeExecution scope, NativeViewParameters parameters)
     {
         ValidateScope(scope);

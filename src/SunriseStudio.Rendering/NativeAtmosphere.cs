@@ -24,6 +24,7 @@ public sealed class NativeAtmosphereSettings
     private NativeAtmosphereSettings(uint[] lookups, float[] keys, uint fogTable)
     { Lookups = lookups; Keys = keys; FogTable = fogTable; }
 
+    /** Reads the 0xE0-byte atmosphere settings tag; throws if the length is wrong. */
     public static NativeAtmosphereSettings Parse(ReadOnlySpan<byte> bytes)
     {
         if (bytes.Length != Size) throw new ArgumentException("Atmosphere settings are 0xE0 bytes.");
@@ -548,6 +549,7 @@ public sealed class NativeAtmosphere : IDisposable
         }
     }
 
+    /** Releases the GPU resources this pass owns. */
     public void Dispose()
     {
         if (disposed) return;

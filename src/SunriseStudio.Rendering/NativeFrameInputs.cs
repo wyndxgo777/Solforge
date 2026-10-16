@@ -2,6 +2,7 @@ using System.Numerics;
 
 namespace SunriseStudio.Rendering;
 
+/** Builds the per-frame TFX inputs (simulation clock and time of day) the way the native clock does. */
 public static class NativeFrameInputs
 {
     // The native clock converts unsigned simulation ticks at this rate.

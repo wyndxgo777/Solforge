@@ -5,9 +5,11 @@ using Vortice.Direct3D11;
 
 namespace SunriseStudio.Rendering;
 
+/** Interleaved vertex of lit meshes. This file also holds the GPU mesh and texture handles. */
 [StructLayout(LayoutKind.Sequential)]
 public readonly record struct RenderVertex(Vector3 Position, Vector3 Normal, Vector2 TexCoord);
 
+/** Vertex of line meshes: position and RGBA colour. */
 [StructLayout(LayoutKind.Sequential)]
 public readonly record struct LineVertex(Vector3 Position, Vector4 Color);
 
@@ -27,6 +29,7 @@ public sealed class GpuMesh : IDisposable
         VertexCount = vertexCount;
     }
 
+    /** Releases the vertex and index buffers. */
     public void Dispose()
     {
         Indices.Dispose();
@@ -61,6 +64,7 @@ public sealed class GpuTexture : IDisposable
         Dimension = view.Description.ViewDimension;
     }
 
+    /** Releases the texture, its resource and its view. */
     public void Dispose()
     {
         View.Dispose();

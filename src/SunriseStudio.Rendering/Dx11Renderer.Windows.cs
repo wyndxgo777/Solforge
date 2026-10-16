@@ -17,11 +17,13 @@ public sealed class WindowTarget : IDisposable
 
     internal WindowTarget(IDXGISwapChain1 swapChain) => SwapChain = swapChain;
 
+    /** Drops the colour and depth views so a resize can recreate them. */
     internal void ReleaseViews()
     {
         ColorView?.Dispose(); Color?.Dispose(); DepthView?.Dispose(); Depth?.Dispose();
     }
 
+    /** Releases the views and the swap chain. */
     public void Dispose()
     {
         ReleaseViews();
@@ -29,6 +31,7 @@ public sealed class WindowTarget : IDisposable
     }
 }
 
+/** Secondary-window part of Dx11Renderer: swap chains and frames for extra windows on the shared device. */
 public sealed unsafe partial class Dx11Renderer
 {
     private (ID3D11Texture2D Color, ID3D11RenderTargetView ColorView, ID3D11Texture2D Depth,

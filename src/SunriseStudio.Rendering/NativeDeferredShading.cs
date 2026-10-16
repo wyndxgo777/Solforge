@@ -162,6 +162,7 @@ public sealed class NativeDeferredShading : IDisposable
         }
     }
 
+    /** Releases the GPU resources this pass owns. */
     public void Dispose()
     {
         if (disposed) return;

@@ -105,6 +105,7 @@ public sealed class NativeFinalCombine : IDisposable
         return targets.Textures[0];
     }
 
+    /** Releases the GPU resources this pass owns. */
     public void Dispose()
     {
         if (disposed) return;

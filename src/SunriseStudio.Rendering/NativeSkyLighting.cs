@@ -217,6 +217,7 @@ public sealed class NativeSkyLighting : IDisposable
         }
     }
 
+    /** Releases the GPU resources this pass owns. */
     public void Dispose()
     {
         if (disposed) return;

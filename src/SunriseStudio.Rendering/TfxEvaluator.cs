@@ -4,6 +4,7 @@ using Vortice.Direct3D;
 
 namespace SunriseStudio.Rendering;
 
+/** Selects a value of a TFX extern: extern id and element. This file holds the TFX interpreter. */
 public readonly record struct TfxExternKey(byte Extern, byte Element);
 
 /** Resource identity is independent of GPU allocation and cannot enter vector arithmetic. */
@@ -15,6 +16,7 @@ public sealed class TfxResource(string name, ShaderResourceViewDimension dimensi
         ? dimension : throw new ArgumentException("TFX resource dimension is unknown.", nameof(dimension));
 }
 
+/** Extern values (vectors and floats) a TFX program reads, keyed by TfxExternKey. */
 public sealed class TfxInputs
 {
     public Dictionary<TfxExternKey, float> Floats { get; } = [];
@@ -30,6 +32,7 @@ public sealed class TfxInputs
     public Vector4? ObjectChannelDefault { get; set; }
 }
 
+/** Result of running a TFX program: constants, samplers and any inputs that were missing. */
 public sealed record TfxEvaluation(Vector4[] Constants,
     IReadOnlyDictionary<NativeBindingKey, MaterialSampler> Samplers,
     IReadOnlyList<string> MissingRequirements)
@@ -40,12 +43,14 @@ public sealed record TfxEvaluation(Vector4[] Constants,
     public IReadOnlyDictionary<int, TfxTerm> Terms { get; init; } = ReadOnlyDictionary<int, TfxTerm>.Empty;
     public bool IsComplete => MissingRequirements.Count == 0;
 
+    /** Throws if the program read an input that was not supplied. */
     public void RequireComplete()
     {
         if (!IsComplete) throw new NotSupportedException(string.Join(" ", MissingRequirements));
     }
 }
 
+/** Interpreter for TFX bytecode: runs a material stage's program against TfxInputs to produce its constants. */
 public static class TfxEvaluator
 {
     // Native division treats denominators at or below this magnitude as zero.

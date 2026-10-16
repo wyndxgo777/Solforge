@@ -2,12 +2,16 @@ using System.Text;
 
 namespace SunriseStudio.Rendering;
 
+/** A texture bound to a scope slot. This file holds the scope execution records. */
 public sealed record ScopeTextureBinding(uint Slot, uint TextureTag);
+/** Per-stage scope data: constant buffer slot, shader stage data and textures. */
 public sealed record ScopeStageData(GameShaderStage Stage, uint ConstantBufferSlot,
     MaterialStageData Data, IReadOnlyList<ScopeTextureBinding> Textures);
+/** A render scope ready to execute: its tag, index, name and pixel and vertex stage data. */
 public sealed record GameScopeExecution(uint Tag, uint ScopeIndex, string Name,
     ScopeStageData Pixel, ScopeStageData Vertex);
 
+/** Scope part of GameMaterialReader: reads render scopes into executable form. */
 public sealed partial class GameMaterialReader
 {
     /** Pixel and vertex blocks are decoded; other stages remain unsupported. */
