@@ -59,7 +59,8 @@ public static class PinTypes
 
     /** Whether an output of type from may feed an input of type to directly (no conversion node). */
     public static bool Compatible(PinType from, PinType to) =>
-        from == to || from == PinType.Any || to == PinType.Any
+        from == PinType.Exec || to == PinType.Exec ? from == to
+        : from == to || from == PinType.Any || to == PinType.Any
         || to == PinType.Numeric && IsNumeric(from) || from == PinType.Numeric && IsNumeric(to);
 
     public static bool IsNumeric(PinType type) =>
