@@ -588,8 +588,10 @@ public sealed partial class StudioForm
     }
 
     /** The tool host; members the tools read off the UI thread are swapped whole. */
-    private sealed class AiHost(StudioForm form) : ISolforgeHost
+    private sealed partial class AiHost(StudioForm form) : ISolforgeHost
     {
+        /** The owning form, for the other AiHost parts (primary-constructor parameters are visible in this part only). */
+        private StudioForm Owner => form;
         private volatile string contextJson = "{}";
         private volatile IReadOnlyList<VisibleObject> visible = [];
         public string ContextJson { get => contextJson; set => contextJson = value; }

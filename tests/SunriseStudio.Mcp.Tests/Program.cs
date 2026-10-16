@@ -36,12 +36,16 @@ try
     ReferenceCheck();
     checks.Add("reference library: found above the project, index.json plus unindexed front matter, ranked search with tag filter, read by path or url with paging, half-written index and path escapes are safe");
     await StdioRoundTrip();
-    checks.Add("initialize, tools/list (54 tools with object schemas), tools/call, get_open_documents, mission, read_panel and reference tools round trip over the stdio shim");
+    checks.Add("initialize, tools/list (73 tools with object schemas), tools/call, get_open_documents, mission, read_panel and reference tools round trip over the stdio shim");
     checks.Add("project tools: list_maps and other catalog reads reach the host and work while paused, find_world_objects stops while paused, host errors become tool errors, edit_bounds validates before asking, edit_placement waits for approval");
     SessionChecks(scratch);
     checks.Add("session context: SESSION.md lists project, map, skills and tools; the AGENTS.md block is appended once, replaced in place and keeps the user's text; skills copy only when they differ");
     await ContextHook();
     checks.Add("solforge-mcp --context prints the live context, and nothing (exit 0, fast) when paused or no Solforge runs");
+    string dataProject = Path.Combine(scratch, "data-project");
+    Directory.CreateDirectory(dataProject);
+    await DecompChecks.Run(Path.Combine(scratch, "decomp"), new FixtureHost(dataProject));
+    checks.Add("deep data: decomp index (calls, data refs, tag classes, names, cache, grep, rename), struct inference and header structs, image strings and vtables, generic tag layouts and class schemas, cursor paging, CSV, and the decomp/data/export tools");
     Approvals();
     checks.Add("auto-allow: Claude Code, agy and Cline allow prompts match only with a one-time Yes/Allow highlighted at the bottom; No, scrollback, quotes, persistent rows and free text never do");
     foreach (string check in checks) Console.WriteLine("PASS " + check);
@@ -225,10 +229,11 @@ async Task StdioRoundTrip()
             "find_world_objects", "get_placement", "search_items", "get_item", "search_perks", "list_vendors", "get_vendor",
             "list_creation_types", "describe_creation",
             "open_map", "open_asset", "set_viewport_rendering", "edit_placement", "edit_bounds", "revert_object_edit",
-            "apply_item_edit", "apply_vendor_edit", "start_creation", "replace_texture_pixels", "build_project"];
+            "apply_item_edit", "apply_vendor_edit", "start_creation", "replace_texture_pixels", "build_project",
+            .. SolforgeTools.DecompToolNames, .. SolforgeTools.PackageDataToolNames];
         string[] actions = ["select_object", "focus_camera", "highlight", "open_file", "apply_project_edit", "open_map", "open_asset",
             "set_viewport_rendering", "edit_placement", "edit_bounds", "revert_object_edit", "apply_item_edit", "apply_vendor_edit",
-            "start_creation", "replace_texture_pixels", "build_project"];
+            "start_creation", "replace_texture_pixels", "build_project", "rename_function"];
         Expect(tools.Select(tool => tool?["name"]?.ToString()).SequenceEqual(expected), "tool names: " + string.Join(",", tools.Select(tool => tool?["name"])));
         foreach (var tool in tools)
         {
