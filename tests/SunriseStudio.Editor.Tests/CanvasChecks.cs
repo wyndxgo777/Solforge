@@ -39,7 +39,7 @@ internal static class CanvasChecks
             const BindingFlags access = BindingFlags.Instance | BindingFlags.NonPublic;
             var owner = new MissionGraphPage();
             typeof(MissionGraphPage).GetField("graph", access)!.SetValue(owner, dragSource);
-            typeof(MissionGraphPage).GetField("sourceDraft", access)!.SetValue(owner, dragSource.Source);
+            ((Solforge.Graphs.GraphSourceSync)typeof(MissionGraphPage).GetField("source", access)!.GetValue(owner)!).Reset(dragSource.Source);
             Vector2 origin = default, region = default;
             var actions = new CanvasActions
             {
