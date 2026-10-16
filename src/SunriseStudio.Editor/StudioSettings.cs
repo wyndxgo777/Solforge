@@ -17,8 +17,15 @@ public sealed class StudioSettings
     public bool GameShaders { get; set; } = true;
     /** Static objects keep their most detailed level at every distance instead of the game's distance levels. */
     public bool FullDetail { get; set; }
-    /** Memory optimization profile for 16GB RAM systems: bounds texture caches and LOH buffers. */
-    public bool LowMemoryMode { get; set; } = true;
+    /**
+     * Memory optimization profile for 16GB RAM systems: bounds texture caches and LOH buffers. Off by default because the
+     * budget leaves textures on their low resident mips, which changes the base look; the stored name changed so files
+     * saved while it defaulted on load as off.
+     */
+    [System.Text.Json.Serialization.JsonPropertyName("LowMemoryTextures")]
+    public bool LowMemoryMode { get; set; }
+    /** Also force Low memory mode while Destiny 2 runs or the Live link is attached (changes the look the same way). */
+    public bool LowMemoryWithGame { get; set; }
     /** Suspends viewport rendering while Destiny 2 is running unless attached via Live link. */
     public bool PauseRenderWhenGameRunning { get; set; } = true;
     /** The user's 3D viewport switch (View > 3D viewport rendering, Ctrl+Shift+R); off draws no 3D at all. */
@@ -28,6 +35,8 @@ public sealed class StudioSettings
     public int FpsBackground { get; set; }
     /** World texture budget in MiB while Low memory mode is on. */
     public int TextureBudgetMiB { get; set; } = 256;
+    /** Decoded world textures kept in RAM for faster reloads after edits (no effect on the image); 0 keeps none. */
+    public int TextureCacheMiB { get; set; } = 256;
     /** Interface size multiplier on top of the monitor DPI (0.8 to 1.5). */
     public float UiScale { get; set; } = 1;
     /** AI workspace: the engine picked last (Claude Code, Cline, Antigravity or Custom command), and its custom command line. */
@@ -84,6 +93,7 @@ public sealed class StudioSettings
             settings.FpsFocused = Math.Clamp(settings.FpsFocused, 0, 240);
             settings.FpsBackground = Math.Clamp(settings.FpsBackground, 0, 240);
             settings.TextureBudgetMiB = Math.Clamp(settings.TextureBudgetMiB, 64, 4096);
+            settings.TextureCacheMiB = Math.Clamp(settings.TextureCacheMiB, 0, 4096);
             settings.UiScale = float.IsFinite(settings.UiScale) ? Math.Clamp(settings.UiScale, .8f, 1.5f) : 1;
             settings.Popouts = settings.Popouts?.Where(popout => popout is not null && Enum.IsDefined(popout.Panel)
                 && popout.Panel != StudioPanelKind.Empty).DistinctBy(popout => popout.Panel).ToList() ?? [];

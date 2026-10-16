@@ -258,6 +258,30 @@ public sealed partial class PackageCatalog : IDisposable
         }
     }
 
+    /** Decoded bytes held by the block LRU (each entry is one 256 KiB block). */
+    public long CachedBlockBytes
+    {
+        get { lock (readLock) return blockCache.Values.Sum(block => (long)block.Data.Length); }
+    }
+
+    /**
+     * Drops the oldest decoded blocks until at most keepBlocks remain; later reads decode them again, so nothing
+     * read changes. The editor calls it after a load and while minimized, since the full LRU holds about 256 MiB.
+     */
+    public void TrimReadCache(int keepBlocks)
+    {
+        lock (readLock)
+        {
+            if (disposed) return;
+            while (blockOrder.Count > Math.Max(0, keepBlocks) && blockOrder.First is { } oldest)
+            {
+                blockCache.Remove(oldest.Value, out var removed);
+                blockOrder.RemoveFirst();
+                oodle?.Recycle(removed.Data);
+            }
+        }
+    }
+
     /** Project overlays are transient; decoded package blocks always retain their original bytes. */
     public byte[] Read(uint tagHash)
     {

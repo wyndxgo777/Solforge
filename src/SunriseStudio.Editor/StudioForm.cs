@@ -40,6 +40,7 @@ public sealed partial class StudioForm : Form
     private bool missionGraphActive, focusMissionGraph, focusAssets, focusLive, initialMissionScript;
     private long lastDestiny2CheckTick;
     private bool destiny2Detected;
+    private bool memoryTrimmed;
     private int documentRevision = -1, assetRevision = -1, smokeFrames;
     private int nativeRevision;
     private int sceneRevision = -1;
@@ -218,8 +219,14 @@ public sealed partial class StudioForm : Form
     /** Worker results are adopted before the frame; native dialogs cannot reenter rendering. */
     private void TickFrame()
     {
-        if (drawing || nativeDialog || closed || renderer is null || gui is null || viewport is null
-            || WindowState == FormWindowState.Minimized) return;
+        if (drawing || nativeDialog || closed || renderer is null || gui is null || viewport is null) return;
+        if (WindowState == FormWindowState.Minimized)
+        {
+            // Once per minimize: drop caches that only speed up later loads; the next frame looks the same.
+            if (!memoryTrimmed && !workspace.IsBusy) { memoryTrimmed = true; workspace.TrimMemory(); }
+            return;
+        }
+        memoryTrimmed = false;
 
         long tickNow = Environment.TickCount64;
         if (tickNow - lastDestiny2CheckTick > 1500)
@@ -243,8 +250,9 @@ public sealed partial class StudioForm : Form
             each.TurnOnRendering ??= () => SetViewportRendering(true);
         }
 
-        workspace.LowMemoryMode = settings.LowMemoryMode || destiny2Detected || livePage.IsAttached;
+        workspace.LowMemoryMode = settings.LowMemoryMode || settings.LowMemoryWithGame && (destiny2Detected || livePage.IsAttached);
         workspace.LowMemoryTextureBudget = settings.TextureBudgetMiB * 1024L * 1024;
+        workspace.TextureCacheLimit = settings.TextureCacheMiB * 1024L * 1024;
 
         // An attached game shares this GPU; Studio draws at most 30 frames a second, and 10 in the background.
         // When Destiny 2 is running detached, throttle to 15 / 5 FPS to yield resources completely to the game.

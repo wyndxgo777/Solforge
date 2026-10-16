@@ -880,10 +880,42 @@ public sealed partial class StudioWorkspace : IDisposable
     /** Decoded world textures, kept so an edit's reload does not decode them again. */
     private readonly System.Collections.Concurrent.ConcurrentDictionary<uint, TextureData> worldTextures = new();
     /** Low memory optimization (16GB RAM profile): bounds texture budget and avoids pinning uncompressed pixel buffers in CPU heap. */
-    public bool LowMemoryMode { get; set; } = true;
+    public bool LowMemoryMode { get; set; }
     /** The world texture budget Low memory mode uses (Settings > Rendering); applies to the next map or shader load. */
     public long LowMemoryTextureBudget { get; set; } = 256L * 1024 * 1024;
     public void TrimTextureCache() { worldTextures.Clear(); }
+    /**
+     * Cap on the decoded world-texture cache outside Low memory mode. Upstream kept every decoded texture (a second copy
+     * of the GPU textures in RAM); past the cap an edit's reload decodes those textures again, so the image is the same.
+     */
+    public long TextureCacheLimit { get; set; } = 256L * 1024 * 1024;
+    /** Decoded blocks kept after a load; the rest of the 1024-block LRU only speeds up the load itself. */
+    private const int BlocksKeptAfterLoad = 256;
+    public long TextureCacheBytes => worldTextures.Values.Sum(texture => texture.ByteCount);
+
+    /** Evicts the largest cached textures until the cache fits TextureCacheLimit. */
+    private void BoundTextureCache()
+    {
+        long total = TextureCacheBytes;
+        if (total <= TextureCacheLimit) return;
+        foreach (var (tag, texture) in worldTextures.OrderByDescending(pair => pair.Value.ByteCount).ToArray())
+        {
+            if (total <= TextureCacheLimit) break;
+            if (worldTextures.TryRemove(tag, out _)) total -= texture.ByteCount;
+        }
+    }
+
+    /**
+     * Releases RAM that only speeds up later work (decoded textures, decoded package blocks) and compacts the large
+     * object heap once. Nothing on screen depends on it; called while the window is minimized.
+     */
+    public void TrimMemory()
+    {
+        worldTextures.Clear();
+        Catalog?.TrimReadCache(0);
+        System.Runtime.GCSettings.LargeObjectHeapCompactionMode = System.Runtime.GCLargeObjectHeapCompactionMode.CompactOnce;
+        GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: true);
+    }
 
     /** Unsupported shader inputs retain geometry with a completed diagnostic. */
     private NativeScenePlan? PrepareScene(SceneDocument? scene, out string error, bool assetPreview = false)
@@ -893,7 +925,8 @@ public sealed partial class StudioWorkspace : IDisposable
             || !scene.Instances.Any(instance => instance.Mesh.Native is not null)) return null;
         try
         {
-            long textureBudget = LowMemoryMode ? LowMemoryTextureBudget : NativeScenePlan.DefaultTextureBudgetBytes;
+            // Upstream loads every texture's streamed mips (no budget); only Low memory mode bounds them.
+            long textureBudget = LowMemoryMode ? LowMemoryTextureBudget : long.MaxValue;
             return AssetViewport.PrepareNativeScene(catalog, scene, OperationToken,
                 ReportProgress, textureBudgetBytes: textureBudget, assetPreview: assetPreview,
                 textureCache: assetPreview || LowMemoryMode ? null : worldTextures);
@@ -906,6 +939,8 @@ public sealed partial class StudioWorkspace : IDisposable
     {
         NativePlan = plan; NativePlanScene = scene; NativeRevision++;
         if (LowMemoryMode) worldTextures.Clear();
+        else BoundTextureCache();
+        Catalog?.TrimReadCache(BlocksKeptAfterLoad);
     }
 
     public void Run(Action action)

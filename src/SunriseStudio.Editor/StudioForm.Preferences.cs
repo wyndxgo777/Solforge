@@ -52,11 +52,17 @@ public sealed partial class StudioForm
         SettingNote("Unless the Live link is attached. The viewport's Resume button overrides it until the game closes. Applies now.");
         bool low = settings.LowMemoryMode;
         if (ImGui.Checkbox("Low memory mode (16 GB PCs)", ref low)) { settings.LowMemoryMode = low; SaveSettings(); }
-        SettingNote("Bounds the world texture cache. Always on while Destiny 2 runs or the Live link is attached. Applies to the next map or shader load.");
+        SettingNote("Bounds the world texture cache; textures past the budget keep only their low mips, so surfaces look softer and flatter. Off matches upstream Sunrise Studio. Applies to the next map or shader load.");
+        bool withGame = settings.LowMemoryWithGame;
+        if (ImGui.Checkbox("Low memory mode while Destiny 2 runs or Live is attached", ref withGame)) { settings.LowMemoryWithGame = withGame; SaveSettings(); }
         int budget = settings.TextureBudgetMiB;
         ImGui.SetNextItemWidth(220 * scale);
         if (ImGui.SliderInt("Texture budget (MiB)", ref budget, 64, 2048)) { settings.TextureBudgetMiB = budget; SaveSettings(); }
         SettingNote("Used while Low memory mode is on. Applies to the next map or shader load.");
+        int cache = settings.TextureCacheMiB;
+        ImGui.SetNextItemWidth(220 * scale);
+        if (ImGui.SliderInt("Reload texture cache (MiB)", ref cache, 0, 2048)) { settings.TextureCacheMiB = cache; SaveSettings(); }
+        SettingNote("Decoded textures kept in RAM so a reload after an edit is faster; the image is the same at any size. Applies after the next load.");
         int focused = settings.FpsFocused, background = settings.FpsBackground;
         ImGui.SetNextItemWidth(220 * scale);
         if (ImGui.SliderInt("FPS cap, focused", ref focused, 0, 240, focused == 0 ? "no cap" : "%d")) { settings.FpsFocused = focused; SaveSettings(); }
