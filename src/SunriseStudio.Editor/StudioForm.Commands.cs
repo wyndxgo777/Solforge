@@ -41,6 +41,20 @@ public sealed partial class StudioForm
     /** Groups the last frame moved into the "»" menu. */
     internal IReadOnlyList<string> TitleBarOverflow => titleOverflow;
 
+    /** One title bar group (or "Overflow") as last drawn, window-relative: its x span, and its last item's y span. */
+    internal readonly record struct TitleRect(string Name, bool Menu, Vector2 Min, Vector2 Max);
+    private readonly List<TitleRect> titleRects = [];
+
+    /** Where each group on the row and the "»" button were last drawn. */
+    internal IReadOnlyList<TitleRect> TitleBarRects => titleRects;
+
+    /** The title bar's height and its controls' frame height, as last drawn. */
+    internal float TitleBarHeight { get; private set; }
+    internal float TitleBarFrameHeight { get; private set; }
+
+    /** Minimize, maximize and close as last drawn, window-relative. */
+    internal IReadOnlyList<(Vector2 Min, Vector2 Max)> TitleBarButtonRects => chrome.ButtonRects;
+
     /**
      * The title bar: brand, the menus, the toolbar and the window buttons on one row, all in one window's menu bar
      * (no overlay window). Wherever no control sits it is the window's caption.
@@ -61,6 +75,7 @@ public sealed partial class StudioForm
         // A frame whose bar fails to open offers nothing, so the layout checks see it.
         titleReachable.Clear();
         titleOverflow.Clear();
+        titleRects.Clear();
         bool bar = ImGui.BeginMenuBar();
         ImGui.PopStyleVar();
         if (!bar)
@@ -71,6 +86,8 @@ public sealed partial class StudioForm
         // BeginMenuBar aligns the row's text to the bar padding; text items start this much higher to sit centred.
         float row = (height - ImGui.GetFrameHeight()) / 2;
         float textTop = row + normalPad - barPad;
+        TitleBarHeight = height;
+        TitleBarFrameHeight = ImGui.GetFrameHeight();
         var barMin = ImGui.GetWindowPos();
         ImGui.GetWindowDrawList().AddLine(barMin + new Vector2(0, height - 1), barMin + new Vector2(ClientSize.Width, height - 1),
             SolTheme.U32(SolTheme.Line), 1);
@@ -80,7 +97,7 @@ public sealed partial class StudioForm
         float busyX = -1, busyRight = right;
 
         // Which groups fit, from last frame's widths; the rest go to the "»" menu, the right-most first.
-        float overflowWidth = ImGui.CalcTextSize("»").X + style.ItemSpacing.X * 2;
+        float overflowWidth = ImGui.CalcTextSize("»").X + style.FramePadding.X * 2 + style.ItemSpacing.X;
         int fit = TitleGroups.Length;
         if (x + TitleGroups.Sum(TitleWidth) > right)
         {
@@ -108,16 +125,22 @@ public sealed partial class StudioForm
             x = ImGui.GetCursorPosX();
             titleWidths[(int)group] = x - start;
             titleReachable.Add(group.ToString());
+            RecordTitleRect(group.ToString(), IsMenu(group), start + TitleLead(group), barMin);
         }
         if (fit < TitleGroups.Length)
         {
-            ImGui.SetCursorPos(new(x, textTop));
-            if (UiAuto.BeginMenu("»##title-overflow"))
+            // A frame-height button on the control row, like the toolbar; its popup lists the folded groups.
+            ImGui.SetCursorPos(new(x, row));
+            if (UiAuto.Button("»##title-overflow")) ImGui.OpenPopup("title-overflow");
+            Vector2 overflowMin = ImGui.GetItemRectMin();
+            RecordTitleRect("Overflow", false, x, barMin);
+            x = ImGui.GetCursorPosX();
+            ImGui.SetNextWindowPos(new(overflowMin.X, barMin.Y + height));
+            if (ImGui.BeginPopup("title-overflow"))
             {
                 for (int i = fit; i < TitleGroups.Length; i++) DrawTitleOverflowItem(TitleGroups[i]);
-                UiAuto.EndMenu();
+                ImGui.EndPopup();
             }
-            x = ImGui.GetCursorPosX();
             for (int i = fit; i < TitleGroups.Length; i++)
             {
                 titleReachable.Add(TitleGroups[i].ToString());
@@ -137,6 +160,13 @@ public sealed partial class StudioForm
     }
 
     private static bool IsMenu(TitleGroup group) => group <= TitleGroup.Help;
+
+    /** Records a group from its first x to its last item, window-relative, for the layout checks. */
+    private void RecordTitleRect(string name, bool menu, float startX, Vector2 barMin)
+    {
+        Vector2 min = ImGui.GetItemRectMin() - barMin, max = ImGui.GetItemRectMax() - barMin;
+        titleRects.Add(new(name, menu, new(Math.Min(startX, min.X), min.Y), max));
+    }
 
     // Extra room before a section, with a hairline in it: menus | relay and navigation | project | view controls.
     // Controls inside a section are ItemSpacing.X apart.

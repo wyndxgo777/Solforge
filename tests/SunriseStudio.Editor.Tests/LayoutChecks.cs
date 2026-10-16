@@ -163,11 +163,24 @@ internal static class LayoutChecks
                     {
                         CheckTitleBar(form, "640 px");
                         Check(form.TitleBarOverflow.Count > 0, "A 640 px title bar moved nothing into its overflow menu.");
+                        Check(form.TitleBarRects.Any(r => r.Name == "Overflow"), "A 640 px title bar drew no overflow button.");
+                        form.ClientSize = new System.Drawing.Size(1100, form.ClientSize.Height);
+                        phase++;
+                    }
+                    else if (phase == 7)
+                    {
+                        CheckTitleBar(form, "1100 px");
+                        form.ClientSize = new System.Drawing.Size(1920, form.ClientSize.Height);
+                        phase++;
+                    }
+                    else if (phase == 8)
+                    {
+                        CheckTitleBar(form, "1920 px");
                         phase++;
                     }
                 };
                 System.Windows.Forms.Application.Run(form);
-                Check(form.Failure is null && phase == 7, form.Failure ?? "Layout UI did not finish.");
+                Check(form.Failure is null && phase == 9, form.Failure ?? "Layout UI did not finish.");
             }
             catch (Exception error) { failure = error; }
         });
@@ -192,6 +205,36 @@ internal static class LayoutChecks
         ("tb-settings", "Settings"), ("window buttons", "WindowButtons"), ("tb-relay", "Relay")
     ];
 
+    /**
+     * The window buttons fill the bar's height at its right end; every control on the row and the "»" button stays
+     * inside the bar, left of the window buttons, and toolbar controls are one frame tall and centred.
+     */
+    private static void CheckTitleBarGeometry(StudioForm form, string width)
+    {
+        const float slack = 1;
+        float height = form.TitleBarHeight, frame = form.TitleBarFrameHeight;
+        var buttons = form.TitleBarButtonRects;
+        Check(buttons.Count == 3, $"Title bar at {width}: expected three window buttons.");
+        float buttonsLeft = buttons.Min(b => b.Min.X);
+        for (int i = 0; i < buttons.Count; i++)
+        {
+            var (min, max) = buttons[i];
+            Check(Math.Abs(min.Y) <= slack && Math.Abs(max.Y - height) <= slack,
+                $"Title bar at {width}: window button {i} spans y {min.Y:0.#}-{max.Y:0.#}, not the bar's 0-{height:0.#}.");
+        }
+        Check(Math.Abs(buttons.Max(b => b.Max.X) - form.ClientSize.Width) <= slack,
+            $"Title bar at {width}: the window buttons do not end at the window's right edge.");
+        foreach (var rect in form.TitleBarRects)
+        {
+            string at = $"Title bar at {width}: '{rect.Name}' ({rect.Min.X:0.#},{rect.Min.Y:0.#})-({rect.Max.X:0.#},{rect.Max.Y:0.#})";
+            Check(rect.Max.X < buttonsLeft - slack, $"{at} reaches the window buttons at x {buttonsLeft:0.#}.");
+            if (rect.Menu) continue;
+            Check(rect.Min.Y >= -slack && rect.Max.Y <= height + slack, $"{at} leaves the bar's 0-{height:0.#}.");
+            Check(Math.Abs(rect.Max.Y - rect.Min.Y - frame) <= slack, $"{at} is not one control ({frame:0.#}) tall.");
+            Check(Math.Abs((rect.Min.Y + rect.Max.Y) / 2 - height / 2) <= slack, $"{at} is not centred in the bar.");
+        }
+    }
+
     private static void CheckTitleBar(StudioForm form, string width)
     {
         var reachable = form.TitleBarReachable;
@@ -200,6 +243,7 @@ internal static class LayoutChecks
         Check(form.TitleBarOverflow.Distinct().Count() == form.TitleBarOverflow.Count
             && form.TitleBarOverflow.All(reachable.Contains), $"Title bar at {width}: the overflow menu repeats or invents a group.");
         Check(!form.TitleBarOverflow.Contains("WindowButtons"), $"Title bar at {width}: the window buttons left the row.");
+        CheckTitleBarGeometry(form, width);
     }
 
     private static void Check(bool valid, string message)

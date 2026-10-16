@@ -23,11 +23,19 @@ internal sealed class WindowChrome(Form form)
     public float Scale { get; set; } = 1;
     // Set at the end of each frame; the hit test between frames reads it.
     private bool overItem;
+    // The pointer was over a window button this frame; the button pressed and not yet released, or -1.
+    private bool buttonsHovered;
+    private int pressedButton = -1;
+    private readonly (Vector2 Min, Vector2 Max)[] buttonRects = new (Vector2, Vector2)[3];
+
+    /** Minimize, maximize and close as last drawn, window-relative: each the ImGui item's own rectangle. */
+    public IReadOnlyList<(Vector2 Min, Vector2 Max)> ButtonRects => buttonRects;
 
     /** Call after the window's frame, with its ImGui context current. */
     public void EndFrame()
     {
-        overItem = ImGui.IsAnyItemHovered() || ImGui.IsAnyItemActive() || ImGui.IsPopupOpen("", ImGuiPopupFlags.AnyPopupId);
+        overItem = buttonsHovered || ImGui.IsAnyItemHovered() || ImGui.IsAnyItemActive() || ImGui.IsPopupOpen("", ImGuiPopupFlags.AnyPopupId);
+        buttonsHovered = false;
         if (!Maximized && !Minimized)
             ImGui.GetForegroundDrawList().AddRect(Vector2.Zero, new(form.ClientSize.Width, form.ClientSize.Height),
                 ImGui.GetColorU32(ImGuiCol.Border));
@@ -113,22 +121,37 @@ internal sealed class WindowChrome(Form form)
     {
         float width = ButtonsWidth / 3;
         var draw = ImGui.GetWindowDrawList();
+        var origin = ImGui.GetWindowPos();
+        float windowWidth = ImGui.GetWindowWidth();
         uint glyph = ImGui.GetColorU32(ImGuiCol.Text);
         float stroke = MathF.Max(1, Scale);
+        bool windowHovered = ImGui.IsWindowHovered(ImGuiHoveredFlags.AllowWhenBlockedByActiveItem);
         for (int button = 0; button < 3; button++)
         {
-            // Each button is placed at the top: on a menu bar row SameLine returns to the row's text line, which
-            // pushed the second and third glyphs down.
-            ImGui.SetCursorPos(new(ImGui.GetWindowWidth() - (3 - button) * width, 0));
-            if (ImGui.InvisibleButton($"##window-button-{button}", new(width, height)))
-                form.BeginInvoke(button switch
-                {
-                    0 => () => form.WindowState = FormWindowState.Minimized,
-                    1 => () => form.WindowState = Maximized ? FormWindowState.Normal : FormWindowState.Maximized,
-                    _ => close ?? form.Close
-                });
-            Vector2 min = ImGui.GetItemRectMin(), max = ImGui.GetItemRectMax(), center = (min + max) / 2;
-            if (ImGui.IsItemHovered())
+            // Each button is a fixed rectangle from the bar's top to its bottom at the right end. Its glyph, hover and
+            // click come from that rectangle, not from the layout cursor: on a menu bar row the cursor follows the row's
+            // line, which put maximize and close 11 px below minimize, half under the bar's lower edge.
+            Vector2 min = origin + new Vector2(windowWidth - (3 - button) * width, 0), max = min + new Vector2(width, height);
+            Vector2 center = (min + max) / 2;
+            ImGui.SetCursorScreenPos(min);
+            // The item keeps the hit test from treating the button as caption.
+            ImGui.InvisibleButton($"##window-button-{button}", max - min);
+            buttonRects[button] = (ImGui.GetItemRectMin() - origin, ImGui.GetItemRectMax() - origin);
+            bool hovered = windowHovered && ImGui.IsMouseHoveringRect(min, max);
+            buttonsHovered |= ImGui.IsMouseHoveringRect(min, max, false);
+            if (hovered && ImGui.IsMouseClicked(ImGuiMouseButton.Left)) pressedButton = button;
+            if (pressedButton == button && ImGui.IsMouseReleased(ImGuiMouseButton.Left))
+            {
+                pressedButton = -1;
+                if (hovered)
+                    form.BeginInvoke(button switch
+                    {
+                        0 => () => form.WindowState = FormWindowState.Minimized,
+                        1 => () => form.WindowState = Maximized ? FormWindowState.Normal : FormWindowState.Maximized,
+                        _ => close ?? form.Close
+                    });
+            }
+            if (hovered)
                 draw.AddRectFilled(min, max, button == 2 ? ImGui.GetColorU32(new Vector4(0.77f, 0.17f, 0.11f, 1))
                     : ImGui.GetColorU32(ImGuiCol.ButtonHovered));
             float half = 5 * Scale;

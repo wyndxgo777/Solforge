@@ -432,11 +432,12 @@ public static unsafe class SolTheme
     {
         int split = label.IndexOf("##", StringComparison.Ordinal);
         string shown = (split < 0 ? label : label[..split]).ToUpperInvariant();
+        // One body-font frame tall, like the controls beside it; the smaller button face would make it shorter.
+        if (size.Y <= 0) size.Y = ImGui.GetFrameHeight();
         bool font = PushFont(ButtonFont);
         float tracking = ImGui.GetFontSize() * .1f;
         float textWidth = TrackedWidth(shown, tracking);
         if (size.X <= 0) size.X = textWidth + 32 * Scale;
-        if (size.Y <= 0) size.Y = ImGui.GetFrameHeight();
         bool clicked = ImGui.InvisibleButton(label, Vector2.Max(size, Vector2.One));
         bool hovered = ImGui.IsItemHovered(), held = ImGui.IsItemActive();
         var min = ImGui.GetItemRectMin();
