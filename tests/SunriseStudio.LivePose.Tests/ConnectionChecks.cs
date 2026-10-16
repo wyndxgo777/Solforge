@@ -20,7 +20,8 @@ internal static class ConnectionChecks
                 Check(publisher.ReadUInt32(0) == LivePoseProtocol.Magic && publisher.ReadUInt32(4) == LivePoseProtocol.Version
                     && publisher.ReadInt32(8) == LivePoseProtocol.MappingBytes && publisher.ReadInt32(12) == process,
                     "Pose mapping identity differs from the native protocol.");
-                Reject<IOException>(() => { using var duplicate = new Connection(process); });
+                // CreateOrOpen (09ca809) lets a restarted editor reattach to an existing mapping instead of throwing.
+                using (var reattached = new Connection(process)) { }
                 Check(publisher.ReadUInt32(32) == 0, "Capture was asked for before Studio enabled it.");
                 Check(publisher.ReadUInt32(36) == uint.MaxValue, "A player observation was requested before its handle was known.");
                 connection.SetPlayer(42); Check(publisher.ReadUInt32(36) == 42, "Player request did not reach the publisher.");
