@@ -66,6 +66,39 @@ public sealed partial class StudioForm
         lock (aiRequests) foreach (var request in aiRequests) request.Answer.TrySetResult(false);
         UiAuto.Enabled = false;
         if (aiService is { } service) { aiService = null; service.DisposeAsync().AsTask().Wait(1000); }
+        if (aiClinePass is { } proxy) { aiClinePass = null; proxy.DisposeAsync().AsTask().Wait(1000); }
+    }
+
+    /** The localhost ClinePass translator for "Claude Code on ClinePass", started on first use. */
+    private ClinePassProxy? aiClinePass;
+
+    /**
+     * Claude Code's environment for the ClinePass translator, or null (note shown) when CLINE_API_KEY is missing.
+     * The key stays in the user's environment; Claude Code only gets the translator's per-run local token.
+     */
+    private IReadOnlyDictionary<string, string>? AiClinePassEnvironment(string model)
+    {
+        if (!ClinePassProxy.HasApiKey())
+        {
+            aiInstallNote = ("Claude Code on ClinePass needs CLINE_API_KEY: create a key at app.cline.bot (Settings > API Keys) and set it "
+                + "as a user environment variable, then Start again.", false);
+            return null;
+        }
+        if (aiClinePass is not { } proxy)
+        {
+            proxy = new ClinePassProxy();
+            try { proxy.Start(); }
+            catch (System.Net.Sockets.SocketException exception)
+            {
+                proxy.DisposeAsync().AsTask().Wait(1000);
+                aiInstallNote = ("ClinePass translator could not start: " + exception.Message, false);
+                return null;
+            }
+            proxy.Log += message => aiServiceError = message;
+            aiClinePass = proxy;
+        }
+        if (model.Length > 0) proxy.Model = proxy.MapModel(model);
+        return proxy.ClaudeEnvironment();
     }
 
     partial void AiServiceStatus(ref string status)
@@ -99,7 +132,11 @@ public sealed partial class StudioForm
         if (SolforgeMcpService.FindShim() is { } shim)
         {
             // ask_gemini only when agy is installed: it runs the user's own agy login, never a copied token.
-            try { files = EngineLaunch.WriteClaudeFiles(folder, shim, gemini: AiResolved("agy") is not null); }
+            try
+            {
+                files = EngineLaunch.WriteClaudeFiles(folder, shim, gemini: AiResolved("agy") is not null,
+                    clinePass: settings.AiAskClinePass && AiResolved("cline") is not null);
+            }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             { aiServiceError = "config: " + exception.Message; }
         }

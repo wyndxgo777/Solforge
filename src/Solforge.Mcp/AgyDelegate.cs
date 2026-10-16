@@ -123,10 +123,17 @@ public static class AgyDelegate
         { return ("agy failed to run: " + exception.Message, true); }
     }
 
+    /** One tool a stdio server offers: its definition and the call that runs it. */
+    public sealed record StdioTool(JsonObject Definition, Func<JsonObject?, CancellationToken, Task<(string Text, bool Error)>> Call);
+
+    /** The ask_gemini server; @param call replaces the agy run (tests). */
+    public static Task Serve(TextReader input, TextWriter output, Func<JsonObject?, CancellationToken, Task<(string Text, bool Error)>>? call = null) =>
+        Serve(input, output, [new StdioTool(Tool(), call ?? Call)], "solforge-gemini",
+            "ask_gemini delegates a task to Gemini via the user's own Antigravity CLI sign-in.");
+
     /** The MCP stdio loop: one JSON-RPC message per line; calls run concurrently so ping and list stay answered. */
-    public static async Task Serve(TextReader input, TextWriter output, Func<JsonObject?, CancellationToken, Task<(string Text, bool Error)>>? call = null)
+    public static async Task Serve(TextReader input, TextWriter output, IReadOnlyList<StdioTool> tools, string serverName, string instructions)
     {
-        var handler = call ?? Call;
         var gate = new SemaphoreSlim(1, 1);
         var pending = new List<Task>();
         async Task Send(JsonObject message)
@@ -144,7 +151,7 @@ public static class AgyDelegate
             if (node is not JsonObject request) continue;
             pending.Add(Task.Run(async () =>
             {
-                if (await Handle(request, handler) is { } reply) await Send(reply);
+                if (await Handle(request, tools, serverName, instructions) is { } reply) await Send(reply);
             }));
             pending.RemoveAll(task => task.IsCompleted);
         }
@@ -152,7 +159,7 @@ public static class AgyDelegate
     }
 
     /** One request's reply, or null for a notification. */
-    public static async Task<JsonObject?> Handle(JsonObject request, Func<JsonObject?, CancellationToken, Task<(string Text, bool Error)>> call)
+    public static async Task<JsonObject?> Handle(JsonObject request, IReadOnlyList<StdioTool> tools, string serverName, string instructions)
     {
         JsonNode? id = request["id"]?.DeepClone();
         string method = Text(request, "method") ?? "";
@@ -164,15 +171,18 @@ public static class AgyDelegate
                 {
                     ["protocolVersion"] = Text(request["params"] as JsonObject, "protocolVersion") ?? "2025-06-18",
                     ["capabilities"] = new JsonObject { ["tools"] = new JsonObject() },
-                    ["serverInfo"] = new JsonObject { ["name"] = "solforge-gemini", ["version"] = "1.0" },
-                    ["instructions"] = "ask_gemini delegates a task to Gemini via the user's own Antigravity CLI sign-in."
+                    ["serverInfo"] = new JsonObject { ["name"] = serverName, ["version"] = "1.0" },
+                    ["instructions"] = instructions
                 });
             case "ping": return Reply(id, new JsonObject());
-            case "tools/list": return Reply(id, new JsonObject { ["tools"] = new JsonArray(Tool()) });
+            case "tools/list":
+                return Reply(id, new JsonObject { ["tools"] = new JsonArray(tools.Select(tool => tool.Definition.DeepClone()).ToArray()) });
             case "tools/call":
                 var parameters = request["params"] as JsonObject;
-                if (Text(parameters, "name") != ToolName) return Error(id, -32602, "Unknown tool: " + Text(parameters, "name"));
-                var (text, error) = await call(parameters?["arguments"] as JsonObject, CancellationToken.None);
+                string? name = Text(parameters, "name");
+                if (tools.FirstOrDefault(tool => Text(tool.Definition, "name") == name) is not { } match)
+                    return Error(id, -32602, "Unknown tool: " + name);
+                var (text, error) = await match.Call(parameters?["arguments"] as JsonObject, CancellationToken.None);
                 return Reply(id, new JsonObject
                 {
                     ["content"] = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = text }), ["isError"] = error
@@ -186,8 +196,8 @@ public static class AgyDelegate
     private static JsonObject Error(JsonNode? id, int code, string message) =>
         new() { ["jsonrpc"] = "2.0", ["id"] = id, ["error"] = new JsonObject { ["code"] = code, ["message"] = message } };
 
-    private static JsonObject Field(string type, string description) => new() { ["type"] = type, ["description"] = description };
+    internal static JsonObject Field(string type, string description) => new() { ["type"] = type, ["description"] = description };
 
-    private static string? Text(JsonObject? node, string key) =>
+    internal static string? Text(JsonObject? node, string key) =>
         node?[key] is JsonValue value && value.TryGetValue(out string? text) ? text : null;
 }

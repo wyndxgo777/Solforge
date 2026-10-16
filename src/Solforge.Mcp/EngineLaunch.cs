@@ -23,24 +23,33 @@ public static class EngineLaunch
         "The gemini MCP tool ask_gemini hands a self-contained task to Gemini on the user's own Antigravity CLI login; " +
         "use it when the user asks for Gemini, a second opinion or a very large read.";
 
+    /** Added when the clinepass server is in the config (setting on, cline installed). Same rule: no double quotes or percent signs. */
+    public const string ClinePassPrompt =
+        "The clinepass MCP tool ask_clinepass hands a self-contained task to an open-weight ClinePass model on the user's own Cline login; " +
+        "use it when the user asks for ClinePass, Cline or one of its models, or for a cheap second opinion.";
+
     /** First prompt of an engine started by a handoff (no double quotes or percent signs). */
     public const string HandoffPrompt =
         "Solforge handed this project over from another AI engine. Read .solforge/HANDOFF.md and .solforge/SESSION.md, " +
         "then say in a few lines what you are picking up and wait for the user to go ahead.";
 
-    /** @param Gemini True when the config also holds the gemini (ask_gemini) server. */
-    public sealed record ClaudeFiles(string McpConfig, string Settings, bool Gemini = false);
+    /**
+     * @param Gemini True when the config also holds the gemini (ask_gemini) server.
+     * @param ClinePass True when it also holds the clinepass (ask_clinepass) server.
+     */
+    public sealed record ClaudeFiles(string McpConfig, string Settings, bool Gemini = false, bool ClinePass = false);
 
     /**
      * Writes the MCP config and the UserPromptSubmit hook settings for the project; @param folder defaults to the
-     * discovery folder; @param gemini also adds the shim's --gemini server (ask_gemini runs the user's own agy).
+     * discovery folder; @param gemini also adds the shim's --gemini server (ask_gemini runs the user's own agy);
+     * @param clinePass also adds its --clinepass server (ask_clinepass runs the user's own cline on ClinePass).
      */
-    public static ClaudeFiles WriteClaudeFiles(string projectRoot, string shimPath, string? folder = null, bool gemini = false)
+    public static ClaudeFiles WriteClaudeFiles(string projectRoot, string shimPath, string? folder = null, bool gemini = false, bool clinePass = false)
     {
         folder ??= McpDiscovery.Folder;
         Directory.CreateDirectory(folder);
         string key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Path.GetFullPath(projectRoot).ToUpperInvariant())))[..12];
-        var files = new ClaudeFiles(Path.Combine(folder, $"claude-mcp-{key}.json"), Path.Combine(folder, $"claude-settings-{key}.json"), gemini);
+        var files = new ClaudeFiles(Path.Combine(folder, $"claude-mcp-{key}.json"), Path.Combine(folder, $"claude-settings-{key}.json"), gemini, clinePass);
         var server = new JsonObject
         {
             ["type"] = "stdio", ["command"] = shimPath, ["args"] = new JsonArray("--project", projectRoot), ["env"] = new JsonObject()
@@ -50,6 +59,11 @@ public static class EngineLaunch
             servers[AgyDelegate.ServerName] = new JsonObject
             {
                 ["type"] = "stdio", ["command"] = shimPath, ["args"] = new JsonArray("--gemini"), ["env"] = new JsonObject()
+            };
+        if (clinePass)
+            servers[ClineDelegate.ServerName] = new JsonObject
+            {
+                ["type"] = "stdio", ["command"] = shimPath, ["args"] = new JsonArray("--clinepass"), ["env"] = new JsonObject()
             };
         Write(files.McpConfig, new JsonObject { ["mcpServers"] = servers });
         // Forward slashes and plain quotes read the same in cmd.exe and in bash, whichever runs the hook.
@@ -67,7 +81,10 @@ public static class EngineLaunch
     {
         var args = new List<string>();
         if (files is not null) args.AddRange(["--mcp-config", files.McpConfig, "--settings", files.Settings]);
-        args.AddRange(["--append-system-prompt", files is { Gemini: true } ? SystemPrompt + " " + GeminiPrompt : SystemPrompt]);
+        string prompt = SystemPrompt;
+        if (files is { Gemini: true }) prompt += " " + GeminiPrompt;
+        if (files is { ClinePass: true }) prompt += " " + ClinePassPrompt;
+        args.AddRange(["--append-system-prompt", prompt]);
         foreach (string folder in addDirs) { args.Add("--add-dir"); args.Add(folder); }
         return string.Join(' ', args.Select(Quote));
     }

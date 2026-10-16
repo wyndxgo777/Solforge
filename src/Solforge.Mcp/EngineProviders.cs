@@ -7,8 +7,10 @@ namespace Solforge.Mcp;
  * and Solforge never reads, copies or stores tokens or API keys. Secrets stay in the user's environment.
  *
  * Supported combinations only:
- * - Claude Code: the user's Claude subscription login, their own ANTHROPIC_API_KEY, or an Anthropic-format gateway.
- *   Claude Code does not support non-Claude models, so ClinePass (OpenAI-format, open-weight models) is not offered.
+ * - Claude Code: the user's Claude subscription login, their own ANTHROPIC_API_KEY, an Anthropic-format gateway, or
+ *   ClinePass through Solforge's localhost translator (ClinePassProxy) with the user's own CLINE_API_KEY, which Cline
+ *   documents for use from other clients. That run gets every Anthropic/Claude login variable removed, so no Claude
+ *   subscription token ever reaches the translator.
  * - Cline: its saved provider, Cline's built-in "claude-code" provider (Cline runs the user's own claude binary,
  *   which signs in with their Claude subscription), or ClinePass through their Cline account.
  */
@@ -27,7 +29,7 @@ public static class EngineProviders
     }
 
     public const string ClaudeSubscription = "claude-subscription", ClaudeApiKey = "claude-api-key", ClaudeGateway = "claude-gateway",
-        ClineSaved = "cline-saved", ClineClaudeCode = "cline-claude-code", ClinePass = "cline-pass";
+        ClineSaved = "cline-saved", ClineClaudeCode = "cline-claude-code", ClinePass = "cline-pass", ClaudeClinePass = "claude-cline-pass";
 
     /** Credentials that would make claude bill an API key instead of the subscription login. */
     private static readonly string[] AnthropicCredentials = ["ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_URL"];
@@ -42,6 +44,10 @@ public static class EngineProviders
         new(ClaudeGateway, "claude", "Anthropic-format LLM gateway",
             "Sets ANTHROPIC_BASE_URL; put the gateway credential in ANTHROPIC_AUTH_TOKEN in your own environment. Claude models only.",
             UsesBaseUrl: true),
+        new(ClaudeClinePass, "claude", "Claude Code on ClinePass (CLINE_API_KEY)",
+            "Runs Claude Code on open-weight ClinePass models through Solforge's localhost translator. Needs CLINE_API_KEY (app.cline.bot > Settings > API Keys) " +
+            "in your own environment; your Claude login is removed from this run. Model: a cline-pass/ id; /model in Claude Code takes any cline-pass/ id.",
+            "", ClinePassProxy.DefaultModel, UsesModel: true),
         new(ClineSaved, "cline", "Cline's saved provider (cline auth)",
             "Whatever cline auth last configured.", "cline auth"),
         new(ClineClaudeCode, "cline", "Cline using Claude Code subscription",
@@ -80,6 +86,11 @@ public static class EngineProviders
             // Cline's claude-code provider starts claude with Cline's environment, so the same rule keeps it on the subscription.
             case ClaudeSubscription or ClineClaudeCode:
                 foreach (string name in AnthropicCredentials) env[name] = "";
+                break;
+            // The editor adds the translator's base URL and local token (ClinePassProxy.ClaudeEnvironment); until then no login is passed.
+            case ClaudeClinePass:
+                foreach (string name in AnthropicCredentials) env[name] = "";
+                env["CLAUDE_CODE_OAUTH_TOKEN"] = "";
                 break;
             case ClaudeGateway when (choice?.BaseUrl.Trim() ?? "") is { Length: > 0 } url:
                 env["ANTHROPIC_BASE_URL"] = url;

@@ -42,7 +42,7 @@ tool_timeout_sec = 130
 
 Use tool timeouts of about 130 s: `wait_for_player_near` waits up to 120 s, and `wait_for_viewport_change` up to 60 s.
 
-## Two subscriptions: Claude Code + Gemini (Antigravity CLI)
+## Several subscriptions: Claude Code + Gemini (Antigravity CLI) + ClinePass
 
 Each engine runs on its own official client and its own sign-in. Claude Code uses your Claude plan, and agy uses your Google AI Pro login.
 
@@ -50,6 +50,17 @@ Each engine runs on its own official client and its own sign-in. Claude Code use
   - It does not need Solforge to be running.
   - When agy is installed, Solforge adds it to the Claude Code config it launches.
   - To use it in any Claude Code session, run: `claude mcp add --scope user gemini -- "<solforge>\solforge-mcp.exe" --gemini`.
+- **`ask_clinepass` (stdio server `solforge-mcp --clinepass`).** This tool works like `ask_gemini` but runs your own Cline CLI on ClinePass: `cline --json -P cline-pass [-m cline-pass/<model>] [-p] -t <seconds> -- <task>`. The default `plan` mode reads and answers only; `act` lets the model edit files and run commands. The prompt is capped at 24,000 characters and the time limit at 30 minutes. It returns the reply plus the model and finish reason. The headless Cline CLI can't resume a session in JSON mode, so each call starts fresh.
+  - It does not need Solforge to be running. Sign in once with `cline auth` and pick ClinePass, or set `CLINE_API_KEY`.
+  - Solforge adds it to the Claude Code config it launches when "Give Claude Code ask_clinepass" is ticked in the AI workspace "..." menu and cline is installed.
+  - To use both tools in any Claude Code session, run:
+    - `claude mcp add --scope user gemini -- "<solforge>\solforge-mcp.exe" --gemini`
+    - `claude mcp add --scope user clinepass -- "<solforge>\solforge-mcp.exe" --clinepass`
+- **Claude Code on ClinePass (provider for Claude Code).** Claude Code itself runs on ClinePass models through a translator on 127.0.0.1 inside Solforge, which converts Anthropic Messages to OpenAI Chat Completions against `https://api.cline.bot/api/v1`. Cline documents this API for your own scripts and apps with a ClinePass API key ([ClinePass docs](https://docs.cline.bot/getting-started/clinepass)), and its FAQ allows ClinePass "with other coding agents by using your ClinePass API key" ([cline.bot/cline-pass](https://cline.bot/cline-pass)).
+  - Setup: create a key at app.cline.bot (Settings > API Keys), set it as the user environment variable `CLINE_API_KEY`, and pick the provider "Claude Code on ClinePass" for Claude Code.
+  - The model field takes a `cline-pass/` id; the default is `cline-pass/kimi-k3`. Inside Claude Code, `/model cline-pass/qwen3.8-max` (or any other `cline-pass/` id) switches the model, and the haiku alias maps to `cline-pass/deepseek-v4.1-flash`.
+  - That run has every Anthropic and Claude login variable removed. Claude Code gets only a random local token that opens nothing but the translator port. Your Claude and Google sign-ins never pass through it, and Antigravity stays tool-only (`ask_gemini`). The key is read from your environment per request and never stored or logged.
+  - It is personal use only: Cline's [terms](https://cline.bot/tos) forbid sharing a subscription or transferring API keys.
 - **Hand off (AI workspace "..." menu).** This stops the running engine and writes `.solforge/HANDOFF.md` with that session's recent requests and last reply. It then starts the other engine on the same project, MCP and skills, with a first prompt that points at the note.
 - **Not allowed (both providers' terms).** Never copy or proxy a subscription's OAuth token into another client. That rules out pointing Claude Code at Gemini through an Antigravity-login proxy, and putting a Claude login in a third-party harness. Google suspends accounts that do the first. Gemini inside Claude Code itself is possible only with a paid Gemini API key through an LLM gateway such as LiteLLM. That is billed API use, not AI Pro, and Anthropic doesn't support it.
 
