@@ -4,6 +4,7 @@ using SunriseStudio.Editor;
 using SunriseStudio.Packages;
 using SunriseStudio.Projects;
 
+/** Checks the browser config-binding behavior: binding-only changes mark rows changed, and unbind/undo/redo/reopen leave raw bytes and membership intact. */
 internal static class BrowserConfigChecks
 {
     private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;

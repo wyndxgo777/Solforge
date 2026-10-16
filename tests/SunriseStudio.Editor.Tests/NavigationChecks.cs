@@ -8,6 +8,7 @@ internal static class NavigationChecks
     private const uint Helmet = 0x8131934E, Weapon = 0x8132017D;
     private const string ComponentsPage = "sunrise.components";
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string install, string output)
     {
         Exception? failure = null;

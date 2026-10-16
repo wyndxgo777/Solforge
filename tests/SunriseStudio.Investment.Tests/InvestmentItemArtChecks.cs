@@ -1,6 +1,7 @@
 using System.Buffers.Binary;
 using SunriseStudio.Formats;
 
+/** Checks item art rows: cloning grows the table, keeps art fields and parent, and points the clone at its own icon. */
 internal static class InvestmentItemArtChecks
 {
     /** Cloned rows may share fields until an icon assignment makes a private copy. */

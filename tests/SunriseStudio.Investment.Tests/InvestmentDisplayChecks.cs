@@ -2,8 +2,10 @@ using System.Buffers.Binary;
 using SunriseStudio.Formats;
 using SunriseStudio.Packages;
 
+/** Checks display curves: clamping, interpolation, half-even rounding and empty curves must match native results. */
 internal static class InvestmentDisplayChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string temporaryRoot)
     {
         InvestmentStatPoint[] input = [new(0, 0), new(2, 1), new(4, 3)];
@@ -72,6 +74,7 @@ internal static class InvestmentDisplayChecks
         }
     }
 
+    /** Runs the same kind of checks against the real packages of the owned installation. */
     public static void Owned(InvestmentCatalog data, PackageCatalog catalog)
     {
         const uint tag = 0x81319AF9;

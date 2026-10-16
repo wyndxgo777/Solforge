@@ -4,8 +4,10 @@ using SunriseStudio.Formats;
 using SunriseStudio.Packages;
 using SunriseStudio.Projects;
 
+/** Checks CUI visual edits (text, style, size, RGBA tint): channel order is kept and a no-op leaves native bytes unchanged. */
 internal static class CuiVisualChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run()
     {
         const uint first = 0x80A00000;
@@ -99,6 +101,7 @@ internal static class CuiVisualChecks
         return (container, data);
     }
 
+    /** Runs the checks that need an installed game; takes the installed data under test. */
     public static bool Installed(PackageCatalog catalog, CuiDocument document)
     {
         foreach (var component in document.Components)

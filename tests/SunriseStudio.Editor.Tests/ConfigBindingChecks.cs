@@ -8,9 +8,11 @@ using SunriseStudio.Formats;
 using SunriseStudio.Packages;
 using SunriseStudio.Projects;
 
+/** Checks config binding compilation against an installation: bindings keep raw project bytes and shared entries produce one final digest. */
 internal static class ConfigBindingChecks
 {
     private const uint Tag = 0x80A00000, Class = 0x80804825;
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string parent, string? output = null)
     {
         byte[] source = ConfigBindingFixture.Create();
@@ -166,8 +168,10 @@ internal static class ConfigBindingChecks
 
     private sealed class CallbackCompiler(Action callback) : IConfigBindingCompiler
     {
+        /** Returns the fixed candidate sites of the fake binding source. */
         public IReadOnlyList<ConfigBindingCandidate> FindSites(uint tag, uint classHash, ReadOnlyMemory<byte> bytes) =>
             CuiConfigBindingCompiler.Default.FindSites(tag, classHash, bytes);
+        /** Compiles the bindings with the fake compiler used by these tests. */
         public ConfigBindingCompilation Compile(IReadOnlyList<ProjectConfigBinding> bindings,
             IReadOnlyList<ModConfigEntry> settings, Func<uint, byte[]> readSource)
         { callback(); return CuiConfigBindingCompiler.Default.Compile(bindings, settings, readSource); }
@@ -179,6 +183,7 @@ internal static class ConfigBindingChecks
         private int enumerations;
         public int Count => values.Length;
         public ProjectConfigBinding this[int index] => values[index];
+        /** Enumerates the bindings in the collection. */
         public IEnumerator<ProjectConfigBinding> GetEnumerator()
         {
             int pass = ++enumerations;
@@ -318,6 +323,7 @@ internal static class ConfigBindingChecks
         Check(File.ReadAllBytes(project.ManifestPath).SequenceEqual(before), "startup refusal before publication");
     }
 
+    /** Runs the same kind of checks against the real packages of the owned installation. */
     public static void Owned(string parent, string gameRoot, string output)
     {
         const uint tag = 0x80BC722A;

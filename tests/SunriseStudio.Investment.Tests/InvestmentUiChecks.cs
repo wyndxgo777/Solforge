@@ -3,6 +3,7 @@ using SunriseStudio.Editor;
 using SunriseStudio.Projects;
 using SunriseStudio.Rendering;
 
+/** Checks the investment page UI: drafts do not leak across projects and failures are surfaced. */
 internal static class InvestmentUiChecks
 {
     /** Real frames must discard old drafts before an identical tag can be edited in another project. */

@@ -5,6 +5,7 @@ using SunriseStudio.Packages;
 using SunriseStudio.Projects;
 using SunriseStudio.Rendering;
 
+/** Checks that material preview and export share inputs (object, parameters, clock, camera), texture slots/channels and stage blends. */
 internal static class MaterialPreviewChecks
 {
     /** Shader component flow, not slot ordering, defines each preview input. */

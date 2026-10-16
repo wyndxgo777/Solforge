@@ -3,6 +3,7 @@ using System.Reflection;
 using SunriseStudio.Editor;
 using SunriseStudio.Packages;
 
+/** Checks the browser filters, especially the changed-only filter, which must not stay hidden when browsing view-only or after reopening a project. */
 internal static class BrowserFilterChecks
 {
     private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;

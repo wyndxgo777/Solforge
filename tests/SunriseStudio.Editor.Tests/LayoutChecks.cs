@@ -1,8 +1,10 @@
 using System.Text.Json;
 using SunriseStudio.Editor;
 
+/** Checks editor panel layouts: area type changes keep the displaced editor, old layouts restore, and the default layout includes the Local Server panel. */
 internal static class LayoutChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(string root)
     {
         var layout = StudioLayout.Default();
@@ -97,6 +99,7 @@ internal static class LayoutChecks
         Console.WriteLine("editor_layout persistence=pass swap=pass split=pass join=pass bounds=pass corrupt=pass graph=pass");
     }
 
+    /** Runs the layout checks that drive the real editor UI against an installation. */
     internal static void Ui(string root, string output)
     {
         string install = Path.Combine(root, "layout-install");

@@ -6,6 +6,7 @@ using SunriseStudio.Editor;
 using SunriseStudio.Editor.Creation;
 using SunriseStudio.Formats;
 
+/** Checks static prop file inspection: malformed glTF reports reach the creation panel, refresh when the file changes, and are not recomputed every frame. */
 internal static class StaticPropInspectionChecks
 {
     /** Replacing either exported file refreshes the report; malformed user input stays a UI error. */

@@ -1,7 +1,9 @@
 using System.Buffers.Binary;
 
+/** Builds a synthetic config blob (arrays, types, slots) used by the config binding tests. */
 internal static class ConfigBindingFixture
 {
+    /** Builds the synthetic config blob. */
     public static byte[] Create()
     {
         var b = new Bytes(344);
@@ -45,18 +47,26 @@ internal static class ConfigBindingFixture
     private sealed class Bytes(int count)
     {
         private byte[] bytes = new byte[count];
+        /** Grows the buffer by a 16-byte-aligned block and returns its offset. */
         public int Reserve(int size) { int at = checked((bytes.Length + 15) & ~15); System.Array.Resize(ref bytes, at + size); return at; }
+        /** Writes an array header (count, relative offset, marker, type) at the field and returns the offset of its data. */
         public int Array(int field, uint type, int stride, int count)
         {
             int at = Reserve(32 + stride * count), data = at + 32;
             U32(at + 12, 0x80809FBD); I64(at + 16, count); U64(at + 24, type);
             I64(field, count); I64(field + 8, at + 16 - field - 8); return data;
         }
+        /** Writes a byte at the offset. */
         public void U8(int at, byte value) => bytes[at] = value;
+        /** Writes a little-endian 16-bit value at the offset. */
         public void U16(int at, ushort value) => BinaryPrimitives.WriteUInt16LittleEndian(bytes.AsSpan(at), value);
+        /** Writes a little-endian 32-bit value at the offset. */
         public void U32(int at, uint value) => BinaryPrimitives.WriteUInt32LittleEndian(bytes.AsSpan(at), value);
+        /** Writes a little-endian 64-bit value at the offset. */
         public void U64(int at, ulong value) => BinaryPrimitives.WriteUInt64LittleEndian(bytes.AsSpan(at), value);
+        /** Writes a little-endian signed 64-bit value at the offset. */
         public void I64(int at, long value) => BinaryPrimitives.WriteInt64LittleEndian(bytes.AsSpan(at), value);
+        /** Stamps the total length at offset 0 and returns the bytes. */
         public byte[] Finish() { I64(0, bytes.Length); return bytes; }
     }
 }

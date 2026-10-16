@@ -5,8 +5,10 @@ using SunriseStudio.Editor;
 using SunriseStudio.Packages;
 using SunriseStudio.Scene;
 
+/** Checks that isolated object assets are published by the workspace with overlay metadata and do not leak into authored browser rows. */
 internal static class IsolatedObjectWorkflowChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(string root)
     {
         string install = Path.Combine(root, "isolated-object-install");

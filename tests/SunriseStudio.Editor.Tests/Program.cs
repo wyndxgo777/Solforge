@@ -332,8 +332,10 @@ sealed class TextureMutationPage : IStudioPage
     public string Id => "tests.texture-mutation";
     public string Title => "Texture mutation";
     public bool Applied { get; private set; }
+    /** Offers the page for any document that has a texture. */
     public bool CanOpen(StudioDocument document) => document.Texture is not null;
 
+    /** Draws the page used by the texture mutation test. */
     public void Draw(StudioPageContext context)
     {
         context.Viewport.DrawImGui(ImGuiNET.ImGui.GetContentRegionAvail());
@@ -346,6 +348,7 @@ sealed class TextureMutationPage : IStudioPage
 
 static class WorldUiCheck
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string root)
     {
         string install = Path.Combine(root, "world-install");

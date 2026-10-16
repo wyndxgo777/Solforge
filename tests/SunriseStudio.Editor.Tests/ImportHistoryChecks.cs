@@ -8,6 +8,7 @@ using SunriseStudio.Formats;
 using SunriseStudio.Packages;
 using SunriseStudio.Scene;
 
+/** Checks undo/redo around imports (texture creation adopting its coupled group, selection, allocated identities). */
 internal static class ImportHistoryChecks
 {
     private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;

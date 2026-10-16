@@ -6,6 +6,7 @@ using SunriseStudio.Interchange;
 using SunriseStudio.Packages;
 using SunriseStudio.Scene;
 
+/** Checks native tangent-basis handling: declarations, index order, position transform and authored tangent arrays. */
 internal static class NativeBasisChecks
 {
     /** Exported basis vectors must match the authored shader inputs, not generated face normals. */

@@ -4,6 +4,7 @@ using System.Reflection;
 using SunriseStudio.Editor;
 using SunriseStudio.Packages;
 
+/** Checks that assets added by a project show up in the browser as changed rows without displacing installed rows. */
 internal static class BrowserAddedChecks
 {
     private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;

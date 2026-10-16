@@ -3,6 +3,7 @@ using SunriseStudio.Interchange;
 using SunriseStudio.Packages;
 using SunriseStudio.Projects;
 
+/** Checks that a bundle import layers its raw delta with object edits instead of writing object edit values into the delta. */
 internal static class ObjectEditImportChecks
 {
     /** A bundle holds compiled bytes; its raw delta must keep the raw value wherever an object edit writes. */
@@ -45,6 +46,7 @@ internal static class ObjectEditImportChecks
     /** Writes Scale as a float at the target offset. */
     private sealed class ScaleCompiler : IObjectEditCompiler
     {
+        /** Writes each edit Scale as a float at its target offset. */
         public ObjectEditCompilation Compile(IReadOnlyList<ObjectEdit> edits, Func<uint, byte[]> readRaw, PackageCatalog catalog)
         {
             var assets = new Dictionary<uint, byte[]>();
@@ -57,6 +59,7 @@ internal static class ObjectEditImportChecks
             return new(assets, edits.Select(edit => new CompiledObjectEdit(edit, [edit.Target.SourceTag])).ToArray());
         }
 
+        /** Keeps every edit unchanged. */
         public ObjectEdit? Normalize(ObjectEdit edit, Func<uint, byte[]> readRaw, PackageCatalog catalog) => edit;
     }
 }

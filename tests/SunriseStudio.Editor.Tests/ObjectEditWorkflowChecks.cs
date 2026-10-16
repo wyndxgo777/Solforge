@@ -4,6 +4,7 @@ using SunriseStudio.Authoring;
 using SunriseStudio.Editor;
 using SunriseStudio.Scene;
 
+/** Checks the object edit workflow: edits reach the overlay, redo restores saved and compiled bytes, and dependent edits are broken by upstream changes. */
 internal static class ObjectEditWorkflowChecks
 {
     /** Object edit redo, the raw-edit guard and delta conversion, on the world fixture's instance table. */

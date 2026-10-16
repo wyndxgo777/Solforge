@@ -6,6 +6,7 @@ using SunriseStudio.Packages;
 /** Tome bytes rebuild exactly from the model, and point lookup follows the stored trees. */
 internal static class TomeChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run()
     {
         var tome = Sample();

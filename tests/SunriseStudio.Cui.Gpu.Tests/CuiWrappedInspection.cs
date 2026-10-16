@@ -1,8 +1,10 @@
 using SunriseStudio.Formats;
 using SunriseStudio.Packages;
 
+/** Diagnostic tool that scans installed UI string banks and prints wrapped-text cases for manual inspection. */
 internal static class CuiWrappedInspection
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string root)
     {
         using var catalog = PackageCatalog.Open(root, cacheOptions: new() { Enabled = false });

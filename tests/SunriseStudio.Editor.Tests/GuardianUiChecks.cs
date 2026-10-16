@@ -19,6 +19,7 @@ internal static class GuardianUiChecks
     ];
     private static readonly string[] ArmorLabels = ["Helmet", "Gauntlets", "Chest", "Legs", "Class item"];
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string install, string output)
     {
         Exception? failure = null;

@@ -4,6 +4,7 @@ using SunriseStudio.Formats;
 using SunriseStudio.Packages;
 using SunriseStudio.Scene;
 
+/** Builds synthetic packages for asset connection tests (related models, component links) so verified animation owners and navigation contexts can be checked. */
 internal static class AssetConnectionFixtures
 {
     private const uint First = 0x80A00000;

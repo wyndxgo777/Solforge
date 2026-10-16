@@ -4,6 +4,7 @@ using System.Text;
 using SunriseStudio.Editor;
 using SunriseStudio.Packages;
 
+/** Checks browser categories for entities (props, lights, enemies and NPCs) and that every entity type appears in the browser menu. */
 internal static class BrowserCategoryChecks
 {
     /** Browser menus retain entity roles after the complete component index is published. */

@@ -3,6 +3,7 @@ using System.Reflection;
 using SunriseStudio.Editor;
 using SunriseStudio.Formats;
 
+/** Checks investment draft editing: a failed or locked save must not report success or lose the entered values. */
 internal static class InvestmentDraftChecks
 {
     private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;

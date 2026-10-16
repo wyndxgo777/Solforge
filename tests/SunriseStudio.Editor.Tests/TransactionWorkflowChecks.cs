@@ -4,6 +4,7 @@ using SunriseStudio.Editor;
 using SunriseStudio.Packages;
 using SunriseStudio.Scene;
 
+/** Checks editor transactions: rejected allocations change nothing, creations reach the overlay, and undo removes clones, labels and references. */
 internal static class TransactionWorkflowChecks
 {
     /** Undo and redo restore created native identities as well as all edited owners. */

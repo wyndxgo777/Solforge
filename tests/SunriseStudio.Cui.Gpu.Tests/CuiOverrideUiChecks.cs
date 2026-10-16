@@ -7,6 +7,7 @@ using SunriseStudio.Packages;
 using SunriseStudio.Rendering;
 using SunriseStudio.Viewport;
 
+/** Checks the CUI override panel: new-property drafts persist across same-selection frames and per-profile selection, and read-only drawing changes nothing. */
 internal static class CuiOverrideUiChecks
 {
     private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;

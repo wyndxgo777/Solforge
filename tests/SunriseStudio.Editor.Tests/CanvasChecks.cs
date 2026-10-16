@@ -5,8 +5,10 @@ using SunriseStudio.Editor;
 using SunriseStudio.Missions;
 using SunriseStudio.Viewport;
 
+/** Checks the mission graph canvas: layout recovery from damaged saved layouts, node dragging and position bookkeeping. */
 internal static class CanvasChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static unsafe void Run(string root)
     {
         var layout = new MissionLayoutStore(Path.Combine(root, "graph-layouts"));

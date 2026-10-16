@@ -8,6 +8,7 @@ using SunriseStudio.Viewport;
 /** Workspace edits move the open world in place, and the result matches a full reload of the same state. */
 internal static class PlacementUpdateWorkflowChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(string root)
     {
         string install = Path.Combine(root, "placement-workflow-install");

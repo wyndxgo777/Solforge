@@ -4,6 +4,7 @@ using SunriseStudio.Formats;
 using SunriseStudio.Packages;
 using SunriseStudio.Projects;
 
+/** Checks item socket and plug pools: embedded templates keep item indices, adding a plug twice does not grow the pool, and sockets stay independent. */
 internal static class InvestmentSocketChecks
 {
     /** Shared member lists must separate without moving their condition streams. */

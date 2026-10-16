@@ -7,8 +7,10 @@ using SunriseStudio.Packages;
 using SunriseStudio.Scene;
 using Vortice.D3DCompiler;
 
+/** Checks the world scene exporter: content-identical geometry is shared, material variants and markers survive, and unsupported entries are counted. */
 internal static class WorldSceneChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(string parent, string? keep = null)
     {
         string root = Path.Combine(parent, "world-export-checks"), install = Path.Combine(root, "game");

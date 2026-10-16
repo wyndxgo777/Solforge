@@ -6,6 +6,7 @@ using SunriseStudio.Animation;
 using SunriseStudio.Interchange;
 using SunriseStudio.Packages;
 
+/** Checks glTF skin lane merging and canonical zero padding so exported and re-imported skins match the native baseline. */
 internal static class BundleSkinChecks
 {
     private static readonly MethodInfo Merge = typeof(AssetBundle).Assembly.GetType("SunriseStudio.Interchange.BundleSceneWriter")!

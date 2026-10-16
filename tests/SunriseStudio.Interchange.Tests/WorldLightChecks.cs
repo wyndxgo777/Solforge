@@ -16,6 +16,7 @@ internal static class WorldLightChecks
 {
     private const float Range = 10;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(string parent, string? keep = null)
     {
         string root = Path.Combine(parent, "world-light-checks"), game = Path.Combine(root, "game");

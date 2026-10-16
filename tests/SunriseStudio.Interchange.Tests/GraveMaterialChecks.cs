@@ -3,6 +3,7 @@ using SunriseStudio.Packages;
 using SunriseStudio.Rendering;
 using System.Numerics;
 
+/** Checks that installed Grave materials keep their shader outputs and sampler address modes when interpreted. */
 internal static class GraveMaterialChecks
 {
     /** Native remaps must survive expression export instead of becoming direct mask channels. */

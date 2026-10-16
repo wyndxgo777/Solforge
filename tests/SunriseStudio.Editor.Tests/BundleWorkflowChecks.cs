@@ -3,6 +3,7 @@ using SunriseStudio.Editor;
 using SunriseStudio.Interchange;
 using SunriseStudio.Packages;
 
+/** Checks the bundle export and import workflow in the editor: results are published, and an unchanged import changes nothing while a delta is one undoable edit. */
 internal static class BundleWorkflowChecks
 {
     /** Bundle imports preserve undo for originals and publish derived roots through the overlay. */

@@ -6,6 +6,7 @@ using SunriseStudio.Packages;
 using SunriseStudio.Rendering;
 using System.Buffers.Binary;
 
+/** Console entry for the GPU CUI tests; flags select the game root, output folder and the audit or inspection modes. */
 internal static class Program
 {
     [STAThread]

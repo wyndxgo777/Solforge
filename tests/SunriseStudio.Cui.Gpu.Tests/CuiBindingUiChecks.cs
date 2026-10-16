@@ -2,6 +2,7 @@
 using SunriseStudio.Editor;
 using SunriseStudio.Formats;
 
+/** GPU-backed UI check that CUI bindings place and hide frames (label, ready source) as the authored input state demands. */
 internal static class CuiBindingUiChecks
 {
     /** The waiting-HUD label hides through its native NOT binding when the ready input is true. */

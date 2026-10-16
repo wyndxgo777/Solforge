@@ -1,8 +1,10 @@
 using SunriseStudio.Packages;
 using SunriseStudio.Formats;
 
+/** Diagnostic tool that lists installed font and ui_global tags and their style entries for manual inspection. */
 internal static class CuiFontInspection
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string root)
     {
         using var catalog = PackageCatalog.Open(root, cacheOptions: new() { Enabled = false });

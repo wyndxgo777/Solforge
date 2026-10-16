@@ -4,6 +4,7 @@ using System.Text;
 /** An original triangular A glyph exercises added fonts without copying a package font. */
 internal static class OwnedFontFixture
 {
+    /** Builds a minimal TrueType font with one triangular glyph, optionally with a kerning pair. */
     public static byte[] Create(bool kerning = false)
     {
         Dictionary<string, byte[]> tables = [];
@@ -56,6 +57,7 @@ internal static class OwnedFontFixture
         return output;
     }
 
+    /** Returns the offset of the named table in the font. */
     public static int Table(byte[] font, string tag)
     {
         int count = BinaryPrimitives.ReadUInt16BigEndian(font.AsSpan(4));
@@ -66,6 +68,7 @@ internal static class OwnedFontFixture
         }
         throw new Exception("Fixture font table is missing.");
     }
+    /** Recomputes table and head checksums after the font was edited. */
     public static void RepairChecksums(byte[] font)
     {
         int head = Table(font, "head"); U(font, head + 8, 0);

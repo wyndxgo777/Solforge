@@ -10,6 +10,7 @@ internal static class CollisionAddWorkflowChecks
 {
     private const uint Compound = 0x80EDC2D0, Owner = 0x80EDC2D1;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(string gameRoot, string root)
     {
         using var workspace = new StudioWorkspace { CacheOptions = new() { Enabled = false } };
