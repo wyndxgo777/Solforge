@@ -100,12 +100,14 @@ Expect(compiled.Target == "0x80AB1234" && compiled.Constants.Count == 1 && compi
 Expect(compiled.Textures.Single() is { Slot: 1, Texture: "0x80001111" }, "texture slot write");
 Expect(Near(compiled.Preview.BaseColor[0], 1) && Near(compiled.Preview.BaseColor[1], 0), "preview base colour");
 Expect(compiled.Parameters.Single().Name == "Tint", "parameter list");
+var beforeClash = red.Nodes.Select(node => node.Id).ToHashSet();
 var clash = redEditor.AddNode(NodeLibrary.SetConstant, 400, 150, new Dictionary<string, string> { ["vector"] = "3", ["mask"] = "x" });
 redEditor.Connect(half.Id, "value", clash.Id, "value");
 Expect(GraphValidation.HasErrors(MaterialGraphCompiler.Compile(red).Diagnostics), "overlapping constant writes are errors");
 
 // Function collapse and expand keep the result.
-redEditor.Remove([clash.Id]);
+// The clash link may insert a converter node; remove everything the clash added.
+redEditor.Remove(red.Nodes.Select(node => node.Id).Where(id => !beforeClash.Contains(id)).ToList());
 redEditor.Selection.Clear(); redEditor.Selection.UnionWith([half.Id, scaled.Id]);
 var function = redEditor.CollapseToFunction("Darken");
 Expect(red.Functions.Count == 1 && function.Inputs.Count == 1 && function.Outputs.Count == 1, "collapse makes a function with one input and output");
