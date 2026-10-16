@@ -106,6 +106,7 @@ public sealed partial class StudioForm
                 PickFolder("Build output", folder => workspace.Build(folder));
             ImGui.Separator();
             if (ImGui.MenuItem("Mod details...", "", false, workspace.CanEdit)) workspace.Run(OpenModDialog);
+            DrawPackagingMenuItems();
             ImGui.EndMenu();
         }
         if (ImGui.BeginMenu("View"))
@@ -131,6 +132,7 @@ public sealed partial class StudioForm
         DrawWindowMenu();
         if (ImGui.BeginMenu("Help"))
         {
+            DrawHelpMenuItems();
             if (ImGui.MenuItem("Third-party notices")) noticesDialog = true;
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("Licenses of the libraries and code Studio includes");
             // About: Solforge is a fork; the upstream author keeps the credit.
@@ -274,7 +276,8 @@ public sealed partial class StudioForm
         if (shortcutsDialog) { ImGui.OpenPopup("Shortcuts"); shortcutsDialog = false; }
         if (noticesDialog) { ImGui.OpenPopup("Third-party notices"); noticesDialog = false; }
         DrawLocationDialog(); DrawProjectDialog(); DrawAddDialog(); DrawCacheDialog(); DrawBundleDialogs(); DrawModDialog();
-        DrawShortcutsDialog(); DrawNoticesDialog(); DrawPreferences(); DrawDataExplorer();
+        DrawShortcutsDialog(); DrawNoticesDialog(); DrawHelpDialog(); DrawPreferences(); DrawDataExplorer();
+        DrawContentEditors();
         DrawCreation();
     }
 

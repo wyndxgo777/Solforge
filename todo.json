@@ -229,18 +229,20 @@
     {
       "id": "36",
       "title": "Activity, Strike & Raid Director",
-      "status": "upstream_partial",
-      "notes": "Investment/vendor editors only; no encounter director"
+      "status": "partial",
+      "notes": "Solforge.Content activity documents (content/activity): type, destination, map/mission tags, fireteam caps, objective graph with reachability and completion checks, encounters, rewards (loot pools + items); Window > Content editors + MCP content tools. No server reader yet (exports to sol_content.lua)."
     },
     {
       "id": "37",
       "title": "Combatant, AI & Encounter Builder",
-      "status": "todo"
+      "status": "partial",
+      "notes": "Solforge.Content enemy documents: race, rank incl. champions, base tag, health/shields/resistances, abilities, loot pool cross-reference; authoring only until the server reads sol_content.lua."
     },
     {
       "id": "38",
       "title": "Seasonal Artifact & Progression Studio",
-      "status": "todo"
+      "status": "partial",
+      "notes": "Solforge.Content artifact documents: columns with unlock thresholds and perks (plug hash, sandbox perks); authoring only."
     },
     {
       "id": "39",
@@ -260,13 +262,14 @@
     {
       "id": "42",
       "title": "Mod Container Packaging (`.solmod`)",
-      "status": "todo"
+      "status": "partial",
+      "notes": "Solforge.Content.Packaging.SolmodContainer: Pack (solmod.json manifest, per-file size + SHA-256, profile, deps), ReadManifest, Verify, Extract with path checks; Build > Pack .solmod... No signing yet."
     },
     {
       "id": "43",
       "title": "Install, Backup & Rollback Manager",
-      "status": "upstream_partial",
-      "notes": "Projects ModInstaller (mods under bin/x64/Sunrise/mods); no rollback snapshots"
+      "status": "partial",
+      "notes": "InstallSnapshots: every Build and install snapshots the previous mods/<id> to <project>/.solforge/snapshots (keeps 5); Build > Restore install snapshot (restore snapshots the current copy first)."
     },
     {
       "id": "44",
@@ -294,7 +297,7 @@
       "id": "47B",
       "title": "AI CLI Vibecoding Integration (Cline, Claude Code, Antigravity)",
       "status": "partial",
-      "notes": "AI editor area (StudioPanelKind.AI, Window > AI workspace, Ctrl+Shift+A in Sunrise/Unreal presets): ConPTY terminal (Ai/ConPtyTerminal + VtScreen + TerminalView), engine picker claude/cline/agy/custom via cmd /k at the project folder, Context panel (hovered, selected, camera+zone, open file, pinned, attention log; Pin, Send screenshot, Publish toggle), approval queue + AI edits with Undo. src/Solforge.Mcp: TcpListener streamable HTTP on 127.0.0.1 random port, bearer token, Mcp-Session-Id, SSE GET keep-alive, discovery %LOCALAPPDATA%/Solforge/mcp/server-<pid>.json; src/Solforge.Mcp.Shim = solforge-mcp.exe (publish.ps1). Configs: <project>/.mcp.json, ~/.cline/data/settings/cline_mcp_settings.json (+ VS Code Cline if installed), ~/.gemini/antigravity/mcp_config.json (Antigravity desktop), ~/.gemini/config/mcp_config.json (agy CLI). 11 read tools + 5 approve-gated. Checks: tests/SunriseStudio.Mcp.Tests (verify.ps1). Not built or run yet. Left: build + fix, live acceptance test (static mesh 7489 in Claude Code), apply_project_edit into Project changes proper (now AI-edits list), terminal glyph coverage (box drawing), AI pop-out window keyboard input, confirm Cline CLI and Antigravity config paths Main session 2026-10-15: build + verify.ps1 green on master (stdio check hang fixed); left: live acceptance test in Solforge with Claude Code. 2026-10-15 later: EngineCommands (fresh PATH + PATHEXT, install card), EngineLaunch (Claude Code --mcp-config, --settings UserPromptSubmit hook -> solforge-mcp --context, --append-system-prompt, --add-dir), get_open_documents, Context dropdown + narrow header, terminal glyph ranges + wide cells; verify green. 2026-10-15: agy CLI reads ~/.gemini/config/mcp_config.json (confirmed via agy mcp add); Solforge now writes it (empty installer file merges as {}) and launches agy with --add-dir. Open: duplicate solforge server name (--mcp-config vs project .mcp.json), Cline gets no --add-dir (no such flag). 2026-10-15 Claude-Forge (8598b44): render toggle, Settings window, AI header row + context chip, foldable side panels + Solforge (AI) preset + per-project layouts, 32 more MCP tools (54 total: catalog reads without a map, find_world_objects, get_placement, items/vendors/creation, approve-gated open_map/edit_placement/edit_bounds/item+vendor edits/start_creation/replace_texture_pixels/build_project), solforge-* skills synced to ~/.claude/skills, .solforge/SESSION.md + AGENTS.md block. Build + Mcp/Shortcuts/Editor/Viewport/Creation/Architecture checks green; not tried live. Follow-ups: CUI widget edit tools, CUI animation keys."
+      "notes": "AI editor area (StudioPanelKind.AI, Window > AI workspace, Ctrl+Shift+A in Sunrise/Unreal presets): ConPTY terminal (Ai/ConPtyTerminal + VtScreen + TerminalView), engine picker claude/cline/agy/custom via cmd /k at the project folder, Context panel (hovered, selected, camera+zone, open file, pinned, attention log; Pin, Send screenshot, Publish toggle), approval queue + AI edits with Undo. src/Solforge.Mcp: TcpListener streamable HTTP on 127.0.0.1 random port, bearer token, Mcp-Session-Id, SSE GET keep-alive, discovery %LOCALAPPDATA%/Solforge/mcp/server-<pid>.json; src/Solforge.Mcp.Shim = solforge-mcp.exe (publish.ps1). Configs: <project>/.mcp.json, ~/.cline/data/settings/cline_mcp_settings.json (+ VS Code Cline if installed), ~/.gemini/antigravity/mcp_config.json (Antigravity desktop), ~/.gemini/config/mcp_config.json (agy CLI). 11 read tools + 5 approve-gated. Checks: tests/SunriseStudio.Mcp.Tests (verify.ps1). Not built or run yet. Left: build + fix, live acceptance test (static mesh 7489 in Claude Code), apply_project_edit into Project changes proper (now AI-edits list), terminal glyph coverage (box drawing), AI pop-out window keyboard input, confirm Cline CLI and Antigravity config paths Main session 2026-10-15: build + verify.ps1 green on master (stdio check hang fixed); left: live acceptance test in Solforge with Claude Code. 2026-10-15 later: EngineCommands (fresh PATH + PATHEXT, install card), EngineLaunch (Claude Code --mcp-config, --settings UserPromptSubmit hook -> solforge-mcp --context, --append-system-prompt, --add-dir), get_open_documents, Context dropdown + narrow header, terminal glyph ranges + wide cells; verify green. 2026-10-15: agy CLI reads ~/.gemini/config/mcp_config.json (confirmed via agy mcp add); Solforge now writes it (empty installer file merges as {}) and launches agy with --add-dir. Open: duplicate solforge server name (--mcp-config vs project .mcp.json), Cline gets no --add-dir (no such flag). 2026-10-15 Claude-Forge (8598b44): render toggle, Settings window, AI header row + context chip, foldable side panels + Solforge (AI) preset + per-project layouts, 32 more MCP tools (54 total: catalog reads without a map, find_world_objects, get_placement, items/vendors/creation, approve-gated open_map/edit_placement/edit_bounds/item+vendor edits/start_creation/replace_texture_pixels/build_project), solforge-* skills synced to ~/.claude/skills, .solforge/SESSION.md + AGENTS.md block. Build + Mcp/Shortcuts/Editor/Viewport/Creation/Architecture checks green; not tried live. Follow-ups: CUI widget edit tools, CUI animation keys. Content tools (list_content_families, list_content, get_content, validate_content, get_subclass_layout, check_subclass_build, create_content, update_content, delete_content, export_content) and get_help."
     },
     {
       "id": "48",
@@ -304,7 +307,8 @@
     {
       "id": "49",
       "title": "Documentation, Starter Templates & Creator Manual",
-      "status": "todo"
+      "status": "partial",
+      "notes": "Help > Keybinds & Tips (F1 in every preset): searchable keybinds generated from ShortcutActions + the live map, grouped by area, plus a Tips page (workflow, performance, MCP setup); get_help MCP tool. Creator manual and starter templates still to do."
     },
     {
       "id": "50",

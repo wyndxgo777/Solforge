@@ -35,6 +35,7 @@ public static class ShortcutActions
     public const string OpenAiWorkspace = "menu.open_ai_workspace";
     public const string ToggleViewportRendering = "menu.toggle_viewport_rendering";
     public const string OpenSettings = "menu.open_settings";
+    public const string OpenHelp = "menu.open_help";
 
     public const string Pan2D = "2d.pan";
     public const string Zoom2D = "2d.zoom";
@@ -91,6 +92,7 @@ public static class ShortcutActions
         new(OpenAiWorkspace, "Open the AI workspace", ShortcutSection.Menus, KeyOnly),
         new(ToggleViewportRendering, "Turn 3D viewport rendering on or off", ShortcutSection.Menus, KeyOnly),
         new(OpenSettings, "Open Settings", ShortcutSection.Menus, KeyOnly),
+        new(OpenHelp, "Open Help: keybinds and tips", ShortcutSection.Menus, KeyOnly),
 
         new(Pan2D, "Pan", ShortcutSection.View2D, DragOnly),
         new(Zoom2D, "Zoom", ShortcutSection.View2D, WheelOrDrag),
@@ -195,6 +197,7 @@ public static class ShortcutPresets
         (ShortcutActions.OpenAiWorkspace, "Ctrl+Shift+A"),
         (ShortcutActions.ToggleViewportRendering, "Ctrl+Shift+R"),
         (ShortcutActions.OpenSettings, "Ctrl+,"),
+        (ShortcutActions.OpenHelp, "F1"),
         (ShortcutActions.Pan2D, "Middle drag or Right drag"),
         (ShortcutActions.Zoom2D, "Wheel"),
         (ShortcutActions.FrameSelection2D, "F or Numpad ."),
@@ -244,6 +247,7 @@ public static class ShortcutPresets
         (ShortcutActions.OpenAiWorkspace, ""),
         (ShortcutActions.ToggleViewportRendering, ""),
         (ShortcutActions.OpenSettings, ""),
+        (ShortcutActions.OpenHelp, "F1"),
         (ShortcutActions.Pan2D, "Middle drag"),
         (ShortcutActions.Zoom2D, "Wheel or Ctrl+Middle drag"),
         (ShortcutActions.FrameSelection2D, "Numpad ."),
@@ -293,6 +297,7 @@ public static class ShortcutPresets
         (ShortcutActions.OpenAiWorkspace, ""),
         (ShortcutActions.ToggleViewportRendering, ""),
         (ShortcutActions.OpenSettings, ""),
+        (ShortcutActions.OpenHelp, "F1"),
         (ShortcutActions.Pan2D, "Middle drag"),
         (ShortcutActions.Zoom2D, "Wheel"),
         (ShortcutActions.FrameSelection2D, "F"),
@@ -342,6 +347,7 @@ public static class ShortcutPresets
         (ShortcutActions.OpenAiWorkspace, ""),
         (ShortcutActions.ToggleViewportRendering, ""),
         (ShortcutActions.OpenSettings, ""),
+        (ShortcutActions.OpenHelp, "F1"),
         (ShortcutActions.Pan2D, "Alt+Middle drag"),
         (ShortcutActions.Zoom2D, "Alt+Right drag or Wheel"),
         (ShortcutActions.FrameSelection2D, "F"),
@@ -391,6 +397,7 @@ public static class ShortcutPresets
         (ShortcutActions.OpenAiWorkspace, "Ctrl+Shift+A"),
         (ShortcutActions.ToggleViewportRendering, "Ctrl+Shift+R"),
         (ShortcutActions.OpenSettings, "Ctrl+,"),
+        (ShortcutActions.OpenHelp, "F1"),
         (ShortcutActions.Pan2D, "Right drag"),
         (ShortcutActions.Zoom2D, "Wheel"),
         (ShortcutActions.FrameSelection2D, ""),

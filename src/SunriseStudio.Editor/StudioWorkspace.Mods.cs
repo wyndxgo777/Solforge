@@ -46,6 +46,7 @@ public sealed partial class StudioWorkspace
         var catalog = Catalog!;
         BeginWork("Installing mod", () =>
         {
+            SnapshotInstalledMod(project, catalog.GameRoot);
             var result = ModInstaller.BuildAndInstall(project, catalog, MissionProject.ModScripts(project), ReportProgress);
             return () =>
             {

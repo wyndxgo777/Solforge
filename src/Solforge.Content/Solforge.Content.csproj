@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Solforge.Content (Studio.md §3.6, Phases 35-38): structured content families (subclasses, abilities,
+       damage types, loot pools, enemies, activities, seasonal artifact) stored as JSON in the project,
+       validated, and exported to the files the Sol server reads. Plain net9.0 with no Windows, ImGui or
+       game-package dependencies, so the MCP tools, the editor and the checks all share it. -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <RootNamespace>Solforge.Content</RootNamespace>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
+  </PropertyGroup>
+</Project>
