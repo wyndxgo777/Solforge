@@ -315,7 +315,7 @@ async Task StdioRoundTrip()
             Expect(noTag["isError"]?.GetValue<bool>() == true && host.Queries.Count == assetQueries, name + " checks its tag first");
         }
         var clip = await Call(62, "tools/call", new JsonObject { ["name"] = "get_animation", ["arguments"] = new JsonObject { ["tag"] = "0x80800001" } });
-        Expect(clip["isError"]?.GetValue<bool>() == true && clip["content"]![0]!["text"]!.ToString().Contains("not an animation", StringComparison.Ordinal),
+        Expect(clip["isError"]?.GetValue<bool>() == true && clip["content"]![0]!["text"]!.ToString().Contains("neither an animation", StringComparison.Ordinal),
             "get_animation host errors are tool errors");
         foreach (string name in new[] { "list_shaders", "list_animations", "list_audio" })
         {

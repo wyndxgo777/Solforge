@@ -92,9 +92,9 @@ static class ClassChecks
         var derived = classes.Search("Derived").First();
         var baseClass = classes.Search("game::Base").First();
         Expect(classes.DerivedFrom(baseClass).Single() == derived && derived.Constructors.SequenceEqual([0x100300u]), "derived classes and constructors");
-        Expect(derived.Fields.Select(f => f.Offset).SequenceEqual([0, 0x28, 0x30]) && derived.Fields[1].Type == "longlong", "derived fields: " + string.Join(";", derived.Fields));
+        Expect(derived.Fields.Select(f => f.Offset).SequenceEqual([0, 0x28, 0x30]) && derived.Fields[1].Type == "longlong", "derived fields: " + string.Join(";", derived.Fields.Select(field => field.ToString())));
         Expect(baseClass.Fields is [{ Offset: 0x10, Type: "int", Uses: 2 }, { Offset: 0x20, Type: "float" }] && baseClass.TagClasses.SequenceEqual([0x80809FBDu]),
-            "base fields and tag classes: " + string.Join(";", baseClass.Fields));
+            "base fields and tag classes: " + string.Join(";", baseClass.Fields.Select(field => field.ToString())));
 
         var reloaded = DecompIndex.Load(root, cache).Classes!;
         Expect(reloaded.Classes.Count == 4 && reloaded.Search("Derived").First().Fields.Length == 3 && reloaded.Virtuals[0x100010].Name == "game::Base::vf0"
