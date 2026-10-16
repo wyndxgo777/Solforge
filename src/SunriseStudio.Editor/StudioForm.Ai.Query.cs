@@ -51,6 +51,7 @@ public sealed partial class StudioForm
                 "get_placement" => await OnUi(() => AiPlacement(McpJson.String(args, "id") ?? "")).WaitAsync(cancel),
                 "search_items" or "get_item" or "search_perks" or "list_vendors" or "get_vendor" => await AiInvestmentAsync(tool, args, cancel),
                 "list_creation_types" => AiCreationTypes(McpJson.String(args, "filter")),
+                "get_help" => await OnUi(() => AiHelp(args)).WaitAsync(cancel),
                 "describe_creation" => await OnUi(() => AiDescribeCreation(McpJson.String(args, "key") ?? "", McpJson.String(args, "mode") ?? "")).WaitAsync(cancel),
                 _ => AiError("Unknown tool.")
             };

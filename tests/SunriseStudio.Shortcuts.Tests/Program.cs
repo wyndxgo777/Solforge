@@ -24,12 +24,32 @@ try
     checks.Add("shortcuts save with the local preferences, and a damaged section keeps the other preferences");
     BindingText();
     checks.Add("every key and gesture round trips through its text form; malformed text is refused");
+    HelpPage();
+    checks.Add("Help > Keybinds & Tips lists every action in a known area with the map's keys, F1 opens it in every preset, and search filters");
     ShortcutInputChecks.Run();
     checks.Add("inactive and captured input is suppressed; mission save needs no project; follow mode keeps its camera");
     foreach (string check in checks) Console.WriteLine("PASS " + check);
     Console.WriteLine($"PASS checks={checks.Count}");
 }
 catch (Exception error) { Console.Error.WriteLine(error); Environment.ExitCode = 1; }
+
+static void HelpPage()
+{
+    foreach (var preset in ShortcutPresets.All)
+    {
+        var map = new ShortcutMap();
+        map.UsePreset(preset.Name);
+        var keys = HelpCatalog.Keys(map);
+        Require(keys.Count(key => key.Rebindable) == ShortcutActions.All.Count, $"{preset.Name}: Help misses actions.");
+        Require(keys.All(key => HelpCatalog.Areas.Contains(key.Area)), $"{preset.Name}: an action has no Help area.");
+        Require(keys.Single(key => key.Id == OpenHelp).Keys.Contains("F1", StringComparison.Ordinal), $"{preset.Name}: F1 does not open Help.");
+    }
+    var sunrise = new ShortcutMap();
+    Require(HelpCatalog.Search(sunrise, "help").Any(key => key.Id == OpenHelp), "Search does not find the Help action.");
+    Require(HelpCatalog.Search(sunrise, null, HelpCatalog.Viewport).All(key => key.Area == HelpCatalog.Viewport), "The area filter leaks.");
+    Require(HelpCatalog.AreaOf(ShortcutActions.All.Single(action => action.Id == OpenAiWorkspace)) == HelpCatalog.Ai, "AI workspace is not in AI / MCP.");
+    Require(HelpCatalog.SearchTips("mcp").Count >= 3 && HelpCatalog.Tips.All(tip => tip.Text.Length > 0), "Tips are missing MCP setup.");
+}
 
 static void PresetCoverage()
 {
