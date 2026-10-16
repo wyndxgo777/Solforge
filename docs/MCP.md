@@ -67,6 +67,7 @@ Solforge captures the 3D viewport continuously while someone watches: a frame to
 - `get_viewport_frame`: the latest frame, at once. `since=<id>` returns text only if nothing is newer.
 - `get_viewport_frames`: frames since an id.
 - `wait_for_viewport_change`: blocks until the view changes, up to the timeout.
+- `read_screen_text`: the text on screen via Windows OCR (`Windows.Media.Ocr`, built into Windows, CPU only): lines with `[x, y, w, h]` boxes in image pixels; `region`, `contains`, `words`, `source=screenshot` for full size. `get_viewport_frame` and `wait_for_viewport_change` take `ocr: true` to add the same text to a frame.
 - `get_viewport_stream`: a local URL, `http://127.0.0.1:<port>/viewport?key=<view key>`, for an MJPEG stream on this PC. The view key is not the MCP token.
 - `set_viewport_stream` (approval): pushes frames out to the relay, so viewers can watch at `https://relay.example.invalid/stream/<name>?k=<key>`.
   - It is off by default. Seth can also turn it on with View > Stream to phone, which shows the link as a QR code.

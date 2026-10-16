@@ -41,6 +41,7 @@ try
     UiControlChecks();
     checks.Add("ui controls: exact ids, label queries ranked (label, prefix, words, scope), kind/window filters, ties refused with the candidates, operations per kind, approve summaries");
     ViewportFeedChecks();
+    checks.Add(await ScreenOcrChecks());
     PlayerSourceChecks();
     checks.Add("player sources: recorder lines (cam over a frozen or stale pos, menus and marks skipped, newest line decides), server /coop rows, yaw and facing, trail spacing, cap and teleport reset; get_player_position and wait_for_player_near reach, time out and refuse a bad target");
     checks.Add("viewport feed: luminance grid, unchanged captures add no frame and skip encoding, change text says how much and where, ids, since, ring capacity, wait_for_change wakes and times out");
@@ -247,7 +248,7 @@ async Task StdioRoundTrip()
             "list_content_families", "list_content", "get_content", "validate_content", "get_subclass_layout", "check_subclass_build", "get_help",
             "create_content", "update_content", "delete_content", "export_content",
             "list_ui_controls", "ui_invoke", "ui_set_value", "ui_set_checked", "ui_select",
-            "get_viewport_frame", "get_viewport_frames", "wait_for_viewport_change", "get_viewport_stream", "set_viewport_stream",
+            "get_viewport_frame", "get_viewport_frames", "wait_for_viewport_change", "read_screen_text", "get_viewport_stream", "set_viewport_stream",
             "get_player_position", "wait_for_player_near",
             "list_graph_node_types", "list_graphs", "get_graph", "compile_graph", "create_graph", "edit_graph", "apply_graph"];
 
@@ -475,6 +476,52 @@ static void UiControlChecks()
         && UiControls.Allows("combo", UiOperation.Select) && UiControls.Allows("text", UiOperation.SetValue), "operations per kind");
     Expect(UiControls.Summary(controls[2], UiOperation.SetChecked, null, false) == "Turn off 'Grid' in Viewport", "summary");
     Expect(UiControls.ToJson(controls[3])["options"]?.AsArray().Count == 2 && UiControls.ToJson(controls[3])["name"]?.ToString() == "##follow", "json row");
+}
+
+// Screen OCR: request lines, reply parsing, summaries and region rules run anywhere; the live part reads a fixture with
+// Windows.Media.Ocr on the CPU (Windows only; skipped elsewhere or when no OCR language is installed).
+static async Task<string> ScreenOcrChecks()
+{
+    string script = ScreenOcr.ScriptText();
+    Expect(script.Contains("Windows.Media.Ocr") && script.Contains("$Serve"), "ocr script embedded");
+    Expect(ScreenOcr.ParseRegion(null, out string? none) is null && none is null, "no region");
+    Expect(ScreenOcr.ParseRegion(JsonNode.Parse("[10, 20.4, 300, 40]"), out _) is [10, 20, 300, 40], "array region");
+    Expect(ScreenOcr.ParseRegion(JsonValue.Create("5, 6 7,8"), out _) is [5, 6, 7, 8], "string region");
+    foreach (var bad in new[] { "[1, 2, 3]", "[0, 0, 0, 5]", "[-1, 0, 5, 5]", "[1, \"x\", 5, 5]", "\"a,b,c,d\"" }.Select(json => JsonNode.Parse(json)!))
+        Expect(ScreenOcr.ParseRegion(bad, out string? error) is null && error is not null, "bad region " + bad.ToJsonString());
+    var request = JsonNode.Parse(ScreenOcr.Request("frame.png", [1, 2, 3, 4], 50, " en-US "))!.AsObject();
+    Expect(Path.IsPathRooted(request["path"]!.ToString()) && request["region"]!.AsArray().Count == 4 && request["scale"]!.GetValue<double>() == 8
+        && request["lang"]!.ToString() == "en-US", "ocr request " + request.ToJsonString());
+    Expect(JsonNode.Parse(ScreenOcr.Request("f.png", null, 0, null))!.AsObject().Count == 1, "minimal ocr request");
+    Expect(!ScreenOcr.Ok(ScreenOcr.Parse("WARNING: something")) && !ScreenOcr.Ok(ScreenOcr.Parse("{\"ok\":false,\"error\":\"x\"}")), "ocr failures");
+    var reply = ScreenOcr.Parse("{\"ok\":true,\"width\":640,\"height\":160,\"region\":[0,0,640,160],\"scale\":2,\"lang\":\"en-US\",\"text\":\"QUESTS Launch now\"," +
+        "\"lines\":[{\"text\":\"QUESTS\",\"box\":[29,38,81,18],\"words\":[{\"text\":\"QUESTS\",\"box\":[29,38,81,18]}]}," +
+        "{\"text\":\"Launch now\",\"box\":[28,106,148,14],\"words\":[{\"text\":\"Launch\",\"box\":[28,106,60,14]},{\"text\":\"now\",\"box\":[96,106,40,14]}]}]}");
+    var all = ScreenOcr.Summarize(reply, false, null);
+    Expect(all["lineCount"]!.GetValue<int>() == 2 && all["lines"]![0]!["words"] is null && all["text"]!.ToString() == "QUESTS Launch now", "ocr summary");
+    var launch = ScreenOcr.Summarize(reply, true, "launch");
+    Expect(launch["lineCount"]!.GetValue<int>() == 1 && launch["lines"]![0]!["words"]!.AsArray().Count == 2 && launch["text"]!.ToString() == "Launch now",
+        "ocr contains filter");
+    Expect(ScreenOcr.Summarize(ScreenOcr.Failure("nope"), true, null)["ok"]!.GetValue<bool>() == false, "ocr failure summary");
+
+    string fixture = Path.Combine(AppContext.BaseDirectory, "ocr-sample.png");
+    if (!ScreenOcr.Available || !File.Exists(fixture)) return "screen OCR: region and request rules, reply summaries and filters (live OCR skipped: not Windows or no fixture)";
+    using var ocr = new ScreenOcr();
+    var full = await ocr.ReadFileAsync(fixture, null, 0, null, CancellationToken.None);
+    if (!ScreenOcr.Ok(full) && (full["error"]?.ToString() ?? "").Contains("No Windows OCR language"))
+        return "screen OCR: region and request rules, reply summaries and filters (live OCR skipped: no OCR language installed)";
+    string text = full["text"]?.ToString() ?? "";
+    Expect(ScreenOcr.Ok(full) && text.Contains("QUESTS") && text.Contains("DESTINATIONS") && text.Contains("Invite Friends"), "live ocr text: " + full.ToJsonString());
+    var quests = full["lines"]!.AsArray().First(line => line!["text"]!.ToString() == "QUESTS")!["box"]!.AsArray();
+    Expect(Math.Abs(quests[0]!.GetValue<double>() - 29) < 6 && Math.Abs(quests[1]!.GetValue<double>() - 38) < 6, "live ocr box " + quests.ToJsonString());
+    var right = await ocr.ReadFileAsync(fixture, [300, 0, 340, 80], 0, null, CancellationToken.None);
+    var rightLines = right["lines"]!.AsArray();
+    Expect(ScreenOcr.Ok(right) && rightLines.Count == 1 && rightLines[0]!["text"]!.ToString() == "DESTINATIONS"
+        && rightLines[0]!["box"]![0]!.GetValue<double>() > 340, "live ocr region keeps image coordinates: " + right.ToJsonString());
+    var bytes = await ocr.ReadAsync(await File.ReadAllBytesAsync(fixture), null, 0, "en-US", CancellationToken.None);
+    Expect(ScreenOcr.Ok(bytes) && bytes["text"]!.ToString().Contains("1234"), "live ocr from bytes");
+    return "screen OCR: region and request rules, reply summaries and filters; Windows.Media.Ocr reads the fixture's HUD labels with " +
+        "image-pixel boxes, a region reads only its part in full-image coordinates, and one helper process serves several requests";
 }
 
 static void ViewportFeedChecks()
