@@ -1,3 +1,4 @@
+/** File: Preferences window of StudioForm; values are stored in StudioSettings.cs. */
 using System.Numerics;
 using ImGuiNET;
 using SunriseStudio.Viewport;
@@ -14,6 +15,7 @@ public sealed partial class StudioForm
     private string preferencesScripts = "", preferencesBlender = "";
     private bool preferencesSeeded;
 
+    /** Draws the preferences window and its tabs. */
     private void DrawPreferences()
     {
         if (!preferencesOpen) { preferencesSeeded = false; return; }
@@ -39,8 +41,10 @@ public sealed partial class StudioForm
         ImGui.End();
     }
 
+    /** Draws a wrapped disabled-colour note. */
     private static void SettingNote(string text) { ImGui.PushTextWrapPos(); ImGui.TextDisabled(text); ImGui.PopTextWrapPos(); }
 
+    /** Draws the rendering settings. */
     private void DrawRenderingSettings()
     {
         bool render = settings.ViewportRendering;
@@ -71,6 +75,7 @@ public sealed partial class StudioForm
         SettingNote("0 means no cap. Lower caps from the Live link (30/10), Destiny 2 (15/5) and viewport off (30/10) still apply. Applies now.");
     }
 
+    /** Draws the AI settings section. */
     private void DrawAiSettings()
     {
         // Settings > AI (MCP switch, auto-allow) is never driven by the MCP itself.
@@ -79,6 +84,7 @@ public sealed partial class StudioForm
         finally { UiAuto.PopBlocked(); }
     }
 
+    /** Draws the AI settings rows (engines and providers). */
     private void DrawAiSettingsRows()
     {
         ImGui.SetNextItemWidth(220 * scale);
@@ -104,6 +110,7 @@ public sealed partial class StudioForm
         DrawAiFolders();
     }
 
+    /** Draws the path settings (game folder, reference folder and others). */
     private void DrawPathSettings()
     {
         ImGui.TextDisabled("Game install");
@@ -123,6 +130,7 @@ public sealed partial class StudioForm
             "blender.exe, read by the AI playbooks (get_settings). Blank: they look for it themselves.");
     }
 
+    /** Draws one path field with a browse button and a note. */
     private void PathRow(string label, ref string text, Action<string> store, string note)
     {
         ImGui.TextDisabled(label);
@@ -140,6 +148,7 @@ public sealed partial class StudioForm
         ImGui.PopID();
     }
 
+    /** Draws the Live link settings. */
     private void DrawLiveSettings()
     {
         ImGui.TextUnformatted(livePage.IsAttached ? "Attached to a running game." : "Not attached.");
@@ -150,6 +159,7 @@ public sealed partial class StudioForm
         if (UiAuto.Checkbox("Pause rendering while Destiny 2 runs detached", ref pause)) { settings.PauseRenderWhenGameRunning = pause; SaveSettings(); }
     }
 
+    /** Draws the interface settings. */
     private void DrawInterfaceSettings()
     {
         ImGui.TextDisabled("Layout");

@@ -1,3 +1,7 @@
+/**
+ * File: Commands, dialogs and file pickers of StudioForm: menu actions, the project dialog, open/save helpers and
+ * install-safety checks.
+ */
 using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
@@ -264,6 +268,7 @@ public sealed partial class StudioForm
 
     private static readonly string[] LightingNames = ["Studio", "Sky", "Ambient"];
 
+    /** Draws whichever modal dialogs are open. */
     private void DrawDialogs()
     {
         DrawWideHashes();
@@ -282,6 +287,7 @@ public sealed partial class StudioForm
         DrawCreation();
     }
 
+    /** Centers the next modal window with the given width. */
     private void CenterModal(float width)
     {
         ImGui.SetNextWindowPos(new(ClientSize.Width / 2f, ClientSize.Height / 2f),
@@ -328,6 +334,7 @@ public sealed partial class StudioForm
         ImGui.EndPopup();
     }
 
+    /** Draws the new/open project dialog. */
     private void DrawProjectDialog()
     {
         CenterModal(600);
@@ -419,6 +426,7 @@ public sealed partial class StudioForm
         ImGui.EndPopup();
     }
 
+    /** Starts duplicating the selected object. */
     private void BeginDuplicate()
     {
         if (workspace.Document is not { AddedAssetId: null } source) return;
@@ -430,8 +438,10 @@ public sealed partial class StudioForm
         addDialog = true;
     }
 
+    /** Asks for a project file and opens it. */
     private void OpenProjectDialog() => PickFile("Sunrise project|sunrise.project.json", OpenProject);
 
+    /** Opens a project file and loads it into the workspace. */
     private void OpenProject(string path) => workspace.Run(() =>
     {
         if (!ConfirmMissionDraft()) return;
@@ -464,6 +474,7 @@ public sealed partial class StudioForm
         finally { nativeDialog = previous; }
     }
 
+    /** Remembers the open project in the recent-project list. */
     private void RememberProject()
     {
         settings.RememberProject(workspace.Project!.ManifestPath);
@@ -471,6 +482,7 @@ public sealed partial class StudioForm
         Text = $"{workspace.Project.Name} - Solforge";
     }
 
+    /** Shows a folder picker and calls back with the chosen folder. */
     private void PickFolder(string title, Action<string> selected)
     {
         nativeDialog = true;
@@ -482,6 +494,7 @@ public sealed partial class StudioForm
         finally { nativeDialog = false; }
     }
 
+    /** Shows an open-file picker and calls back with the chosen file. */
     private void PickFile(string filter, Action<string> selected)
     {
         nativeDialog = true;
@@ -493,6 +506,7 @@ public sealed partial class StudioForm
         finally { nativeDialog = false; }
     }
 
+    /** Shows a save-file picker and calls back with the chosen path. */
     private void SaveFile(string filter, string name, Action<string> save)
     {
         nativeDialog = true;
@@ -518,6 +532,7 @@ public sealed partial class StudioForm
             throw new IOException("Export to a working folder outside the project.");
     }
 
+    /** Throws when a path is inside the game install (Solforge never writes there). */
     private void EnsureOutsideInstall(string path)
     {
         RejectLinks(path);
@@ -525,6 +540,7 @@ public sealed partial class StudioForm
             throw new IOException("Choose a folder outside the Sunrise installation.");
     }
 
+    /** Throws when the path is a symbolic link or junction. */
     private static void RejectLinks(string path)
     {
         for (string? current = Path.GetFullPath(path); current is not null; current = Path.GetDirectoryName(current))
@@ -533,6 +549,7 @@ public sealed partial class StudioForm
                 throw new IOException("Choose a path without links or junctions.");
     }
 
+    /** Whether a path lies inside a folder. */
     private static bool IsWithin(string path, string folder)
     {
         string full = Path.GetFullPath(path), root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder));
@@ -540,6 +557,7 @@ public sealed partial class StudioForm
             || full.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
     }
 
+    /** Opens a folder in the file explorer. */
     private static void OpenFolder(string path) =>
         Process.Start(new ProcessStartInfo { FileName = Path.GetFullPath(path), UseShellExecute = true });
 }

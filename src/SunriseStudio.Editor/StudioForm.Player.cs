@@ -1,3 +1,7 @@
+/**
+ * File: Live player position handling for the editor; position sources and PlayerFix/PlayerTrail are in
+ * Solforge.Mcp/PlayerTracking.cs.
+ */
 using System.Numerics;
 using System.Text.Json.Nodes;
 using Solforge.Mcp;
@@ -16,6 +20,7 @@ namespace SunriseStudio.Editor;
  */
 public sealed partial class StudioForm
 {
+    /** Breadcrumb trail of recent player positions. */
     private readonly PlayerTrail playerTrail = new();
     private PlayerFix? playerFix;
     private PlayerPlace playerPlace = PlayerPlace.Unknown;
@@ -27,12 +32,15 @@ public sealed partial class StudioForm
     private long playerNextRecorder, playerNextServer, playerWantedUntil;
     private bool playerFollowing;
     private string? playerSwitchedFor;
+    /** HTTP client used for the local position query. */
     private static readonly HttpClient PlayerHttp = new() { Timeout = TimeSpan.FromSeconds(1.5) };
+    /** How old a reading may be before it is ignored. */
     private static readonly TimeSpan PlayerStale = TimeSpan.FromSeconds(5);
 
     /** Matches: the fix belongs on the open map. Known: the fix names its map (else it is drawn on the open map). */
     private sealed record PlayerPlace(bool Matches, bool Known, uint? Map, WorldMissionEntry? Mission)
     {
+        /** The place used when nothing is known. */
         public static readonly PlayerPlace Unknown = new(false, false, null, null);
     }
 
@@ -69,6 +77,7 @@ public sealed partial class StudioForm
         if (viewport.FollowPlayer && fix is not null && !playerPlace.Matches) SwitchToPlayerMap(fix);
     }
 
+    /** Stops following the player in the camera. */
     private void StopFollowingPlayer()
     {
         if (!playerFollowing || viewport is null) return;
@@ -76,8 +85,13 @@ public sealed partial class StudioForm
         if (!livePage.IsAttached) viewport.Camera.PivotFollowed = false;
     }
 
+    /** A fix only if it is recent enough, else null. */
     private static PlayerFix? Fresh(PlayerFix? fix) => fix is not null && DateTimeOffset.UtcNow - fix.Time < PlayerStale ? fix : null;
 
+    /**
+     * The newest player position from the Live link, else the recorder or local server (see the class comment), or
+     * null.
+     */
     private PlayerFix? LivePlayerFix()
     {
         if (!livePage.IsAttached || livePage.Player is not { } at) return null;
@@ -157,6 +171,7 @@ public sealed partial class StudioForm
         return new(on, true, on ? world!.Map.Tag : mission.MapTags[0], mission);
     }
 
+    /** The mission entry the position falls in, or null. */
     private WorldMissionEntry? PlayerMission(PlayerFix fix)
     {
         if (workspace.WorldCatalog?.Missions is not { } missions) return null;

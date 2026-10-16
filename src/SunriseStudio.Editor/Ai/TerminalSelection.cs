@@ -1,3 +1,7 @@
+/**
+ * File: Mouse text selection for the AI terminal (character, word and line modes); drawn and driven by
+ * TerminalView.cs over the VtScreen.cs buffer.
+ */
 using System.Text;
 
 namespace SunriseStudio.Editor.Ai;
@@ -5,6 +9,7 @@ namespace SunriseStudio.Editor.Ai;
 /** A spot in the terminal: a line number (see VtScreen.Pushed) and a column, either a cell or the gap before it. */
 internal readonly record struct TerminalPoint(long Line, int Column) : IComparable<TerminalPoint>
 {
+    /** Orders points by line, then column. */
     public int CompareTo(TerminalPoint other) => Line != other.Line ? Line.CompareTo(other.Line) : Column.CompareTo(other.Column);
     public static bool operator <(TerminalPoint a, TerminalPoint b) => a.CompareTo(b) < 0;
     public static bool operator >(TerminalPoint a, TerminalPoint b) => a.CompareTo(b) > 0;
@@ -12,6 +17,7 @@ internal readonly record struct TerminalPoint(long Line, int Column) : IComparab
     public static bool operator >=(TerminalPoint a, TerminalPoint b) => a.CompareTo(b) >= 0;
 }
 
+/** Selection granularity chosen by click count. */
 internal enum TerminalSelectMode { Character, Word, Line }
 
 /**
@@ -49,13 +55,16 @@ internal sealed class TerminalSelection
         Dragging = true;
     }
 
+    /** Extends the selection to the dragged caret. */
     public void Drag(TerminalPoint caret, TerminalPoint cell)
     {
         if (Dragging) Head = Mode == TerminalSelectMode.Character ? caret : cell;
     }
 
+    /** Ends the drag. */
     public void Release() => Dragging = false;
 
+    /** Clears the selection. */
     public void Clear() { started = false; Dragging = false; }
 
     /** Every line from first to last, whole. */
@@ -113,6 +122,7 @@ internal sealed class TerminalSelection
     /** 0 blank, 1 word, 2 a break character (selected alone). The right half of a wide character counts as a word cell. */
     private static int Kind(char c) => c is ' ' or '\t' ? 0 : c != VtScreen.Continuation && Breaks.Contains(c) ? 2 : 1;
 
+    /** Start column of the word at a column. */
     private static int WordStart(VtCell[]? cells, int column)
     {
         if (cells is not { Length: > 0 }) return column;
@@ -123,6 +133,7 @@ internal sealed class TerminalSelection
         return column;
     }
 
+    /** End column of the word at a column. */
     private static int WordEnd(VtCell[]? cells, int column)
     {
         if (cells is not { Length: > 0 }) return column + 1;
@@ -152,5 +163,6 @@ internal sealed class DoublePress(double window = 1.0)
     /** A first press is waiting for its second. */
     public bool Pending(double now) => now - last <= Window;
 
+    /** Forgets the last press so the next press starts a new sequence. */
     public void Reset() => last = double.NegativeInfinity;
 }

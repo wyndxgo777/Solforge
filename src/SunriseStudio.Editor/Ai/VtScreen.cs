@@ -1,3 +1,7 @@
+/**
+ * File: Terminal screen buffer with a VT/ANSI escape sequence parser (cursor, erase, scroll, SGR colours). Fed by
+ * ConPtyTerminal.cs and drawn by TerminalView.cs.
+ */
 using System.Globalization;
 using System.Text;
 
@@ -25,16 +29,20 @@ internal sealed class VtScreen(int columns, int rows)
     /** Osc also swallows DCS, APC, PM and SOS strings up to their terminator. */
     private enum State { Ground, Escape, Csi, Osc, OscEscape, Charset }
 
+    /** The visible lines. */
     private VtCell[][] lines = Make(columns, rows);
     private VtCell[][]? saved;
     private readonly List<VtCell[]> scrollback = [];
     private State state;
+    /** Parameter text of the escape sequence being parsed. */
     private readonly StringBuilder parameters = new();
     private int top, bottom = rows - 1, savedX, savedY;
     private bool pendingWrap, savedWrap, altScreen;
     private char high;
+    /** Current drawing pen and the saved pen. */
     private VtCell pen = new() { Char = ' ' }, savedPen = new() { Char = ' ' };
 
+    /** Lock object guarding the buffer between the reader and UI threads. */
     public object Gate { get; } = new();
     public int Columns { get; private set; } = columns;
     public int Rows { get; private set; } = rows;
@@ -45,6 +53,7 @@ internal sealed class VtScreen(int columns, int rows)
     public bool ApplicationCursor { get; private set; }
     public long Revision { get; private set; }
     public IReadOnlyList<VtCell[]> Scrollback => scrollback;
+    /** A line of cells by row. */
     public VtCell[] Line(int row) => lines[row];
     /**
      * Lines ever pushed into scrollback. Line numbers that count from the first line ever written stay put while output
@@ -70,6 +79,7 @@ internal sealed class VtScreen(int columns, int rows)
     /** Answers device queries (cursor position) back to the program. */
     public Action<string>? Reply { get; set; }
 
+    /** Creates blank lines. */
     private static VtCell[][] Make(int columns, int rows)
     {
         var made = new VtCell[rows][];
@@ -77,6 +87,7 @@ internal sealed class VtScreen(int columns, int rows)
         return made;
     }
 
+    /** Creates one blank line. */
     private static VtCell[] Blank(int columns, VtCell? fill = null)
     {
         var line = new VtCell[columns];
@@ -84,6 +95,7 @@ internal sealed class VtScreen(int columns, int rows)
         return line;
     }
 
+    /** Resizes the buffer, keeping content where possible. */
     public void Resize(int columns, int rows)
     {
         lock (Gate)
@@ -158,6 +170,7 @@ internal sealed class VtScreen(int columns, int rows)
         }
     }
 
+    /** Feeds output text through the escape parser. */
     public void Feed(ReadOnlySpan<char> text)
     {
         lock (Gate)
@@ -167,6 +180,7 @@ internal sealed class VtScreen(int columns, int rows)
         }
     }
 
+    /** Parser state machine: advances by one character. */
     private void Step(char c)
     {
         switch (state)
@@ -213,6 +227,7 @@ internal sealed class VtScreen(int columns, int rows)
         }
     }
 
+    /** Handles a C0 control character (newline, tab, backspace and so on). */
     private void Control(char c)
     {
         switch (c)
@@ -224,6 +239,7 @@ internal sealed class VtScreen(int columns, int rows)
         }
     }
 
+    /** Writes a printable character at the cursor. */
     private void Print(char c)
     {
         if (char.IsHighSurrogate(c)) { high = c; return; }
@@ -302,6 +318,7 @@ internal sealed class VtScreen(int columns, int rows)
     private static bool Invisible(int code) => code >= 0x300 && CharUnicodeInfo.GetUnicodeCategory(code)
         is UnicodeCategory.NonSpacingMark or UnicodeCategory.EnclosingMark or UnicodeCategory.Format;
 
+    /** Moves down a line, scrolling at the bottom. */
     private void LineFeed()
     {
         pendingWrap = false;
@@ -309,6 +326,7 @@ internal sealed class VtScreen(int columns, int rows)
         else if (CursorY < Rows - 1) CursorY++;
     }
 
+    /** Scrolls the region up, pushing lines to scrollback. */
     private void ScrollUp(int count)
     {
         for (int i = 0; i < count; i++)
@@ -319,6 +337,7 @@ internal sealed class VtScreen(int columns, int rows)
         }
     }
 
+    /** Scrolls the region down. */
     private void ScrollDown(int count)
     {
         for (int i = 0; i < count; i++)
@@ -328,6 +347,7 @@ internal sealed class VtScreen(int columns, int rows)
         }
     }
 
+    /** Adds a line to the scrollback. */
     private void PushScrollback(VtCell[] line)
     {
         scrollback.Add(line);
@@ -335,8 +355,10 @@ internal sealed class VtScreen(int columns, int rows)
         if (scrollback.Count > ScrollbackLimit) scrollback.RemoveRange(0, scrollback.Count - ScrollbackLimit);
     }
 
+    /** A blank cell with the current background. */
     private VtCell BlankPen() => new() { Char = ' ', Background = pen.Background };
 
+    /** Resets the terminal state. */
     private void Reset()
     {
         lines = Make(Columns, Rows);
@@ -357,8 +379,10 @@ internal sealed class VtScreen(int columns, int rows)
         pen = savedPen; pendingWrap = savedWrap;
     }
 
+    /** Parses an integer parameter, 0 on failure. */
     private static int Number(string text) => int.TryParse(text, out int value) ? value : 0;
 
+    /** Handles a CSI sequence by its final character. */
     private void Csi(char final, string text)
     {
         // A leading ? > = < makes the sequence private and bytes 0x20-0x2F are intermediates; either changes what
@@ -416,6 +440,7 @@ internal sealed class VtScreen(int columns, int rows)
         }
     }
 
+    /** Sets or clears terminal modes. */
     private void Mode(int[] values, bool on)
     {
         foreach (int mode in values)
@@ -433,6 +458,7 @@ internal sealed class VtScreen(int columns, int rows)
             }
     }
 
+    /** Erase in display. */
     private void Erase(int mode)
     {
         if (mode == 3) { scrollback.Clear(); return; }
@@ -442,6 +468,7 @@ internal sealed class VtScreen(int columns, int rows)
         for (int row = Math.Max(0, from); row <= to; row++) lines[row] = Blank(Columns, BlankPen());
     }
 
+    /** Erase in line. */
     private void EraseLine(int mode)
     {
         if (mode is < 0 or > 2) return;
@@ -449,6 +476,7 @@ internal sealed class VtScreen(int columns, int rows)
         for (int x = from; x <= to && x < Columns; x++) lines[CursorY][x] = BlankPen();
     }
 
+    /** Insert or delete characters or lines by a count. */
     private void Shift(int count)
     {
         var line = lines[CursorY];
@@ -510,9 +538,11 @@ internal sealed class VtScreen(int columns, int rows)
         }
     }
 
+    /** Packs 8-bit red, green, blue text into a colour value. */
     private static uint Rgb(string r, string g, string b) =>
         0xFF000000 | (uint)(Number(r) & 255) << 16 | (uint)(Number(g) & 255) << 8 | (uint)(Number(b) & 255);
 
+    /** Colour of an indexed 256-colour palette entry. */
     private static uint Indexed(int index)
     {
         if (index < 16) return Palette[Math.Max(0, index)];

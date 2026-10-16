@@ -1,3 +1,7 @@
+/**
+ * File: Persisted editor settings (JSON): paths, renderer, layout and AI options. Edited in
+ * StudioForm.Preferences.cs.
+ */
 using System.Text.Json;
 using SunriseStudio.Rendering;
 
@@ -6,6 +10,7 @@ namespace SunriseStudio.Editor;
 /** One editor in its own window. Bounds are screen pixels. */
 public sealed record StudioPopoutState(StudioPanelKind Panel, int X, int Y, int Width, int Height);
 
+/** The persisted editor settings; each property is one saved option. */
 public sealed class StudioSettings
 {
     public string SunrisePath { get; set; } = "";
@@ -139,6 +144,7 @@ public sealed class StudioSettings
         throw new IOException("No packages found in this Sunrise installation.");
     }
 
+    /** Moves a project to the top of the recent project list. */
     public void RememberProject(string path)
     {
         path = Path.GetFullPath(path);

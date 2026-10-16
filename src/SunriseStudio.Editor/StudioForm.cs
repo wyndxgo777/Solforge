@@ -1,3 +1,8 @@
+/**
+ * File: Main editor window (WinForms host + ImGui frame loop). StudioForm is split in partials: .Commands (menus,
+ * dialogs, project open), .Ai* (AI workspace/MCP host), .NodeGraph, .Player (live player tracking), .Preferences,
+ * .PhoneStream, .Layout and others; per-page UI lives in the *Page.cs files.
+ */
 using System.Diagnostics;
 using System.Numerics;
 using ImGuiNET;
@@ -72,6 +77,7 @@ public sealed partial class StudioForm : Form
     public WorldObjectInspection? SelectedObjectDetails => objectInspection;
     public event Action? FrameRendered;
 
+    /** Selects a scene object in the viewport and optionally focuses the camera on it. */
     public void SelectSceneObject(object source, bool focus = false)
     {
         if (TrySelectLiveSceneObject(source, focus)) return;
@@ -80,7 +86,9 @@ public sealed partial class StudioForm : Form
         if (focus && viewport?.SelectedObject is not null) viewport.FocusSelection();
     }
 
+    /** Asks the layout to show and focus the mission editor page on the next frame. */
     public void ShowMissionEditor() => focusMissionPage = true;
+    /** Opens the named asset page (for example a material or animation page). */
     public void ShowAssetPage(string page)
     {
         if (page.Equals("Mission Graph", StringComparison.OrdinalIgnoreCase)) { focusMissionGraph = true; return; }
@@ -89,6 +97,7 @@ public sealed partial class StudioForm : Form
         focusAssets = true; focusDocumentPage = page; focusAssetPage = true; inspectAsset = true;
     }
 
+    /** Creates the window, renderer, panels and pages from the startup options. */
     public StudioForm(StudioOptions options)
     {
         this.options = options;
@@ -124,13 +133,17 @@ public sealed partial class StudioForm : Form
         };
     }
 
+    /** Painting is done by the ImGui renderer, so WinForms paints nothing. */
     protected override void OnPaint(PaintEventArgs e) { }
+    /** Avoids flicker: the renderer draws the background. */
     protected override void OnPaintBackground(PaintEventArgs e) { }
 
+    /** Lets all keys reach ImGui instead of WinForms handling navigation keys. */
     protected override bool IsInputKey(Keys keyData) =>
         (keyData & Keys.KeyCode) is Keys.Tab or Keys.Left or Keys.Right or Keys.Up or Keys.Down
         || base.IsInputKey(keyData);
 
+    /** Creates the renderer and starts the frame timer once the window handle exists. */
     protected override void OnHandleCreated(EventArgs e)
     {
         base.OnHandleCreated(e);
@@ -141,6 +154,7 @@ public sealed partial class StudioForm : Form
     /** A smoke run never takes focus from the user's own windows. */
     protected override bool ShowWithoutActivation => options.Smoke;
 
+    /** Window message hook that forwards mouse, key and IME messages to ImGui. */
     protected override void WndProc(ref Message m)
     {
         if (chrome.WndProc(ref m)) return;
@@ -546,6 +560,7 @@ public sealed partial class StudioForm : Form
         Text = workspace.Project is { } project ? $"{project.Name} - Solforge" : "Solforge";
     }
 
+    /** Display name of a scene object source for the UI and AI context. */
     private static string? SceneObjectName(object source) => source switch
     {
         MeshInstance mesh => mesh.Name,
@@ -554,6 +569,7 @@ public sealed partial class StudioForm : Form
         _ => null
     };
 
+    /** Saves the cursor and camera preferences when they change. */
     private void RememberCursorPreferences()
     {
         if (viewport is not null)
@@ -610,10 +626,13 @@ public sealed partial class StudioForm : Form
     private bool CanUndoActive => nodeGraphActive ? nodeGraph.CanUndo : missionGraphActive ? missionGraph.CanUndo : workspace.CanEdit && workspace.CanUndo;
     private bool CanRedoActive => nodeGraphActive ? nodeGraph.CanRedo : missionGraphActive ? missionGraph.CanRedo : workspace.CanEdit && workspace.CanRedo;
     private bool CanSaveActive => nodeGraphActive ? nodeGraph.CanSave : missionGraphActive ? missionGraph.CanSave : workspace.CanEdit;
+    /** Undo for the active document. */
     private void UndoActive()
     { if (CanUndoActive) { if (nodeGraphActive) nodeGraph.Undo(); else workspace.Run(missionGraphActive ? missionGraph.Undo : workspace.Undo); } }
+    /** Redo for the active document. */
     private void RedoActive()
     { if (CanRedoActive) { if (nodeGraphActive) nodeGraph.Redo(); else workspace.Run(missionGraphActive ? missionGraph.Redo : workspace.Redo); } }
+    /** Saves the active document. */
     private void SaveActiveDocument() => workspace.Run(() =>
     {
         if (!CanSaveActive) return;
@@ -622,6 +641,7 @@ public sealed partial class StudioForm : Form
         else workspace.Project?.Save();
     });
 
+    /** Loads the game shaders for the renderer from the open installation. */
     private void PrepareGameShaders()
     {
         viewport!.UseGameShaders = settings.GameShaders;
@@ -664,6 +684,7 @@ public sealed partial class StudioForm : Form
         ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse |
         ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoBringToFrontOnFocus;
 
+    /** Begins an ImGui child panel at a position and size; returns false when it is hidden. */
     private static bool BeginPanel(string id, Vector2 position, Vector2 size,
         ImGuiWindowFlags extra = ImGuiWindowFlags.None)
     {
@@ -675,6 +696,7 @@ public sealed partial class StudioForm : Form
         return open;
     }
 
+    /** Draws a draggable splitter and reports the drag delta. */
     private static void Splitter(string id, Vector2 position, Vector2 size, Action<Vector2> drag)
     {
         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
@@ -690,6 +712,7 @@ public sealed partial class StudioForm : Form
         ImGui.End(); ImGui.PopStyleColor(); ImGui.PopStyleVar(3);
     }
 
+    /** Draws the active document page in its region. */
     private void DrawDocument(Vector2 position, Vector2 size)
     {
         if (focusAssets || focusLive || focusLocalServer) ImGui.SetNextWindowFocus();
@@ -891,6 +914,7 @@ public sealed partial class StudioForm : Form
         base.OnFormClosing(e);
     }
 
+    /** Stops the timer and releases the renderer and services when the window closes. */
     protected override void OnFormClosed(FormClosedEventArgs e)
     {
         closed = true;

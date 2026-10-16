@@ -1,3 +1,7 @@
+/**
+ * File: Local server page: status, log, deploy, config, actions and subsystems for the local game server, backed by
+ * Solforge.Mcp LocalServer (the same manager the local_server_* MCP tools use).
+ */
 using System.Diagnostics;
 using System.Numerics;
 using ImGuiNET;
@@ -13,9 +17,12 @@ namespace SunriseStudio.Editor;
  */
 public sealed class LocalServerPage
 {
+    /** The local server manager (status, log, backups, deploy). */
     private readonly LocalServerManager server = LocalServerManager.CreateDefault();
+    /** Guards the status and log state shared with worker tasks. */
     private readonly object sync = new();
     private readonly List<string> log = [];
+    /** Follows the server log file. */
     private readonly LogFollower follower = new();
     private const int MaxLogLines = 5000;
 
@@ -26,6 +33,7 @@ public sealed class LocalServerPage
     private string planProject = "";
     private string busy = "", lastMessage = "", lastOutput = "";
     private bool lastOk = true;
+    /** Timers for status and log refreshes. */
     private readonly Stopwatch statusClock = new(), logClock = new();
     private bool statusPending, logPending;
 
@@ -70,6 +78,7 @@ public sealed class LocalServerPage
 
     // --- background work ----------------------------------------------------------------------------
 
+    /** Refreshes status and log on their timers. */
     private void Poll()
     {
         if (!statusClock.IsRunning || (statusClock.Elapsed > TimeSpan.FromSeconds(4) && !statusPending)) { statusClock.Restart(); RefreshStatus(); }
@@ -98,6 +107,7 @@ public sealed class LocalServerPage
         }
     }
 
+    /** Refreshes the server status in the background. */
     private void RefreshStatus()
     {
         statusPending = true;
@@ -108,6 +118,7 @@ public sealed class LocalServerPage
         });
     }
 
+    /** Runs a server action in the background and reports its result. */
     private void Start(string label, Func<Task<ActionResult>> work)
     {
         if (busy.Length > 0) return;
@@ -121,6 +132,7 @@ public sealed class LocalServerPage
         });
     }
 
+    /** Records the last action result for display. */
     private void Report(bool ok, string message, string output) { lastOk = ok; lastMessage = message; lastOutput = output; }
 
     private void LoadBackups() => _ = Task.Run(async () =>
@@ -131,8 +143,10 @@ public sealed class LocalServerPage
 
     // --- header and status ------------------------------------------------------------------------
 
+    /** Colours for good, bad and warning text. */
     private static readonly Vector4 Good = new(.45f, .85f, .45f, 1), Bad = new(.95f, .4f, .35f, 1), Warn = new(.95f, .8f, .3f, 1);
 
+    /** Draws the page header and controls. */
     private void DrawHeader()
     {
         var current = status;
@@ -160,6 +174,7 @@ public sealed class LocalServerPage
         ImGui.Separator();
     }
 
+    /** Draws the status section. */
     private void DrawStatus()
     {
         if (status is not { } current) { ImGui.TextDisabled("Reading status from WSL..."); return; }
@@ -197,10 +212,14 @@ public sealed class LocalServerPage
         ImGui.PopStyleColor();
     }
 
+    /** Draws wrapped text. */
     private static void Wrapped(string text) { ImGui.PushTextWrapPos(); ImGui.TextUnformatted(text); ImGui.PopTextWrapPos(); }
+    /** Draws a bullet line. */
     private static void Bullet(string text) { ImGui.Bullet(); ImGui.SameLine(); ImGui.TextUnformatted(text); }
+    /** Draws a tooltip with wrapped text. */
     private static void Tip(string text) { ImGui.BeginTooltip(); ImGui.PushTextWrapPos(600); ImGui.TextUnformatted(text); ImGui.PopTextWrapPos(); ImGui.EndTooltip(); }
 
+    /** Draws a label/value row coloured by ok. */
     private static void Row(string label, string value, bool ok)
     {
         ImGui.TextUnformatted(label);
@@ -210,6 +229,7 @@ public sealed class LocalServerPage
 
     // --- log ------------------------------------------------------------------------------------------
 
+    /** Draws the server log with filter. */
     private void DrawLog()
     {
         ImGui.SetNextItemWidth(320);
@@ -242,6 +262,7 @@ public sealed class LocalServerPage
 
     // --- deploy -------------------------------------------------------------------------------------
 
+    /** Draws the deploy section. */
     private void DrawDeploy(string? projectRoot, string? lastBuild)
     {
         if (projectRoot is null) { ImGui.TextDisabled("Open a project to deploy its scripts, sdk and build to the local server."); return; }
@@ -295,6 +316,7 @@ public sealed class LocalServerPage
 
     // --- config ---------------------------------------------------------------------------------------
 
+    /** Draws the config section. */
     private void DrawConfig()
     {
         if (ImGui.Button("List files")) _ = Task.Run(async () =>
@@ -331,6 +353,7 @@ public sealed class LocalServerPage
 
     // --- actions ----------------------------------------------------------------------------------------
 
+    /** Draws the action buttons (start, stop, restart, selftest...). */
     private void DrawActions()
     {
         Wrapped("Runs server commands as the operator console through the local admin API (127.0.0.1:" +
@@ -366,6 +389,7 @@ public sealed class LocalServerPage
         }
     }
 
+    /** Runs a quick action by name. */
     private void Quick(string action)
     {
         var args = new System.Text.Json.Nodes.JsonObject
@@ -379,6 +403,7 @@ public sealed class LocalServerPage
 
     // --- subsystems -----------------------------------------------------------------------------------
 
+    /** Draws the subsystems section. */
     private void DrawSubsystems()
     {
         Wrapped("Demonware (Activision) did sign-in, lobbies, NAT relay and title storage and no gameplay; Bungie's Activity " +

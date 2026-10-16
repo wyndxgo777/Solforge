@@ -1,3 +1,7 @@
+/**
+ * File: Live material preview for material graphs: compiles the graph while it is edited and pushes the result into
+ * MaterialOverrides (Rendering) so the viewport mesh updates; uses LiveDebounce from Solforge.Graphs.
+ */
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Numerics;
@@ -21,7 +25,9 @@ namespace SunriseStudio.Editor;
 internal sealed class NodeGraphLivePreview(MaterialOverrideSet overrides, Dx11Renderer renderer, Func<PackageCatalog?> catalog,
     Func<IReadOnlyList<AssetViewport>> viewports) : IDisposable
 {
+    /** Rate limiter for sending preview updates while dragging. */
     private readonly LiveDebounce debounce = new();
+    /** Textures decoded on worker threads, waiting to be taken on the UI thread. */
     private readonly ConcurrentQueue<(uint Tag, TextureData? Data)> decoded = new();
     // Decoded override textures by tag; null marks one that could not be read.
     private readonly Dictionary<uint, TextureData?> textures = [];
@@ -120,6 +126,7 @@ internal sealed class NodeGraphLivePreview(MaterialOverrideSet overrides, Dx11Re
         return null;
     }
 
+    /** Sends a compile result to the overrides as constant and texture overrides. */
     private void Send(MaterialCompileResult result)
     {
         // An error keeps the last good preview; the Problems list says what to fix.
@@ -154,8 +161,10 @@ internal sealed class NodeGraphLivePreview(MaterialOverrideSet overrides, Dx11Re
         overrides.Set(tag, new MaterialOverride(constants, slots));
     }
 
+    /** Component of a lane array, or 0 when out of range. */
     private static float Lane(double[] values, int index) => index < values.Length ? (float)values[index] : 0;
 
+    /** Material tag of a mesh part. */
     private static uint MaterialOf(MeshInstance part)
     {
         uint native = part.Mesh.Native?.MaterialTag ?? 0;
@@ -199,6 +208,7 @@ internal sealed class NodeGraphLivePreview(MaterialOverrideSet overrides, Dx11Re
         return true;
     }
 
+    /** Starts previewing a material tag: loads its mesh into the preview. */
     private void StartPreview(uint tag)
     {
         loadCancel?.Cancel();
@@ -278,6 +288,7 @@ internal sealed class NodeGraphLivePreview(MaterialOverrideSet overrides, Dx11Re
         }
     }
 
+    /** Removes the preview mesh and clears overrides. */
     private void ClearPreviewMesh()
     {
         loadCancel?.Cancel();
@@ -289,6 +300,7 @@ internal sealed class NodeGraphLivePreview(MaterialOverrideSet overrides, Dx11Re
         retryAt = 0;
     }
 
+    /** Releases the preview resources. */
     public void Dispose()
     {
         Clear();
