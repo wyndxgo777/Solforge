@@ -216,6 +216,7 @@ public sealed partial class StudioForm : Form
             assetViewport.PreparationProgress = ReportPreparation;
             viewport.SelectionChanged += OnViewportSelection;
             RestorePopouts();
+            OfferAiPanel();
             assetViewport.SelectionMode = SceneSelectionMode.MeshPart;
             assetViewport.SelectionChanged += value =>
             {

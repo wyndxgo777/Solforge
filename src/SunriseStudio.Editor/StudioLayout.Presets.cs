@@ -55,7 +55,12 @@ public sealed partial class StudioLayout
         {
             Id = 3, Axis = StudioSplitAxis.Columns, Ratio = .7f,
             First = new() { Id = 4, Panel = StudioPanelKind.AI },
-            Second = new() { Id = 5, Panel = StudioPanelKind.MissionGraph }
+            Second = new()
+            {
+                Id = 5, Axis = StudioSplitAxis.Rows, Ratio = .6f,
+                First = new() { Id = 6, Panel = StudioPanelKind.LocalServer },
+                Second = new() { Id = 7, Panel = StudioPanelKind.MissionGraph }
+            }
         }
     });
 
@@ -69,22 +74,27 @@ public sealed partial class StudioLayout
             First = new() { Id = 3, Panel = StudioPanelKind.Browser },
             Second = new()
             {
-                Id = 4, Axis = StudioSplitAxis.Columns, Ratio = .79f,
+                Id = 4, Axis = StudioSplitAxis.Columns, Ratio = .6f,
                 First = new() { Id = 5, Panel = StudioPanelKind.Workspace },
                 Second = new()
                 {
-                    Id = 6, Axis = StudioSplitAxis.Rows, Ratio = .42f,
-                    First = new() { Id = 7, Panel = StudioPanelKind.ObjectTree },
-                    Second = new() { Id = 8, Panel = StudioPanelKind.Inspector }
+                    Id = 6, Axis = StudioSplitAxis.Columns, Ratio = .5f,
+                    First = new()
+                    {
+                        Id = 7, Axis = StudioSplitAxis.Rows, Ratio = .42f,
+                        First = new() { Id = 8, Panel = StudioPanelKind.ObjectTree },
+                        Second = new() { Id = 9, Panel = StudioPanelKind.Inspector }
+                    },
+                    Second = new() { Id = 10, Panel = StudioPanelKind.AI }
                 }
             }
         },
-        // One editor per area: the bottom row splits Project changes and the Mission Graph.
+        // One editor per area: the bottom row splits Local Server (Project changes' old slot) and the Mission Graph.
         Second = new()
         {
-            Id = 9, Axis = StudioSplitAxis.Columns, Ratio = .5f,
-            First = new() { Id = 10, Panel = StudioPanelKind.Changes },
-            Second = new() { Id = 11, Panel = StudioPanelKind.MissionGraph }
+            Id = 11, Axis = StudioSplitAxis.Columns, Ratio = .5f,
+            First = new() { Id = 12, Panel = StudioPanelKind.LocalServer },
+            Second = new() { Id = 13, Panel = StudioPanelKind.MissionGraph }
         }
     });
 
@@ -102,9 +112,21 @@ public sealed partial class StudioLayout
         {
             Id = 5, Axis = StudioSplitAxis.Rows, Ratio = .5f,
             First = new() { Id = 6, Panel = StudioPanelKind.Inspector },
-            Second = new() { Id = 7, Panel = StudioPanelKind.Changes }
+            Second = new()
+            {
+                Id = 7, Axis = StudioSplitAxis.Rows, Ratio = .5f,
+                First = new() { Id = 8, Panel = StudioPanelKind.AI },
+                Second = new() { Id = 9, Panel = StudioPanelKind.LocalServer }
+            }
         }
     });
+
+    /**
+     * Docks the AI panel as a right-side split of the whole window.
+     * @return False when it is already docked or the layout is full.
+     */
+    public bool AddAiRight() => Find(StudioPanelKind.AI) is null
+        && Reinsert(StudioPanelKind.AI, new StudioLayoutSlot(Root.Id, StudioSplitAxis.Columns, false, .72f));
 
     /**
      * Takes an area out and lets its neighbour fill the space.
