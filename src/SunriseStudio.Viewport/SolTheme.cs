@@ -45,8 +45,11 @@ public static unsafe class SolTheme
     public static readonly Vector4 SunGradEnd = Hex(0xff9a45);
     /** The light ends of sun-shimmer (#ffe0a0 -> sun -> sun-2 -> sun -> #ffe0a0). */
     public static readonly Vector4 SunShimmerEdge = Hex(0xffe0a0);
-    /** --accent-ink: text on a sun fill. */
-    public static readonly Vector4 AccentInk = Hex(0x141006);
+    /** Text on a sun fill: the site button's hsl(--cpl-color-black), 2%. */
+    public static readonly Vector4 AccentInk = Hex(0x050505);
+    /** Night background steps 200 and 300 (12%, 14%); 300 is the site's button fill. */
+    public static readonly Vector4 Step = Hex(0x1f1f1f);
+    public static readonly Vector4 ButtonFill = Hex(0x242424);
     public static readonly Vector4 Ok = Hex(0x5fd38a);
     public static readonly Vector4 Bad = Hex(0xf07a7a);
 
@@ -200,8 +203,8 @@ public static unsafe class SolTheme
         Set(ImGuiCol.CheckMark, Sun);
         Set(ImGuiCol.SliderGrab, Sun);
         Set(ImGuiCol.SliderGrabActive, Sun2);
-        Set(ImGuiCol.Button, Surface);
-        Set(ImGuiCol.ButtonHovered, White(.12f));
+        Set(ImGuiCol.Button, ButtonFill);
+        Set(ImGuiCol.ButtonHovered, Hex(0x333333)); // background-600, 20%
         Set(ImGuiCol.ButtonActive, Alpha(Sun, .24f));
         // Selection is a faint sun wash; helpers add the sun bar or underline.
         Set(ImGuiCol.Header, Alpha(Sun, .12f));
