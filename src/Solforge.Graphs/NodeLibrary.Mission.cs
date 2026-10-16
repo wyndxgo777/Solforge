@@ -2,18 +2,37 @@ namespace Solforge.Graphs;
 
 /**
  * Mission graph nodes. They compile to a Sunrise mission script module: a Lua table of on_start, on_load and
- * on_event_* handlers taking (context, state, event), as MissionScriptFactory writes. SDK calls go through a
- * guarded helper so a function missing on this build is skipped rather than crashing the activity host.
+ * on_event_* handlers taking (context, state, event), as MissionScriptFactory writes. Every SDK call is one the
+ * server's Lua context binds (mission_script_lua_context_api.cpp), called directly.
  */
 public static partial class NodeLibrary
 {
-    /** Activity callbacks a script module may define (MissionScriptFactory's starter lists the same events). */
+    /** Activity callbacks a script module may define; each on_event_* kind is one mission_api_events.h names. */
     public static readonly string[] MissionEvents =
     [
         "on_start", "on_load", "region_changed", "client_state_changed", "player_trigger", "squad_state", "scene_finished",
         "scene_output", "timer_elapsed", "actor_path_state", "fireteam_state", "effect_result", "damage_state", "object_state",
-        "object_interacted", "device_state", "ghost_link_state", "trigger_entered"
+        "object_interacted", "device_state", "ghost_link_state", "trigger_entered", "trigger_exited", "entity_died",
+        "entity_spawned", "objective_progress", "phase_entered", "session_joined", "session_left", "squad_provoked",
+        "client_message_received", "sensor_sense_updated"
     ];
+
+    /** Context methods the server binds as functions; Call SDK Function offers only these. */
+    public static readonly string[] MissionContextFunctions =
+    [
+        "log", "complete_mission", "activate_objects", "grant_reward", "report_progress", "cohort", "squad", "scene", "slot",
+        "hold_spawn", "select_state", "restart_checkpoint", "set_phase", "set_variable", "clear_variable", "start_timer", "cancel_timer"
+    ];
+
+    /** Node types earlier builds offered for SDK functions the server does not have, and what replaces them. */
+    public static readonly IReadOnlyDictionary<string, string> RemovedMissionNodes = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["mission.set_objective"] = "The server has no set_objective; objectives are directives: use Set Directive.",
+        ["mission.spawn_squad"] = "Replaced by Place Squad (context:squad(id):place{}).",
+        ["entity.get_player"] = "The server has no get_player; mission scripts cannot read a player entity.",
+        ["entity.find_named_actor"] = "Replaced by Get Slot (context:slot(id)).",
+        ["entity.filter_by_health"] = "The server has no get_health_fraction; use a damage_state Activity Event."
+    };
 
     /** Signals the Phase 31 phase nodes stand for; any other name works too. */
     public static readonly string[] MissionSignals = ["ObjectiveUpdated", "CombatWaveSpawned", "BossVulnerable", "EncounterComplete"];
@@ -46,50 +65,57 @@ public static partial class NodeLibrary
         yield return Node("flow.finish_branch", "Finish Branch", "Flow", kind, "Marks one branch of a Parallel All as done.",
             [ExecIn], [Prop("parallel", "Parallel node id", PropertyKind.Text)], "join done");
         yield return Node("flow.delay", "Delay", "Flow", kind,
-            "Continues on the next timer_elapsed callback at or after Seconds (activity time from the event, else the next tick).",
+            "Continues after Seconds on a server mission timer (context:start_timer), so it survives a save and reload. Running it again restarts it.",
             [ExecIn, In("seconds", "Seconds", PinType.Float, "1"), Out("completed", "Completed", PinType.Exec)], keywords: "timer wait seconds");
         yield return Node("flow.wait_signal", "Wait Signal", "Flow", kind, "Continues when Send Signal fires the name.",
             [ExecIn, Out("then", "Then", PinType.Exec)], [Prop("signal", "Signal", PropertyKind.Choice, "ObjectiveUpdated", "", MissionSignals)],
             keywords: "await event");
         yield return Node("flow.send_signal", "Send Signal", "Flow", kind, "Fires a signal: On Signal handlers and waiting branches run.",
             [ExecIn, Then], [Prop("signal", "Signal", PropertyKind.Choice, "ObjectiveUpdated", "", MissionSignals)], "emit raise fire");
-        yield return Node("flow.do_once", "Do Once", "Flow", kind, "Passes the first time only (per activity run).",
+        yield return Node("flow.do_once", "Do Once", "Flow", kind, "Passes the first time only; kept in the mission state, so a reload remembers it.",
             [ExecIn, Then], keywords: "once gate");
 
         // State.
-        yield return Node("state.set_flag", "Set Flag", "State", kind, "Stores a named boolean in the script state.",
+        yield return Node("state.set_flag", "Set Flag", "State", kind, "Stores a named boolean as a mission variable (kept across save and reload).",
             [ExecIn, In("value", "Value", PinType.Bool, "true"), Then], [Prop("name", "Name", PropertyKind.Text, "flag")], "variable set");
-        yield return Node("state.get_flag", "Get Flag", "State", kind, "Reads a named boolean from the script state.",
+        yield return Node("state.get_flag", "Get Flag", "State", kind, "Reads a named boolean mission variable (false when unset).",
             [Out("value", "", PinType.Bool)], [Prop("name", "Name", PropertyKind.Text, "flag")], "variable get");
-        yield return Node("state.set_number", "Set Number", "State", kind, "Stores a named number in the script state.",
+        yield return Node("state.set_number", "Set Number", "State", kind, "Stores a named number as a mission variable (kept across save and reload).",
             [ExecIn, In("value", "Value", PinType.Float, "0"), Then], [Prop("name", "Name", PropertyKind.Text, "count")], "variable counter");
-        yield return Node("state.get_number", "Get Number", "State", kind, "Reads a named number from the script state.",
+        yield return Node("state.get_number", "Get Number", "State", kind, "Reads a named number mission variable (0 when unset).",
             [Out("value", "", PinType.Float)], [Prop("name", "Name", PropertyKind.Text, "count")], "variable counter");
-        yield return Node("event.field", "Event Field", "State", kind, "Reads a field of an event table, e.g. entered or held_region_index.",
-            [In("event", "Event", PinType.Any), Out("value", "", PinType.Any)], [Prop("field", "Field", PropertyKind.Text, "entered")], "table get member");
+        yield return Node("event.field", "Event Field", "State", kind, "Reads a field of the callback's event, e.g. kind or timer_name.",
+            [In("event", "Event", PinType.Any), Out("value", "", PinType.Any)], [Prop("field", "Field", PropertyKind.Text, "kind")], "table get member");
+        yield return Node("state.get_phase", "Get Phase", "State", kind, "The mission phase number (state.phase).",
+            [Out("value", "", PinType.Int)], keywords: "stage step");
 
-        // Entities (Phase 31).
-        yield return Node("entity.get_player", "Get Player", "Entities", kind, "A player of the fireteam by index (1 first).",
-            [In("index", "Index", PinType.Int, "1"), Out("player", "", PinType.Entity)], keywords: "guardian fireteam");
-        yield return Node("entity.get_squad", "Get Squad", "Entities", kind, "A squad by name.",
+        // Entities: squad and slot handles the server resolves by id or name.
+        yield return Node("entity.get_squad", "Get Squad", "Entities", kind, "A squad handle: context:squad(id or slot name).",
             [Out("squad", "", PinType.Entity)], [Prop("name", "Squad", PropertyKind.Text)], "enemies combatants");
-        yield return Node("entity.find_named_actor", "Find Named Actor", "Entities", kind, "An actor by its script name.",
-            [Out("actor", "", PinType.Entity)], [Prop("name", "Name", PropertyKind.Text)], "boss npc object");
-        yield return Node("entity.filter_by_health", "Filter By Health", "Entities", kind, "Passes the entity while its health fraction is below Threshold, else nil.",
-            [In("entity", "Entity", PinType.Entity), In("threshold", "Threshold", PinType.Float, "0.5"), Out("entity_out", "", PinType.Entity)],
-            keywords: "hp low");
+        yield return Node("entity.slot", "Get Slot", "Entities", kind, "An object slot handle: context:slot(id or name).",
+            [Out("slot", "", PinType.Entity)], [Prop("name", "Slot", PropertyKind.Text)], "actor object named find");
 
         // Actions.
-        yield return Node("mission.set_objective", "Set Objective", "Actions", kind, "Shows objective text (SDK set_objective).",
-            [ExecIn, In("text", "Text", PinType.String), Then], keywords: "quest step hud");
-        yield return Node("mission.spawn_squad", "Spawn Squad", "Actions", kind, "Spawns a squad by name (SDK spawn_squad).",
-            [ExecIn, Then, Out("squad", "Squad", PinType.Entity)], [Prop("name", "Squad", PropertyKind.Text)], "combat wave enemies");
-        yield return Node("mission.log", "Log", "Actions", kind, "Writes to the activity host log.",
+        yield return Node("mission.set_directive", "Set Directive", "Actions", kind,
+            "Shows an objective: the generated mission module's Directive on its sensor slot (or Sensor slot when given).",
+            [ExecIn, Then], [Prop("module", "Mission module", PropertyKind.Text, "", "missions.lua key, e.g. EDZ_FREEROAM"),
+             Prop("directive", "Directive", PropertyKind.Text, "", "Directive name in that module"),
+             Prop("sensor", "Sensor slot", PropertyKind.Text, "", "Optional; the directive's own sensor when empty")],
+            "objective quest step hud set_directive");
+        yield return Node("mission.place_squad", "Place Squad", "Actions", kind, "Places (spawns) a squad: context:squad(id):place{}.",
+            [ExecIn, Then, Out("squad", "Squad", PinType.Entity)], [Prop("name", "Squad", PropertyKind.Text)], "spawn combat wave enemies");
+        yield return Node("mission.fire_trigger", "Fire Trigger", "Actions", kind, "Fires a trigger slot: context:slot(id):fire_trigger().",
+            [ExecIn, Then], [Prop("slot", "Trigger slot", PropertyKind.Text)], "arm trigger");
+        yield return Node("mission.set_phase", "Set Phase", "Actions", kind, "Sets the mission phase number (context:set_phase).",
+            [ExecIn, In("phase", "Phase", PinType.Int, "1"), Then], keywords: "stage step");
+        yield return Node("mission.complete", "Complete Mission", "Actions", kind, "Completes the mission (context:complete_mission{}).",
+            [ExecIn, Then], keywords: "finish win end");
+        yield return Node("mission.log", "Log", "Actions", kind, "Writes to the server log (context:log, 400 characters at most).",
             [ExecIn, In("text", "Text", PinType.String), Then], keywords: "print debug");
         yield return Node("mission.call", "Call SDK Function", "Actions", kind,
-            "Calls context:<function>(args...) when this build has it; Result is its first return value.",
+            "Calls context:<function>(args...); Result is its first return value until the activity reloads.",
             [ExecIn, In("a1", "Arg 1", PinType.Any), In("a2", "Arg 2", PinType.Any), In("a3", "Arg 3", PinType.Any), Then,
-             Out("result", "Result", PinType.Any)], [Prop("function", "Function", PropertyKind.Text, "")], "sdk api invoke");
+             Out("result", "Result", PinType.Any)], [Prop("function", "Function", PropertyKind.Choice, "log", "", MissionContextFunctions)], "sdk api invoke");
         yield return Node("mission.lua", "Lua", "Actions", kind, "Raw Lua run in the handler (context, state and event are in scope).",
             [ExecIn, Then], [Prop("code", "Code", PropertyKind.Code, "-- lua")], "script snippet raw custom");
     }

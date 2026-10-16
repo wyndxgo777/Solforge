@@ -160,8 +160,11 @@ public sealed partial class StudioForm
     private WorldMissionEntry? PlayerMission(PlayerFix fix)
     {
         if (workspace.WorldCatalog?.Missions is not { } missions) return null;
-        if ((fix.ActivityHash ?? SolforgeTools.ParseHash(fix.Activity)) is { } tag && missions.FirstOrDefault(row => row.Tag == tag) is { } byTag) return byTag;
-        return fix.Activity.Length == 0 ? null : missions.FirstOrDefault(row => string.Equals(row.Name, fix.Activity, StringComparison.OrdinalIgnoreCase));
+        if (fix.Activity.Length == 0) return null;
+        // loc.activity is the scenario's package name, not the localized title WorldMissionEntry.Name holds.
+        if (workspace.Catalog is { } catalog && missions.FirstOrDefault(row => PlayerSources.IsScenario(catalog.GetName(row.Tag), fix.Activity)) is { } byName)
+            return byName;
+        return missions.FirstOrDefault(row => string.Equals(row.Name, fix.Activity, StringComparison.OrdinalIgnoreCase));
     }
 
     /** Opens the player's map once per place; the Live link switches maps itself (Sync > Map). */
@@ -218,7 +221,7 @@ public sealed partial class StudioForm
         string? mapName = place.Map is { } tag ? workspace.WorldCatalog?.Maps.FirstOrDefault(row => row.Tag == tag)?.Name : null;
         var others = playerServerRows.Where(row => !ReferenceEquals(row, fix)).Take(16)
             .Select(row => (JsonNode)new JsonObject { ["name"] = row.Player, ["position"] = PlayerSources.Json(row.Position),
-                ["activity"] = row.ActivityHash is { } hash ? $"0x{hash:X8}" : null }).ToArray();
+                ["room"] = row.Room.Length > 0 ? row.Room : null }).ToArray();
         var state = new JsonObject
         {
             ["found"] = fix is not null,

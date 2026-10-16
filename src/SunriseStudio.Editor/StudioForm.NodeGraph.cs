@@ -56,6 +56,9 @@ public sealed partial class StudioForm
             // A loading or reading reply means the item is not open yet: stop and let the caller try again.
             if (!reply.StartsWith("Applied", StringComparison.Ordinal)) break;
         }
+        if (result.WorkflowFields.Count > 0)
+            lines.Add("Set in the item's creation workflow (not apply_item_edit): "
+                + string.Join("; ", result.WorkflowFields.Select(pair => pair.Key + " = " + pair.Value)) + ".");
         if (result.CustomPerks.Count > 0)
             lines.Add($"{result.CustomPerks.Count} custom perk rule(s) compiled; packing them into perk tags is not supported yet.");
         return lines.Count == 0 ? "The graph has no edits." : string.Join("\n", lines);

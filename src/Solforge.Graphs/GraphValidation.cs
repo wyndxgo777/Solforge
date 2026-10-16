@@ -38,7 +38,8 @@ public static class GraphValidation
         {
             if (!byId.TryAdd(node.Id, node)) result.Add(new(DiagnosticSeverity.Error, $"Duplicate node id {node.Id}.", node.Id, scopeId));
             if (NodeLibrary.Find(node.Type) is not { } type)
-                result.Add(new(DiagnosticSeverity.Error, $"Unknown node type '{node.Type}'.", node.Id, scopeId));
+                result.Add(new(DiagnosticSeverity.Error, NodeLibrary.RemovedMissionNodes.TryGetValue(node.Type, out var removed)
+                    ? $"'{node.Type}' was removed: {removed}" : $"Unknown node type '{node.Type}'.", node.Id, scopeId));
             else if ((type.Kinds & document.Kind) == 0)
                 result.Add(new(DiagnosticSeverity.Error, $"{type.Title} does not belong in a {document.Kind} graph.", node.Id, scopeId));
         }
@@ -174,7 +175,13 @@ public static class GraphValidation
             if (NodeLibrary.Find(node.Type) is { } type && type.Inputs.Any(pin => pin.Type == PinType.Exec) && !reached.Contains(node.Id))
                 result.Add(new(DiagnosticSeverity.Warning, "Never runs: no event leads here.", node.Id));
         foreach (var node in flat.OfType("mission.call"))
-            if (!LuaName(node.Get("function"))) result.Add(new(DiagnosticSeverity.Error, "Function must be a Lua name such as set_objective.", node.Id));
+            if (!NodeLibrary.MissionContextFunctions.Contains(node.Get("function"), StringComparer.Ordinal))
+                result.Add(new(DiagnosticSeverity.Error, $"The server's mission context has no function '{node.Get("function")}'.", node.Id));
+        foreach (var node in flat.Nodes.Where(node => node.Type is "mission.set_directive"))
+            if (!LuaName(node.Get("module")) || node.Get("directive").Length == 0)
+                result.Add(new(DiagnosticSeverity.Error, "Set Directive needs the mission module (missions.lua key) and a directive name.", node.Id));
+        if (flat.OfType("flow.delay").Count() > MissionGraphCompiler.MaxTimers)
+            result.Add(new(DiagnosticSeverity.Warning, $"The server keeps at most {MissionGraphCompiler.MaxTimers} mission timers; more Delays than that cannot all wait at once."));
         foreach (var node in flat.OfType("flow.finish_branch"))
             if (flat.Node(node.Get("parallel")) is not { Type: "flow.parallel_all" })
                 result.Add(new(DiagnosticSeverity.Error, "Parallel node id must name a Parallel All node.", node.Id));

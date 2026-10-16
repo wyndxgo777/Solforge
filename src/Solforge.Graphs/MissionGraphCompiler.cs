@@ -7,80 +7,72 @@ public sealed record MissionCompileResult(string Lua, IReadOnlyList<string> Hand
 
 /**
  * Compiles a mission graph to a Sunrise mission script module (the table of on_start, on_load and on_event_*
- * handlers MissionScriptFactory writes). Delay and Wait Signal continuations live in a per-run table keyed by the
- * state table; they do not survive a reload (on_load), which the generated header says.
+ * handlers MissionScriptFactory writes). The output uses only what the server's sandbox and context bind
+ * (mission_script_lua_sandbox.cpp, mission_script_lua_context_api.cpp, mission_script_lua_state_api.cpp):
+ * no print, os, pcall, pairs or weak tables. Graph state that must outlive a callback lives in the mission
+ * state, which the server saves and restores: Do Once, Parallel joins, waiting Wait Signals, flags and
+ * numbers are mission variables (context:set_variable / state:variable), and each Delay is a named mission
+ * timer (context:start_timer) whose timer_elapsed event runs the continuation, also after a reload.
  */
 public static class MissionGraphCompiler
 {
+    /** state::activity::mission::kTimerCapacity: timers one mission state holds at once. */
+    public const int MaxTimers = 32;
+    /** kStateKeyByteCapacity is 64 with a terminator: keys are 1 to 63 bytes. */
+    public const int MaxKeyLength = 63;
+    /** context:log refuses longer text. */
+    public const int MaxLogLength = 400;
+
     private const string Header = """
         local sf = {}
-        local runs = setmetatable({}, {__mode = "k"})
         local k = {}
+        local values = {}
         local signal_handlers = {}
+        local waits = {}
+        local delays = {}
 
-        function sf.call(context, name, ...)
-            local fn = context and context[name]
-            if type(fn) ~= "function" then return nil end
-            local ok, result = pcall(fn, context, ...)
-            if ok then return result end
-            print("[solforge] " .. name .. " failed: " .. tostring(result))
-            return nil
+        function sf.ms(seconds)
+            local ms = math.floor((tonumber(seconds) or 0) * 1000 + 0.5)
+            if ms ~= ms or ms < 0 then return 0 end
+            if ms > 4294967295 then return 4294967295 end
+            return ms
         end
 
-        function sf.run(state)
-            local run = runs[state]
-            if run == nil then
-                run = {waiting = {}, timers = {}, once = {}, joins = {}, values = {}}
-                runs[state] = run
-            end
-            return run
-        end
-
-        function sf.vars(state)
-            state.sf_vars = state.sf_vars or {}
-            return state.sf_vars
-        end
-
-        function sf.now(context, event)
-            if type(event) == "table" and type(event.time) == "number" then return event.time end
-            local now = sf.call(context, "get_time")
-            if type(now) == "number" then return now end
-            return os.clock()
-        end
-
-        function sf.filter_health(context, entity, threshold)
-            if entity == nil then return nil end
-            local health = sf.call(context, "get_health_fraction", entity)
-            if type(health) == "number" and health < threshold then return entity end
-            return nil
+        function sf.number(value)
+            local number = tonumber(value) or 0
+            if number ~= number or number == math.huge or number == -math.huge then return 0 end
+            return number
         end
 
         function sf.signal(context, state, event, name)
-            local run = sf.run(state)
             local ready = {}
-            for i = #run.waiting, 1, -1 do
-                if run.waiting[i].signal == name then
-                    table.insert(ready, 1, run.waiting[i].k)
-                    table.remove(run.waiting, i)
+            for _, wait in ipairs(waits[name] or {}) do
+                if state:has_variable(wait.key) then
+                    context:clear_variable(wait.key)
+                    table.insert(ready, k[wait.id])
                 end
             end
             for _, handler in ipairs(signal_handlers[name] or {}) do handler(context, state, event) end
             for _, continuation in ipairs(ready) do continuation(context, state, event) end
         end
 
-        function sf.tick(context, state, event)
-            local run = sf.run(state)
-            local now = sf.now(context, event)
-            for i = #run.timers, 1, -1 do
-                local timer = run.timers[i]
-                if now >= timer.due then
-                    table.remove(run.timers, i)
-                    timer.k(context, state, event)
-                end
-            end
+        function sf.timer(context, state, event)
+            local id = delays[event.timer_name]
+            if id ~= nil and k[id] ~= nil then k[id](context, state, event) end
         end
 
         """;
+
+    /** A mission variable or timer key: prefix and text, 1 to 63 of A-Z a-z 0-9 _ - . / (valid_key). */
+    public static string Key(string prefix, string text)
+    {
+        var builder = new StringBuilder(prefix);
+        foreach (char c in text) builder.Append(char.IsAsciiLetterOrDigit(c) || c is '_' or '-' or '.' or '/' ? c : '_');
+        if (builder.Length <= MaxKeyLength) return builder.ToString();
+        uint hash = 2166136261;
+        foreach (char c in text) { hash ^= c; hash *= 16777619; }
+        return builder.ToString(0, MaxKeyLength - 9) + "." + hash.ToString("x8", CultureInfo.InvariantCulture);
+    }
 
     public static MissionCompileResult Compile(GraphDocument document)
     {
@@ -89,8 +81,26 @@ public static class MissionGraphCompiler
         var writer = new Writer(flat, diagnostics);
         var lua = new StringBuilder();
         lua.Append("-- Generated by Solforge from mission graph \"").Append(document.Name.Replace("\n", " ")).AppendLine("\". Edit the graph, not this file.");
-        lua.AppendLine("-- Delay and Wait Signal continuations are per run and are not restored by on_load.");
+        lua.AppendLine("-- Delays are mission timers and graph state is mission variables, so both survive a save and reload.");
+        // Generated mission modules load while the VM opens (their initialisation budget), never inside a callback.
+        var modules = flat.OfType("mission.set_directive").Select(node => node.Get("module")).Where(GraphValidation.LuaName)
+            .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
+        if (modules.Count > 0)
+        {
+            lua.AppendLine("local missions = require(\"missions\")");
+            lua.AppendLine("local mission_modules = {}");
+            foreach (string module in modules)
+                lua.Append("mission_modules.").Append(module).Append(" = require(missions.").Append(module).AppendLine(")");
+            lua.AppendLine();
+        }
         lua.Append(Header);
+        foreach (var node in flat.OfType("flow.delay").OrderBy(node => node.Id, StringComparer.Ordinal))
+            lua.Append("delays[").Append(Quote(Key("sf.d.", node.Id))).Append("] = ").AppendLine(Quote(node.Id));
+        foreach (var group in flat.OfType("flow.wait_signal").GroupBy(node => node.Get("signal", "ObjectiveUpdated"), StringComparer.Ordinal)
+                     .OrderBy(group => group.Key, StringComparer.Ordinal))
+            lua.Append("waits[").Append(Quote(group.Key)).Append("] = {").AppendJoin(", ", group.OrderBy(node => node.Id, StringComparer.Ordinal)
+                .Select(node => $"{{key = {Quote(Key("sf.w.", node.Id))}, id = {Quote(node.Id)}}}")).AppendLine("}");
+        lua.AppendLine();
 
         // Continuations first, so handlers can refer to them through k[...] in any order.
         foreach (var node in flat.Nodes.Where(node => node.Type is "flow.delay" or "flow.wait_signal" or "flow.parallel_all").OrderBy(node => node.Id, StringComparer.Ordinal))
@@ -131,7 +141,7 @@ public static class MissionGraphCompiler
             lua.Append("    ").Append(name).AppendLine(" = function(context, state, event)");
             foreach (var node in nodes.OrderBy(node => node.Y).ThenBy(node => node.Id, StringComparer.Ordinal))
                 writer.Chain(lua, node.Id, "then", 2, []);
-            if (timers && name == "on_event_timer_elapsed") lua.AppendLine("        sf.tick(context, state, event)");
+            if (timers && name == "on_event_timer_elapsed") lua.AppendLine("        sf.timer(context, state, event)");
             lua.AppendLine("    end,");
         }
         lua.AppendLine("}");
@@ -176,7 +186,6 @@ public static class MissionGraphCompiler
                 return;
             }
             var next = new HashSet<string>(path, StringComparer.Ordinal) { node.Id };
-            string id = Quote(node.Id);
             switch (node.Type)
             {
                 case "flow.branch":
@@ -193,58 +202,83 @@ public static class MissionGraphCompiler
                     foreach (string then in new[] { "then0", "then1", "then2" }) Chain(lua, node.Id, then, indent, next);
                     return;
                 case "flow.parallel_all":
-                    Line(lua, indent, $"sf.run(state).joins[{id}] = 0");
+                    Line(lua, indent, $"context:set_variable({Quote(Key("sf.j.", node.Id))}, 0)");
                     Chain(lua, node.Id, "a", indent, next);
                     Chain(lua, node.Id, "b", indent, next);
                     return;
                 case "flow.finish_branch":
                 {
-                    string parallel = Quote(node.Get("parallel"));
+                    string parallel = Quote(node.Get("parallel")), key = Quote(Key("sf.j.", node.Get("parallel")));
                     Line(lua, indent, "do");
-                    Line(lua, indent + 1, "local joins = sf.run(state).joins");
-                    Line(lua, indent + 1, $"joins[{parallel}] = (joins[{parallel}] or 0) + 1");
-                    Line(lua, indent + 1, $"if joins[{parallel}] == 2 and k[{parallel}] then k[{parallel}](context, state, event) end");
+                    Line(lua, indent + 1, $"local joined = (state:variable({key}) or 0) + 1");
+                    Line(lua, indent + 1, $"context:set_variable({key}, joined)");
+                    Line(lua, indent + 1, $"if joined == 2 and k[{parallel}] then k[{parallel}](context, state, event) end");
                     Line(lua, indent, "end");
                     return;
                 }
                 case "flow.delay":
-                    Line(lua, indent, $"table.insert(sf.run(state).timers, {{due = sf.now(context, event) + ({Expr(node, "seconds")}), k = k[{id}]}})");
+                    Line(lua, indent, $"context:start_timer({Quote(Key("sf.d.", node.Id))}, sf.ms({Expr(node, "seconds")}))");
                     return;
                 case "flow.wait_signal":
-                    Line(lua, indent, $"table.insert(sf.run(state).waiting, {{signal = {Quote(node.Get("signal", "ObjectiveUpdated"))}, k = k[{id}]}})");
+                    Line(lua, indent, $"context:set_variable({Quote(Key("sf.w.", node.Id))}, true)");
                     return;
                 case "flow.send_signal":
                     Line(lua, indent, $"sf.signal(context, state, event, {Quote(node.Get("signal", "ObjectiveUpdated"))})");
                     break;
                 case "flow.do_once":
-                    Line(lua, indent, $"if not sf.run(state).once[{id}] then");
-                    Line(lua, indent + 1, $"sf.run(state).once[{id}] = true");
+                    Line(lua, indent, $"if not state:has_variable({Quote(Key("sf.o.", node.Id))}) then");
+                    Line(lua, indent + 1, $"context:set_variable({Quote(Key("sf.o.", node.Id))}, true)");
                     Chain(lua, node.Id, "then", indent + 1, next);
                     Line(lua, indent, "end");
                     return;
                 case "state.set_flag":
-                    Line(lua, indent, $"sf.vars(state)[{Quote(node.Get("name", "flag"))}] = {Expr(node, "value")} and true or false");
+                    Line(lua, indent, $"context:set_variable({Quote(Key("sf.f.", node.Get("name", "flag")))}, ({Expr(node, "value")}) and true or false)");
                     break;
                 case "state.set_number":
-                    Line(lua, indent, $"sf.vars(state)[{Quote(node.Get("name", "count"))}] = {Expr(node, "value")}");
+                    Line(lua, indent, $"context:set_variable({Quote(Key("sf.n.", node.Get("name", "count")))}, sf.number({Expr(node, "value")}))");
                     break;
-                case "mission.set_objective":
-                    Line(lua, indent, $"sf.call(context, \"set_objective\", {Expr(node, "text")})");
+                case "mission.set_directive":
+                {
+                    string module = node.Get("module"), sensor = node.Get("sensor");
+                    if (!GraphValidation.LuaName(module) || node.Get("directive").Length == 0)
+                    {
+                        Line(lua, indent, "-- Set Directive needs a mission module and a directive");
+                        break;
+                    }
+                    Line(lua, indent, "do");
+                    Line(lua, indent + 1, $"local directive = mission_modules.{module}.Directive[{Quote(node.Get("directive"))}]");
+                    Line(lua, indent + 1, $"context:slot({(sensor.Length > 0 ? Quote(sensor) : "directive.sensor")}):set_directive{{directive = directive}}");
+                    Line(lua, indent, "end");
                     break;
-                case "mission.spawn_squad":
-                    Line(lua, indent, $"sf.run(state).values[{Quote(node.Id + ".squad")}] = sf.call(context, \"spawn_squad\", {Quote(node.Get("name"))})");
+                }
+                case "mission.place_squad":
+                    Line(lua, indent, $"context:squad({Quote(node.Get("name"))}):place{{}}");
+                    break;
+                case "mission.fire_trigger":
+                    Line(lua, indent, $"context:slot({Quote(node.Get("slot"))}):fire_trigger()");
+                    break;
+                case "mission.set_phase":
+                    Line(lua, indent, $"context:set_phase(math.floor(sf.number({Expr(node, "phase")})))");
+                    break;
+                case "mission.complete":
+                    Line(lua, indent, "context:complete_mission{}");
                     break;
                 case "mission.log":
-                    Line(lua, indent, $"print(\"[mission] \" .. tostring({Expr(node, "text")}))");
+                    Line(lua, indent, $"context:log(string.sub(tostring({Expr(node, "text")}), 1, {MaxLogLength}))");
                     break;
                 case "mission.call":
                 {
+                    string function = node.Get("function");
+                    if (!NodeLibrary.MissionContextFunctions.Contains(function, StringComparer.Ordinal))
+                    {
+                        Line(lua, indent, $"-- the server's mission context has no function {function.Replace("\n", " ")}");
+                        break;
+                    }
                     var args = new List<string>();
                     foreach (string arg in new[] { "a1", "a2", "a3" })
                         args.Add(graph.Sources(node.Id, arg).Any() || node.Properties.ContainsKey(arg) ? Expr(node, arg) : "nil");
                     while (args.Count > 0 && args[^1] == "nil") args.RemoveAt(args.Count - 1);
-                    string call = $"sf.call(context, {Quote(node.Get("function"))}{string.Concat(args.Select(arg => ", " + arg))})";
-                    Line(lua, indent, $"sf.run(state).values[{Quote(node.Id + ".result")}] = {call}");
+                    Line(lua, indent, $"values[{Quote(node.Id + ".result")}] = context:{function}({string.Join(", ", args)})");
                     break;
                 }
                 case "mission.lua":
@@ -257,7 +291,8 @@ public static class MissionGraphCompiler
                     return;
                 default:
                     Line(lua, indent, $"-- {node.Type} does not run in a mission graph");
-                    diagnostics.Add(new(DiagnosticSeverity.Warning, $"{node.Type} does not run in a mission graph.", node.Id));
+                    diagnostics.Add(new(DiagnosticSeverity.Warning, NodeLibrary.RemovedMissionNodes.TryGetValue(node.Type, out var removed)
+                        ? removed : $"{node.Type} does not run in a mission graph.", node.Id));
                     return;
             }
             Chain(lua, node.Id, "then", indent, next);
@@ -326,23 +361,22 @@ public static class MissionGraphCompiler
                     string[] names = pin switch { "x" => ["x", "r"], "y" => ["y", "g"], "z" => ["z", "b"], _ => ["w", "a"] };
                     return $"(function(v) return v.{names[0]} or v.{names[1]} end)({In("value")})";
                 }
-                case "state.get_flag": return $"(sf.vars(state)[{Quote(Prop("name"))}] == true)";
-                case "state.get_number": return $"(sf.vars(state)[{Quote(Prop("name"))}] or 0)";
+                case "state.get_flag": return $"(state:variable({Quote(Key("sf.f.", Prop("name")))}) == true)";
+                case "state.get_number": return $"(state:variable({Quote(Key("sf.n.", Prop("name")))}) or 0)";
+                case "state.get_phase": return "state.phase";
                 case "event.field": return $"(({In("event")}) or {{}})[{Quote(Prop("field"))}]";
                 case "mission.event": return "event";
-                case "entity.get_player": return $"sf.call(context, \"get_player\", {In("index")})";
-                case "entity.get_squad": return $"sf.call(context, \"get_squad\", {Quote(Prop("name"))})";
-                case "entity.find_named_actor": return $"sf.call(context, \"find_named_actor\", {Quote(Prop("name"))})";
-                case "entity.filter_by_health": return $"sf.filter_health(context, {In("entity")}, {In("threshold")})";
-                case "mission.spawn_squad": return $"sf.run(state).values[{Quote(node.Id + ".squad")}]";
-                case "mission.call": return $"sf.run(state).values[{Quote(node.Id + ".result")}]";
+                case "entity.get_squad": case "mission.place_squad": return $"context:squad({Quote(Prop("name"))})";
+                case "entity.slot": return $"context:slot({Quote(Prop("name"))})";
+                case "mission.call": return $"values[{Quote(node.Id + ".result")}]";
                 case "conv.float_int": return $"math.floor({In("in")})";
                 case "conv.bool_float": case "conv.bool_int": return $"({In("in")} and 1 or 0)";
                 case "conv.int_string": case "conv.float_string": case "conv.bool_string": return $"tostring({In("in")})";
                 case "conv.entity_bool": return $"({In("in")} ~= nil)";
             }
             if (node.Type.StartsWith("conv.", StringComparison.Ordinal)) return In("in");
-            diagnostics.Add(new(DiagnosticSeverity.Warning, $"{node.Type} has no Lua value; nil is used.", node.Id));
+            diagnostics.Add(new(DiagnosticSeverity.Warning, NodeLibrary.RemovedMissionNodes.TryGetValue(node.Type, out var removed)
+                ? removed : $"{node.Type} has no Lua value; nil is used.", node.Id));
             return "nil";
         }
     }
