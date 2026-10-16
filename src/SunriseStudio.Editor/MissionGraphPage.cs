@@ -26,7 +26,10 @@ public sealed partial class MissionGraphPage
     private readonly Stack<string> undo = [], redo = [];
     private StudioProject? project;
     private StudioWorkspace? workspaceOwner;
-    private string selected = "", groupKey = MissionScriptGraph.Root, advancedField = "", advancedValue = "", sourceDraft = "", referenceFilter = "";
+    private string selected = "", groupKey = MissionScriptGraph.Root, advancedField = "", advancedValue = "", referenceFilter = "";
+    // The Lua tab: two-way sync with the nodes (shared with the node graph model); a draft that does not parse stays.
+    private readonly Solforge.Graphs.GraphSourceSync source = new();
+    private static double Now => Environment.TickCount64 / 1000.0;
     private string newId = "step", status = "";
     // True when status holds an error.
     private bool statusFailed;
@@ -52,15 +55,21 @@ public sealed partial class MissionGraphPage
     public MissionGraphDocument? Document => graph;
     /** The file this script saves to; null until a new script is first saved. */
     public string? ScriptPath => stored ? script?.FullPath : null;
+    /** The open script's file, also before a new script is first saved; null with no script open (the unified Graph panel). */
+    public string? OpenScriptPath => graph is null ? null : script?.FullPath;
     public bool IsInstalledScript => home == ScriptHome.Installed;
+    /** The Checks tab's document, scene and template findings plus a Lua draft that did not apply (for the AI). */
+    public IReadOnlyList<string> CheckLines => graph is null ? []
+        : [.. graph.Diagnostics.Concat(sceneChecks).Select(diagnostic => diagnostic.Message),
+            .. (source.Error.Length > 0 ? new[] { "Lua tab not applied: " + source.Error } : [])];
     // The Lua tab holds text that is not applied yet.
-    private bool HasSourceDraft => graph is not null && sourceDraft != graph.Source;
+    private bool HasSourceDraft => graph is not null && source.Draft != graph.Source;
 
     /** Discard drops only the unsaved editor document; no file changes. */
     public void DiscardDraft()
     {
         legacyAssetId = null;
-        graph = null; script = null; scriptGraph = null; stored = false; sourceDraft = "";
+        graph = null; script = null; scriptGraph = null; stored = false; source.Reset("");
         undo.Clear(); redo.Clear(); selected = "";
         ClearLuaDrafts();
         pendingSwitch = null; showSwitch = false; IsDirty = false;
@@ -77,8 +86,12 @@ public sealed partial class MissionGraphPage
     {
         if (!HasSourceDraft) return;
         RequireNoLuaDrafts();
-        var next = MissionGraphDocument.Parse(sourceDraft);
-        undo.Push(graph!.Source); redo.Clear(); graph = next; IsDirty = true; Refresh();
+        if (!source.TryApply(text =>
+            {
+                var next = MissionGraphDocument.Parse(text);
+                undo.Push(graph!.Source); redo.Clear(); graph = next; IsDirty = true; Refresh();
+            }, Now, force: true))
+            throw new InvalidDataException("The Lua tab does not parse, so it was not applied (see Checks): " + source.Error);
     }
 
     /** Opens an installed script, or a script in the open project's scripts folder. */
@@ -167,22 +180,13 @@ public sealed partial class MissionGraphPage
                 if (statusFailed) Problem(status);
                 else ImGui.TextDisabled(status);
             }
-            if (ImGui.BeginTabBar("mission-views"))
-            {
-                if (UiAuto.BeginTabItem("Nodes")) { DrawNodes(CanEdit); UiAuto.EndTabItem(); }
-                if (UiAuto.BeginTabItem("Lua")) { DrawSource(CanEdit); UiAuto.EndTabItem(); }
-                var calls = ApiChecks();
-                string sdk = SdkProblem;
-                int problems = graph.Diagnostics.Count + sceneChecks.Count + calls.Count
-                    + (scriptError.Length > 0 ? 1 : 0) + (sdk.Length > 0 ? 1 : 0);
-                // The ### id keeps the tab selected when its count changes.
-                if (UiAuto.BeginTabItem(problems > 0 ? $"Checks ({problems})###checks" : "Checks###checks"))
-                {
-                    DrawChecks(calls, sdk, problems);
-                    UiAuto.EndTabItem();
-                }
-                ImGui.EndTabBar();
-            }
+            var calls = ApiChecks();
+            string sdk = SdkProblem;
+            int problems = graph.Diagnostics.Count + sceneChecks.Count + calls.Count
+                + (scriptError.Length > 0 ? 1 : 0) + (sdk.Length > 0 ? 1 : 0) + (source.Error.Length > 0 ? 1 : 0);
+            // Unified Graph: the same Nodes / source / Checks views as the node graph model (GraphViews).
+            GraphViews.Tabs("mission-views", () => DrawNodes(CanEdit), "Lua", () => DrawSource(CanEdit), problems,
+                () => DrawChecks(calls, sdk, problems));
         }
         catch (Exception error) when (Recoverable(error)) { Fail(error.Message); workspace.Error = error.Message; }
     }
@@ -197,6 +201,7 @@ public sealed partial class MissionGraphPage
             return;
         }
         if (sdk.Length > 0) Problem(sdk);
+        if (source.Error.Length > 0) Problem("Lua tab not applied (the nodes keep the last good script): " + source.Error);
         if (scriptError.Length != 0) Problem("Script view: " + scriptError);
         foreach (var diagnostic in graph!.Diagnostics.Concat(sceneChecks)) Problem(diagnostic.Message);
         foreach (string check in calls) Problem(check);
@@ -204,12 +209,7 @@ public sealed partial class MissionGraphPage
     }
 
     /** One wrapped line in the problem color. */
-    private static void Problem(string text)
-    {
-        ImGui.PushStyleColor(ImGuiCol.Text, ProblemColor);
-        ImGui.TextWrapped(text);
-        ImGui.PopStyleColor();
-    }
+    private static void Problem(string text) => GraphViews.Problem(text, ProblemColor);
 
     private void Fail(string text) { status = text; statusFailed = true; }
 
@@ -386,7 +386,7 @@ public sealed partial class MissionGraphPage
     /** Rebuilds every view of the current document: references, typed API, script graph and scene checks. */
     private void Refresh()
     {
-        sourceDraft = graph!.Source;
+        source.Reset(graph!.Source);
         if (catalog is not null && script is not null)
         {
             var current = catalog.DescribeSource(script.Name, script.RelativePath, graph) with { FullPath = script.FullPath };
@@ -401,6 +401,9 @@ public sealed partial class MissionGraphPage
         // With typed API checks on, they already check scene sends.
         try { sceneChecks = visual.SceneDiagnostics(sends: scriptGraph?.Api is null); }
         catch (InvalidDataException error) { sceneChecks = [new("Scene checks: " + error.Message)]; }
+        // Unified Graph: placeholders a template left, and Slot/Squad/Directive/states names this mission's SDK (the map) lacks.
+        var names = MissionTemplates.Check(graph.Source, references);
+        if (names.Count > 0) sceneChecks = [.. sceneChecks, .. names.Select(finding => new MissionGraphDiagnostic(finding.Message))];
         if (!GroupExists(groupKey)) groupKey = MissionScriptGraph.Root;
     }
 
@@ -468,7 +471,7 @@ public sealed partial class MissionGraphPage
         { FinishSwitch(); ImGui.CloseCurrentPopup(); }
         ImGui.EndDisabled(); ImGui.SameLine();
         if (UiAuto.Button("Discard"))
-        { ClearLuaDrafts(); IsDirty = false; sourceDraft = graph?.Source ?? ""; FinishSwitch(); ImGui.CloseCurrentPopup(); }
+        { ClearLuaDrafts(); IsDirty = false; source.Reset(graph?.Source ?? ""); FinishSwitch(); ImGui.CloseCurrentPopup(); }
         ImGui.SameLine(); if (UiAuto.Button("Cancel")) ImGui.CloseCurrentPopup();
         ImGui.EndPopup();
     }
@@ -508,13 +511,34 @@ public sealed partial class MissionGraphPage
     private void DrawSource(bool editable)
     {
         ImGui.BeginDisabled(!editable || !HasSourceDraft);
-        if (UiAuto.SmallButton("Apply")) Change(_ => MissionGraphDocument.Parse(sourceDraft));
+        if (UiAuto.SmallButton("Apply")) ApplySource(force: true);
         ImGui.SameLine();
-        if (UiAuto.SmallButton("Revert")) sourceDraft = graph!.Source;
+        if (UiAuto.SmallButton("Revert")) source.Reset(graph!.Source);
         ImGui.EndDisabled();
+        ImGui.SameLine();
+        bool live = source.Live;
+        if (UiAuto.Checkbox("Live##lua-live", ref live)) source.Live = live;
+        Tip("Apply Lua edits to the nodes after a short pause. Lua that does not parse is kept here and listed in Checks.");
+        if (source.Error.Length > 0) { ImGui.SameLine(); ImGui.TextColored(ProblemColor, "Not applied: see Checks"); }
         if (editable) ImGui.SameLine();
         // Room to paste the largest installed script over the draft.
-        LuaText("source", ref sourceDraft, new(-1, -1), editable, headroom: 512 * 1024);
+        string text = source.Draft;
+        LuaText("source", ref text, new(-1, -1), editable, headroom: 512 * 1024);
+        if (!editable) return;
+        source.Edit(text, Now);
+        if (source.Due(Now)) ApplySource(force: false);
+    }
+
+    /** Lua tab to nodes: one undo step; bad Lua leaves the graph and the draft as they are and reports in Checks. */
+    private void ApplySource(bool force)
+    {
+        if (graph is null || HasLuaDrafts) return;
+        source.TryApply(text =>
+        {
+            var next = MissionGraphDocument.Parse(text);
+            if (next.Source == graph!.Source) return;
+            undo.Push(graph.Source); redo.Clear(); graph = next; IsDirty = true; Note(""); Refresh();
+        }, Now, force);
     }
 
     private static string Friendly(string text)

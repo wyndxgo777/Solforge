@@ -4,7 +4,11 @@ using System.Text.Json.Serialization;
 
 namespace SunriseStudio.Editor;
 
-public enum StudioPanelKind { Empty, Workspace, Browser, Inspector, Changes, ObjectTree, MissionGraph, AI, NodeGraph, LocalServer }
+/**
+ * Area editors. MissionGraph and NodeGraph are the old ids of the unified Graph panel: saved layouts, popouts and
+ * callers that name them get Graph (Canonical); new layouts store Graph. Values only ever append.
+ */
+public enum StudioPanelKind { Empty, Workspace, Browser, Inspector, Changes, ObjectTree, MissionGraph, AI, NodeGraph, LocalServer, Graph }
 public enum StudioSplitAxis { Columns, Rows }
 
 public sealed class StudioLayoutNode
@@ -20,8 +24,8 @@ public sealed class StudioLayoutNode
     [JsonIgnore] public bool IsLeaf => First is null && Second is null;
 
     /** Panels that fold to a strip; the editor, the AI workspace and empty areas never do. */
-    public static bool Collapsible(StudioPanelKind kind) => kind is StudioPanelKind.Browser or StudioPanelKind.MissionGraph
-        or StudioPanelKind.Changes or StudioPanelKind.ObjectTree or StudioPanelKind.Inspector;
+    public static bool Collapsible(StudioPanelKind kind) => kind is StudioPanelKind.Browser or StudioPanelKind.Graph
+        or StudioPanelKind.MissionGraph or StudioPanelKind.NodeGraph or StudioPanelKind.Changes or StudioPanelKind.ObjectTree or StudioPanelKind.Inspector;
 }
 
 public sealed partial class StudioLayout
@@ -63,8 +67,11 @@ public sealed partial class StudioLayout
     {
         try
         {
-            if (value is { } json && json.Deserialize<StudioLayoutNode>(Json) is { } root && Valid(root))
-                return new(root);
+            if (value is { } json && json.Deserialize<StudioLayoutNode>(Json) is { } root)
+            {
+                if (Valid(root, allowLegacy: true)) Migrate(root);
+                if (Valid(root)) return new(root);
+            }
         }
         catch (Exception error) when (error is JsonException or NotSupportedException or InvalidOperationException) { }
         return Default(browser, inspector, changes);
@@ -72,12 +79,35 @@ public sealed partial class StudioLayout
 
     public JsonElement Save() => JsonSerializer.SerializeToElement(Root, Json);
     public StudioLayoutNode? Find(int id) => Nodes(Root).FirstOrDefault(node => node.Id == id);
-    public StudioLayoutNode? Find(StudioPanelKind kind) => Panels.FirstOrDefault(node => node.Panel == kind);
+    public StudioLayoutNode? Find(StudioPanelKind kind) { kind = Canonical(kind); return Panels.FirstOrDefault(node => node.Panel == kind); }
+
+    /** The panel an id opens: the old Mission Graph and Node Graph ids open the unified Graph panel. */
+    public static StudioPanelKind Canonical(StudioPanelKind kind) =>
+        kind is StudioPanelKind.MissionGraph or StudioPanelKind.NodeGraph ? StudioPanelKind.Graph : kind;
+
+    /** Kinds the panel picker and Panels menu offer: every editor once, without the old graph ids. */
+    public static IEnumerable<StudioPanelKind> Pickable => Enum.GetValues<StudioPanelKind>().Where(kind => Canonical(kind) == kind);
+
+    /**
+     * Saved layouts from before the unified Graph panel: the first Mission Graph or Node Graph area becomes the Graph
+     * panel and a second one (both were open) becomes an empty area, so the layout stays valid and nothing is lost.
+     */
+    private static void Migrate(StudioLayoutNode root)
+    {
+        bool graph = Nodes(root).Any(node => node.IsLeaf && node.Panel == StudioPanelKind.Graph);
+        foreach (var node in Nodes(root).Where(node => node.IsLeaf && Canonical(node.Panel) != node.Panel).ToArray())
+        {
+            node.Panel = graph ? StudioPanelKind.Empty : StudioPanelKind.Graph;
+            if (node.Panel == StudioPanelKind.Empty) node.Collapsed = null;
+            graph = true;
+        }
+    }
 
     /** Stateful editors move between areas; each owns one renderer and one edit context. */
     public void SetPanel(int id, StudioPanelKind kind)
     {
         if (!Enum.IsDefined(kind)) throw new ArgumentOutOfRangeException(nameof(kind));
+        kind = Canonical(kind);
         if (Find(id) is not { IsLeaf: true } node) return;
         if (kind != StudioPanelKind.Empty && Find(kind) is { } other && other != node) other.Panel = node.Panel;
         node.Panel = kind;
@@ -112,6 +142,7 @@ public sealed partial class StudioLayout
 
     public StudioLayoutNode Show(StudioPanelKind kind)
     {
+        kind = Canonical(kind);
         if (Find(kind) is { } existing) return existing;
         var target = Find(StudioPanelKind.Empty)
             ?? Split(LargestPanel(Root, 1).Node.Id, StudioSplitAxis.Columns)
@@ -146,7 +177,8 @@ public sealed partial class StudioLayout
         if (root.Second is { } second) foreach (var node in Nodes(second)) yield return node;
     }
 
-    private static bool Valid(StudioLayoutNode root)
+    /** @param allowLegacy Accepts the old graph ids (each once) so Migrate can fold them into Graph. */
+    private static bool Valid(StudioLayoutNode root, bool allowLegacy = false)
     {
         HashSet<int> ids = [];
         HashSet<StudioPanelKind> panels = [];
@@ -156,7 +188,7 @@ public sealed partial class StudioLayout
         bool Visit(StudioLayoutNode node, int depth)
         {
             if (depth > MaximumPanels || node.Id is <= 0 or >= int.MaxValue - 64 || !ids.Add(node.Id)
-                || !Enum.IsDefined(node.Panel) || !Enum.IsDefined(node.Axis) || !float.IsFinite(node.Ratio)
+                || !Enum.IsDefined(node.Panel) || !allowLegacy && Canonical(node.Panel) != node.Panel || !Enum.IsDefined(node.Axis) || !float.IsFinite(node.Ratio)
                 || node.Ratio is <= 0 or >= 1) return false;
             if (node.IsLeaf) return ++count <= MaximumPanels
                 && (node.Panel == StudioPanelKind.Empty || panels.Add(node.Panel));

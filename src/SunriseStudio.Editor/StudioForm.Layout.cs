@@ -20,8 +20,8 @@ public sealed partial class StudioForm
         StudioPanelKind.Browser => "Asset browser",
         StudioPanelKind.ObjectTree => "Object tree",
         StudioPanelKind.Changes => "Project changes",
-        StudioPanelKind.MissionGraph => "Mission Graph",
-        StudioPanelKind.NodeGraph => "Node Graph",
+        // The old Mission Graph and Node Graph ids open the unified Graph panel.
+        StudioPanelKind.Graph or StudioPanelKind.MissionGraph or StudioPanelKind.NodeGraph => "Graph",
         StudioPanelKind.LocalServer => "Local Server",
         StudioPanelKind.Empty => "Choose editor",
         _ => kind.ToString()
@@ -41,10 +41,10 @@ public sealed partial class StudioForm
             layout.Show(StudioPanelKind.Workspace);
             layoutDirty |= absent;
         }
-        if (focusMissionGraph && !ShowPopout(StudioPanelKind.MissionGraph))
+        if (focusMissionGraph && !ShowPopout(StudioPanelKind.Graph))
         {
-            bool absent = layout.Find(StudioPanelKind.MissionGraph) is null;
-            layout.Show(StudioPanelKind.MissionGraph);
+            bool absent = layout.Find(StudioPanelKind.Graph) is null;
+            layout.Show(StudioPanelKind.Graph);
             layoutDirty |= absent;
         }
         if (focusLocalServer && !ShowPopout(StudioPanelKind.LocalServer))
@@ -63,10 +63,8 @@ public sealed partial class StudioForm
         }
         var root = maximizedPanel is { } id ? layout.Find(id) : null;
         if (root is not { IsLeaf: true }) { root = layout.Root; maximizedPanel = null; }
-        if (layout.Find(StudioPanelKind.MissionGraph) is null && !IsPoppedOut(StudioPanelKind.MissionGraph))
-            missionGraphActive = false;
-        if (layout.Find(StudioPanelKind.NodeGraph) is null && !IsPoppedOut(StudioPanelKind.NodeGraph))
-            nodeGraphActive = false;
+        if (layout.Find(StudioPanelKind.Graph) is null && !IsPoppedOut(StudioPanelKind.Graph))
+            missionGraphActive = nodeGraphActive = false;
         DrawLayoutNode(root, position, size);
         if (pendingLayoutChange is { } change)
         {
@@ -122,7 +120,7 @@ public sealed partial class StudioForm
         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(4 * scale));
         ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, Vector2.One);
         BeginPanel($"area-{node.Id}-header", position, new(size.X, header), ImGuiWindowFlags.NoScrollbar);
-        if (node.Panel != StudioPanelKind.Empty) TrackAreaFocus(node.Panel == StudioPanelKind.MissionGraph);
+        if (node.Panel != StudioPanelKind.Empty) TrackAreaFocus(StudioLayout.Canonical(node.Panel) == StudioPanelKind.Graph);
         float button = ImGui.GetFrameHeight();
         // Solforge: Sol panel header (notch + uppercase title); the combo keeps its id and behaviour.
         float titleWidth = Math.Max(button, size.X - button - 16 * scale - SolTheme.HeaderIndent);
@@ -132,7 +130,7 @@ public sealed partial class StudioForm
         SolTheme.PushHeaderCombo();
         if (UiAuto.BeginCombo("##editor-type", ""))
         {
-            foreach (var kind in Enum.GetValues<StudioPanelKind>())
+            foreach (var kind in StudioLayout.Pickable)
             {
                 if (UiAuto.Selectable(PanelTitle(kind), node.Panel == kind))
                     pendingLayoutChange = () => { ClosePopout(kind); layout.SetPanel(node.Id, kind); };
@@ -206,16 +204,9 @@ public sealed partial class StudioForm
             case StudioPanelKind.Inspector: DrawInspector(position, size); break;
             case StudioPanelKind.Changes: DrawChanges(position, size); break;
             case StudioPanelKind.AI: DrawAiWorkspace(position, size); break;
-            case StudioPanelKind.NodeGraph: DrawNodeGraphPanel(position, size); break;
             case StudioPanelKind.LocalServer: DrawLocalServerPanel(position, size); break;
-            case StudioPanelKind.MissionGraph:
-                if (focusMissionGraph) ImGui.SetNextWindowFocus();
-                BeginPanel("Mission graph area", position, size);
-                if (focusMissionGraph || ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows))
-                    missionGraphActive = true; nodeGraphActive = false;
-                focusMissionGraph = false;
-                missionGraph.Draw(workspace);
-                ImGui.End();
+            case StudioPanelKind.Graph or StudioPanelKind.MissionGraph or StudioPanelKind.NodeGraph:
+                DrawGraphPanel(position, size);
                 break;
             case StudioPanelKind.ObjectTree:
                 BeginPanel("Object tree", position, size);
@@ -234,7 +225,7 @@ public sealed partial class StudioForm
     {
         if (UiAuto.BeginMenu("Panels"))
         {
-            foreach (var kind in Enum.GetValues<StudioPanelKind>().Where(kind => kind != StudioPanelKind.Empty))
+            foreach (var kind in StudioLayout.Pickable.Where(kind => kind != StudioPanelKind.Empty))
                 if (UiAuto.MenuItem(PanelTitle(kind), "", layout.Find(kind) is not null || IsPoppedOut(kind))
                     && !ShowPopout(kind, true))
                 {
@@ -285,7 +276,7 @@ public sealed partial class StudioForm
 
     private bool PanelEmpty(StudioPanelKind kind) => kind switch
     {
-        StudioPanelKind.MissionGraph => missionGraph.ScriptPath is null && !missionGraph.IsDirty,
+        StudioPanelKind.Graph or StudioPanelKind.MissionGraph or StudioPanelKind.NodeGraph => GraphPanelEmpty,
         StudioPanelKind.Browser => workspace.Assets.Length == 0 && workspace.Catalog is null,
         StudioPanelKind.Changes => workspace.Project is null,
         StudioPanelKind.ObjectTree => sceneTree is null,
@@ -324,8 +315,10 @@ public sealed partial class StudioForm
         ImGui.PopStyleVar(2);
     }
 
-    private void TrackAreaFocus(bool mission = false)
+    private void TrackAreaFocus(bool graph = false)
     {
-        if (ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows)) { missionGraphActive = mission; nodeGraphActive = false; }
+        if (!ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows)) return;
+        if (graph) SetGraphActive();
+        else missionGraphActive = nodeGraphActive = false;
     }
 }

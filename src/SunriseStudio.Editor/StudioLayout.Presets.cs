@@ -23,7 +23,7 @@ public sealed partial class StudioLayout
         _ => Default()
     };
 
-    /** Solforge's default (Seth's, 2026-10-15): Asset browser, Workspace and AI, over Local Server and the Mission Graph. */
+    /** Solforge's default (Seth's, 2026-10-15): Asset browser, Workspace and AI, over Local Server and the Graph panel (mission scripts and node graphs). */
     private static StudioLayout Solforge() => new(new()
     {
         Id = 1, Axis = StudioSplitAxis.Rows, Ratio = .74f,
@@ -42,7 +42,7 @@ public sealed partial class StudioLayout
         {
             Id = 7, Axis = StudioSplitAxis.Columns, Ratio = .5f,
             First = new() { Id = 8, Panel = StudioPanelKind.LocalServer },
-            Second = new() { Id = 9, Panel = StudioPanelKind.MissionGraph }
+            Second = new() { Id = 9, Panel = StudioPanelKind.Graph }
         }
     });
 
@@ -59,7 +59,7 @@ public sealed partial class StudioLayout
             {
                 Id = 5, Axis = StudioSplitAxis.Rows, Ratio = .6f,
                 First = new() { Id = 6, Panel = StudioPanelKind.LocalServer },
-                Second = new() { Id = 7, Panel = StudioPanelKind.MissionGraph }
+                Second = new() { Id = 7, Panel = StudioPanelKind.Graph }
             }
         }
     });
@@ -94,7 +94,7 @@ public sealed partial class StudioLayout
         {
             Id = 11, Axis = StudioSplitAxis.Columns, Ratio = .5f,
             First = new() { Id = 12, Panel = StudioPanelKind.LocalServer },
-            Second = new() { Id = 13, Panel = StudioPanelKind.MissionGraph }
+            Second = new() { Id = 13, Panel = StudioPanelKind.Graph }
         }
     });
 
@@ -134,6 +134,7 @@ public sealed partial class StudioLayout
      */
     public StudioLayoutSlot? Remove(StudioPanelKind kind)
     {
+        kind = Canonical(kind);
         if (kind == StudioPanelKind.Empty || Find(kind) is not { } node || node == Root) return null;
         var parent = Nodes(Root).First(item => item.First == node || item.Second == node);
         var sibling = parent.First == node ? parent.Second! : parent.First!;
@@ -147,6 +148,7 @@ public sealed partial class StudioLayout
      */
     public bool Reinsert(StudioPanelKind kind, StudioLayoutSlot slot)
     {
+        kind = Canonical(kind);
         if (!Enum.IsDefined(kind) || kind == StudioPanelKind.Empty || Find(kind) is not null || Panels.Count >= MaximumPanels
             || !Enum.IsDefined(slot.Axis) || !float.IsFinite(slot.Ratio) || slot.Ratio is <= 0 or >= 1
             || Find(slot.SiblingId) is not { } sibling) return false;

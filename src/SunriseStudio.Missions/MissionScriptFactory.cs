@@ -139,4 +139,33 @@ public static class MissionScriptFactory
         var graph = MissionGraphDocument.Parse(source); graph.RequireValid();
         return new(entry, graph);
     }
+
+    /**
+     * A new script of any activity type from its template (MissionTemplates), for a mission in missions.lua. The script
+     * lives at stem/stem.lua from its name; names come from that mission's SDK rows, so Checks validates it against
+     * the map's slots and squads.
+     */
+    public static MissionSdkActivity FindMission(MissionScriptCatalog catalog, string missionKey)
+    {
+        // A key (STRIKE_HYMN) or a map-ish name ("strike hymn", "edz freeroam"); a name must match one mission only.
+        string wanted = string.Concat((missionKey ?? "").Trim().Select(c => char.IsAsciiLetterOrDigit(c) ? char.ToUpperInvariant(c) : '_'));
+        if (wanted.Length == 0) throw new InvalidDataException("Name the mission (a missions.lua key such as STRIKE_HYMN, or the map).");
+        if (catalog.Missions.FirstOrDefault(value => value.Key.Equals(wanted, StringComparison.OrdinalIgnoreCase)) is { } exact) return exact;
+        var near = catalog.Missions.Where(value => value.Key.Contains(wanted, StringComparison.OrdinalIgnoreCase)).Take(6).ToArray();
+        return near.Length == 1 ? near[0] : throw new InvalidDataException(near.Length == 0
+            ? $"No installed mission matches {missionKey}; list_missions or list_mission_scripts names them."
+            : $"{missionKey} matches several missions: {string.Join(", ", near.Select(value => value.Key))}.");
+    }
+
+    public static MissionScriptDraft CreateTemplate(MissionScriptCatalog catalog, MissionActivityType type, string missionKey, string name)
+    {
+        var row = FindMission(catalog, missionKey);
+        if (string.IsNullOrWhiteSpace(name)) throw new InvalidDataException("Name the script.");
+        string stem = MissionScriptCatalog.ControllerStem(name);
+        var entry = new MissionScriptEntry(stem, stem + "/" + stem + ".lua", "", row.Module);
+        var references = catalog.ReadReferences(entry, catalog.Api?.MissionTables);
+        var graph = MissionGraphDocument.Parse(MissionTemplates.Create(type, row.Key, stem, references));
+        graph.RequireValid();
+        return new(entry, graph);
+    }
 }

@@ -603,6 +603,7 @@ public sealed partial class StudioForm
             }
             case "apply_item_edit": return AiApplyItemEdit(args);
             case "apply_graph": return AiApplyGraph(args);
+            case "create_mission_script": return AiCreateMissionScript(args);
             case "apply_vendor_edit": return AiApplyVendorEdit(args);
             case "start_creation": return AiStartCreation(args);
             case "replace_texture_pixels":

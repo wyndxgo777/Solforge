@@ -66,6 +66,22 @@ public sealed partial class MissionGraphPage
         if (CodeFont is not null) ImGui.PopFont();
     }
 
+    /**
+     * The same code editor for the unified Graph panel's other models (a node graph's JSON source and compiled output).
+     * @param lua Lua gets the highlighted preview when read-only; other text uses the plain code field.
+     * @return True when the text changed.
+     */
+    internal bool CodeText(string id, ref string text, Vector2 size, bool editable, bool lua)
+    {
+        string before = text;
+        if (lua) { LuaText(id, ref text, size, editable, preview: false); return text != before; }
+        if (CodeFont is { } font) ImGui.PushFont(font);
+        CodeInput("##code-" + id, ref text, 256 * 1024, size,
+            editable ? ImGuiInputTextFlags.AllowTabInput : ImGuiInputTextFlags.ReadOnly);
+        if (CodeFont is not null) ImGui.PopFont();
+        return text != before;
+    }
+
     /** ImGui copies the whole buffer each frame, so an idle field gets one sized to its text. */
     private bool CodeInput(string label, ref string text, uint headroom, Vector2 size,
         ImGuiInputTextFlags flags = ImGuiInputTextFlags.None, bool multiline = true)

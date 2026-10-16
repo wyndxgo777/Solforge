@@ -91,7 +91,9 @@ public sealed partial class StudioForm : Form
     /** Opens the named asset page (for example a material or animation page). */
     public void ShowAssetPage(string page)
     {
-        if (page.Equals("Mission Graph", StringComparison.OrdinalIgnoreCase)) { focusMissionGraph = true; return; }
+        // The unified Graph panel answers to its own name and both old panel names.
+        if (page.Equals("Mission Graph", StringComparison.OrdinalIgnoreCase) || page.Equals("Graph", StringComparison.OrdinalIgnoreCase)
+            || page.Equals("Node Graph", StringComparison.OrdinalIgnoreCase)) { focusMissionGraph = true; return; }
         if (page.Equals("Live", StringComparison.OrdinalIgnoreCase)) { focusLive = true; return; }
         if (page.Equals("Local Server", StringComparison.OrdinalIgnoreCase)) { focusLocalServer = true; return; }
         focusAssets = true; focusDocumentPage = page; focusAssetPage = true; inspectAsset = true;
@@ -459,7 +461,7 @@ public sealed partial class StudioForm : Form
             focusMissionGraph = true;
         }
         if (!initialPageSelected && options.Page is { } page
-            && (workspace.Document is not null || page is "Mission Graph" or "Live"))
+            && (workspace.Document is not null || page is "Mission Graph" or "Graph" or "Node Graph" or "Live"))
         { initialPageSelected = true; ShowAssetPage(page); }
     }
 

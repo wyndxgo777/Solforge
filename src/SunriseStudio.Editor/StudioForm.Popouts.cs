@@ -9,7 +9,8 @@ public sealed partial class StudioForm
 {
     private readonly List<StudioPopout> popouts = [];
 
-    private bool IsPoppedOut(StudioPanelKind kind) => popouts.Any(popout => popout.Panel == kind);
+    // The old Mission Graph and Node Graph ids (saved popouts, callers) name the unified Graph panel.
+    private bool IsPoppedOut(StudioPanelKind kind) => popouts.Any(popout => popout.Panel == StudioLayout.Canonical(kind));
 
     /** Reopens the saved windows; an editor the layout already shows stays docked. */
     private void RestorePopouts()
@@ -49,6 +50,7 @@ public sealed partial class StudioForm
 
     private void OpenPopout(StudioPanelKind kind, Rectangle? bounds)
     {
+        kind = StudioLayout.Canonical(kind);
         var popout = new StudioPopout(kind, PanelTitle(kind), studioIcon, bounds);
         popout.Show(this);
         try { popout.Attach(renderer!, gui!, scale); }
@@ -69,6 +71,7 @@ public sealed partial class StudioForm
     /** Closes the editor's window, if it has one, without docking it. */
     private void ClosePopout(StudioPanelKind kind)
     {
+        kind = StudioLayout.Canonical(kind);
         if (popouts.FirstOrDefault(popout => popout.Panel == kind) is not { } popout) return;
         popouts.Remove(popout);
         popout.Dispose();
@@ -82,6 +85,7 @@ public sealed partial class StudioForm
      */
     private bool ShowPopout(StudioPanelKind kind, bool activate = false)
     {
+        kind = StudioLayout.Canonical(kind);
         if (popouts.FirstOrDefault(popout => popout.Panel == kind) is not { } popout) return false;
         if (popout.WindowState == FormWindowState.Minimized) popout.WindowState = FormWindowState.Normal;
         if (activate) popout.Activate();
