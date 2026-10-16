@@ -63,7 +63,10 @@ public static partial class SolforgeTools
         "content by name with list_maps (zones) and search_assets, open it with open_map, then find_world_objects (layer volumes " +
         "or collision) and get_placement before edit_placement or edit_bounds. Playbooks for common jobs are skills named " +
         "solforge-new-weapon, solforge-new-armor, solforge-map-bounds, solforge-patrol-content, solforge-new-enemy and " +
-        "solforge-new-mission; read the matching one first. Action tools need the user's approve click.";
+        "solforge-new-mission; read the matching one first. Action tools need the user's approve click. " +
+        "For how the game client works (functions, xrefs, strings, structs, vtables, tag class handlers in destiny2.exe) and for raw " +
+        "tag data, unknown tag classes, localized text and JSON/CSV export, start with decomp_status and read the solforge-decomp skill; " +
+        "paged results return next_cursor, which you pass back as cursor.";
 
     /** read_panel names; each pages with offset/limit. */
     public static readonly string[] Panels =
@@ -288,7 +291,8 @@ public static partial class SolforgeTools
                 },
                 args => args["content"] is not null ? $"Write {McpJson.String(args, "path")} ({McpJson.String(args, "content")?.Length ?? 0} chars)"
                     : $"Edit {McpJson.String(args, "path")}: replace {Quote(McpJson.String(args, "find"))} with {Quote(McpJson.String(args, "replace"))}"),
-            .. ProjectTools(host, Read, Act)
+            .. ProjectTools(host, Read, Act),
+            .. DataTools(host)
         ];
     }
 

@@ -113,6 +113,7 @@ public sealed partial class StudioForm
             if (ImGui.MenuItem("Mission Graph")) focusMissionGraph = true;
             if (ImGui.MenuItem("Live")) focusLive = true;
             if (ImGui.MenuItem("Items", "", false, workspace.Catalog is not null)) ShowItems();
+            if (ImGui.MenuItem("Data explorer (decomp, tags, strings)")) dataExplorerOpen = true;
             ImGui.Separator();
             if (ImGui.MenuItem("Frame selection", ShortcutInput.Text(ShortcutActions.FrameSelection3D), false,
                 viewport?.Camera.PivotFree == true)) viewport?.FocusSelection();
@@ -272,7 +273,7 @@ public sealed partial class StudioForm
         if (shortcutsDialog) { ImGui.OpenPopup("Shortcuts"); shortcutsDialog = false; }
         if (noticesDialog) { ImGui.OpenPopup("Third-party notices"); noticesDialog = false; }
         DrawLocationDialog(); DrawProjectDialog(); DrawAddDialog(); DrawCacheDialog(); DrawBundleDialogs(); DrawModDialog();
-        DrawShortcutsDialog(); DrawNoticesDialog(); DrawPreferences();
+        DrawShortcutsDialog(); DrawNoticesDialog(); DrawPreferences(); DrawDataExplorer();
         DrawCreation();
     }
 
