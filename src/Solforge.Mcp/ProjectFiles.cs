@@ -51,6 +51,7 @@ public static class ProjectFiles
         return path;
     }
 
+    /** A page of lines of a project file, shown under the given display path. */
     public static JsonObject Read(string path, string shown, int offset, int limit)
     {
         var info = new FileInfo(path);
@@ -68,6 +69,7 @@ public static class ProjectFiles
         };
     }
 
+    /** Text search over the project and SDK roots, limited to the extension if given. */
     public static JsonArray Search(string? projectRoot, IReadOnlyList<string> sdkRoots, string query, string? extension, int limit)
     {
         var results = new JsonArray();

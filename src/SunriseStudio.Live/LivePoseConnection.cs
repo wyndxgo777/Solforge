@@ -55,6 +55,7 @@ internal sealed class LivePoseConnection : IDisposable
         view.WriteArray(LivePoseProtocol.OwnersOffset, owners, 0, owners.Length);
     }
 
+    /** Selects which player object the game filters pose capture to; null clears the filter. */
     public void SetPlayer(uint? handle) => view.Write(36, handle ?? uint.MaxValue);
 
     /** Writes the heartbeat and copies a new frame once its sequence is stable. */
@@ -87,5 +88,6 @@ internal sealed class LivePoseConnection : IDisposable
         if (Draws is { } frame && !LivePoseProtocol.Fresh(frame.Time, now)) Draws = null;
     }
 
+    /** Zeroes the heartbeat and releases the mapping. */
     public void Dispose() { view.Write(16, 0L); view.Dispose(); mapping.Dispose(); }
 }

@@ -6,6 +6,10 @@ namespace Solforge.Mcp;
  */
 public sealed class ApprovalGate(Func<bool> autoApprove, Action<string, string> onAuto)
 {
+    /**
+     * Returns true at once (logging through onAuto) when auto-approve is on; otherwise waits for the user's
+     * answer.
+     */
     public async Task<bool> AskAsync(string tool, string summary, Func<Task<bool>> askUser)
     {
         if (autoApprove())

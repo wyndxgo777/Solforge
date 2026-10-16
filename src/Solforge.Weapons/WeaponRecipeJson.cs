@@ -42,6 +42,7 @@ public static class WeaponRecipeJson
         return JsonSerializer.Serialize(recipe.Canonical(), Options);
     }
 
+    /** Reads and validates a recipe file; I/O and parse failures surface as WeaponRecipeException. */
     public static WeaponRecipe Load(string path)
     {
         string json;

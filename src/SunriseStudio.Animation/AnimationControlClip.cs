@@ -1,10 +1,13 @@
+/** File: Decoded control-channel samples of an animation clip, grouped by control name. */
 using System.Numerics;
 
 namespace SunriseStudio.Animation;
 
+/** One control's value at a frame; the Has flags say which components the clip animates. */
 public readonly record struct AnimationControlSample(int ControlIndex, float Scale,
     Quaternion Rotation, Vector3 Translation, bool HasScale, bool HasRotation, bool HasTranslation);
 
+/** A group of controls sharing a name hash and how many it holds. */
 public sealed record AnimationControlGroup(uint NameHash, int ControlCount);
 
 /** Control indices remain distinct from skeleton bone indices until their binding is resolved. */

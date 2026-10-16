@@ -47,6 +47,7 @@ public sealed class McpHttpServer : IAsyncDisposable
     public int RequestCount;
     public event Action<string>? Log;
 
+    /** Begins accepting connections. */
     public void Start()
     {
         listener.Start();
@@ -256,6 +257,7 @@ public sealed class McpHttpServer : IAsyncDisposable
         405 => "Method Not Allowed", 413 => "Payload Too Large", 503 => "Service Unavailable", _ => "Error"
     };
 
+    /** Cancels the accept loop and closes the listener. */
     public async ValueTask DisposeAsync()
     {
         stop.Cancel();
@@ -286,8 +288,10 @@ internal sealed class HttpRequest
     public byte[] Body { get; private set; } = [];
     private readonly Dictionary<string, string> headers = new(StringComparer.OrdinalIgnoreCase);
 
+    /** Request header by name, or null. */
     public string? Header(string name) => headers.GetValueOrDefault(name);
 
+    /** Parses one HTTP request from the stream, refusing bodies above maximumBody. */
     public static async Task<HttpRequest?> Read(Stream stream, int maximumBody, CancellationToken cancel)
     {
         var buffer = new MemoryStream();

@@ -12,6 +12,7 @@ public static class DataPages
 {
     public const int DefaultLimit = 50, MaximumLimit = 500;
 
+    /** First row of the page: the cursor if given, else the offset argument. */
     public static int Start(JsonObject args)
     {
         string? cursor = McpJson.String(args, "cursor");
@@ -19,6 +20,7 @@ public static class DataPages
         return Math.Max(0, McpJson.Int(args, "offset", 0));
     }
 
+    /** Page size from the limit argument, clamped to 1..MaximumLimit. */
     public static int Limit(JsonObject args, int fallback = DefaultLimit) => Math.Clamp(McpJson.Int(args, "limit", fallback), 1, MaximumLimit);
 
     /** One page with total (counted to the end unless countAll is false, for expensive scans). */

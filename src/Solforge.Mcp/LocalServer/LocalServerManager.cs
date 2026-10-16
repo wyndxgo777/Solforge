@@ -1,3 +1,7 @@
+/**
+ * File: Drives the local WSL test server (status, start/stop, log, deploy, rollback, config, admin routes)
+ * by running bash scripts through WslShell. Never touches the VPS.
+ */
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
@@ -6,9 +10,12 @@ using System.Text.RegularExpressions;
 
 namespace Solforge.Mcp.LocalServer;
 
+/** A slice of the server log: lines, the next read offset, whether the log restarted, and its size. */
 public sealed record LogChunk(IReadOnlyList<string> Lines, long Next, bool Reset, long Size);
+/** Outcome of a server action with its output. */
 public sealed record ActionResult(bool Ok, string Message, string Output = "")
 {
+    /** JSON form with output clipped to 6000 characters. */
     public JsonObject ToJson() => new() { ["ok"] = Ok, ["message"] = Message, ["output"] = LocalServerParse.Clip(Output, 6000) };
 }
 
@@ -22,6 +29,7 @@ public sealed partial class LocalServerManager(IWslShell shell, LocalServerOptio
     public LocalServerOptions Options { get; } = options;
     private readonly SemaphoreSlim gate = new(1, 1);
 
+    /** Manager configured from environment variables. */
     public static LocalServerManager CreateDefault()
     {
         var options = LocalServerOptions.FromEnvironment();
@@ -36,6 +44,7 @@ public sealed partial class LocalServerManager(IWslShell shell, LocalServerOptio
     /** One pgrep for the configured executable; prints its pid or nothing. */
     private string PidLine => $"pid=$(pgrep -o -x {Exe} || true)";
 
+    /** Bash script whose sectioned output LocalServerParse.Status turns into a status. */
     public string StatusScript() => $$"""
         RUN={{Run}}
         {{PidLine}}
@@ -52,6 +61,7 @@ public sealed partial class LocalServerManager(IWslShell shell, LocalServerOptio
         echo '{{LocalServerParse.EndMark}}'
         """.ReplaceLineEndings("\n") + "\n";
 
+    /** Reads the server's process, sockets, census and ghost-member state. */
     public async Task<LocalServerStatus> StatusAsync(CancellationToken cancel = default)
     {
         if (Guard() is { } problem) return Failed(problem);
@@ -97,9 +107,12 @@ public sealed partial class LocalServerManager(IWslShell shell, LocalServerOptio
         echo "STOPPED=$pid"
         """.ReplaceLineEndings("\n") + "\n";
 
+    /** Starts the server. */
     public Task<ActionResult> StartAsync(CancellationToken cancel = default) => Exclusive(StartScript(), "Started", cancel);
+    /** Stops the server. */
     public Task<ActionResult> StopAsync(CancellationToken cancel = default) => Exclusive(StopScript(), "Stopped", cancel);
 
+    /** Stops, then starts the server. */
     public async Task<ActionResult> RestartAsync(CancellationToken cancel = default)
     {
         var stop = await StopAsync(cancel).ConfigureAwait(false);
@@ -142,6 +155,7 @@ public sealed partial class LocalServerManager(IWslShell shell, LocalServerOptio
         fi
         """.ReplaceLineEndings("\n") + "\n";
 
+    /** Reads log lines from offset; the chunk says when the log restarted. */
     public async Task<LogChunk> ReadLogAsync(long offset, int lines = 200, CancellationToken cancel = default)
     {
         if (Guard() is { } problem) throw new InvalidOperationException(problem);
@@ -167,6 +181,7 @@ public sealed partial class LocalServerManager(IWslShell shell, LocalServerOptio
 
     // --- deploy -----------------------------------------------------------------------------------
 
+    /** Copies the plan's files into the server under a new backup id, optionally restarting it. */
     public async Task<ActionResult> DeployAsync(DeployPlan plan, bool restart, CancellationToken cancel = default)
     {
         if (plan.Files.Count == 0) return new ActionResult(false, "Nothing to deploy: " + string.Join("; ", plan.Notes));
@@ -178,6 +193,10 @@ public sealed partial class LocalServerManager(IWslShell shell, LocalServerOptio
         return new ActionResult(again.Ok, result.Message + "; " + again.Message, result.Output + "\n" + again.Output);
     }
 
+    /**
+     * Restores a backup (the newest not yet rolled back when none is named), optionally restarting the
+     * server.
+     */
     public async Task<ActionResult> RollbackAsync(string? backupId, bool restart, CancellationToken cancel = default)
     {
         if (backupId is null or "" or "latest")
@@ -189,6 +208,7 @@ public sealed partial class LocalServerManager(IWslShell shell, LocalServerOptio
         return new ActionResult(again.Ok, result.Message + "; " + again.Message, result.Output + "\n" + again.Output);
     }
 
+    /** Lists the deploy backups on the server. */
     public async Task<IReadOnlyList<BackupEntry>> BackupsAsync(CancellationToken cancel = default)
     {
         if (Guard() is { } problem) throw new InvalidOperationException(problem);
@@ -218,6 +238,7 @@ public sealed partial class LocalServerManager(IWslShell shell, LocalServerOptio
         return ConfigName().IsMatch(name) && !name.Contains("..", StringComparison.Ordinal) ? name : null;
     }
 
+    /** Names of the config files this manager may read and write. */
     public async Task<IReadOnlyList<string>> ConfigFilesAsync(CancellationToken cancel = default)
     {
         if (Guard() is { } problem) throw new InvalidOperationException(problem);
@@ -228,6 +249,7 @@ public sealed partial class LocalServerManager(IWslShell shell, LocalServerOptio
             .Where(path => ConfigPath(path) is not null).ToArray();
     }
 
+    /** Reads one allowed config file; other names are rejected. */
     public async Task<string> ReadConfigAsync(string name, CancellationToken cancel = default)
     {
         string path = ConfigPath(name) ?? throw new ArgumentException($"'{name}' is not a server config file (config/*.json|cfg|txt or Sunrise/crucible.cfg).");
@@ -253,6 +275,7 @@ public sealed partial class LocalServerManager(IWslShell shell, LocalServerOptio
             """.ReplaceLineEndings("\n") + "\n";
     }
 
+    /** Validation message for a JSON config that does not parse; null for other formats or valid JSON. */
     public static string? ConfigProblem(string path, string content)
     {
         if (!path.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) return null;
@@ -260,6 +283,7 @@ public sealed partial class LocalServerManager(IWslShell shell, LocalServerOptio
         catch (JsonException error) { return $"{path} is not valid JSON: {error.Message}"; }
     }
 
+    /** Validates and writes one allowed config file; the server needs a restart to apply it. */
     public Task<ActionResult> WriteConfigAsync(string name, string content, CancellationToken cancel = default)
     {
         string? path = ConfigPath(name);
@@ -286,6 +310,7 @@ public sealed partial class LocalServerManager(IWslShell shell, LocalServerOptio
         echo "SELFTEST_EXIT=${PIPESTATUS[0]}"
         """.ReplaceLineEndings("\n") + "\n";
 
+    /** Runs the server's self-test and reports its result. */
     public async Task<ActionResult> SelftestAsync(CancellationToken cancel = default)
     {
         var result = await Exclusive(SelftestScript(), "Selftest finished", cancel, Options.SelftestTimeout + TimeSpan.FromMinutes(1)).ConfigureAwait(false);
@@ -300,13 +325,16 @@ public sealed partial class LocalServerManager(IWslShell shell, LocalServerOptio
          "sol/accounts", "sol/inventory", "sol/items/names", "sol/changes", "sol/moderation"];
     public static readonly string[] AdminWrites = ["sol/command", "sol/inventory/set"];
 
+    /** Null when path is an allowed admin route for the verb; otherwise the reason it is refused. */
     public static string? AdminProblem(string path, bool post) =>
         (post ? AdminWrites : AdminReads).Contains(path) ? null
             : $"'{path}' is not an allowed {(post ? "POST" : "GET")} route here (allowed: {string.Join(", ", post ? AdminWrites : AdminReads)}).";
 
+    /** URL-encodes values as a form body. */
     public static string Form(IReadOnlyDictionary<string, string>? values) => values is null ? ""
         : string.Join('&', values.Select(pair => Uri.EscapeDataString(pair.Key) + "=" + Uri.EscapeDataString(pair.Value)));
 
+    /** Script that calls the local admin port for an allowed route. */
     public string AdminScript(string path, IReadOnlyDictionary<string, string>? values, bool post)
     {
         string url = $"http://127.0.0.1:{Options.AdminPort}/{path}";
@@ -316,6 +344,7 @@ public sealed partial class LocalServerManager(IWslShell shell, LocalServerOptio
             : $"curl -s -m 20 -H 'X-Sol-Panel: 1' {Shell.Quote(form.Length > 0 ? url + "?" + form : url)}\n";
     }
 
+    /** Calls an allowed local admin route and returns its reply. */
     public async Task<JsonNode?> AdminAsync(string path, IReadOnlyDictionary<string, string>? values, bool post, CancellationToken cancel = default)
     {
         path = path.Trim().TrimStart('/');

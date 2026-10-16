@@ -13,6 +13,7 @@ public static class McpClientConfigs
 {
     public const string ServerName = "solforge";
 
+    /** One client config file that was written: client name and path. */
     public sealed record Written(string Client, string Path);
 
     /** @param home The user profile folder; checks pass a scratch folder. */

@@ -3,6 +3,7 @@ using System.Numerics;
 
 namespace SunriseStudio.Live;
 
+/** Game camera in world space as read from the live frame. */
 public sealed record LiveCamera(Vector3 Position, Vector3 Forward, Vector3 Up,
     float HorizontalFieldOfView, float Aspect);
 /** PlayerHandle is the full handle of the object the local player controls. */
@@ -18,6 +19,7 @@ public static class LiveProtocol
     public const int HeartbeatOffset = 16;
     public const int SequenceOffset = 24;
     public const ulong StaleAfterMilliseconds = 1500;
+    /** Per-process shared-memory name for the main live frame. */
     public static string MappingName(int processId) => $@"Local\SunriseStudio.Live.{processId}";
 
     /** Unknown fields remain absent; an expired frame cannot drive camera or cursor updates. */

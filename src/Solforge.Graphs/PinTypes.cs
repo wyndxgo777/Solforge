@@ -85,10 +85,15 @@ public readonly record struct GraphValue(PinType Type, double X, double Y = 0, d
     public static GraphValue Float(double value) => new(PinType.Float, value);
     /** Makes an int value. */
     public static GraphValue Int(long value) => new(PinType.Int, value);
+    /** Makes a bool value (stored as 0 or 1). */
     public static GraphValue Bool(bool value) => new(PinType.Bool, value ? 1 : 0);
+    /** Makes a string value. */
     public static GraphValue Str(string text) => new(PinType.String, 0, Text: text);
+    /** Makes a Vector3 value. */
     public static GraphValue Vec3(double x, double y, double z) => new(PinType.Vector3, x, y, z);
+    /** Makes a color value; alpha defaults to opaque. */
     public static GraphValue Rgba(double r, double g, double b, double a = 1) => new(PinType.Color, r, g, b, a);
+    /** Makes a reference-typed value (texture, entity, stat, perk, field) carrying its name as text. */
     public static GraphValue Ref(PinType type, string text) => new(type, 0, Text: text);
 
     public double this[int index] => index switch { 0 => X, 1 => Y, 2 => Z, _ => W };

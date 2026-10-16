@@ -10,8 +10,10 @@ namespace Solforge.Mcp;
 public sealed record UiControl(string Id, string Kind, string Label, string Name, string Window, string Scope,
     double[] Rect, bool Visible, string? Value, bool? Checked, IReadOnlyList<string>? Options);
 
+/** What a ui_* call does to a control. */
 public enum UiOperation { Invoke, SetValue, SetChecked, Select }
 
+/** A resolved UI request: target control, operation and its value. */
 public sealed record UiCommand(string ControlId, UiOperation Operation, string? Value, bool Checked);
 
 /** Search, resolution and operation checks for the ui_* tools; pure, so the checks run without Solforge. */
@@ -29,6 +31,7 @@ public static class UiControls
         _ => false
     };
 
+    /** Relevance of a control to a search query; 0 means no match. */
     public static int Score(UiControl control, string query)
     {
         string wanted = Normal(query);
@@ -78,9 +81,11 @@ public static class UiControls
         return (found[0], null);
     }
 
+    /** Window and scope path of a control, or "the editor". */
     public static string Where(UiControl control) =>
         string.Join(" > ", new[] { control.Window, control.Scope }.Where(part => part.Length > 0)) is { Length: > 0 } place ? place : "the editor";
 
+    /** JSON row describing one control. */
     public static JsonObject ToJson(UiControl control)
     {
         var row = new JsonObject

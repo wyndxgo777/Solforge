@@ -176,11 +176,13 @@ internal static class AnimationIkSolver
         return Quaternion.Normalize(new Quaternion(Vector3.Cross(from, half), Vector3.Dot(from, half)));
     }
 
+    /** Parent-then-child transform composition. */
     internal static BoneTransform Compose(BoneTransform parent, BoneTransform child) => new(
         Quaternion.Normalize(parent.Rotation * child.Rotation),
         Vector3.Transform(child.Translation, parent.Rotation) * parent.Scale + parent.Translation,
         parent.Scale * child.Scale);
 
+    /** Inverse of a uniform-scale rigid transform. */
     internal static BoneTransform Inverse(BoneTransform value)
     {
         var rotation = Quaternion.Conjugate(Quaternion.Normalize(value.Rotation));

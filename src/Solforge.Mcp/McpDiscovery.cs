@@ -6,6 +6,7 @@ namespace Solforge.Mcp;
 /** Where a running Solforge says its MCP server is; the stdio shim reads it. One file per Solforge process. */
 public sealed record McpDiscoveryEntry(int Pid, string Url, string Token, string? Project, DateTimeOffset Started);
 
+/** Discovery files that let MCP clients and the shim find a running Solforge server. */
 public static class McpDiscovery
 {
     /** %LOCALAPPDATA%\Solforge\mcp; SOLFORGE_MCP_DISCOVERY overrides it for checks. */
@@ -13,6 +14,7 @@ public static class McpDiscovery
         Environment.GetEnvironmentVariable("SOLFORGE_MCP_DISCOVERY") is { Length: > 0 } custom ? custom
             : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Solforge", "mcp");
 
+    /** Writes server-{pid}.json for the entry and returns its path. */
     public static string Write(McpDiscoveryEntry entry, string? folder = null)
     {
         folder ??= Folder;
@@ -34,6 +36,7 @@ public static class McpDiscovery
         return path;
     }
 
+    /** Deletes the discovery file of a process; failures are ignored. */
     public static void Remove(int pid, string? folder = null)
     {
         try { File.Delete(Path.Combine(folder ?? Folder, $"server-{pid}.json")); }
@@ -71,6 +74,7 @@ public static class McpDiscovery
         return entries.FirstOrDefault(entry => wanted is not null && Normalize(entry.Project) == wanted) ?? entries.FirstOrDefault();
     }
 
+    /** Reads one discovery file; null when it is missing or malformed. */
     public static McpDiscoveryEntry? Read(string file)
     {
         try

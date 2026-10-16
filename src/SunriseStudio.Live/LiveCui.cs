@@ -2,6 +2,7 @@ using System.Buffers.Binary;
 
 namespace SunriseStudio.Live;
 
+/** Whether the game has answered a screen request, and how (absent screen vs. capture unavailable). */
 public enum LiveCuiStatus : uint { Pending, Complete, Absent, Unavailable }
 
 /** One open screen: its hierarchy tag and the count of earlier open screens with that tag. */
@@ -133,6 +134,7 @@ public static class LiveCuiProtocol
     /** RowWidget: StateFlags is valid; a row without it is a CUI object that is not a widget. */
     public const uint RowSlotsRead = 1, RowText = 2, RowWidget = 4;
 
+    /** Per-process shared-memory name for the UI channel. */
     public static string MappingName(int processId) => $@"Local\SunriseStudio.Cui.{processId}";
 
     /** True while the game's last capture is recent; checkedTime moves even when nothing changed. */

@@ -11,6 +11,7 @@ public enum ObjectScope { Viewport, Tree, Asset }
 public sealed record ObjectEntry(string Id, string Label, string Kind, ObjectScope Scope, string? Map = null,
     string? Package = null, uint Tag = 0, IReadOnlyList<uint>? Hashes = null);
 
+/** A scored object search hit with the reason it matched. */
 public sealed record ObjectMatch(ObjectEntry Entry, int Score, string Why);
 
 /**
@@ -20,6 +21,7 @@ public sealed record ObjectMatch(ObjectEntry Entry, int Score, string Why);
  */
 public static class ObjectIndex
 {
+    /** Ranks entries against a query, weighting the current map and recently seen objects. */
     public static IReadOnlyList<ObjectMatch> Find(IEnumerable<ObjectEntry> entries, string query, string? map = null,
         IReadOnlyDictionary<string, float>? recency = null, int limit = 10)
     {
@@ -42,6 +44,7 @@ public static class ObjectIndex
         return matches.Where(match => seen.Add(match.Entry.Id)).Take(limit).ToArray();
     }
 
+    /** Matches as a JSON array. */
     public static JsonArray ToJson(IEnumerable<ObjectMatch> matches)
     {
         var array = new JsonArray();

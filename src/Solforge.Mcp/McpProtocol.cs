@@ -14,10 +14,14 @@ public sealed class McpToolResult
     public List<byte[]> Images { get; } = [];
     public bool IsError { get; init; }
 
+    /** A successful text result. */
     public static McpToolResult Text(string text) => new() { Texts = { text } };
+    /** A successful result carrying indented JSON. */
     public static McpToolResult Json(JsonNode? node) => Text(node?.ToJsonString(McpJson.Indented) ?? "null");
+    /** An error result the model sees as a tool failure. */
     public static McpToolResult Error(string text) => new() { IsError = true, Texts = { text } };
 
+    /** MCP wire form of the result. */
     public JsonObject ToJson()
     {
         var content = new JsonArray();
@@ -32,11 +36,13 @@ public sealed class McpToolResult
         image.Length > 2 && image[0] == 0xFF && image[1] == 0xD8 && image[2] == 0xFF ? "image/jpeg" : "image/png";
 }
 
+/** Argument and schema helpers shared by the tools. */
 public static class McpJson
 {
     public static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
     public static readonly JsonSerializerOptions Compact = new() { WriteIndented = false };
 
+    /** JSON schema for a tool's object input from (name, type, description, required) tuples. */
     public static JsonObject Schema(params (string Name, string Type, string Description, bool Required)[] properties)
     {
         var props = new JsonObject();
@@ -51,9 +57,11 @@ public static class McpJson
         return schema;
     }
 
+    /** String argument; non-string values are rendered as text, absent gives null. */
     public static string? String(JsonObject args, string name) =>
         args[name] is JsonValue value && value.TryGetValue(out string? text) ? text : args[name]?.ToString();
 
+    /** Integer argument, or fallback when absent or not a number. */
     public static int Int(JsonObject args, string name, int fallback)
     {
         if (args[name] is not JsonValue value) return fallback;
@@ -62,6 +70,7 @@ public static class McpJson
         return value.TryGetValue(out string? text) && int.TryParse(text, out number) ? number : fallback;
     }
 
+    /** Boolean argument, or fallback when absent or not a bool. */
     public static bool Bool(JsonObject args, string name, bool fallback) =>
         args[name] is JsonValue value && value.TryGetValue(out bool flag) ? flag : fallback;
 }
@@ -77,6 +86,7 @@ public sealed class McpDispatcher(IReadOnlyList<McpTool> tools, string version, 
     /** Called with each tools/call name before it runs (automatic mode counts them as activity). */
     public Action<string>? OnToolCall { get; set; }
 
+    /** Handles one JSON-RPC message and returns the reply text; null when no reply is due. */
     public async Task<string?> HandleAsync(string message, CancellationToken cancel)
     {
         JsonNode? request;

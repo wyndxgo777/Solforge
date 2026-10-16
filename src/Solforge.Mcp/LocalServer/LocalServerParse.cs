@@ -10,11 +10,13 @@ public sealed record ServerSocket(string Protocol, string Address, int Port);
 /** A session member that appears twice in one census session (a killed client's ghost: events stop spawning). */
 public sealed record GhostMember(string Session, string Member, int Count);
 
+/** Player census: sessions, members, ghost members and members split across sessions. */
 public sealed record CensusSummary(int Sessions, int Members, IReadOnlyList<GhostMember> Ghosts, IReadOnlyList<string> SplitMembers)
 {
     public static readonly CensusSummary Empty = new(0, 0, [], []);
 }
 
+/** Snapshot of the local server: process, sockets, ports answering, census and problems. */
 public sealed record LocalServerStatus(
     bool Running, int? Pid, long? UptimeSeconds, string? WorkingDirectory, bool ForeignInstance,
     IReadOnlyList<ServerSocket> Sockets, bool BapUdp, bool BapTcp, bool Web, bool Admin,
@@ -24,6 +26,7 @@ public sealed record LocalServerStatus(
         : $"running pid {Pid}, up {LocalServerParse.Duration(UptimeSeconds ?? 0)}, {Players?.ToString(CultureInfo.InvariantCulture) ?? "?"} player(s)"
           + (Census.Ghosts.Count > 0 ? $", {Census.Ghosts.Count} GHOST member(s): restart before testing events" : "");
 
+    /** JSON form of the status. */
     public JsonObject ToJson()
     {
         var sockets = new JsonArray();
@@ -56,6 +59,7 @@ public static partial class LocalServerParse
 {
     public const string SocketsMark = "---SOCKETS", AdminMark = "---ADMIN", PlayersMark = "---PLAYERS", CensusMark = "---CENSUS", EndMark = "---END";
 
+    /** Parses the sectioned output of the status script. */
     public static LocalServerStatus Status(string output, LocalServerOptions options)
     {
         var sections = Sections(output);
@@ -181,12 +185,14 @@ public static partial class LocalServerParse
             && !exclude.Any(term => line.Contains(term, StringComparison.OrdinalIgnoreCase));
     }
 
+    /** Formats a number of seconds as a short duration string. */
     public static string Duration(long seconds)
     {
         var span = TimeSpan.FromSeconds(seconds);
         return span.TotalDays >= 1 ? $"{(int)span.TotalDays}d {span.Hours}h" : span.TotalHours >= 1 ? $"{span.Hours}h {span.Minutes}m" : $"{span.Minutes}m {span.Seconds}s";
     }
 
+    /** Truncates text to length characters, marking the cut. */
     public static string Clip(string text, int length) => text.Length <= length ? text : text[..length] + "...";
 }
 
@@ -196,6 +202,10 @@ public sealed class LogFollower
     private string pending = "";
     public long Offset { get; private set; } = -1;
 
+    /**
+     * Adds a log chunk and returns the complete lines; a partial last line is held back until the next
+     * chunk.
+     */
     public IReadOnlyList<string> Accept(string chunk, long nextOffset, bool reset)
     {
         if (reset) pending = "";

@@ -11,6 +11,10 @@ public static class ContextSummary
 {
     public const int Limit = 2048;
 
+    /**
+     * One-paragraph text of the editor context, clipped to limit; empty when the context is absent or
+     * paused.
+     */
     public static string Format(JsonNode? context, int limit = Limit)
     {
         if (context is not JsonObject root || root["paused"]?.GetValueKind() == System.Text.Json.JsonValueKind.True) return "";

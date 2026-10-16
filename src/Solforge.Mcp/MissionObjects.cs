@@ -68,9 +68,11 @@ public sealed class MissionSnapshot
             && string.Equals(MissionSlots.ConstantName(each.Name), constant, StringComparison.OrdinalIgnoreCase));
     }
 
+    /** The slot whose name is this slot's parent within the same registry, or null. */
     public MissionSlot? Parent(MissionSlot slot) => MissionSlots.ParentName(slot.Name) is { } parent
         ? byName[parent].FirstOrDefault(each => each.RegistryKey == slot.RegistryKey) : null;
 
+    /** Slots directly under this slot. */
     public IReadOnlyList<MissionSlot> Children(MissionSlot slot) => byParent[(slot.RegistryKey, slot.Name)].ToArray();
 
     /** Slots of the same prefab whose names sit under this one (any depth), for prefabs whose parent has no slot of its own. */
@@ -84,11 +86,13 @@ public sealed class MissionSnapshot
         Map, null, slot.PrefabTag, [slot.RegistryKey, slot.AssetTag]));
 }
 
+/** Slot id parsing and JSON helpers for mission objects. */
 public static class MissionSlots
 {
     /** The id the SDK mission Lua uses: slot/{registry}/{index:6}/{index:4}/{type:4}, lower-case hex. */
     public static string SlotId(uint registryKey, int type, int index) => $"slot/{registryKey:x8}/{index:x6}/{index:x4}/{type:x4}";
 
+    /** Parses a slot/... id into registry key, type and index; false when malformed. */
     public static bool TryParseSlotId(string id, out uint registryKey, out int type, out int index)
     {
         registryKey = 0; type = 0; index = 0;
@@ -125,6 +129,7 @@ public static class MissionSlots
         return text.ToString().TrimEnd('_');
     }
 
+    /** JSON row describing one slot. */
     public static JsonObject Row(MissionSlot slot)
     {
         var row = new JsonObject
@@ -199,6 +204,7 @@ public static class Pages
 {
     public const int MaximumLimit = 500;
 
+    /** One page of rows from offset, limited, with the total. */
     public static JsonObject Page<T>(IEnumerable<T> rows, int offset, int limit, Func<T, JsonNode?> row)
     {
         offset = Math.Max(0, offset);

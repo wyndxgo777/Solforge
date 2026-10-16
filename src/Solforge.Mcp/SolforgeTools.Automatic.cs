@@ -7,6 +7,7 @@ using System.Text.Json.Nodes;
 
 namespace Solforge.Mcp;
 
+/** Partial: the automatic-mode tools (automatic_start, goal_progress, goal_complete, goal_blocked). */
 public static partial class SolforgeTools
 {
     /** Shared by the server instructions and the session file: the AI may put itself into automatic mode. */

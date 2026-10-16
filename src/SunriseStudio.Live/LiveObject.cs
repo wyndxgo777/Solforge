@@ -3,7 +3,9 @@ using System.Numerics;
 
 namespace SunriseStudio.Live;
 
+/** Whether the game has answered an object request, and how. */
 public enum LiveObjectStatus : uint { Pending, Complete, Absent, Unavailable }
+/** A child object, identified by handle plus generation so reused slots are not confused. */
 public sealed record LiveObjectChild(uint Handle, uint Generation);
 
 /**
@@ -49,6 +51,7 @@ public static class LiveObjectProtocol
     public const int ChildCapacity = 64, ModelCapacity = 32, DatumCapacity = 256;
     public const int ChildrenOffset = 160, ModelsOffset = 672, DatumOffset = 800;
     public const int MappingBytes = DatumOffset + DatumCapacity;
+    /** Per-process shared-memory name for the object-query channel. */
     public static string MappingName(int processId) => $@"Local\SunriseStudio.Object.{processId}";
 
     /**

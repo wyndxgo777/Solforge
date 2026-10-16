@@ -1,5 +1,6 @@
 namespace SunriseStudio.Live;
 
+/** Partial: exposes the skinned-pose channel (draw palettes and its diagnostic text). */
 public sealed partial class LiveConnection
 {
     private LivePoseConnection? pose;

@@ -4,6 +4,7 @@ namespace SunriseStudio.Animation;
 public static class BoneNameCandidates
 {
     private static readonly IReadOnlyDictionary<uint, string> names = Build();
+    /** Candidate plaintext name for a bone hash, or null when none matches. */
     public static string? Resolve(uint hash) => names.GetValueOrDefault(hash);
 
     /** Candidate hash collisions remain unresolved. */

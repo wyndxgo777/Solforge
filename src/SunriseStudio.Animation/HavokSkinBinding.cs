@@ -139,20 +139,25 @@ internal sealed class HavokSkinBinding
                 throw new InvalidDataException("Havok pointer has more than one fixup.");
         }
 
+        /** Absolute offset for a pointer field, from the packfile's fixups. */
         internal int Pointer(int field) => pointers.TryGetValue(field, out int value)
             ? value : throw new InvalidDataException("Havok array has no pointer fixup.");
+        /** Throws unless the range lies inside one data section. */
         internal void RequireDataRange(int offset, int count)
         {
             if (count < 0 || !sections.Any(s => offset >= s.Start && (long)offset + count <= (long)s.Start + s.Local))
                 throw new InvalidDataException("Havok object or array exceeds its data section.");
         }
+        /** Reads a u32 at a data offset. */
         internal uint U32(int offset) => BinaryPrimitives.ReadUInt32LittleEndian(Range(offset, 4));
+        /** Reads a u16 at a data offset. */
         internal ushort U16(int offset) => BinaryPrimitives.ReadUInt16LittleEndian(Range(offset, 2));
         private float F32(int offset)
         {
             float value = BinaryPrimitives.ReadSingleLittleEndian(Range(offset, 4));
             return float.IsFinite(value) ? value : throw new InvalidDataException("Havok matrix is not finite.");
         }
+        /** Reads a row-major 4x4 matrix of floats. */
         internal Matrix4x4 Matrix(int offset) => new(F32(offset), F32(offset + 4), F32(offset + 8), F32(offset + 12),
             F32(offset + 16), F32(offset + 20), F32(offset + 24), F32(offset + 28),
             F32(offset + 32), F32(offset + 36), F32(offset + 40), F32(offset + 44),

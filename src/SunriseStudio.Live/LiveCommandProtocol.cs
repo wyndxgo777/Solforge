@@ -27,6 +27,7 @@ public static class LiveCommandProtocol
     public const int MessageOffset = 120;
     public const int MessageBytes = 192;
     public const uint ReloadModKind = 1;
+    /** Per-process shared-memory name the game opens for Studio commands. */
     public static string MappingName(int processId) => $@"Local\SunriseStudio.Command.{processId}";
 
     /** The id is printable ASCII and leaves room for the terminating zero. */

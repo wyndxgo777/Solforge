@@ -1,14 +1,17 @@
+/** File: Reads the rig's control definitions (frames, chains, default values) from an animation rig tag. */
 using System.Numerics;
 using SunriseStudio.Packages;
 
 namespace SunriseStudio.Animation;
 
+/** How a control frame is built from bones: bone indices, kind, and optional aim target. */
 public sealed record AnimationFrameReference(short BoneIndex, short SecondBoneIndex, byte Kind,
     AnimationFrameReference? TranslationFrame, float AimWeight, short AimTarget, byte AimSource);
 
 /** A clip whose keys meet these keys has its control translations multiplied by the scale. */
 public sealed record AnimationRetarget(IReadOnlyList<uint> Keys, float TranslationScale);
 
+/** One rig control: its bones, composition and chain modes, frames and default value. */
 public sealed record AnimationRigControl(int Index, uint NameHash, short BoneIndex, short ChainBoneIndex,
     byte CompositionMode, byte ChainMode, AnimationFrameReference RotationFrame,
     AnimationFrameReference TranslationFrame, BoneTransform DefaultValue)

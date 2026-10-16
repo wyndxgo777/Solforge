@@ -32,6 +32,7 @@ internal sealed class SparseAnimationCodec
             throw new InvalidDataException("Sparse codec tables omit a track or quantizer.");
     }
 
+    /** Samples a scale track as a function of frame. */
     public Func<float, float> Scale(int index)
     {
         var curve = Curve(index, 1, 1, false, extents[index], biases[index]);

@@ -42,7 +42,9 @@ public static class TagLayout
     public const uint ArrayMarker = 0x80809FBD;
     private const int MaximumCount = 1_048_576;
 
+    /** One scalar field of a tag struct with its offset, inferred kind and printed value. */
     public sealed record Field(int Offset, string Kind, string Value);
+    /** A typed array found in a tag: header offset, element count and class, data offset and stride. */
     public sealed record ArrayInfo(int Offset, int Count, uint Class, int Data, int Stride);
 
     /** The root struct's fields, then each array (depth-first up to maxDepth) with its first elements' fields. */
@@ -67,6 +69,10 @@ public static class TagLayout
         return found;
     }
 
+    /**
+     * Reads an array header at field when its marker and layout are valid; null when the bytes are not an
+     * array.
+     */
     public static ArrayInfo? TryArray(byte[] bytes, int field, IReadOnlyList<int> markers)
     {
         if (field < 0 || field + 16 > bytes.Length || (field & 7) != 0) return null;
