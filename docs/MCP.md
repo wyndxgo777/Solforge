@@ -42,6 +42,17 @@ tool_timeout_sec = 130
 
 Use tool timeouts of about 130 s: `wait_for_player_near` waits up to 120 s, and `wait_for_viewport_change` up to 60 s.
 
+## Two subscriptions: Claude Code + Gemini (Antigravity CLI)
+
+Each engine runs on its own official client and its own sign-in. Claude Code uses your Claude plan, and agy uses your Google AI Pro login.
+
+- **`ask_gemini` (stdio server `solforge-mcp --gemini`).** This tool runs `agy -p <task> --output-format json --mode plan|accept-edits` in the folder you give it. It returns Gemini's reply and a conversation id, which you pass back as `conversation` to continue.
+  - It does not need Solforge to be running.
+  - When agy is installed, Solforge adds it to the Claude Code config it launches.
+  - To use it in any Claude Code session, run: `claude mcp add --scope user gemini -- "<solforge>\solforge-mcp.exe" --gemini`.
+- **Hand off (AI workspace "..." menu).** This stops the running engine and writes `.solforge/HANDOFF.md` with that session's recent requests and last reply. It then starts the other engine on the same project, MCP and skills, with a first prompt that points at the note.
+- **Not allowed (both providers' terms).** Never copy or proxy a subscription's OAuth token into another client. That rules out pointing Claude Code at Gemini through an Antigravity-login proxy, and putting a Claude login in a third-party harness. Google suspends accounts that do the first. Gemini inside Claude Code itself is possible only with a paid Gemini API key through an LLM gateway such as LiteLLM. That is billed API use, not AI Pro, and Anthropic doesn't support it.
+
 ## Solforge's own UI
 
 - `list_ui_controls` lists the controls drawn right now: buttons, menus, checkboxes, tabs, text fields, combos, sliders and list rows. Each row has a stable id (`main:1A2B3C4D`), its kind, label, panel, scope, rect, value and options.

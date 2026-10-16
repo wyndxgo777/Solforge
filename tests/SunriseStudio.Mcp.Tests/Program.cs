@@ -26,6 +26,8 @@ try
     checks.Add("Claude launch: --mcp-config, --settings hook, --append-system-prompt and --add-dir survive argv parsing with spaced paths; agy gets the same --add-dir folders");
     ResumeSessions();
     checks.Add("resume: claude --continue only when ~/.claude/projects/<folder> has a session; agy --conversation and cline --id pick the newest session for the same folder; none means a fresh start");
+    DualEngines();
+    checks.Add("dual engines: ask_gemini builds agy -p argv and reads its JSON reply; its MCP stdio answers initialize, list and call; the gemini server and prompt join Claude's config only on request; claude/agy first prompts; handoff note from the last session");
     ContextText();
     checks.Add("context summary: compact lines under 2 KB with map, hovered, selected values, open documents; nothing when paused");
     MissionObjects();
@@ -568,6 +570,81 @@ void ClaudeLaunch()
     Expect(agy == $"--add-dir \"{game}\" --add-dir \"{ancestor}\"", "agy arguments: " + agy);
     Expect(Argv("agy.exe " + agy).Skip(1).SequenceEqual(["--add-dir", game, "--add-dir", ancestor]), "agy argv");
     Expect(EngineLaunch.AgyArguments([]).Length == 0, "agy without folders");
+}
+
+void DualEngines()
+{
+    var (argv, error) = AgyDelegate.Arguments(new JsonObject { ["prompt"] = " review x ", ["model"] = "gemini-3-pro", ["conversation"] = "c1", ["timeout_seconds"] = 5 });
+    Expect(error is null && argv!.SequenceEqual(["-p", "review x", "--output-format", "json", "--mode", "plan", "--print-timeout", "30s",
+        "--model", "gemini-3-pro", "--conversation", "c1"]), "agy argv: " + string.Join(" | ", argv ?? []));
+    Expect(AgyDelegate.Arguments(new JsonObject { ["prompt"] = "x", ["mode"] = "auto" }).Error is not null, "auto mode refused");
+    Expect(AgyDelegate.Arguments(new JsonObject()).Error is not null && AgyDelegate.Arguments(null).Error is not null, "prompt required");
+    Expect(AgyDelegate.Arguments(new JsonObject { ["prompt"] = new string('a', AgyDelegate.MaxPrompt + 1) }).Error is not null, "long prompt refused");
+    var ok = AgyDelegate.Result("""{"conversation_id":"40cf","status":"SUCCESS","response":"OK\n","num_turns":1}""", "", 0);
+    Expect(!ok.Error && ok.Text.StartsWith("OK\n\n[agy SUCCESS; conversation 40cf", StringComparison.Ordinal), "agy reply: " + ok.Text);
+    Expect(AgyDelegate.Result("""{"status":"ERROR","response":"quota"}""", "", 1).Error
+        && AgyDelegate.Result("not json", "boom", 2).Text.Contains("boom"), "agy failures");
+    var input = new StringReader(string.Join("\n",
+        """{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26"}}""",
+        """{"jsonrpc":"2.0","method":"notifications/initialized"}""",
+        """{"jsonrpc":"2.0","id":2,"method":"tools/list"}""",
+        """{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"ask_gemini","arguments":{"prompt":"hi"}}}""",
+        """{"jsonrpc":"2.0","id":4,"method":"nope"}""") + "\n");
+    var output = new StringWriter();
+    AgyDelegate.Serve(input, output, (args, _) => Task.FromResult(("echo " + args?["prompt"], false))).GetAwaiter().GetResult();
+    var replies = output.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(line => JsonNode.Parse(line)!)
+        .ToDictionary(node => (int)node["id"]!);
+    Expect(replies.Count == 4 && replies[1]["result"]?["protocolVersion"]?.ToString() == "2025-03-26"
+        && replies[2]["result"]?["tools"]?[0]?["name"]?.ToString() == AgyDelegate.ToolName
+        && replies[3]["result"]?["content"]?[0]?["text"]?.ToString() == "echo hi"
+        && (int?)replies[4]["error"]?["code"] == -32601, "mcp stdio: " + output);
+    string project = Path.Combine(scratch, "dual project"), shim = Path.Combine(scratch, "solforge-mcp.exe");
+    Directory.CreateDirectory(project);
+    var plain = EngineLaunch.WriteClaudeFiles(project, shim, Path.Combine(scratch, "dual-mcp-a"));
+    Expect(JsonNode.Parse(File.ReadAllText(plain.McpConfig))!["mcpServers"]?[AgyDelegate.ServerName] is null
+        && !EngineLaunch.ClaudeArguments(plain, []).Contains("ask_gemini"), "no gemini unless asked");
+    var both = EngineLaunch.WriteClaudeFiles(project, shim, Path.Combine(scratch, "dual-mcp-b"), gemini: true);
+    var gemini = JsonNode.Parse(File.ReadAllText(both.McpConfig))!["mcpServers"]?[AgyDelegate.ServerName];
+    Expect(gemini?["command"]?.ToString() == shim && gemini?["args"]?[0]?.ToString() == "--gemini"
+        && Argv("claude.exe " + EngineLaunch.ClaudeArguments(both, [])).Contains(EngineLaunch.SystemPrompt + " " + EngineLaunch.GeminiPrompt),
+        "gemini server + prompt");
+    Expect(!EngineLaunch.GeminiPrompt.Contains('"') && !EngineLaunch.GeminiPrompt.Contains('%')
+        && !EngineLaunch.HandoffPrompt.Contains('"') && !EngineLaunch.HandoffPrompt.Contains('%'), "prompts are safe through cmd");
+    Expect(Argv("claude.exe " + EngineLaunch.WithPrompt("claude", "--add-dir x", EngineLaunch.HandoffPrompt)).Skip(1)
+        .SequenceEqual([EngineLaunch.HandoffPrompt, "--add-dir", "x"]), "claude first prompt goes first");
+    Expect(Argv("agy.exe " + EngineLaunch.WithPrompt("agy", "--add-dir x", "go on")).Skip(1).SequenceEqual(["--add-dir", "x", "-i", "go on"])
+        && EngineLaunch.WithPrompt("cline", "a", "go") == "a" && EngineLaunch.WithPrompt("claude", "a", null) == "a", "agy -i, others none");
+    static string Line(string type, JsonNode content, string? flag = null)
+    {
+        var entry = new JsonObject { ["type"] = type, ["message"] = new JsonObject { ["content"] = content } };
+        if (flag is not null) entry[flag] = true;
+        return entry.ToJsonString();
+    }
+    static JsonArray Part(string type, string text) => new(new JsonObject { ["type"] = type, [type == "text" ? "text" : "content"] = text });
+    string[] transcript =
+    [
+        Line("user", "make a hand cannon"), Line("user", "meta", "isMeta"), Line("user", "<command-name>/mcp</command-name>"),
+        Line("user", Part("tool_result", "x")), Line("assistant", Part("text", "side"), "isSidechain"),
+        Line("assistant", Part("text", "Cloned it.")), "broken"
+    ];
+    var (requests, reply) = EngineLaunch.ClaudeTranscript(transcript);
+    Expect(requests.SequenceEqual(["make a hand cannon"]) && reply == "Cloned it.", "claude transcript: " + string.Join(" | ", requests) + " / " + reply);
+    string[] history =
+    [
+        new JsonObject { ["display"] = "one", ["workspace"] = project, ["conversationId"] = "g1" }.ToJsonString(),
+        new JsonObject { ["display"] = "/mcp", ["workspace"] = project, ["conversationId"] = "g1", ["type"] = "slash_command" }.ToJsonString(),
+        new JsonObject { ["display"] = "other", ["workspace"] = project, ["conversationId"] = "g0" }.ToJsonString(),
+        new JsonObject { ["display"] = "two", ["workspace"] = project + "\\", ["conversationId"] = "g1" }.ToJsonString()
+    ];
+    Expect(EngineLaunch.AgyRequests(project, "g1", history).SequenceEqual(["one", "two"]), "agy requests");
+    string home = Path.Combine(scratch, "dual home"), sessions = EngineLaunch.ClaudeSessionsDir(project, home);
+    Directory.CreateDirectory(sessions);
+    File.WriteAllLines(Path.Combine(sessions, "abc.jsonl"), transcript);
+    string note = File.ReadAllText(EngineLaunch.WriteHandoff(project, "claude", "Claude Code", "Antigravity", home));
+    Expect(note.Contains("from Claude Code to Antigravity") && note.Contains("Claude Code session: abc") && note.Contains("- make a hand cannon")
+        && note.Contains("Cloned it."), "handoff note: " + note);
+    Expect(File.ReadAllText(EngineLaunch.WriteHandoff(project, "agy", "Antigravity", "Claude Code", home)).Contains("(none recorded)"),
+        "handoff without a session");
 }
 
 void ResumeSessions()
