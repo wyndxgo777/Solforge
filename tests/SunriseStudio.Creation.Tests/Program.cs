@@ -16,6 +16,7 @@ try
     }
     CreationFieldChecks.Run();
     PerkBehaviorEditorChecks.Run();
+    CustomPerkAuthoringChecks.Run();
     ItemCloneChecks.Run();
     StringBankChecks.Run(root);
     ItemWorkflowChecks.Run(root);

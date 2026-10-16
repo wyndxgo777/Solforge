@@ -2,8 +2,9 @@ namespace Solforge.Graphs;
 
 /**
  * Weapon and item graph nodes. They compile to the item edit pipeline (apply_item_edit ops: set_field, add_stat,
- * remove_stat, add_perk, remove_perk) against the target item. Custom perk behaviour (Studio.md Phase 26) compiles
- * to perk rule descriptors; packing those into investment tags is Phase 27.
+ * remove_stat, add_perk, remove_perk) against the target item. A Custom Perk (Studio.md Phases 26-27) compiles to
+ * rule descriptors, then PerkLowering turns them into a native sandbox perk program that the editor packs into a new
+ * perk tag and plug item on one of the weapon's sockets.
  */
 public static partial class NodeLibrary
 {
@@ -25,8 +26,8 @@ public static partial class NodeLibrary
 
     /** Perk events (Studio.md Phase 26), with the game moments they stand for. */
     public static readonly (string Id, string Title)[] PerkEvents =
-        [("on_hit", "On Hit"), ("on_kill", "On Kill"), ("on_precision_kill", "On Precision Kill"), ("on_reload", "On Reload"),
-         ("on_ability_use", "On Ability Use")];
+        [("on_hit", "On Hit"), ("on_precision_hit", "On Precision Hit"), ("on_kill", "On Kill"), ("on_precision_kill", "On Precision Kill"),
+         ("on_reload", "On Reload"), ("on_ability_use", "On Ability Use")];
 
     private static IEnumerable<NodeType> ItemNodeTypes()
     {
@@ -61,10 +62,15 @@ public static partial class NodeLibrary
             [Out("field", "", PinType.Field)],
             [Prop("rarity", "Rarity", PropertyKind.Choice, "Legendary", "", "None", "Common", "Uncommon", "Rare", "Legendary", "Exotic")], "tier exotic legendary");
 
-        // Custom perk behaviour (Phase 26): Custom Perk -> event -> conditions -> actions.
-        yield return Node(CustomPerk, "Custom Perk", "Perk Behavior", kind, "A new perk; link it to Weapon Output and to its events.",
-            [Out("perk", "", PinType.Perk)],
-            [Prop("name", "Name", PropertyKind.Text, "New Perk"), Prop("description", "Description", PropertyKind.Text)], "new trait behavior");
+        // Custom perk behaviour (Phases 26-27): Custom Perk -> event -> conditions -> actions; Stat nodes on Stats are the plug's stats.
+        yield return Node(CustomPerk, "Custom Perk", "Perk Behavior", kind,
+            "A new perk: a plug with its own sandbox perk, installed in a weapon socket. Link it to Weapon Output and to its events; "
+            + "Stat nodes linked to Stats are stat bonuses while it is socketed.",
+            [In("stats", "Stats", PinType.Stat, multi: true), Out("perk", "", PinType.Perk)],
+            [Prop("name", "Name", PropertyKind.Text, "New Perk"), Prop("description", "Description", PropertyKind.Text),
+             Prop("icon", "Icon PNG", PropertyKind.Text, "", "PNG path (absolute or project-relative); empty keeps the socket's current perk icon"),
+             Prop("socket", "Socket", PropertyKind.Integer, "-1", "Weapon socket index from get_item; -1 uses the trait socket (type 92)")],
+            "new trait behavior plug");
         foreach (var (id, title) in PerkEvents)
             yield return Node("perk." + id, title, "Perk Events", kind, $"Runs when the wielder triggers '{title}'.",
                 [In("perk", "Perk", PinType.Perk, required: true), Then], keywords: "event trigger");

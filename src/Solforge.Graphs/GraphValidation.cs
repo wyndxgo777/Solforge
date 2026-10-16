@@ -144,6 +144,9 @@ public static class GraphValidation
         var feeding = new HashSet<string>(StringComparer.Ordinal);
         foreach (var pin in new[] { "fields", "stats", "perks", "name", "description" })
             foreach (var (node, _) in flat.Sources(output.Id, pin)) feeding.Add(node.Id);
+        // Stat nodes on a Custom Perk's Stats are the perk plug's stats.
+        foreach (var perk in flat.OfType(NodeLibrary.CustomPerk))
+            foreach (var (node, _) in flat.Sources(perk.Id, "stats")) feeding.Add(node.Id);
         foreach (var node in flat.Nodes.Where(node => node.Type is "item.stat" or "item.remove_stat" or "item.perk" or "item.remove_perk"
                      or "item.field" or "item.visuals" or "item.archetype" or "item.rarity"))
             if (!feeding.Contains(node.Id))

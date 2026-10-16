@@ -49,6 +49,8 @@ public sealed record WeaponCompileResult(string Target, IReadOnlyList<ItemEditOp
     IReadOnlyList<GraphDiagnostic> Diagnostics)
 {
     public IReadOnlyList<KeyValuePair<string, string>> WorkflowFields { get; init; } = [];
+    /** One definition per Custom Perk node, with its native lowering (Studio.md Phase 27). */
+    public IReadOnlyList<CustomPerkDefinition> Definitions { get; init; } = [];
 }
 
 public static class MaterialGraphCompiler
@@ -124,6 +126,7 @@ public static class WeaponGraphCompiler
         var evaluator = new GraphEvaluator(flat);
         var ops = new List<ItemEditOp>();
         var rules = new List<PerkRule>();
+        var definitions = new List<CustomPerkDefinition>();
         if (flat.OfType(NodeLibrary.WeaponOutput).FirstOrDefault() is not { } output) return new("", ops, rules, diagnostics);
         string target = output.Get("target").Trim();
 
@@ -171,12 +174,33 @@ public static class WeaponGraphCompiler
                 case "item.perk": ops.Add(new("add_perk", Perk: node.Get("perk").Trim(), NodeId: node.Id)); break;
                 case "item.archetype": ops.Add(new("add_perk", Perk: node.Get("frame", "Adaptive") + " Frame", NodeId: node.Id)); break;
                 case NodeLibrary.CustomPerk:
-                    rules.AddRange(CustomPerkRules(flat, evaluator, node, diagnostics));
-                    diagnostics.Add(new(DiagnosticSeverity.Info,
-                        $"Custom perk '{node.Get("name")}' compiles to rule descriptors; installing it as a new perk tag is Phase 27 (not yet).", node.Id));
+                {
+                    var perkRules = CustomPerkRules(flat, evaluator, node, diagnostics).ToList();
+                    rules.AddRange(perkRules);
+                    var definition = CustomPerk(flat, evaluator, node, perkRules, diagnostics);
+                    definition = definition with { Native = PerkLowering.Lower(definition) };
+                    diagnostics.AddRange(definition.Native.Diagnostics);
+                    definitions.Add(definition);
                     break;
+                }
             }
-        return new(target, ops, rules, diagnostics) { WorkflowFields = workflow };
+        if (definitions.GroupBy(definition => definition.Name, StringComparer.Ordinal).FirstOrDefault(group => group.Count() > 1) is { } twice)
+            diagnostics.Add(new(DiagnosticSeverity.Error, $"Two Custom Perks are called '{twice.Key}'; perk names must differ.", twice.Last().NodeId));
+        return new(target, ops, rules, diagnostics) { WorkflowFields = workflow, Definitions = definitions };
+    }
+
+    /** Display text, icon, socket and the plug stats linked to the node's Stats pin. */
+    private static CustomPerkDefinition CustomPerk(FlatGraph flat, GraphEvaluator evaluator, GraphNode perk, IReadOnlyList<PerkRule> rules,
+        List<GraphDiagnostic> diagnostics)
+    {
+        var stats = new List<(string Stat, int Value)>();
+        foreach (var (source, _) in flat.Sources(perk.Id, "stats"))
+        {
+            if (source.Type != "item.stat") { diagnostics.Add(new(DiagnosticSeverity.Warning, "A Custom Perk's Stats take Stat nodes; this one is ignored.", source.Id)); continue; }
+            stats.Add((source.Get("stat", "Impact"), (int)Math.Round(evaluator.Input(source, "value").X)));
+        }
+        if (!int.TryParse(perk.Get("socket", "-1").Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int socket)) socket = -1;
+        return new(perk.Get("name", "New Perk").Trim(), perk.Get("description").Trim(), perk.Get("icon").Trim(), socket, stats, rules, perk.Id);
     }
 
     /** InvestmentDetails.ReadItem's editable fields: what apply_item_edit set_field accepts. */
@@ -222,7 +246,8 @@ public static class WeaponGraphCompiler
             ["perk"] = rule.Perk, ["description"] = rule.Description, ["event"] = rule.Event,
             ["conditions"] = new JsonArray(rule.Conditions.Select(Step).ToArray()),
             ["actions"] = new JsonArray(rule.Actions.Select(Step).ToArray())
-        }).ToArray())
+        }).ToArray()),
+        ["perkDefinitions"] = new JsonArray(result.Definitions.Select(definition => (JsonNode)PerkLowering.ToJson(definition)).ToArray())
     };
 
     private static JsonNode Step(PerkStep step)
