@@ -19,17 +19,23 @@ namespace SunriseStudio.Editor;
  */
 public sealed partial class StudioForm
 {
+    /** Builds an error result object. */
     private static JsonObject AiError(string message) => new() { ["error"] = message };
+    /** Formats a tag hash as 0x%08X. */
     private static string Hex(uint value) => $"0x{value:X8}";
+    /** The paging offset argument (never negative). */
     private static int Offset(JsonObject args) => Math.Max(0, McpJson.Int(args, "offset", 0));
+    /** The paging limit argument, clamped to 1 and the maximum page size. */
     private static int Limit(JsonObject args) => Math.Clamp(McpJson.Int(args, "limit", 50), 1, McpPages.MaximumLimit);
 
     /** Every word of the query appears in the text. */
     private static bool AllWords(string? query, string text) => query is not { Length: > 0 }
         || query.Split(' ', StringSplitOptions.RemoveEmptyEntries).All(word => text.Contains(word, StringComparison.OrdinalIgnoreCase));
 
+    /** Cached map and mission rows with the catalog they came from. */
     private (WorldCatalog? Catalog, JsonObject[] Maps, JsonObject[] Missions)? aiWorldRows;
 
+    /** Dispatches a project query tool by name (SolforgeTools.Project.cs defines the tools). */
     private async Task<JsonObject> AiQueryAsync(string tool, JsonObject args, CancellationToken cancel)
     {
         try
@@ -72,6 +78,7 @@ public sealed partial class StudioForm
         return await Task.Run(() => read(taken), cancel).WaitAsync(AiReadTimeout, cancel).ConfigureAwait(false);
     }
 
+    /** get_editor_state: installation, game, open pages and so on. */
     private JsonObject AiEditorState()
     {
         bool d2 = destiny2Detected && settings.PauseRenderWhenGameRunning && !livePage.IsAttached && !(viewport?.ForceResumeRendering ?? false);
@@ -97,6 +104,7 @@ public sealed partial class StudioForm
         };
     }
 
+    /** get_project: the open project facts. */
     private JsonObject AiProject()
     {
         if (workspace.Project is not { } project) return AiError("No project is open (File > Open project).");
@@ -110,6 +118,7 @@ public sealed partial class StudioForm
         };
     }
 
+    /** get_build_status: state of the last project build. */
     private JsonObject AiBuildStatus()
     {
         var build = workspace.LastBuild;
@@ -131,6 +140,7 @@ public sealed partial class StudioForm
         };
     }
 
+    /** get_settings: the editor settings the AI may read. */
     private JsonObject AiSettings() => new()
     {
         ["installation"] = workspace.Catalog?.GameRoot ?? settings.SunrisePath,
@@ -149,6 +159,7 @@ public sealed partial class StudioForm
     /** Where RAM goes, in MiB: process, managed heap, and the caches that only speed up reloads. */
     private JsonObject AiMemory()
     {
+        /** Rounds a byte count to MiB with one decimal. */
         static double MiB(long bytes) => Math.Round(bytes / 1048576.0, 1);
         using var process = System.Diagnostics.Process.GetCurrentProcess();
         var gc = GC.GetGCMemoryInfo();
@@ -162,6 +173,7 @@ public sealed partial class StudioForm
         };
     }
 
+    /** list_project_files: files under the project root, paged. */
     private static JsonObject AiProjectFiles(string? root, JsonObject args)
     {
         if (root is null || !Directory.Exists(root)) return AiError("No project is open.");
@@ -178,6 +190,7 @@ public sealed partial class StudioForm
         });
     }
 
+    /** list_project_changes: the project deltas and edits not yet built. */
     private JsonObject AiProjectChanges(JsonObject args)
     {
         if (workspace.Project is not { } project) return AiError("No project is open.");
@@ -241,6 +254,7 @@ public sealed partial class StudioForm
         return page;
     }
 
+    /** list_packages: the installed packages. */
     private static JsonObject AiPackages(PackageCatalog? catalog, JsonObject args)
     {
         if (catalog is null) return AiError("No installation is open.");
@@ -250,6 +264,7 @@ public sealed partial class StudioForm
         return McpPages.Page(packages, Offset(args), Limit(args), group => new JsonObject { ["name"] = group.Key, ["entries"] = group.Count() });
     }
 
+    /** list_package_entries: entries of one package, paged. */
     private static JsonObject AiPackageEntries(PackageCatalog? catalog, StudioNameIndex? names, JsonObject args)
     {
         if (catalog is null) return AiError("No installation is open.");
@@ -267,6 +282,7 @@ public sealed partial class StudioForm
         return page;
     }
 
+    /** search_assets: searches the browser asset list. */
     private static JsonObject AiSearchAssets(BrowserAsset[] assets, JsonObject args)
     {
         string query = McpJson.String(args, "query") ?? "", kind = McpJson.String(args, "kind") ?? "";
@@ -278,6 +294,7 @@ public sealed partial class StudioForm
         });
     }
 
+    /** list_mission_scripts: the Lua scripts of the project and the game. */
     private static JsonObject AiMissionScripts(string? project, string? scripts, JsonObject args)
     {
         string? filter = McpJson.String(args, "filter");
@@ -293,6 +310,7 @@ public sealed partial class StudioForm
         return page;
     }
 
+    /** Layer name (static, entity, and so on) of a world object source. */
     private static string AiLayer(object source) => source switch
     {
         SceneMarker marker => marker.Layer.ToString(),
@@ -300,12 +318,14 @@ public sealed partial class StudioForm
         _ => ""
     };
 
+    /** Synonyms accepted for each layer name in find_world_objects. */
     private static readonly Dictionary<string, string[]> AiLayerNames = new(StringComparer.OrdinalIgnoreCase)
     {
         ["volumes"] = ["Volumes", "Transitions"], ["collision"] = ["Collision"], ["meshes"] = ["Geometry", "Terrain", "Distant", "Skybox"],
         ["markers"] = ["Objects", "Spawns"], ["lights"] = ["Lights"], ["squads"] = ["Squads"], ["effects"] = ["Effects"]
     };
 
+    /** find_world_objects: objects of the open world matching a query, layer or area. */
     private static JsonObject AiFindWorldObjects(WorldDocument? world, AiCapture capture, JsonObject args)
     {
         if (world is null) return AiError("No map is open; find it with list_maps and open it with open_map.");
@@ -323,6 +343,7 @@ public sealed partial class StudioForm
             return AllWords(filter, $"{AiSafeLabel(capture, row)} {row.Name} {row.Kind} {AiLayer(row.Source)} {row.BubbleName} {row.AssetTag:X8}");
         });
         if (near is { } origin) rows = rows.OrderBy(row => Vector3.Distance(row.Position!.Value, origin));
+        /** A vector as a JSON array rounded to three places, or null. */
         static JsonArray? Vector(Vector3? v) => v is { } x ? new JsonArray(Math.Round(x.X, 3), Math.Round(x.Y, 3), Math.Round(x.Z, 3)) : null;
         var page = McpPages.Page(rows, Offset(args), Limit(args), row => new JsonObject
         {
@@ -334,11 +355,13 @@ public sealed partial class StudioForm
         return page;
     }
 
+    /** get_placement: details of one placed object. */
     private JsonObject AiPlacement(string id)
     {
         if (workspace.Catalog is not { } catalog) return AiError("No installation is open.");
         if (AiObject(id) is not { } row) return AiError("No object with that id in the open map.");
         var info = SceneEdits.Describe(catalog, row.Source, inspectionWorld);
+        /** A vector as a JSON array rounded to three places. */
         static JsonArray Vector(Vector3 v) => new(Math.Round(v.X, 3), Math.Round(v.Y, 3), Math.Round(v.Z, 3));
         var result = new JsonObject
         {
@@ -383,6 +406,7 @@ public sealed partial class StudioForm
         }, cancel).WaitAsync(AiReadTimeout, cancel).ConfigureAwait(false);
     }
 
+    /** Finds an item by hash or name. */
     private static InvestmentItem? AiFindItem(InvestmentCatalog data, string text)
     {
         text = text.Trim();
@@ -391,6 +415,7 @@ public sealed partial class StudioForm
         return data.Items.FirstOrDefault(item => string.Equals(item.Name, text, StringComparison.OrdinalIgnoreCase));
     }
 
+    /** Finds a vendor by hash or name. */
     private static InvestmentVendor? AiFindVendor(InvestmentCatalog data, string text)
     {
         text = text.Trim();
@@ -398,6 +423,7 @@ public sealed partial class StudioForm
         return data.Vendors.FirstOrDefault(vendor => string.Equals(vendor.Name, text, StringComparison.OrdinalIgnoreCase));
     }
 
+    /** search_items: items matching a text query. */
     private static JsonObject AiSearchItems(InvestmentCatalog data, JsonObject args)
     {
         string? query = McpJson.String(args, "query"), category = McpJson.String(args, "category");
@@ -410,6 +436,7 @@ public sealed partial class StudioForm
         });
     }
 
+    /** get_item: one item with stats, perks and sockets. */
     private static JsonObject AiItem(InvestmentCatalog data, PackageCatalog catalog, string text)
     {
         if (AiFindItem(data, text) is not { } item) return AiError("No item by that tag, hash or name; use search_items.");
@@ -430,6 +457,7 @@ public sealed partial class StudioForm
         };
     }
 
+    /** get_vendor: one vendor with sale items. */
     private static JsonObject AiVendor(InvestmentCatalog data, PackageCatalog catalog, JsonObject args)
     {
         if (AiFindVendor(data, McpJson.String(args, "vendor") ?? "") is not { } vendor) return AiError("No vendor by that tag, hash or name; use list_vendors.");
@@ -444,6 +472,7 @@ public sealed partial class StudioForm
         return page;
     }
 
+    /** list_creation_types: the things the Create flow can make. */
     private static JsonObject AiCreationTypes(string? filter)
     {
         var rows = CreationTypes.All.Concat(CreationTypes.Blocked.Select(type => (Key: type.Name, Mode: CreationMode.New, Type: type)))
@@ -455,8 +484,10 @@ public sealed partial class StudioForm
         });
     }
 
+    /** Parses a creation mode name (new, clone, ...); null when unknown. */
     private static CreationMode? AiMode(string mode) => mode.ToLowerInvariant() switch { "new" => CreationMode.New, "clone" => CreationMode.Clone, _ => null };
 
+    /** describe_creation: fields and steps of a creation type. */
     private JsonObject AiDescribeCreation(string key, string mode)
     {
         if (AiMode(mode) is not { } parsed) return AiError("mode must be new or clone.");
@@ -581,9 +612,11 @@ public sealed partial class StudioForm
         }
     }
 
+    /** A JSON array as a Vector3, or null. */
     private static Vector3? AiVector(JsonNode? node) =>
         node is JsonArray { Count: 3 } array ? new((float)array[0]!, (float)array[1]!, (float)array[2]!) : null;
 
+    /** Edits a placement position/rotation (or bounds) for apply_project_edit; returns result text. */
     private string AiEditPlacement(JsonObject args, bool bounds)
     {
         if (workspace.Catalog is not { } catalog) return "No installation is open.";
@@ -626,6 +659,7 @@ public sealed partial class StudioForm
         return workspace.CanEdit ? null : "No project is open, or Solforge is busy.";
     }
 
+    /** Applies an item edit op list (apply_item_edit); returns result text. */
     private string AiApplyItemEdit(JsonObject args)
     {
         var data = workspace.Investment;
@@ -672,6 +706,7 @@ public sealed partial class StudioForm
         return workspace.Error.Length > 0 ? workspace.Error : $"Applied {op} to {detail.Item.Name}; it is in Project changes with undo.";
     }
 
+    /** Applies a vendor edit (apply_vendor_edit); returns result text. */
     private string AiApplyVendorEdit(JsonObject args)
     {
         var data = workspace.Investment;
@@ -706,6 +741,7 @@ public sealed partial class StudioForm
         return workspace.Error.Length > 0 ? workspace.Error : $"Applied {op} to {detail.Vendor.Name}; it is in Project changes with undo.";
     }
 
+    /** Starts a creation flow (new/clone item etc.) from tool arguments; returns result text. */
     private string AiStartCreation(JsonObject args)
     {
         if (AiMode(McpJson.String(args, "mode") ?? "") is not { } mode) return "mode must be new or clone.";

@@ -15,13 +15,17 @@ namespace SunriseStudio.Editor;
  */
 public sealed partial class StudioForm
 {
+    /** The MCP media host: Havok, Wwise and USM decoders for the media tools. */
     private sealed partial class AiHost : ISolforgeMediaHost
     {
         private const int HavokType = 26, HavokSubType = 7, UsmType = 27;
 
+        /** Formats a tag hash as 0x%08X. */
         private static string Hex(uint value) => "0x" + value.ToString("X8", CultureInfo.InvariantCulture);
+        /** A vector as a JSON array rounded to four places. */
         private static JsonArray V3(Vector3 v) => new(Math.Round(v.X, 4), Math.Round(v.Y, 4), Math.Round(v.Z, 4));
 
+        /** Loads the Havok packfile of a tag (the original game bytes or the project version); null when it is not one. */
         private HavokPackfile? Havok(uint tag, bool original)
         {
             if (DataCatalog is not { } catalog || !catalog.TryGetEntry(tag, out var entry)) return null;
@@ -31,6 +35,7 @@ public sealed partial class StudioForm
             return HavokPackfile.Parse(bytes);
         }
 
+        /** Implements havok_packfile. */
         public JsonObject? DescribeHavok(uint tag, bool original, int maxShapes)
         {
             if (Havok(tag, original) is not { } file) return null;
@@ -66,6 +71,7 @@ public sealed partial class StudioForm
             };
         }
 
+        /** Implements export_collision_obj. */
         public JsonObject? ExportHavokObj(uint tag, bool original, string path)
         {
             if (Havok(tag, original) is not { } file) return null;
@@ -80,6 +86,7 @@ public sealed partial class StudioForm
             };
         }
 
+        /** Loads the audio document of a tag, or null. */
         private AudioDocument? Audio(uint tag)
         {
             if (DataCatalog is not { } catalog || !catalog.TryGetEntry(tag, out var entry)) return null;
@@ -88,6 +95,7 @@ public sealed partial class StudioForm
             return new AudioCatalog(catalog, catalog.GetName).Read(tag);
         }
 
+        /** Implements audio_info. */
         public Task<JsonObject?> DescribeAudio(uint tag, CancellationToken cancel) => Task.Run(() =>
         {
             if (DataCatalog is not { } catalog || Audio(tag) is not { } document) return null;
@@ -115,6 +123,7 @@ public sealed partial class StudioForm
             };
         }, cancel);
 
+        /** Implements export_audio_wav. */
         public Task<JsonObject?> ExportAudioWav(uint tag, uint? mediaId, string folder, CancellationToken cancel) => Task.Run(() =>
         {
             if (DataCatalog is not { } catalog || Audio(tag) is not { } document) return null;
@@ -140,6 +149,7 @@ public sealed partial class StudioForm
             return (JsonObject?)new JsonObject { ["files"] = files, ["skipped"] = skipped };
         }, cancel);
 
+        /** Reads the USM bytes of a tag, or null. */
         private byte[]? Usm(uint tag)
         {
             if (DataCatalog is not { } catalog || !catalog.TryGetEntry(tag, out var entry)) return null;
@@ -148,6 +158,7 @@ public sealed partial class StudioForm
             return UsmContainer.IsUsm(bytes) ? bytes : throw new InvalidDataException($"0x{tag:X8} has no CRID header.");
         }
 
+        /** Implements video_info. */
         public Task<JsonObject?> DescribeVideo(uint tag, CancellationToken cancel) => Task.Run(() =>
         {
             if (Usm(tag) is not { } bytes) return null;
@@ -183,6 +194,7 @@ public sealed partial class StudioForm
             };
         }, cancel);
 
+        /** Implements export_video. */
         public Task<JsonObject?> ExportVideo(uint tag, string folder, int? audioChannel, bool includeVideo, CancellationToken cancel) => Task.Run(() =>
         {
             if (Usm(tag) is not { } bytes) return null;

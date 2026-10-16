@@ -29,11 +29,14 @@ public sealed partial class StudioForm
 
     /** Clip tag to the animation definitions (and their clip index) that list it, built once per install. */
     private (PackageCatalog Catalog, Dictionary<uint, List<(uint Definition, int Index)>> Users)? aiClipUsers;
+    /** Guards the cached animation clip user lookup. */
     private readonly object aiClipUsersLock = new();
 
+    /** References taken on the UI thread (catalog, names, name lookups) for the worker to read with. */
     private sealed record AiAssetContext(PackageCatalog? Catalog, StudioNameIndex? Names, Func<uint, string?> Name,
         Func<uint, string?> ClipName, Func<uint, string?> Hash);
 
+    /** Dispatches a shader, animation or audio tool by name on a worker. */
     private Task<JsonObject> AiAssetAsync(string tool, JsonObject args, CancellationToken cancel) =>
         AiOffThread(() => new AiAssetContext(workspace.Catalog, workspace.Names, workspace.ResolveName, workspace.ResolveClipName, workspace.ResolveHash),
             context =>
@@ -51,6 +54,7 @@ public sealed partial class StudioForm
                 };
             }, cancel);
 
+    /** Reads a tag hash argument; null when missing or invalid. */
     private static uint? AiTagArg(JsonObject args, string name) => SolforgeTools.ParseHash(McpJson.String(args, name));
 
     // Shaders.
@@ -63,6 +67,7 @@ public sealed partial class StudioForm
         _ => null
     };
 
+    /** list_shaders: paged list of installed shaders. */
     private static JsonObject AiListShaders(AiAssetContext context, JsonObject args)
     {
         var catalog = context.Catalog!;
@@ -86,6 +91,7 @@ public sealed partial class StudioForm
         });
     }
 
+    /** get_shader: stages and constants of one shader or material. */
     private static JsonObject AiGetShader(AiAssetContext context, JsonObject args)
     {
         var catalog = context.Catalog!;
@@ -182,8 +188,10 @@ public sealed partial class StudioForm
 
     // Animations.
 
+    /** Name of an animation clip, from the lookup or the catalog. */
     private static string? AiClipName(AiAssetContext context, uint clip) => context.ClipName(clip) ?? context.Catalog!.GetName(clip);
 
+    /** list_animations: paged list of animation clips. */
     private static JsonObject AiListAnimations(AiAssetContext context, JsonObject args, CancellationToken cancel)
     {
         var catalog = context.Catalog!;
@@ -212,6 +220,7 @@ public sealed partial class StudioForm
         });
     }
 
+    /** get_animation: metadata of one clip or animation entity. */
     private JsonObject AiGetAnimation(AiAssetContext context, JsonObject args, CancellationToken cancel)
     {
         var catalog = context.Catalog!;
@@ -279,12 +288,14 @@ public sealed partial class StudioForm
         return result;
     }
 
+    /** JSON for animation payload sections. */
     private static JsonArray AiSections(IEnumerable<AnimationPayloadSection> sections) =>
         new(sections.Select(section => (JsonNode)new JsonObject
         {
             ["field"] = $"0x{section.PointerField:X}", ["offset"] = section.DataOffset, ["class"] = Hex(section.ClassHash)
         }).ToArray());
 
+    /** JSON for the skeleton of an entity. */
     private static JsonObject AiSkeleton(AiAssetContext context, uint entity, JsonObject args)
     {
         try
@@ -335,9 +346,11 @@ public sealed partial class StudioForm
 
     // Audio.
 
+    /** Short kind label of an audio package entry. */
     private static string AiAudioKind(PackageEntry entry) =>
         entry.Reference == AudioCatalog.EventClass ? "event" : entry.SubType == 6 ? "stream" : "bank";
 
+    /** list_audio: paged list of audio tags. */
     private static JsonObject AiListAudio(AiAssetContext context, JsonObject args)
     {
         string kind = (McpJson.String(args, "kind") ?? "").Trim().ToLowerInvariant(), filter = McpJson.String(args, "filter") ?? "";
@@ -354,6 +367,7 @@ public sealed partial class StudioForm
         });
     }
 
+    /** get_audio: metadata of one audio tag. */
     private static JsonObject AiGetAudio(AiAssetContext context, JsonObject args)
     {
         uint tag = AiTagArg(args, "tag") ?? 0;

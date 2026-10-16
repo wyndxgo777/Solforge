@@ -1,3 +1,7 @@
+/**
+ * File: The editor side of the MCP server: AiHost implements ISolforgeHost (Solforge.Mcp) by marshalling onto the UI
+ * thread; context snapshots, approvals, edit tracking and screenshots live here.
+ */
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -18,7 +22,9 @@ namespace SunriseStudio.Editor;
  */
 public sealed partial class StudioForm
 {
+    /** A pending tool request waiting for the user to approve or decline. */
     private sealed record AiRequest(string Tool, string Summary, TaskCompletionSource<bool> Answer);
+    /** An edit the AI made (file, shown text, previous content) kept for undo. */
     private sealed record AiEdit(string Path, string Shown, string? Previous, DateTime Time);
 
     private SolforgeMcpService? aiService;
@@ -28,10 +34,12 @@ public sealed partial class StudioForm
     private readonly List<AiEdit> aiEdits = [];
     private readonly List<(WorldObject Object, double Until)> aiHighlights = [];
     private TaskCompletionSource<byte[]?>? aiScreenshot;
+    /** A requested screenshot: object id, whether to label, whether to send it to the AI. */
     private (string? Id, bool Labels, bool Send) aiScreenshotRequest;
     private double aiNextPublish;
     private FileSystemWatcher? aiWatcher;
     private DateTime aiReloadAfter = DateTime.MaxValue;
+    /** Cached facts about the inspected object and when they were gathered. */
     private (object? Source, double At, JsonObject Facts) aiFacts = (null, 0, new JsonObject());
     private bool aiFrameHooked;
 
@@ -46,6 +54,7 @@ public sealed partial class StudioForm
         else EnsureAiService();
     }
 
+    /** Starts the MCP HTTP service the first time the AI workspace needs it. */
     partial void EnsureAiService()
     {
         if (!settings.AiMcpEnabled || aiService is not null || aiServiceError is not null) return;
@@ -60,6 +69,7 @@ public sealed partial class StudioForm
         { aiServiceError = exception.Message; }
     }
 
+    /** Stops the MCP service and clears its state. */
     partial void StopAiService()
     {
         aiWatcher?.Dispose();
@@ -101,6 +111,7 @@ public sealed partial class StudioForm
         return proxy.ClaudeEnvironment();
     }
 
+    /** Reports the MCP service status text. */
     partial void AiServiceStatus(ref string status)
     {
         if (!settings.AiMcpEnabled) status = "MCP off (Settings > AI)";
@@ -186,8 +197,10 @@ public sealed partial class StudioForm
         AiPrewarm();
     }
 
+    /** Builds the context snapshot (open documents, selection, camera, visible objects) the AI sees. */
     private JsonObject BuildAiContext()
     {
+        /** Builds one id/label JSON entry. */
         static JsonObject Item(string id, string label) => new() { ["id"] = id, ["label"] = label };
         // Mission objects carry their slot id, slot name, type, position and owning prefab.
         JsonObject WithSlot(JsonObject item, object source)
@@ -342,6 +355,7 @@ public sealed partial class StudioForm
         return open;
     }
 
+    /** Adds inspector rows for asset nodes, up to a limit. */
     private static void AddAiInspector(JsonArray rows, IReadOnlyList<AssetNode> nodes, string path, int limit)
     {
         foreach (var node in nodes)
@@ -362,10 +376,12 @@ public sealed partial class StudioForm
         && Path.GetFullPath(path).StartsWith(Path.GetFullPath(root).TrimEnd('\\') + "\\", StringComparison.OrdinalIgnoreCase)
             ? Path.GetRelativePath(root, path).Replace('\\', '/') : path;
 
+    /** The nearest bubble (named volume) to a point, or null. */
     private string? NearestBubble(Vector3 point) => inspectionWorld?.Objects
         .Where(item => item.Position is not null && item.BubbleName.Length > 0)
         .MinBy(item => Vector3.DistanceSquared(item.Position!.Value, point))?.BubbleName;
 
+    /** Builds the list of objects currently visible in the viewport. */
     private List<VisibleObject> BuildAiVisible()
     {
         var visible = new List<VisibleObject>();
@@ -391,9 +407,11 @@ public sealed partial class StudioForm
         return inspectionWorld?.Find(id);
     }
 
+    /** Name of the package holding a tag, or null. */
     private string? AiPackage(uint tag) =>
         tag != 0 && workspace.Catalog is { } catalog && catalog.TryGetEntry(tag, out var entry) ? entry.PackageName : null;
 
+    /** Draws highlight markers the AI asked for in the viewport. */
     private void DrawAiHighlights(double now)
     {
         aiHighlights.RemoveAll(item => item.Until < now);
@@ -426,6 +444,7 @@ public sealed partial class StudioForm
         }
     }
 
+    /** Draws the list of AI edits with an undo button for each. */
     partial void DrawAiEdits()
     {
         if (aiEdits.Count == 0) return;
@@ -441,12 +460,14 @@ public sealed partial class StudioForm
         }
     }
 
+    /** Completes a pending request with the user answer. */
     private void Answer(AiRequest request, bool approved)
     {
         lock (aiRequests) aiRequests.Remove(request);
         request.Answer.TrySetResult(approved);
     }
 
+    /** Restores the file as it was before an AI edit. */
     private void UndoAiEdit(int index)
     {
         var edit = aiEdits[index];
@@ -456,6 +477,7 @@ public sealed partial class StudioForm
         aiAttention.Record(AttentionKind.Open, "file:" + edit.Shown, "Undid AI edit of " + edit.Shown);
     }
 
+    /** Captures and sends the requested viewport screenshot. */
     partial void SendAiScreenshot()
     {
         if (workspace.Project is null || viewport is null) return;
@@ -489,6 +511,7 @@ public sealed partial class StudioForm
         { pending.TrySetResult(null); }
     }
 
+    /** Crops a screenshot to an object (optionally with labels); null when it cannot. */
     private byte[]? CropAiScreenshot(string path, string? id, bool labels)
     {
         if (viewport is not { } view || view.ScreenSize.X < 2) return null;
@@ -526,6 +549,7 @@ public sealed partial class StudioForm
         return stream.ToArray();
     }
 
+    /** Watches the project folder so AI file changes show up and scripts reload. */
     private void WatchAiProject(string folder)
     {
         aiWatcher?.Dispose();
@@ -542,12 +566,14 @@ public sealed partial class StudioForm
             aiReloadAfter = DateTime.UtcNow.AddMilliseconds(300);
     }
 
+    /** Reloads the open mission script after a file change. */
     private void ReloadAiScript()
     {
         if (missionGraph.ScriptPath is not { } script || missionGraph.IsDirty) return;
         missionGraph.OpenScript(script, workspace);
     }
 
+    /** Runs work on the UI thread and returns its result as a Task. */
     private Task<T> OnUi<T>(Func<T> work)
     {
         var done = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -563,6 +589,9 @@ public sealed partial class StudioForm
         return done.Task;
     }
 
+    /**
+     * Runs an editor action tool (select, focus, highlight, open, edit) on the UI thread and returns the result text.
+     */
     private string RunAiAction(string tool, JsonObject args)
     {
         string? id = McpJson.String(args, "id");
@@ -615,6 +644,7 @@ public sealed partial class StudioForm
         }
     }
 
+    /** Details of an asset tag for get_tag, or null. */
     private JsonObject? AiAssetDetails(uint? hash)
     {
         if (hash is not { } tag || workspace.Catalog is not { } catalog || !catalog.TryGetEntry(tag, out var entry)) return null;
@@ -647,12 +677,19 @@ public sealed partial class StudioForm
         public IReadOnlyList<CodeRoot> CodeRoots => form.aiCodeRoots;
         public string? ReferenceFolder => ReferenceLibrary.Locate(form.aiReferenceStarts);
 
+        /** ISolforgeHost: fuzzy object search. */
         public Task<IReadOnlyList<ObjectEntry>> ObjectsAsync(string query, CancellationToken cancel) => form.AiObjectsAsync(query, cancel);
+        /** ISolforgeHost: details of one object. */
         public Task<JsonObject?> GetObjectAsync(string id, CancellationToken cancel) => form.AiObjectDetailsAsync(id, cancel);
+        /** ISolforgeHost: snapshot of the open mission. */
         public Task<MissionSnapshot?> MissionAsync(CancellationToken cancel) => form.AiMissionAsync(cancel);
+        /** ISolforgeHost: reads the contents of a panel. */
         public Task<JsonObject> ReadPanelAsync(string panel, PanelQuery query, CancellationToken cancel) => form.AiReadPanelAsync(panel, query, cancel);
+        /** ISolforgeHost: lists the open documents. */
         public Task<JsonObject> GetOpenDocumentsAsync(CancellationToken cancel) => form.OnUi(form.BuildAiOpenDocuments).WaitAsync(cancel);
+        /** ISolforgeHost: details of a tag. */
         public Task<JsonObject?> GetTagAsync(uint hash, CancellationToken cancel) => form.OnUi(() => form.AiAssetDetails(hash)).WaitAsync(cancel);
+        /** ISolforgeHost: one package entry. */
         public Task<JsonObject?> GetPackageEntryAsync(string id, CancellationToken cancel) => form.OnUi(() =>
         {
             int slash = id.LastIndexOf('/');
@@ -665,8 +702,10 @@ public sealed partial class StudioForm
             }
             return form.AiAssetDetails(SolforgeTools.ParseHash(id));
         }).WaitAsync(cancel);
+        /** ISolforgeHost: state of the in-game Live link. */
         public JsonObject LiveState() => form.OnUi(() => form.livePage.AiState()).WaitAsync(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
 
+        /** ISolforgeHost: a viewport screenshot, optionally cropped to an object. */
         public async Task<byte[]?> ScreenshotAsync(string? objectId, bool labels, CancellationToken cancel)
         {
             // Nothing is drawn while the 3D viewport is off or paused for the game.
@@ -679,6 +718,7 @@ public sealed partial class StudioForm
             return await pending.Task.WaitAsync(TimeSpan.FromSeconds(10), cancel).ConfigureAwait(false);
         }
 
+        /** ISolforgeHost: asks the user to approve an action; false when declined. */
         public async Task<bool> ApproveAsync(string tool, string summary, CancellationToken cancel)
         {
             var request = new AiRequest(tool, summary, new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously));
@@ -689,13 +729,17 @@ public sealed partial class StudioForm
             finally { lock (form.aiRequests) form.aiRequests.Remove(request); }
         }
 
+        /** ISolforgeHost: runs an editor action tool. */
         public Task<string> RunActionAsync(string tool, JsonObject args, CancellationToken cancel) =>
             form.OnUi(() => form.RunAiAction(tool, args)).WaitAsync(cancel);
 
+        /** ISolforgeHost: runs a project query tool (see StudioForm.Ai.Query.cs). */
         public Task<JsonObject> QueryAsync(string tool, JsonObject args, CancellationToken cancel) => form.AiQueryAsync(tool, args, cancel);
 
+        /** Live viewport frames for the frame tools and streams. */
         public ViewportFeed Viewport { get; } = new();
 
+        /** ISolforgeHost: lists the editor UI controls. */
         public async Task<IReadOnlyList<UiControl>> UiControlsAsync(CancellationToken cancel)
         {
             if (!UiAuto.Enabled) return [];
@@ -705,6 +749,7 @@ public sealed partial class StudioForm
                 control.Value, control.Checked, control.Options)).ToArray();
         }
 
+        /** ISolforgeHost: performs a UI command (click, set value, select) on a control. */
         public async Task<(bool Ok, string Message)> UiCommandAsync(UiCommand command, CancellationToken cancel)
         {
             int colon = command.ControlId.LastIndexOf(':');

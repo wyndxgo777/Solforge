@@ -1,3 +1,9 @@
+/**
+ * File: AI workspace UI (engine picker, terminal, context dropdown). Related: StudioForm.Ai.Host.cs (ISolforgeHost
+ * implementation, UI-thread marshalling), .Ai.Query.cs (project reads), .Ai.Assets.cs (shader/animation/audio reads),
+ * .Ai.Media.cs (havok/audio/video), .Ai.Stream.cs (viewport frames), StudioForm.PhoneStream.cs (stream to phone);
+ * tools themselves are in Solforge.Mcp; terminal in Ai/.
+ */
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -27,13 +33,17 @@ public sealed partial class StudioForm
         new("Custom command", "")
     ];
     private const string AiContextPopup = "ai-context-popup", AiFoldersPopup = "ai-folders-popup";
+    /** The embedded ConPTY terminal view. */
     private readonly TerminalView aiTerminal = new();
+    /** Log of what the AI looked at, shown in the context dropdown. */
     private readonly AttentionLog aiAttention = new();
     private readonly List<(string Id, string Label)> aiPinned = [];
+    /** Cache of resolved engine command paths (null when not found). */
     private readonly Dictionary<string, string?> aiResolved = new(StringComparer.Ordinal);
     private int aiEngine;
     private string aiCustomCommand = "", aiNewFolder = "", aiFreshPath = "";
     private string? aiInstalling;
+    /** Result of the last engine install attempt: message and success flag. */
     private (string Text, bool Ok)? aiInstallNote;
     private double aiNextResolve;
     private bool aiKeyHooked;
@@ -61,6 +71,7 @@ public sealed partial class StudioForm
         layoutDirty = true;
     }
 
+    /** Handles the AI workspace keyboard shortcuts. */
     private void HandleAiShortcuts()
     {
         TrackAiAttention();
@@ -70,6 +81,7 @@ public sealed partial class StudioForm
         OpenAiWorkspace();
     }
 
+    /** Draws the whole AI workspace panel: toolbar, terminal, context and request cards. */
     private void DrawAiWorkspace(Vector2 position, Vector2 size)
     {
         BeginPanel("AI workspace", position, size);
@@ -234,6 +246,7 @@ public sealed partial class StudioForm
     private const string AutoAllowTip = "When on, Solforge presses Enter when the engine asks to allow something and the highlighted "
         + "choice is a one-time Yes/Allow (never \"always allow\", No or trust prompts). Claude Code, Cline and Antigravity only.";
 
+    /** Switches the active engine and restarts its terminal session. */
     private void SelectAiEngine(int index)
     {
         aiEngine = Math.Clamp(index, 0, AiEngines.Length - 1);
@@ -249,6 +262,7 @@ public sealed partial class StudioForm
         return (EngineProviders.Resolve(engine, choice.Provider), choice);
     }
 
+    /** The saved provider choice for an engine (see EngineProviders). */
     private EngineProviders.Choice AiProviderChoice(string engine)
     {
         if (!settings.AiProviders.TryGetValue(engine, out var choice)) settings.AiProviders[engine] = choice = new();
@@ -397,6 +411,7 @@ public sealed partial class StudioForm
         else x = width;
     }
 
+    /** Draws a coloured one-line note. */
     private static void AiNote(Vector4 color, string text)
     {
         ImGui.PushStyleColor(ImGuiCol.Text, color);
@@ -404,11 +419,14 @@ public sealed partial class StudioForm
         ImGui.PopStyleColor();
     }
 
+    /** Pixel width of a button with this label. */
     private static float ButtonWidth(string label) => ImGui.CalcTextSize(label).X + ImGui.GetStyle().FramePadding.X * 2;
 
+    /** Display name of an engine. */
     private string AiEngineLabel(AiEngine engine) =>
         engine.Command.Length > 0 && aiResolved.Count > 0 && AiResolved(engine.Command) is null ? engine.Name + " (not installed)" : engine.Name;
 
+    /** The resolved path of a command if it was found earlier, else null. */
     private string? AiResolved(string command) => aiResolved.GetValueOrDefault(command);
 
     /** Re-reads PATH from the registry and finds each engine (and npm); unforced, at most every 10 s. */
@@ -509,6 +527,7 @@ public sealed partial class StudioForm
         catch (Exception exception) when (exception is System.ComponentModel.Win32Exception or InvalidOperationException or IOException) { return null; }
     }
 
+    /** Draws the install card for an engine that is not installed yet. */
     private void DrawAiInstallCard(AiEngine engine)
     {
         ResolveAiEngines();
@@ -548,6 +567,7 @@ public sealed partial class StudioForm
         aiTerminal.Start(line, folder, 120, 32, new Dictionary<string, string> { ["PATH"] = aiFreshPath });
     }
 
+    /** Finishes an engine install: refreshes command resolution and shows the outcome. */
     private void FinishAiInstall()
     {
         string command = aiInstalling!;
@@ -587,6 +607,7 @@ public sealed partial class StudioForm
         ImGui.EndPopup();
     }
 
+    /** Draws the Context dropdown: what the AI currently sees. */
     private void DrawAiContext()
     {
         bool publish = !aiPaused;
@@ -630,6 +651,7 @@ public sealed partial class StudioForm
         }
     }
 
+    /** Draws one name/value row in the context dropdown. */
     private void AiRow(string name, string? value)
     {
         ImGui.TextColored(SolTheme.Dim, name);
@@ -694,12 +716,15 @@ public sealed partial class StudioForm
         ImGui.EndDisabled();
     }
 
+    /** Display label of an inspected object. */
     private string AiLabel(object source) =>
         viewport?.ObjectName?.Invoke(source) ?? inspectionWorld?.Find(source)?.Name ?? source.ToString() ?? "object";
 
+    /** Stable id of an inspected object. */
     private string AiId(object source) =>
         inspectionWorld?.Find(source)?.Id ?? "runtime:" + RuntimeHelpers.GetHashCode(source).ToString("x8");
 
+    /** Pins the currently inspected object into the AI context. */
     private void PinAiObject()
     {
         if ((viewport?.HoveredObject ?? viewport?.SelectedObject) is not { } source) return;
@@ -742,11 +767,18 @@ public sealed partial class StudioForm
         if (aiTerminal.Focused && aiTerminal.Terminal is not null) ImGui.GetIO().WantTextInput = true;
     }
 
+    /** Hook implemented in StudioForm.Ai.Host.cs: starts the MCP service when needed. */
     partial void EnsureAiService();
+    /** Hook implemented in StudioForm.Ai.Host.cs: stops the MCP service. */
     partial void StopAiService();
+    /** Hook implemented in StudioForm.Ai.Host.cs: prepares the engine launch files for a folder. */
     partial void PrepareAiEngine(string folder);
+    /** Hook implemented in StudioForm.Ai.Host.cs: reports the MCP service status text. */
     partial void AiServiceStatus(ref string status);
+    /** Hook implemented in StudioForm.Ai.Host.cs: sends a viewport screenshot to the AI. */
     partial void SendAiScreenshot();
+    /** Hook implemented in StudioForm.Ai.Host.cs: draws pending approval requests. */
     partial void DrawAiRequests();
+    /** Hook implemented in StudioForm.Ai.Host.cs: draws the AI edit list with undo. */
     partial void DrawAiEdits();
 }
