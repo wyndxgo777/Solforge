@@ -10,6 +10,8 @@ namespace Solforge.Mcp;
 public static class ProjectFiles
 {
     public const string SdkPrefix = "sdk:";
+    /** Read-only prefix for the server mission scripts folder (Settings > Paths), e.g. "scripts:freeroam/edz.lua". */
+    public const string ScriptsPrefix = "scripts:";
     private const long MaximumRead = 2 << 20;
     private static readonly HashSet<string> SkippedFolders = new(StringComparer.OrdinalIgnoreCase)
         { ".git", "bin", "obj", "node_modules", ".vs", "build", "out" };
@@ -17,9 +19,11 @@ public static class ProjectFiles
         { ".pkg", ".exe", ".dll", ".pdb", ".bak" };
 
     /** The full path for a project path ("scripts/a.lua") or SDK doc path ("sdk:api.md"); null when it leaves its root. */
-    public static string? Resolve(string? projectRoot, IReadOnlyList<string> sdkRoots, string relative)
+    public static string? Resolve(string? projectRoot, IReadOnlyList<string> sdkRoots, string relative, string? scriptsRoot = null)
     {
         relative = relative.Replace('\\', '/').Trim();
+        if (relative.StartsWith(ScriptsPrefix, StringComparison.OrdinalIgnoreCase))
+            return scriptsRoot is { Length: > 0 } ? Inside(scriptsRoot, relative[ScriptsPrefix.Length..].TrimStart('/')) : null;
         if (relative.StartsWith(SdkPrefix, StringComparison.OrdinalIgnoreCase))
         {
             string rest = relative[SdkPrefix.Length..].TrimStart('/');
@@ -35,8 +39,9 @@ public static class ProjectFiles
     {
         reason = null;
         if (projectRoot is null) { reason = "No project is open."; return null; }
-        if (Path.IsPathRooted(relative) || relative.StartsWith(SdkPrefix, StringComparison.OrdinalIgnoreCase))
-        { reason = "Give a path relative to the project folder."; return null; }
+        if (Path.IsPathRooted(relative) || relative.StartsWith(SdkPrefix, StringComparison.OrdinalIgnoreCase)
+            || relative.StartsWith(ScriptsPrefix, StringComparison.OrdinalIgnoreCase))
+        { reason = "Give a path relative to the project folder (server scripts are read-only here)."; return null; }
         if (Inside(projectRoot, relative) is not { } path) { reason = "The path leaves the project folder."; return null; }
         string[] parts = Path.GetRelativePath(projectRoot, path).Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         if (parts.Any(part => SkippedFolders.Contains(part))) { reason = "Build output and tool folders are not editable."; return null; }

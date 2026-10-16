@@ -38,6 +38,8 @@ public interface ISolforgeHost
     JsonObject LiveState();
     /** The open mission's slots, built off the UI thread and cached per loaded world; null with no map or mission open. */
     Task<MissionSnapshot?> MissionAsync(CancellationToken cancel);
+    /** The server mission scripts folder (Settings > Paths), read by read_project_file as "scripts:<path>"; null when unset. */
+    string? ServerScriptsRoot => null;
     /** Lua folders that name mission slots: SDK mission files, server mission scripts, the project. */
     IReadOnlyList<CodeRoot> CodeRoots { get; }
     /** The reference library folder (08-docs\reference), found at call time; null until it exists. */
@@ -84,7 +86,15 @@ public static partial class SolforgeTools
         "get_shader, list_animations, get_animation, list_audio and get_audio. Action tools need the user's approve click. " +
         "For how the game client works (functions, xrefs, strings, structs, vtables, tag class handlers in destiny2.exe) and for raw " +
         "tag data, unknown tag classes, localized text and JSON/CSV export, start with decomp_status and read the solforge-decomp skill; " +
-        "paged results return next_cursor, which you pass back as cursor.";
+        "paged results return next_cursor, which you pass back as cursor. " + SelfServiceHint;
+
+    /** Shared by the server instructions and the session file, so every engine knows it can do its own setup. */
+    public const string SelfServiceHint =
+        "Do Solforge setup yourself instead of asking the user to click: set_settings (Paths such as serverScripts and blender, " +
+        "the game installation, rendering, memory, FPS caps; get_settings reads the same names), set_mod_details (Build and install " +
+        "needs mod details; get_project shows them), open_project, create_project, close_project, close_map, close_asset, " +
+        "build_project, build_to_folder, update_running_game and reload_mission_scripts. Server mission scripts read as " +
+        "scripts:<path> with read_project_file. Only Settings > AI stays the user's.";
 
 
     /** read_panel names; each pages with offset/limit. */
@@ -175,14 +185,15 @@ public static partial class SolforgeTools
             Read("get_attention_log", "The last n hovered, selected, focused, pinned or opened items with timestamps, newest first.",
                 Schema(("n", "integer", "How many (default 20)", false)),
                 (args, _) => Task.FromResult(McpToolResult.Json(host.Attention.ToJson(Math.Clamp(McpJson.Int(args, "n", 20), 1, 256))))),
-            Read("read_project_file", "Read a project file (path relative to the project folder) or a Lua SDK doc ('sdk:<path>').",
-                Schema(("path", "string", "Project-relative path or sdk:<path>", true), ("offset", "integer", "First line (default 1)", false),
+            Read("read_project_file", "Read a project file (path relative to the project folder), a Lua SDK doc ('sdk:<path>') or a " +
+                "server mission script ('scripts:<path>', as list_mission_scripts gives it).",
+                Schema(("path", "string", "Project-relative path, sdk:<path> or scripts:<path>", true), ("offset", "integer", "First line (default 1)", false),
                     ("limit", "integer", "Line count (default 400)", false)),
                 (args, _) =>
                 {
                     string shown = McpJson.String(args, "path") ?? "";
-                    if (ProjectFiles.Resolve(host.ProjectRoot, host.SdkRoots, shown) is not { } path)
-                        return Task.FromResult(McpToolResult.Error("That path is outside the project and the SDK docs."));
+                    if (ProjectFiles.Resolve(host.ProjectRoot, host.SdkRoots, shown, host.ServerScriptsRoot) is not { } path)
+                        return Task.FromResult(McpToolResult.Error("That path is outside the project, the SDK docs and the server scripts folder."));
                     return Task.FromResult(McpToolResult.Json(ProjectFiles.Read(path, shown, McpJson.Int(args, "offset", 1), McpJson.Int(args, "limit", 400))));
                 }),
             Read("search_project", "Case-insensitive text search over project files and the Lua SDK docs.",

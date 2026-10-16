@@ -39,6 +39,8 @@ public static class SessionContext
             text.AppendLine(string.Join(", ", facts.Tools));
             text.AppendLine();
             text.AppendLine("Action tools wait for the user's approve click in Solforge. Nothing writes game packages; edits go to the project.");
+            text.AppendLine();
+            text.AppendLine(SolforgeTools.SelfServiceHint);
         }
         return text.ToString();
     }

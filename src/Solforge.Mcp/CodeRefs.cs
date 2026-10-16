@@ -114,7 +114,7 @@ public static class CodeRefs
      * The SDK mission folder under the game install ('bin/x64/Sunrise/sdk/lua/missions') and the server's mission-scripts
      * folder, found next to the install or in the given folders; SOLFORGE_SERVER_SCRIPTS overrides the latter.
      */
-    public static IReadOnlyList<CodeRoot> Locate(string? gameRoot, string? projectRoot, IEnumerable<string?> folders)
+    public static IReadOnlyList<CodeRoot> Locate(string? gameRoot, string? projectRoot, IEnumerable<string?> folders, string? serverScripts = null)
     {
         var roots = new List<CodeRoot>();
         string[] sdkTails = [@"bin\x64\Sunrise\sdk\lua\missions", @"Sunrise\sdk\lua\missions", @"sdk\lua\missions"];
@@ -126,8 +126,9 @@ public static class CodeRefs
                 if (!bases.Contains(folder, StringComparer.OrdinalIgnoreCase)) bases.Add(folder);
         if (bases.SelectMany(each => sdkTails.Select(tail => Path.Combine(each, tail))).FirstOrDefault(Directory.Exists) is { } sdk)
             roots.Add(new("sdk-missions", sdk, true));
-        string? server = Environment.GetEnvironmentVariable("SOLFORGE_SERVER_SCRIPTS") is { Length: > 0 } set && Directory.Exists(set) ? set
-            : bases.SelectMany(each => serverTails.Select(tail => Path.Combine(each, tail))).FirstOrDefault(Directory.Exists);
+        // Settings > Paths wins; then the environment; then a folder found next to the game, project or AI folders.
+        string? server = Existing(serverScripts) ?? (Environment.GetEnvironmentVariable("SOLFORGE_SERVER_SCRIPTS") is { Length: > 0 } set && Directory.Exists(set) ? set
+            : bases.SelectMany(each => serverTails.Select(tail => Path.Combine(each, tail))).FirstOrDefault(Directory.Exists));
         if (server is not null) roots.Add(new("server-scripts", server));
         // Last, so a large project never spends the budget before the mission and server files.
         if (Existing(projectRoot) is { } project) roots.Add(new("project", project));

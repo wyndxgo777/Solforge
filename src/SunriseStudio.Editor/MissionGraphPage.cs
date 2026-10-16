@@ -433,6 +433,17 @@ public sealed partial class MissionGraphPage
         catch (Exception error) when (Recoverable(error)) { Fail(error.Message); return false; }
     }
 
+    /**
+     * Re-reads the script lists and API schema, as the toolbar's Reload does (the AI calls it after a path setting changes).
+     * @return false when an unsaved draft is open; the page then asks the user before reloading.
+     */
+    public bool ReloadScripts(string root)
+    {
+        catalogTried = null;
+        RequestSwitch(() => Reload(root));
+        return !IsDirty;
+    }
+
     private void RequestSwitch(Action action)
     {
         if (!IsDirty) { Try(action); return; }
