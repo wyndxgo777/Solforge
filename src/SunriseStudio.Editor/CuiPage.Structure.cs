@@ -43,13 +43,13 @@ public sealed partial class CuiPage
         catch (Exception error) when (error is InvalidDataException or JsonException or IOException)
         { structureError = error.Message; structure = null; }
         ImGui.SameLine();
-        if (ImGui.Button("Frame widget")) focusComposed = true;
+        if (UiAuto.Button("Frame widget")) focusComposed = true;
         ImGui.SameLine();
-        ImGui.Checkbox("Isolate", ref isolateComposed);
+        UiAuto.Checkbox("Isolate", ref isolateComposed);
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Preview the selected widget and its children");
         ImGui.SameLine();
         ImGui.BeginDisabled(!context.Workspace.CanEdit || structure is null);
-        if (ImGui.Button("Add widget"))
+        if (UiAuto.Button("Add widget"))
         {
             widgetParent = structure!.Parents.Any(node => node.Id == selectedComposed) ? selectedComposed : 0;
             widgetName = ((CuiWidgetKind)widgetKind).ToString(); ImGui.OpenPopup("cui-create-widget");
@@ -57,29 +57,29 @@ public sealed partial class CuiPage
         if (structureError.Length > 0 && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.SetTooltip(structureError);
         bool local = structure?.LocalWidgets.Any(node => node.Id == selectedComposed) == true;
         ImGui.SameLine(); ImGui.BeginDisabled(!local);
-        if (ImGui.Button("Duplicate")) DuplicateWidget(context, scene);
+        if (UiAuto.Button("Duplicate")) DuplicateWidget(context, scene);
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Copy stored profile properties. May not work in game.");
         ImGui.SameLine();
-        if (ImGui.Button("Delete")) DeleteWidget(context);
+        if (UiAuto.Button("Delete")) DeleteWidget(context);
         ImGui.EndDisabled();
         if (ImGui.BeginPopup("cui-create-widget"))
         {
             string[] kinds = Enum.GetNames<CuiWidgetKind>();
-            if (ImGui.Combo("Type", ref widgetKind, kinds, kinds.Length)) widgetName = kinds[widgetKind];
-            ImGui.InputText("Name", ref widgetName, 80);
+            if (UiAuto.Combo("Type", ref widgetKind, kinds, kinds.Length)) widgetName = kinds[widgetKind];
+            UiAuto.InputText("Name", ref widgetName, 80);
             ParentPicker("Parent", ref widgetParent);
             var position = new Vector2(widgetRectangle.X, widgetRectangle.Y);
             if (ImGui.InputFloat2("Position", ref position)) { widgetRectangle.X = position.X; widgetRectangle.Y = position.Y; }
             var dimensions = new Vector2(widgetRectangle.Z, widgetRectangle.W);
             if (ImGui.InputFloat2("Size", ref dimensions)) { widgetRectangle.Z = Math.Max(1, dimensions.X); widgetRectangle.W = Math.Max(1, dimensions.Y); }
             ImGui.BeginDisabled(string.IsNullOrWhiteSpace(widgetName));
-            if (ImGui.Button("Create"))
+            if (UiAuto.Button("Create"))
             {
                 context.Workspace.Run(() => ApplyStructure(context, structure!.Create((CuiWidgetKind)widgetKind,
                     WidgetHash(widgetName), (ushort)widgetParent, widgetRectangle), widgetName.Trim(), "Created widget"));
                 ImGui.CloseCurrentPopup();
             }
-            ImGui.EndDisabled(); ImGui.SameLine(); if (ImGui.Button("Cancel")) ImGui.CloseCurrentPopup();
+            ImGui.EndDisabled(); ImGui.SameLine(); if (UiAuto.Button("Cancel")) ImGui.CloseCurrentPopup();
             ImGui.EndPopup();
         }
         ImGui.EndDisabled();
@@ -108,14 +108,14 @@ public sealed partial class CuiPage
     {
         if (structure is null) return;
         int current = selected;
-        if (!ImGui.BeginCombo(label, structure.Parents.FirstOrDefault(node => node.Id == current) is { } parent ? StructureName(parent) : "Screen")) return;
+        if (!UiAuto.BeginCombo(label, structure.Parents.FirstOrDefault(node => node.Id == current) is { } parent ? StructureName(parent) : "Screen")) return;
         foreach (var node in structure.Parents)
         {
             ImGui.PushID(node.Id);
-            if (ImGui.Selectable(StructureName(node), selected == node.Id)) selected = node.Id;
+            if (UiAuto.Selectable(StructureName(node), selected == node.Id)) selected = node.Id;
             ImGui.PopID();
         }
-        ImGui.EndCombo();
+        UiAuto.EndCombo();
     }
 
     /** The composed view edits only its local default-profile properties. */
@@ -137,7 +137,7 @@ public sealed partial class CuiPage
         { structureSelected = selected.Id; structureRectangle = rectangle?.Rectangle ?? Vector4.Zero; widgetParent = selected.ParentId; }
         ParentPicker("Parent", ref widgetParent);
         ImGui.BeginDisabled(widgetParent == selected.ParentId);
-        if (ImGui.Button("Set parent")) context.Workspace.Run(() =>
+        if (UiAuto.Button("Set parent")) context.Workspace.Run(() =>
             ApplyStructure(context, structure.Reparent((ushort)selected.Id, (ushort)widgetParent), null, "Changed widget parent"));
         ImGui.EndDisabled();
         if (rectangle is not null)
@@ -145,10 +145,10 @@ public sealed partial class CuiPage
             for (int axis = 0; axis < 4; axis++)
             {
                 float value = structureRectangle[axis];
-                if (ImGui.DragFloat(axis switch { 0 => "X", 1 => "Y", 2 => "Width", _ => "Height" }, ref value, 1)) structureRectangle[axis] = value;
+                if (UiAuto.DragFloat(axis switch { 0 => "X", 1 => "Y", 2 => "Width", _ => "Height" }, ref value, 1)) structureRectangle[axis] = value;
             }
-            if (ImGui.Button("Apply layout")) context.Workspace.Run(() => Save(CuiLayout.Apply(root.Data.Span, root, rectangle, structureRectangle), "Saved widget layout"));
-            ImGui.SameLine(); if (ImGui.Button("Reset layout")) structureRectangle = rectangle.Rectangle;
+            if (UiAuto.Button("Apply layout")) context.Workspace.Run(() => Save(CuiLayout.Apply(root.Data.Span, root, rectangle, structureRectangle), "Saved widget layout"));
+            ImGui.SameLine(); if (UiAuto.Button("Reset layout")) structureRectangle = rectangle.Rectangle;
             DrawVisualPropertiesCore(context, rectangle, preview?.ComposedContent.GetValueOrDefault(selected.Id), root, Save);
         }
         ImGui.EndDisabled();

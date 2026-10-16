@@ -24,7 +24,7 @@ public sealed partial class MissionGraphPage
         if (action?.Scene is { } actionScene) ImGui.TextWrapped(actionScene.Name);
         if (action?.Target is { } target) ImGui.TextWrapped(target.Name);
         if (action?.Inputs is { Count: > 0 } sent) ImGui.TextWrapped("Then sends " + string.Join(", ", sent.Select(value => value.Name)));
-        if (action is not null && ImGui.SmallButton("Edit action"))
+        if (action is not null && UiAuto.SmallButton("Edit action"))
         { actionDraft = action; actionNode = node.Key; actionError = ""; ImGui.OpenPopup("Edit flow action"); }
         // A custom callback opens as code; a typed one keeps its code one click away.
         if (action is null) FieldLua(node.Key, "run");
@@ -32,20 +32,20 @@ public sealed partial class MissionGraphPage
         if (!ImGui.BeginPopup("Edit flow action")) return;
         var draft = actionDraft!;
         ImGui.SetNextItemWidth(320);
-        if (ImGui.BeginCombo("Action type", TemplateName(draft.Kind)))
+        if (UiAuto.BeginCombo("Action type", TemplateName(draft.Kind)))
         {
             foreach (var kind in FlowActions)
-                if (ImGui.Selectable(TemplateName(kind), kind == draft.Kind)) draft = new(kind);
-            ImGui.EndCombo();
+                if (UiAuto.Selectable(TemplateName(kind), kind == draft.Kind)) draft = new(kind);
+            UiAuto.EndCombo();
         }
         DrawActionFields(ref draft);
         actionDraft = draft;
-        if (ImGui.Button("Apply"))
+        if (UiAuto.Button("Apply"))
         {
             if (Author(authoring => authoring.SetFlowAction(actionNode, draft))) ImGui.CloseCurrentPopup();
             else actionError = status;
         }
-        ImGui.SameLine(); if (ImGui.Button("Cancel")) ImGui.CloseCurrentPopup();
+        ImGui.SameLine(); if (UiAuto.Button("Cancel")) ImGui.CloseCurrentPopup();
         if (actionError.Length > 0) ImGui.TextWrapped(actionError);
         ImGui.EndPopup();
     }
@@ -112,16 +112,16 @@ public sealed partial class MissionGraphPage
             ? new[] { MissionNodeTemplate.ActionStep, MissionNodeTemplate.ReachTrigger, MissionNodeTemplate.GhostScan, MissionNodeTemplate.Interact }
             : group.IsFlowSteps ? [.. FlowActions]
             : group.IsFlowFacts ? [MissionNodeTemplate.TriggerFact, MissionNodeTemplate.SceneOutputFact] : [];
-        ImGui.SetNextItemWidth(320); ImGui.InputText("Node id", ref newId, 64);
-        if (ImGui.BeginCombo("Template", TemplateName(templateDraft.Kind)))
+        ImGui.SetNextItemWidth(320); UiAuto.InputText("Node id", ref newId, 64);
+        if (UiAuto.BeginCombo("Template", TemplateName(templateDraft.Kind)))
         {
             foreach (var item in templates)
-                if (ImGui.Selectable(TemplateName(item), item == templateDraft.Kind)) templateDraft = new(item);
-            ImGui.EndCombo();
+                if (UiAuto.Selectable(TemplateName(item), item == templateDraft.Kind)) templateDraft = new(item);
+            UiAuto.EndCombo();
         }
         if (templateDraft.Kind == MissionNodeTemplate.ReachTrigger) LegPicker(group, ref templateLeg);
         DrawActionFields(ref templateDraft);
-        if (ImGui.Button("Create"))
+        if (UiAuto.Button("Create"))
         {
             var draft = templateDraft;
             if (Change(document => templates.Length == 0 ? document.AddNode(groupKey, newId)
@@ -129,7 +129,7 @@ public sealed partial class MissionGraphPage
                     draft.Target, templateLeg, draft.Sensor, draft.Navpoint, draft.Scene, draft.Inputs ?? [])))
             { selected = groupKey + "/" + newId; ImGui.CloseCurrentPopup(); }
         }
-        ImGui.SameLine(); if (ImGui.Button("Cancel")) ImGui.CloseCurrentPopup();
+        ImGui.SameLine(); if (UiAuto.Button("Cancel")) ImGui.CloseCurrentPopup();
         ImGui.EndPopup();
     }
 

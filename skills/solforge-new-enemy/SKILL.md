@@ -23,6 +23,7 @@ Goal: get different enemies into the world with what Studio supports.
 8. Test: go to the zone, confirm the squad spawns, fights and drops.
 
 ## UI fallback
+Any Solforge control can be driven with `list_ui_controls` then `ui_invoke` / `ui_set_value` / `ui_set_checked` / `ui_select` (approve click each).
 Enemies/NPCs category > Components and Parts tabs; Mission Graph / Lua editor for placement.
 
 ## Verify

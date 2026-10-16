@@ -30,9 +30,10 @@ Goal: edit the freeroam Lua for a destination. These are server mission scripts,
    - rewards: add hashes to `loot_pools.lua`, or a new `enemy_kill` rule (item keys are decimal hash strings).
 5. Check names: a wrong `mission.Squad.X` fails at open. Confirm each with `get_mission_object` or `search_reference`.
 6. Deploy: Update running game (needs `studio_attach`) via `build_project`, or Build and install (game closed). The live server needs a restart; flag other players first. Already-started missions need an activity restart.
-7. Test in game: enter the zone, check spawns, event start, completion, rewards; read the logs.
+7. Test in game: enter the zone, check spawns, event start, completion, rewards; read the logs. `get_player_position` says where the player is (zone, nearest slots); `wait_for_player_near` with the event sensor's slot id waits until they reach it; `get_viewport_frame` / `wait_for_viewport_change` show the view (text for models without vision).
 
 ## UI fallback
+Any Solforge control can be driven with `list_ui_controls` then `ui_invoke` / `ui_set_value` / `ui_set_checked` / `ui_select` (approve click each).
 Mission Graph > Installed scripts / Mod scripts opens the Lua editor; World window pages (States, Squads, Objects/Triggers) for key lookup.
 
 ## Verify

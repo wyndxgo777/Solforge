@@ -52,8 +52,9 @@ public sealed partial class StudioForm
         try
         {
             aiHost ??= new AiHost(this);
-            if (!aiFrameHooked) { FrameRendered += CaptureAiScreenshot; aiFrameHooked = true; }
+            if (!aiFrameHooked) { FrameRendered += CaptureAiScreenshot; FrameRendered += StreamAiViewport; aiFrameHooked = true; }
             aiService = SolforgeMcpService.Start(aiHost, typeof(StudioForm).Assembly.GetName().Version?.ToString(3) ?? "0");
+            UiAuto.Enabled = true;
         }
         catch (Exception exception) when (exception is IOException or System.Net.Sockets.SocketException or UnauthorizedAccessException)
         { aiServiceError = exception.Message; }
@@ -63,6 +64,7 @@ public sealed partial class StudioForm
     {
         aiWatcher?.Dispose();
         lock (aiRequests) foreach (var request in aiRequests) request.Answer.TrySetResult(false);
+        UiAuto.Enabled = false;
         if (aiService is { } service) { aiService = null; service.DisposeAsync().AsTask().Wait(1000); }
     }
 
@@ -381,7 +383,7 @@ public sealed partial class StudioForm
             ImGui.TextWrapped(request.Summary);
             if (SolTheme.PrimaryButton("Approve")) Answer(request, true);
             ImGui.SameLine();
-            if (ImGui.Button("Deny")) Answer(request, false);
+            if (UiAuto.Button("Deny")) Answer(request, false);
             ImGui.PopID();
         }
     }
@@ -394,7 +396,7 @@ public sealed partial class StudioForm
         {
             var edit = aiEdits[i];
             ImGui.PushID(i);
-            if (ImGui.SmallButton("Undo")) { UndoAiEdit(i); ImGui.PopID(); break; }
+            if (UiAuto.SmallButton("Undo")) { UndoAiEdit(i); ImGui.PopID(); break; }
             ImGui.SameLine();
             ImGui.TextWrapped($"{edit.Time:HH:mm:ss} {edit.Shown}");
             ImGui.PopID();
@@ -653,5 +655,33 @@ public sealed partial class StudioForm
             form.OnUi(() => form.RunAiAction(tool, args)).WaitAsync(cancel);
 
         public Task<JsonObject> QueryAsync(string tool, JsonObject args, CancellationToken cancel) => form.AiQueryAsync(tool, args, cancel);
+
+        public ViewportFeed Viewport { get; } = new();
+
+        public async Task<IReadOnlyList<UiControl>> UiControlsAsync(CancellationToken cancel)
+        {
+            if (!UiAuto.Enabled) return [];
+            var drawn = await UiAuto.SnapshotAsync(cancel).ConfigureAwait(false);
+            return drawn.Select(control => new UiControl($"{control.Surface}:{control.Id:X8}", control.Kind, UiAuto.Visible(control.Label),
+                control.Label, control.Window, control.Scope, [control.X, control.Y, control.Width, control.Height], control.Visible,
+                control.Value, control.Checked, control.Options)).ToArray();
+        }
+
+        public async Task<(bool Ok, string Message)> UiCommandAsync(UiCommand command, CancellationToken cancel)
+        {
+            int colon = command.ControlId.LastIndexOf(':');
+            if (colon <= 0 || !uint.TryParse(command.ControlId[(colon + 1)..], System.Globalization.NumberStyles.HexNumber, null, out uint id))
+                return (false, "Not a control id; use one from list_ui_controls.");
+            var operation = command.Operation switch
+            {
+                UiOperation.SetValue => UiAuto.Op.SetValue,
+                UiOperation.SetChecked => UiAuto.Op.SetChecked,
+                UiOperation.Select => UiAuto.Op.Select,
+                _ => UiAuto.Op.Invoke
+            };
+            var pending = UiAuto.Enqueue(new UiAuto.Command(command.ControlId[..colon], id, operation, command.Value, command.Checked));
+            try { return await pending.WaitAsync(TimeSpan.FromSeconds(8), cancel).ConfigureAwait(false); }
+            catch (TimeoutException) { return (false, "Solforge did not draw a frame in time (busy or minimised); try again."); }
+        }
     }
 }

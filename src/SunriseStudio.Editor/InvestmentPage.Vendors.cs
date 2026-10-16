@@ -31,7 +31,7 @@ public sealed partial class InvestmentPage
 
     private void DrawCostRow(StudioPageContext context, InvestmentSale sale, InvestmentCost cost)
     {
-        if (ImGui.SmallButton($"{cost.Quantity:N0} {cost.Name}##cost")) BeginCostEditor(context, sale, cost);
+        if (UiAuto.SmallButton($"{cost.Quantity:N0} {cost.Name}##cost")) BeginCostEditor(context, sale, cost);
         if (cost.Conditional)
         {
             ImGui.SameLine(); ImGui.TextDisabled("Conditional");
@@ -88,7 +88,7 @@ public sealed partial class InvestmentPage
         InvalidateCostDraft(context.Workspace);
         if (costSale is not { } sale || costRow is not { } row)
         { ImGui.CloseCurrentPopup(); ImGui.EndPopup(); return; }
-        ImGui.SetNextItemWidth(380); ImGui.InputTextWithHint("##cost-search", "Find item or currency", ref costSearch, 128);
+        ImGui.SetNextItemWidth(380); UiAuto.InputTextWithHint("##cost-search", "Find item or currency", ref costSearch, 128);
         if (!ReferenceEquals(costCatalog, catalog) || costMatchedSearch != costSearch)
         {
             costCatalog = catalog; costMatchedSearch = costSearch;
@@ -105,18 +105,18 @@ public sealed partial class InvestmentPage
             for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
             {
                 var item = costMatches[i]; ImGui.PushID(item.Index);
-                if (ImGui.Selectable(item.Name, costItem == item.Index)) costItem = item.Index;
+                if (UiAuto.Selectable(item.Name, costItem == item.Index)) costItem = item.Index;
                 if (ImGui.IsItemHovered()) ImGui.SetTooltip($"{item.Name}\n{item.TypeName}");
                 ImGui.PopID();
             }
         clipper.End(); clipper.Destroy(); ImGui.EndChild();
         if ((uint)costItem < catalog.Items.Count) ImGui.TextUnformatted(catalog.Items[costItem].Name);
-        ImGui.SetNextItemWidth(180); ImGui.InputText(row.Conditional ? "Base quantity" : "Quantity", ref costQuantity, 10, ImGuiInputTextFlags.CharsDecimal);
+        ImGui.SetNextItemWidth(180); UiAuto.InputText(row.Conditional ? "Base quantity" : "Quantity", ref costQuantity, 10, ImGuiInputTextFlags.CharsDecimal);
         bool valid = (uint)costItem < catalog.Items.Count && uint.TryParse(costQuantity, NumberStyles.None, CultureInfo.InvariantCulture, out _);
         ImGui.BeginDisabled(!context.Workspace.CanEdit || !valid);
-        if (ImGui.Button("Save delta") && SaveCostDraft(context.Workspace)) ImGui.CloseCurrentPopup();
+        if (UiAuto.Button("Save delta") && SaveCostDraft(context.Workspace)) ImGui.CloseCurrentPopup();
         ImGui.EndDisabled(); ImGui.SameLine();
-        if (ImGui.Button("Cancel")) { ClearCostDraft(); ImGui.CloseCurrentPopup(); }
+        if (UiAuto.Button("Cancel")) { ClearCostDraft(); ImGui.CloseCurrentPopup(); }
         ImGui.EndPopup();
     }
 

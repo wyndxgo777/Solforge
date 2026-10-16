@@ -19,7 +19,7 @@ public sealed partial class MissionGraphPage
         if (own.Length != inputs.Inputs.Count)
         {
             ImGui.TextWrapped("Some inputs belong to another scene.");
-            if (ImGui.SmallButton("Remove them")) { Author(authoring => authoring.SetStepInputs(node.Key, own)); return true; }
+            if (UiAuto.SmallButton("Remove them")) { Author(authoring => authoring.SetStepInputs(node.Key, own)); return true; }
             return false;
         }
         if (!InputList(scene, inputs.Inputs, out var next)) return false;
@@ -54,7 +54,7 @@ public sealed partial class MissionGraphPage
         foreach (var input in inputs)
         {
             bool ticked = current.Contains(input);
-            bool changed = ImGui.Checkbox(input.Name + "##input-" + input.Expression, ref ticked);
+            bool changed = UiAuto.Checkbox(input.Name + "##input-" + input.Expression, ref ticked);
             if (ImGui.IsItemHovered()) ImGui.SetTooltip(input.Expression + "\nKey " + input.Identity);
             if (!changed) continue;
             chosen = ticked ? [.. current, input] : current.Where(value => value != input).ToArray();

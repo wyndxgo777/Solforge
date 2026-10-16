@@ -37,28 +37,28 @@ public sealed partial class MissionGraphPage
         string kind = condition switch { null => "Immediately", MissionFactCondition => "Fact",
             MissionConditionGroup group => group.All ? "All" : "Any", _ => "Custom Lua" };
         ImGui.SetNextItemWidth(-1);
-        if (ImGui.BeginCombo("##condition-kind", kind))
+        if (UiAuto.BeginCombo("##condition-kind", kind))
         {
-            if (root && ImGui.Selectable("Immediately", condition is null)) replacement = null;
+            if (root && UiAuto.Selectable("Immediately", condition is null)) replacement = null;
             ImGui.BeginDisabled(facts.Count == 0);
             foreach (string choice in new[] { "Fact", "All", "Any" })
-                if (ImGui.Selectable(choice, kind == choice) && choice != kind)
+                if (UiAuto.Selectable(choice, kind == choice) && choice != kind)
                 {
                     var first = condition is MissionFactCondition fact ? fact : new MissionFactCondition(facts[0]);
                     replacement = choice == "Fact" ? first : condition is MissionConditionGroup group
                         ? group with { All = choice == "All" } : new MissionConditionGroup(choice == "All", [condition ?? first]);
                 }
-            ImGui.EndDisabled(); ImGui.EndCombo();
+            ImGui.EndDisabled(); UiAuto.EndCombo();
         }
         if (!Equals(replacement, condition)) return true;
         if (condition is MissionFactCondition leaf)
         {
             ImGui.SetNextItemWidth(-1);
-            if (ImGui.BeginCombo("##fact", Friendly(leaf.Fact)))
+            if (UiAuto.BeginCombo("##fact", Friendly(leaf.Fact)))
             {
                 foreach (string fact in facts)
-                    if (ImGui.Selectable(Friendly(fact) + "##" + fact, fact == leaf.Fact)) replacement = new MissionFactCondition(fact);
-                ImGui.EndCombo();
+                    if (UiAuto.Selectable(Friendly(fact) + "##" + fact, fact == leaf.Fact)) replacement = new MissionFactCondition(fact);
+                UiAuto.EndCombo();
             }
             return !Equals(replacement, condition);
         }
@@ -70,7 +70,7 @@ public sealed partial class MissionGraphPage
                 ImGui.PushID(i);
                 bool changed = DrawCondition(children.Children[i], facts, false, path + "/" + i, owner, out var child, out var childDraft);
                 ImGui.BeginDisabled(children.Children.Count == 1);
-                bool remove = ImGui.SmallButton("Remove condition"); ImGui.EndDisabled(); ImGui.PopID();
+                bool remove = UiAuto.SmallButton("Remove condition"); ImGui.EndDisabled(); ImGui.PopID();
                 if (changed || remove)
                 {
                     var next = children.Children.ToList();
@@ -81,7 +81,7 @@ public sealed partial class MissionGraphPage
                 ImGui.Spacing();
             }
             ImGui.BeginDisabled(facts.Count == 0 || children.Children.Count >= 64);
-            bool add = ImGui.SmallButton("Add condition"); ImGui.EndDisabled();
+            bool add = UiAuto.SmallButton("Add condition"); ImGui.EndDisabled();
             if (add) replacement = children with { Children = children.Children.Append(new MissionFactCondition(facts[0])).ToArray() };
             ImGui.Unindent(10); return add;
         }

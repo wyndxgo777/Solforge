@@ -65,7 +65,7 @@ public sealed partial class StudioForm
             }
             ImGui.EndChild();
             ImGui.BeginDisabled(!workspace.CanEdit || workspace.Project?.ContainsEdit(diff.TagHash) != true);
-            if (ImGui.Button("Revert to base"))
+            if (UiAuto.Button("Revert to base"))
             {
                 uint tag = diff.TagHash;
                 workspace.Run(() => workspace.Revert(tag));
@@ -76,7 +76,7 @@ public sealed partial class StudioForm
             ImGui.SameLine();
         }
         else if (tagDiffError.Length > 0) ImGui.TextWrapped(tagDiffError);
-        if (ImGui.Button("Close")) { tagDiff = null; ImGui.CloseCurrentPopup(); }
+        if (UiAuto.Button("Close")) { tagDiff = null; ImGui.CloseCurrentPopup(); }
         ImGui.EndPopup();
     }
 

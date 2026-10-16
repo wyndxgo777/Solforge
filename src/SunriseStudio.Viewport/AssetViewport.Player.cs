@@ -91,11 +91,11 @@ public sealed partial class AssetViewport
             const float Width = 150;
             next(Width);
             ImGui.SetNextItemWidth(Width);
-            if (ImGui.BeginCombo("##teleport-spawn", "Teleport to spawn", ImGuiComboFlags.HeightLarge))
+            if (UiAuto.BeginCombo("##teleport-spawn", "Teleport to spawn", ImGuiComboFlags.HeightLarge))
             {
                 for (int index = 0; index < spawns.Count; index++)
-                    if (ImGui.Selectable($"{Name(spawns[index]) ?? "Spawn point"}##spawn{index}")) TeleportTo(spawns[index]);
-                ImGui.EndCombo();
+                    if (UiAuto.Selectable($"{Name(spawns[index]) ?? "Spawn point"}##spawn{index}")) TeleportTo(spawns[index]);
+                UiAuto.EndCombo();
             }
         }
         ImGui.EndDisabled();

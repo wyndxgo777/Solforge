@@ -72,11 +72,11 @@ public sealed partial class StudioForm
                     bubble.States.FirstOrDefault(state => state.PackageEnabled)?.Ordinal ?? bubble.States.FirstOrDefault()?.Ordinal ?? 0);
         }
         ImGui.SetNextItemWidth(200 * scale);
-        if (ImGui.Combo("Preview states", ref missionStateMode,
+        if (UiAuto.Combo("Preview states", ref missionStateMode,
             ["All authored states", "Package-enabled states", "Selected states"], 3)) missionStateDirty = true;
         ImGui.SameLine();
         ImGui.BeginDisabled(workspace.IsBusy || !missionStateDirty);
-        if (ImGui.Button("Apply states"))
+        if (UiAuto.Button("Apply states"))
         {
             workspace.ReloadWorld(world.Options with
             {
@@ -95,10 +95,10 @@ public sealed partial class StudioForm
             if (ImGui.TreeNodeEx(bubbleName, ImGuiTreeNodeFlags.DefaultOpen))
             {
                 bool visible = !hiddenBubbles.Contains(bubble.NameHash);
-                if (ImGui.Checkbox("Visible", ref visible))
+                if (UiAuto.Checkbox("Visible", ref visible))
                 { if (visible) hiddenBubbles.Remove(bubble.NameHash); else hiddenBubbles.Add(bubble.NameHash); }
                 ImGui.SameLine();
-                if (ImGui.SmallButton("Only this bubble"))
+                if (UiAuto.SmallButton("Only this bubble"))
                 {
                     hiddenBubbles.Clear();
                     foreach (var other in world.Scene.Bubbles.Select(value => world.CanonicalBubble(value.TagHash)).Distinct())
@@ -109,12 +109,12 @@ public sealed partial class StudioForm
                 {
                     int selected = selectedMissionStates.GetValueOrDefault(bubble.NameHash);
                     string title = bubble.States.FirstOrDefault(state => state.Ordinal == selected)?.Name ?? "No state";
-                    if (ImGui.BeginCombo("State", title))
+                    if (UiAuto.BeginCombo("State", title))
                     {
                         foreach (var state in bubble.States)
-                            if (ImGui.Selectable(StateTitle(state) + "##" + state.Ordinal, state.Ordinal == selected))
+                            if (UiAuto.Selectable(StateTitle(state) + "##" + state.Ordinal, state.Ordinal == selected))
                             { selectedMissionStates[bubble.NameHash] = state.Ordinal; missionStateDirty = true; }
-                        ImGui.EndCombo();
+                        UiAuto.EndCombo();
                     }
                 }
                 foreach (var state in bubble.States)
@@ -125,9 +125,9 @@ public sealed partial class StudioForm
                     {
                         var stateKey = new WorldStateKey(world.MissionTag!.Value, state.BubbleNameHash, state.Ordinal);
                         var stateRow = missionStates.GetValueOrDefault(stateKey);
-                        if (ImGui.SmallButton("State details") && stateRow is not null) SelectWorldObject(stateRow);
+                        if (UiAuto.SmallButton("State details") && stateRow is not null) SelectWorldObject(stateRow);
                         ImGui.SameLine();
-                        if (ImGui.SmallButton("Open source")) OpenObjectAsset(state.EntryTag);
+                        if (UiAuto.SmallButton("Open source")) OpenObjectAsset(state.EntryTag);
                         foreach (var group in missionGroups.GetValueOrDefault(stateKey, []))
                             if (ImGui.TreeNodeEx($"{group.Name} ({group.Rows.Length:N0})###{group.Name}"))
                             {
@@ -161,7 +161,7 @@ public sealed partial class StudioForm
             {
                 var row = rows[index];
                 ImGui.PushID(row.Id);
-                if (ImGui.Selectable(row.Name, selectedWorldId == row.Id, ImGuiSelectableFlags.AllowDoubleClick))
+                if (UiAuto.Selectable(row.Name, selectedWorldId == row.Id, ImGuiSelectableFlags.AllowDoubleClick))
                 {
                     SelectWorldObject(row);
                     if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left) && viewport!.SelectedObject is not null)
@@ -219,25 +219,25 @@ public sealed partial class StudioForm
     {
         if (!ImGui.CollapsingHeader("Environment", ImGuiTreeNodeFlags.DefaultOpen)) return;
         float time = viewport!.TimeOfDay;
-        if (ImGui.SliderFloat("Time of day", ref time, 0, 1)) viewport.TimeOfDay = time;
+        if (UiAuto.SliderFloat("Time of day", ref time, 0, 1)) viewport.TimeOfDay = time;
         int backdrop = (int)viewport.Backdrop.Mode;
-        if (ImGui.Combo("Backdrop", ref backdrop, ["Follow cursor", "Fixed bubble", "All bubbles"], 3))
+        if (UiAuto.Combo("Backdrop", ref backdrop, ["Follow cursor", "Fixed bubble", "All bubbles"], 3))
             viewport.Backdrop.Mode = (SceneBackdropMode)backdrop;
         if (viewport.Backdrop.Mode == SceneBackdropMode.Fixed && workspace.World is { } world)
         {
             var bubbles = world.Scene.Bubbles.GroupBy(bubble => world.CanonicalBubble(bubble.TagHash)).Select(group => group.First()).ToArray();
             string title = bubbles.FirstOrDefault(bubble => world.CanonicalBubble(bubble.TagHash) == viewport.Backdrop.BubbleHash)?.Name ?? "Choose bubble";
-            if (ImGui.BeginCombo("Sky bubble", title))
+            if (UiAuto.BeginCombo("Sky bubble", title))
             {
                 foreach (var bubble in bubbles)
-                    if (ImGui.Selectable(BubbleTitle(bubble.NameHash, bubble.Name) + "##" + bubble.TagHash)) viewport.Backdrop.BubbleHash = world.CanonicalBubble(bubble.TagHash);
-                ImGui.EndCombo();
+                    if (UiAuto.Selectable(BubbleTitle(bubble.NameHash, bubble.Name) + "##" + bubble.TagHash)) viewport.Backdrop.BubbleHash = world.CanonicalBubble(bubble.TagHash);
+                UiAuto.EndCombo();
             }
         }
         if (viewport.NativeRenderer is { } native)
         {
             bool exposure = native.AutoExposure;
-            if (ImGui.Checkbox("Auto exposure", ref exposure))
+            if (UiAuto.Checkbox("Auto exposure", ref exposure))
             {
                 if (!exposure) native.ViewerStops = native.AppliedViewerStops;
                 native.AutoExposure = exposure;
@@ -246,7 +246,7 @@ public sealed partial class StudioForm
             else
             {
                 float stops = native.ViewerStops;
-                if (ImGui.SliderFloat("Exposure", ref stops, -4, 16, "%.2f EV")) native.ViewerStops = stops;
+                if (UiAuto.SliderFloat("Exposure", ref stops, -4, 16, "%.2f EV")) native.ViewerStops = stops;
             }
             ImGui.TextDisabled(settings.LightingMode == SunriseStudio.Rendering.NativeLightingMode.Studio
                 ? "Studio lighting" : native.SkyLightingActive ? "Atmospheric reflections" : "Ambient lighting");
@@ -271,11 +271,11 @@ public sealed partial class StudioForm
         {
             bool selected = selectedMapLayers.Contains(layer.Index);
             string label = workspace.ResolveHash(layer.NameHash) ?? layer.Name;
-            if (ImGui.Checkbox($"{label}##layer-{layer.Index}", ref selected))
+            if (UiAuto.Checkbox($"{label}##layer-{layer.Index}", ref selected))
             { if (selected) selectedMapLayers.Add(layer.Index); else selectedMapLayers.Remove(layer.Index); }
         }
         ImGui.BeginDisabled(workspace.IsBusy);
-        if (ImGui.Button("Apply map layers")) workspace.ReloadWorld(world.Options with
+        if (UiAuto.Button("Apply map layers")) workspace.ReloadWorld(world.Options with
         { MapGlobalIndices = selectedMapLayers.ToHashSet(), UseMissionMapLayers = false });
         ImGui.EndDisabled();
     }

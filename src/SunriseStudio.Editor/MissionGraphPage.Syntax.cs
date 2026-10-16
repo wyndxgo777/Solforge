@@ -58,7 +58,7 @@ public sealed partial class MissionGraphPage
     private void LuaText(string id, ref string text, Vector2 size, bool editable = true, bool preview = true, uint headroom = 64 * 1024)
     {
         bool editing = editable && (!preview || codeEditing.GetValueOrDefault(id));
-        if (editable && preview && ImGui.SmallButton((editing ? "Preview" : "Edit") + "##" + id))
+        if (editable && preview && UiAuto.SmallButton((editing ? "Preview" : "Edit") + "##" + id))
             codeEditing[id] = editing = !editing;
         if (CodeFont is { } font) ImGui.PushFont(font);
         if (editing) CodeInput("##lua-" + id, ref text, headroom, size, ImGuiInputTextFlags.AllowTabInput);
@@ -71,8 +71,8 @@ public sealed partial class MissionGraphPage
         ImGuiInputTextFlags flags = ImGuiInputTextFlags.None, bool multiline = true)
     {
         uint capacity = label == activeInput ? activeCapacity : (uint)Encoding.UTF8.GetByteCount(text) + headroom;
-        bool changed = multiline ? ImGui.InputTextMultiline(label, ref text, capacity, size, flags)
-            : ImGui.InputText(label, ref text, capacity, flags);
+        bool changed = multiline ? UiAuto.InputTextMultiline(label, ref text, capacity, size, flags)
+            : UiAuto.InputText(label, ref text, capacity, flags);
         if (ImGui.IsItemActive())
         {
             if (activeInput != label) { activeInput = label; activeCapacity = Math.Max(capacity, PasteRoom); }

@@ -34,19 +34,19 @@ public sealed partial class StudioForm
 
     private void DrawWindowMenu()
     {
-        if (!ImGui.BeginMenu("Window")) return;
-        if (ImGui.BeginMenu("Layouts"))
+        if (!UiAuto.BeginMenu("Window")) return;
+        if (UiAuto.BeginMenu("Layouts"))
         {
             foreach (string name in StudioLayout.PresetNames)
-                if (ImGui.MenuItem(name)) ApplyLayoutPreset(name);
-            ImGui.EndMenu();
+                if (UiAuto.MenuItem(name)) ApplyLayoutPreset(name);
+            UiAuto.EndMenu();
         }
-        if (ImGui.MenuItem("Asset browser drawer", ShortcutInput.Text(ShortcutActions.ToggleBrowser))) ToggleBrowserDrawer();
-        if (ImGui.MenuItem("AI workspace", ShortcutInput.Text(ShortcutActions.OpenAiWorkspace))) OpenAiWorkspace();
+        if (UiAuto.MenuItem("Asset browser drawer", ShortcutInput.Text(ShortcutActions.ToggleBrowser))) ToggleBrowserDrawer();
+        if (UiAuto.MenuItem("AI workspace", ShortcutInput.Text(ShortcutActions.OpenAiWorkspace))) OpenAiWorkspace();
         DrawContentEditorsMenuItem();
         ImGui.Separator();
         DrawLayoutMenu();
-        ImGui.EndMenu();
+        UiAuto.EndMenu();
     }
 
     private void HandleLayoutShortcuts()

@@ -128,7 +128,7 @@ public sealed partial class StudioForm
         float width = ImGui.CalcTextSize(label).X + ImGui.GetStyle().FramePadding.X * 2;
         float buttons = 3 * 46 * scale;
         ImGui.SameLine(MathF.Max(titleEnd, size.X - buttons - width - 8 * scale));
-        if (ImGui.Button(label)) popout.RequestPopIn();
+        if (UiAuto.Button(label)) popout.RequestPopIn();
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Put this editor back into the main window");
         popout.Chrome.DrawButtons(header, popout.RequestPopIn);
         ImGui.End();

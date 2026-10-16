@@ -215,10 +215,10 @@ public sealed partial class LivePage : IDisposable
         ImGui.BeginChild("live-panel", new(0, size.Y), ImGuiChildFlags.Borders);
         if (ImGui.BeginTabBar("live-panel-tabs"))
         {
-            if (ImGui.BeginTabItem("Objects")) { DrawPlacements(workspace); ImGui.EndTabItem(); }
-            if (ImGui.BeginTabItem("World")) { DrawWorld(workspace); ImGui.EndTabItem(); }
-            if (ImGui.BeginTabItem("Screens")) { DrawScreens(workspace); ImGui.EndTabItem(); }
-            if (ImGui.BeginTabItem("Notes")) { DrawNotes(workspace, viewport); ImGui.EndTabItem(); }
+            if (UiAuto.BeginTabItem("Objects")) { DrawPlacements(workspace); UiAuto.EndTabItem(); }
+            if (UiAuto.BeginTabItem("World")) { DrawWorld(workspace); UiAuto.EndTabItem(); }
+            if (UiAuto.BeginTabItem("Screens")) { DrawScreens(workspace); UiAuto.EndTabItem(); }
+            if (UiAuto.BeginTabItem("Notes")) { DrawNotes(workspace, viewport); UiAuto.EndTabItem(); }
             ImGui.EndTabBar();
         }
         ImGui.EndChild();
@@ -230,16 +230,16 @@ public sealed partial class LivePage : IDisposable
         if (connection is null)
         {
             ImGui.SetNextItemWidth(200);
-            if (ImGui.BeginCombo("##liveProcess", processes.Count == 0 ? "No running game" : $"Destiny 2 ({processes[selected].Id})"))
+            if (UiAuto.BeginCombo("##liveProcess", processes.Count == 0 ? "No running game" : $"Destiny 2 ({processes[selected].Id})"))
             {
                 for (int i = 0; i < processes.Count; i++)
-                    if (ImGui.Selectable($"Destiny 2 ({processes[i].Id})##{processes[i].Id}", selected == i)) selected = i;
-                ImGui.EndCombo();
+                    if (UiAuto.Selectable($"Destiny 2 ({processes[i].Id})##{processes[i].Id}", selected == i)) selected = i;
+                UiAuto.EndCombo();
             }
             ImGui.SameLine();
-            if (ImGui.Button("Refresh")) Refresh();
+            if (UiAuto.Button("Refresh")) Refresh();
             ImGui.SameLine(); ImGui.BeginDisabled(processes.Count == 0);
-            if (ImGui.Button("Attach"))
+            if (UiAuto.Button("Attach"))
                 try { connection = LiveConnection.Attach(processes[selected]); status = "Waiting for the game"; }
                 catch (Exception error) when (error is IOException or InvalidOperationException or System.ComponentModel.Win32Exception)
                 { status = error.Message; }
@@ -247,14 +247,14 @@ public sealed partial class LivePage : IDisposable
             if (status.Length > 0) { ImGui.SameLine(); ImGui.TextDisabled(status); }
             return;
         }
-        if (ImGui.Button("Detach")) { Disconnect(); return; }
+        if (UiAuto.Button("Detach")) { Disconnect(); return; }
         ImGui.SameLine();
         bool connected = snapshot?.InWorld == true && syncStatus.Length == 0 && cuiStatus.Length == 0;
         ImGui.TextColored(connected ? new Vector4(.45f, .85f, .5f, 1) : new Vector4(1, .75f, .35f, 1), status);
         ImGui.SameLine(); ImGui.TextDisabled("|"); ImGui.SameLine();
         ImGui.AlignTextToFramePadding(); ImGui.TextUnformatted("Camera"); ImGui.SameLine();
         ImGui.SetNextItemWidth(140);
-        if (ImGui.Combo("##follow", ref follow, FollowModes, FollowModes.Length)) ReleaseCamera();
+        if (UiAuto.Combo("##follow", ref follow, FollowModes, FollowModes.Length)) ReleaseCamera();
         StudioUi.Tip("Game camera / orbit player");
         ImGui.SameLine(); ImGui.BeginDisabled(snapshot?.Player is null || follow == 1);
         if (ImGuiIcons.Button("live-snap", StudioIcon.Player, "Snap to player")) SnapToPlayer(viewport);
@@ -263,20 +263,20 @@ public sealed partial class LivePage : IDisposable
         if (ImGuiIcons.Button("live-sync-button", StudioIcon.Loop, "Sync")) ImGui.OpenPopup("live-sync");
         if (ImGui.BeginPopup("live-sync"))
         {
-            ImGui.Checkbox("Map", ref syncWorld);
+            UiAuto.Checkbox("Map", ref syncWorld);
             StudioUi.Tip("Open the game's map and loaded bubbles");
-            ImGui.Checkbox("Loaded bubbles only", ref syncBubbles);
-            ImGui.Checkbox("Placements", ref syncPlacements);
+            UiAuto.Checkbox("Loaded bubbles only", ref syncBubbles);
+            UiAuto.Checkbox("Placements", ref syncPlacements);
             StudioUi.Tip("Match game positions; hide unspawned");
-            ImGui.Checkbox("Spawned entities", ref syncDynamic);
-            if (ImGui.Checkbox("Animation", ref syncAnimation) && !syncAnimation) StopAnimation();
+            UiAuto.Checkbox("Spawned entities", ref syncDynamic);
+            if (UiAuto.Checkbox("Animation", ref syncAnimation) && !syncAnimation) StopAnimation();
             StudioUi.Tip("Copy game poses");
-            if (ImGui.Checkbox("CUI screen", ref syncCui)) { requestedCui = shownCui = null; cuiSettle = null; }
+            if (UiAuto.Checkbox("CUI screen", ref syncCui)) { requestedCui = shownCui = null; cuiSettle = null; }
             StudioUi.Tip("Follow the game's top screen. " + StudioUi.MayBeInaccurate);
             ImGui.Separator();
-            if (ImGui.Selectable("Sync map now")) requestedWorld = null;
+            if (UiAuto.Selectable("Sync map now")) requestedWorld = null;
             ImGui.BeginDisabled(!syncCui);
-            if (ImGui.Selectable("Sync screen now")) { requestedCui = shownCui = null; cuiSettle = null; }
+            if (UiAuto.Selectable("Sync screen now")) { requestedCui = shownCui = null; cuiSettle = null; }
             ImGui.EndDisabled();
             ImGui.EndPopup();
         }
@@ -435,7 +435,7 @@ public sealed partial class LivePage : IDisposable
         if (connection?.Placements is not { } placements) { ImGui.TextDisabled("No placement data yet"); return; }
         if (!placements.Available) { ImGui.TextDisabled("Placement registry unavailable"); return; }
         if (placements.Truncated) ImGui.TextDisabled($"Partial snapshot: {placements.Total:N0} objects, {placements.Overflow:N0} missed");
-        ImGui.SetNextItemWidth(-1); ImGui.InputTextWithHint("##liveFind", "Find object", ref findObject, 128);
+        ImGui.SetNextItemWidth(-1); UiAuto.InputTextWithHint("##liveFind", "Find object", ref findObject, 128);
         if (!ReferenceEquals(displayedPlacements, placements) || appliedObjectFilter != findObject)
         {
             displayedPlacements = placements; appliedObjectFilter = findObject;
@@ -458,7 +458,7 @@ public sealed partial class LivePage : IDisposable
             {
                 var (row, name, distance) = placementRows[i];
                 ImGui.PushID($"{row.Handle}:{row.Generation}"); ImGui.TableNextRow(); ImGui.TableNextColumn();
-                if (ImGui.Selectable(name, false, ImGuiSelectableFlags.AllowDoubleClick | ImGuiSelectableFlags.SpanAllColumns))
+                if (UiAuto.Selectable(name, false, ImGuiSelectableFlags.AllowDoubleClick | ImGuiSelectableFlags.SpanAllColumns))
                 {
                     var source = binding?.Find(row);
                     if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))

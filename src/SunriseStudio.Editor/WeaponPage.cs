@@ -187,7 +187,7 @@ public sealed class WeaponPage : IStudioPage
             else
             {
                 if (workspace.Error.Length != 0) ImGui.TextWrapped(workspace.Error);
-                if (ImGui.SmallButton("Retry")) requestedCatalog = null;
+                if (UiAuto.SmallButton("Retry")) requestedCatalog = null;
             }
             return;
         }
@@ -276,7 +276,7 @@ public sealed class WeaponPage : IStudioPage
         ImGui.BeginDisabled(!idle);
         foreach (var behavior in state.Behaviors)
         {
-            if (ImGui.Button(behavior.Name + "##" + behavior.Tag)) workspace.Run(() => workspace.Select(behavior.Tag));
+            if (UiAuto.Button(behavior.Name + "##" + behavior.Tag)) workspace.Run(() => workspace.Select(behavior.Tag));
             StudioUi.Tip("Open the perk's behavior graph");
         }
         ImGui.EndDisabled();
@@ -311,7 +311,7 @@ public sealed class WeaponPage : IStudioPage
             string label = $"Model part {index + 1}";
             float width = ImGui.CalcTextSize(label).X + style.FramePadding.X * 2;
             if (index > 0 && ImGui.GetItemRectMax().X + style.ItemSpacing.X + width <= right) ImGui.SameLine();
-            if (ImGui.Button(label)) workspace.Run(() => workspace.Select(entity));
+            if (UiAuto.Button(label)) workspace.Run(() => workspace.Select(entity));
             StudioUi.Tip($"Entity {entity:X8}");
         }
         ImGui.EndDisabled();
@@ -402,10 +402,10 @@ public sealed class WeaponPage : IStudioPage
     {
         string selected = state.Animations.FirstOrDefault(clip => clip.Tag == current)?.Name ?? "Existing clip";
         ImGui.SetNextItemWidth(230);
-        if (!ImGui.BeginCombo(label, selected)) { StudioUi.Tip("Clip this action plays."); return; }
+        if (!UiAuto.BeginCombo(label, selected)) { StudioUi.Tip("Clip this action plays."); return; }
         foreach (var clip in state.Animations)
-            if (ImGui.Selectable(clip.Name, clip.Tag == current))
+            if (UiAuto.Selectable(clip.Name, clip.Tag == current))
                 workspace.Run(() => workspace.BindWeaponAnimation(state.AnimationDefinition, slot, clip.Tag));
-        ImGui.EndCombo();
+        UiAuto.EndCombo();
     }
 }

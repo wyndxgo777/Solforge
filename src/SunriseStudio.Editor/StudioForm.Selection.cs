@@ -70,7 +70,7 @@ public sealed partial class StudioForm
         ImGui.SameLine();
         if (ImGuiIcons.Button("clear-isolation", StudioIcon.Eye, "Show all objects")) isolatedObject = null;
         ImGui.EndDisabled();
-        if (row.AssetTag != 0 && ImGui.Button("Open asset", new(-1, 0))) OpenObjectAsset(row.AssetTag);
+        if (row.AssetTag != 0 && UiAuto.Button("Open asset", new(-1, 0))) OpenObjectAsset(row.AssetTag);
         if (livePage.Observed(selectedObject) is { } observed)
         {
             bool holding = !observed.TransformAvailable && (selectedObject is MeshInstance { PreviewTransform: not null }
@@ -81,7 +81,7 @@ public sealed partial class StudioForm
         if (selectedObject is SceneMarker { Effect: not null } effectMarker && workspace.World?.Scene is { } effectScene)
             DrawEffectControls(effectScene, effectMarker);
         ImGui.Spacing();
-        ImGui.Checkbox("Expand details", ref expandObjectDetails);
+        UiAuto.Checkbox("Expand details", ref expandObjectDetails);
         foreach (var group in inspection.Properties.GroupBy(property => property.Group))
         {
             if (expandObjectDetails) ImGui.SetNextItemOpen(true);
@@ -100,7 +100,7 @@ public sealed partial class StudioForm
             {
                 ImGui.PushID($"{reference.Name}:{reference.TagHash}:{reference.Offset}");
                 ImGui.TextDisabled(reference.Name);
-                if (ImGui.Selectable(workspace.DisplayName(reference.TagHash))) OpenObjectAsset(reference.TagHash);
+                if (UiAuto.Selectable(workspace.DisplayName(reference.TagHash))) OpenObjectAsset(reference.TagHash);
                 if (ImGui.IsItemHovered()) ImGui.SetTooltip(reference.Offset < 0 ? $"{reference.TagHash:X8}"
                     : $"{reference.TagHash:X8} + {reference.Offset:X}");
                 ImGui.PopID();
@@ -113,7 +113,7 @@ public sealed partial class StudioForm
                 if (inspectionWorld.Find(related) is { } relatedRow)
                 {
                     ImGui.PushID(relatedRow.Id);
-                    if (ImGui.Selectable(relatedRow.Name)) SelectWorldObject(relatedRow);
+                    if (UiAuto.Selectable(relatedRow.Name)) SelectWorldObject(relatedRow);
                     ImGui.PopID();
                 }
         if (row.Owners.Count != 0 && ImGui.CollapsingHeader("State ownership"))
@@ -156,8 +156,8 @@ public sealed partial class StudioForm
             ImGui.TextDisabled("Rotation"); ImGui.SetNextItemWidth(-1); ImGui.InputFloat3("##rotation", ref editRotation, "%.2f");
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("XYZ degrees");
             if (info.CanScale)
-            { ImGui.TextDisabled("Scale"); ImGui.SetNextItemWidth(-1); ImGui.InputFloat("##scale", ref editScale, 0, 0, "%.4f"); }
-            if (ImGui.Button("Apply transform", new(-1, 0))) workspace.Run(() =>
+            { ImGui.TextDisabled("Scale"); ImGui.SetNextItemWidth(-1); UiAuto.InputFloat("##scale", ref editScale, 0, 0, "%.4f"); }
+            if (UiAuto.Button("Apply transform", new(-1, 0))) workspace.Run(() =>
                 workspace.ApplyObjectEdit(SceneEdits.CreateTransformEdit(catalog, selectedObject, editPosition,
                     editRotation == editRotationBase ? null : DegreesToQuaternion(editRotation), editScale, inspectionWorld,
                     objectInspection?.Object.Name)));
@@ -166,14 +166,14 @@ public sealed partial class StudioForm
         {
             ImGui.TextDisabled("Minimum"); ImGui.SetNextItemWidth(-1); ImGui.InputFloat3("##minimum", ref editMinimum, "%.3f");
             ImGui.TextDisabled("Maximum"); ImGui.SetNextItemWidth(-1); ImGui.InputFloat3("##maximum", ref editMaximum, "%.3f");
-            if (ImGui.Button("Apply bounds", new(-1, 0))) workspace.Run(() =>
+            if (UiAuto.Button("Apply bounds", new(-1, 0))) workspace.Run(() =>
                 workspace.ApplyObjectEdit(SceneEdits.CreateBoundsEdit(catalog, selectedObject, editMinimum, editMaximum,
                     inspectionWorld, objectInspection?.Object.Name)));
         }
         if (info.Target is { } target && workspace.Project?.FindObjectEdit(target.Key) is { } saved)
         {
             ImGui.TextColored(StudioTheme.Accent, $"Edited: {saved.Summary()}");
-            if (ImGui.Button("Revert object", new(-1, 0))) workspace.Run(() => workspace.RevertObjectEdit(saved.Key));
+            if (UiAuto.Button("Revert object", new(-1, 0))) workspace.Run(() => workspace.RevertObjectEdit(saved.Key));
         }
         ImGui.EndDisabled();
         if (workspace.Project is null) ImGui.TextDisabled("Create a project to edit");

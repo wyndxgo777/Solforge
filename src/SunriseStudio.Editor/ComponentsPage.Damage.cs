@@ -127,7 +127,7 @@ public sealed partial class ComponentsPage
         value = damageDrafts.TryGetValue(key, out float draft) ? draft : current;
         ImGui.BeginDisabled(!workspace.CanEdit);
         ImGui.SetNextItemWidth(width);
-        ImGui.InputFloat("##" + key, ref value, 0, 0, "%g");
+        UiAuto.InputFloat("##" + key, ref value, 0, 0, "%g");
         bool active = ImGui.IsItemActive(), done = ImGui.IsItemDeactivatedAfterEdit();
         ImGui.EndDisabled();
         StudioUi.Tip(workspace.Project is null ? "Open a project to edit." : tip);

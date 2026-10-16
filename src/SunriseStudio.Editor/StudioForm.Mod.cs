@@ -100,34 +100,34 @@ public sealed partial class StudioForm
         if (!ImGui.BeginPopupModal("Mod details", ImGuiWindowFlags.AlwaysAutoResize)) return;
         float wide = 600 * scale;
         ImGui.TextUnformatted("Id"); ImGui.SetNextItemWidth(wide);
-        ImGui.InputTextWithHint("##modId", "dev.example.mod", ref modId, 256);
+        UiAuto.InputTextWithHint("##modId", "dev.example.mod", ref modId, 256);
         ImGui.TextUnformatted("Version"); ImGui.SetNextItemWidth(160 * scale);
-        ImGui.InputTextWithHint("##modVersion", "1.0.0", ref modVersion, 64);
+        UiAuto.InputTextWithHint("##modVersion", "1.0.0", ref modVersion, 64);
         ImGui.TextUnformatted("Name"); ImGui.SetNextItemWidth(wide);
-        ImGui.InputText("##modName", ref modName, 256);
+        UiAuto.InputText("##modName", ref modName, 256);
         ImGui.TextUnformatted("Description");
-        ImGui.InputTextMultiline("##modDescription", ref modDescription, 2048, new(wide, 70 * scale));
+        UiAuto.InputTextMultiline("##modDescription", ref modDescription, 2048, new(wide, 70 * scale));
         ImGui.TextUnformatted("Authors, one per line");
-        ImGui.InputTextMultiline("##modAuthors", ref modAuthors, 2048, new(wide, 55 * scale));
+        UiAuto.InputTextMultiline("##modAuthors", ref modAuthors, 2048, new(wide, 55 * scale));
         ImGui.TextUnformatted("Source URL"); ImGui.SetNextItemWidth(wide);
-        ImGui.InputText("##modSource", ref modSource, 1024);
+        UiAuto.InputText("##modSource", ref modSource, 1024);
         ImGui.TextUnformatted("Dependencies");
         for (int index = 0; index < modDependencies.Count; index++)
         {
             var row = modDependencies[index];
             ImGui.PushID(index);
-            ImGui.SetNextItemWidth(300 * scale); ImGui.InputTextWithHint("##id", "Mod id", ref row[0], 256);
-            ImGui.SameLine(); ImGui.SetNextItemWidth(100 * scale); ImGui.InputTextWithHint("##min", "Minimum", ref row[1], 64);
-            ImGui.SameLine(); ImGui.SetNextItemWidth(100 * scale); ImGui.InputTextWithHint("##max", "Maximum", ref row[2], 64);
+            ImGui.SetNextItemWidth(300 * scale); UiAuto.InputTextWithHint("##id", "Mod id", ref row[0], 256);
+            ImGui.SameLine(); ImGui.SetNextItemWidth(100 * scale); UiAuto.InputTextWithHint("##min", "Minimum", ref row[1], 64);
+            ImGui.SameLine(); ImGui.SetNextItemWidth(100 * scale); UiAuto.InputTextWithHint("##max", "Maximum", ref row[2], 64);
             ImGui.SameLine();
-            bool remove = ImGui.SmallButton("Remove");
+            bool remove = UiAuto.SmallButton("Remove");
             ImGui.PopID();
             if (remove) { modDependencies.RemoveAt(index); break; }
         }
-        if (ImGui.SmallButton("Add dependency")) modDependencies.Add(["", "1.0.0", ""]);
+        if (UiAuto.SmallButton("Add dependency")) modDependencies.Add(["", "1.0.0", ""]);
         ImGui.TextUnformatted("Incompatible mod ids, one per line");
-        ImGui.InputTextMultiline("##modIncompatible", ref modIncompatible, 4096, new(wide, 55 * scale));
-        ImGui.Checkbox("Cheat", ref modCheat);
+        UiAuto.InputTextMultiline("##modIncompatible", ref modIncompatible, 4096, new(wide, 55 * scale));
+        UiAuto.Checkbox("Cheat", ref modCheat);
         StudioUi.Tip("No progress saves while this mod is loaded.");
         DrawModConfig();
         var metadata = CurrentMod();
@@ -136,14 +136,14 @@ public sealed partial class StudioForm
         if (workspace.Error.Length != 0) ImGui.TextWrapped(workspace.Error);
         ImGui.Spacing();
         ImGui.BeginDisabled(problems.Count > 0 || !workspace.CanEdit);
-        if (ImGui.Button("Save", new(120 * scale, 0))) workspace.Run(() =>
+        if (UiAuto.Button("Save", new(120 * scale, 0))) workspace.Run(() =>
         {
             workspace.SetModMetadata(metadata);
             ImGui.CloseCurrentPopup();
         });
         ImGui.EndDisabled();
         ImGui.SameLine();
-        if (ImGui.Button("Cancel", new(120 * scale, 0))) ImGui.CloseCurrentPopup();
+        if (UiAuto.Button("Cancel", new(120 * scale, 0))) ImGui.CloseCurrentPopup();
         ImGui.EndPopup();
     }
 
@@ -164,25 +164,25 @@ public sealed partial class StudioForm
             {
                 var row = modConfig[index];
                 ImGui.PushID(index); ImGui.TableNextRow();
-                ImGui.TableNextColumn(); ImGui.SetNextItemWidth(-1); ImGui.InputTextWithHint("##key", "key", ref row.Key, 64);
+                ImGui.TableNextColumn(); ImGui.SetNextItemWidth(-1); UiAuto.InputTextWithHint("##key", "key", ref row.Key, 64);
                 ImGui.TableNextColumn(); ImGui.SetNextItemWidth(-1);
-                ImGui.Combo("##type", ref row.Type, ModConfigTypes, ModConfigTypes.Length);
+                UiAuto.Combo("##type", ref row.Type, ModConfigTypes, ModConfigTypes.Length);
                 ImGui.TableNextColumn(); ImGui.SetNextItemWidth(-1);
                 switch ((ModConfigType)row.Type)
                 {
-                    case ModConfigType.Int: ImGui.InputInt("##default", ref row.Integer, 0); break;
-                    case ModConfigType.Float: ImGui.InputFloat("##default", ref row.Real, 0, 0, "%g"); break;
-                    default: ImGui.Checkbox("##default", ref row.Flag); break;
+                    case ModConfigType.Int: UiAuto.InputInt("##default", ref row.Integer, 0); break;
+                    case ModConfigType.Float: UiAuto.InputFloat("##default", ref row.Real, 0, 0, "%g"); break;
+                    default: UiAuto.Checkbox("##default", ref row.Flag); break;
                 }
-                ImGui.TableNextColumn(); ImGui.SetNextItemWidth(-1); ImGui.InputTextWithHint("##name", "Name", ref row.Name, 256);
+                ImGui.TableNextColumn(); ImGui.SetNextItemWidth(-1); UiAuto.InputTextWithHint("##name", "Name", ref row.Name, 256);
                 ImGui.TableNextColumn();
-                if (ImGui.SmallButton("Remove")) removed = index;
+                if (UiAuto.SmallButton("Remove")) removed = index;
                 ImGui.PopID();
             }
             ImGui.EndTable();
             if (removed >= 0) modConfig.RemoveAt(removed);
         }
-        if (ImGui.SmallButton("Add config entry")) modConfig.Add(new());
+        if (UiAuto.SmallButton("Add config entry")) modConfig.Add(new());
     }
 
     /** Blank optional fields and list lines are dropped so they are left out of mod.json. */

@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using SunriseStudio.Live;
 
 namespace SunriseStudio.Editor;
 
@@ -13,4 +14,11 @@ public sealed partial class LivePage
         if (connection is null) state["note"] = "Attach the Live link (Live page) to read the player position and nearby in-game objects.";
         return state;
     }
+
+    /** The game camera; its forward gives the player's facing for the map marker. */
+    public LiveCamera? Camera => snapshot?.Camera;
+    /** The game's loaded map, activity and slices. */
+    public LiveWorld? LoadedWorld => world;
+    /** The open map and mission are the ones the game has loaded. */
+    public bool WorldMatches => MatchesWorld();
 }

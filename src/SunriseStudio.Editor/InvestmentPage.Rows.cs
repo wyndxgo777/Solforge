@@ -30,7 +30,7 @@ public sealed partial class InvestmentPage
     private void AddRowButton(StudioPageContext context, bool perk)
     {
         ImGui.BeginDisabled(!context.Workspace.CanEdit);
-        if (ImGui.SmallButton(perk ? "+##perk" : "+##stat"))
+        if (UiAuto.SmallButton(perk ? "+##perk" : "+##stat"))
             BeginRow(context, perk);
         if (ImGui.IsItemHovered()) ImGui.SetTooltip(perk ? "Add perk" : "Add stat");
         ImGui.EndDisabled();
@@ -54,7 +54,7 @@ public sealed partial class InvestmentPage
             || rowOverlayRevision != workspace.Catalog?.OverlayRevision)
         { Close(); ImGui.EndPopup(); return; }
         ImGui.SetNextItemWidth(360);
-        ImGui.InputTextWithHint("##row-search", addingPerk ? "Find perk" : "Find stat", ref rowSearch, 256);
+        UiAuto.InputTextWithHint("##row-search", addingPerk ? "Find perk" : "Find stat", ref rowSearch, 256);
         ImGui.BeginChild("row-choices", new(360, 220), ImGuiChildFlags.Borders);
         var choices = RowChoices(context, catalog);
         var clipper = new ImGuiListClipperPtr(ImGuiNative.ImGuiListClipper_ImGuiListClipper());
@@ -65,19 +65,19 @@ public sealed partial class InvestmentPage
         ImGui.EndChild();
         if (!addingPerk)
         {
-            ImGui.SetNextItemWidth(210); ImGui.InputInt("Value", ref rowValue);
+            ImGui.SetNextItemWidth(210); UiAuto.InputInt("Value", ref rowValue);
             if (rowValue == 0 && ImGui.IsItemHovered()) ImGui.SetTooltip("Zero uses the stat's level curve when one exists.");
         }
         ImGui.BeginDisabled(rowIndex < 0 || !workspace.CanEdit);
-        if (ImGui.Button("Add") && SaveRowDraft(workspace)) ImGui.CloseCurrentPopup();
+        if (UiAuto.Button("Add") && SaveRowDraft(workspace)) ImGui.CloseCurrentPopup();
         ImGui.EndDisabled(); ImGui.SameLine();
-        if (ImGui.Button("Cancel")) Close();
+        if (UiAuto.Button("Cancel")) Close();
         ImGui.EndPopup();
 
         void Choice(RowChoice choice)
         {
             ImGui.PushID(choice.Index);
-            if (ImGui.Selectable(choice.Name, rowIndex == choice.Index)) rowIndex = choice.Index;
+            if (UiAuto.Selectable(choice.Name, rowIndex == choice.Index)) rowIndex = choice.Index;
             if (ImGui.IsItemHovered())
                 ImGui.SetTooltip(choice.Description.Length == 0 ? $"{choice.Name}\nIndex {choice.Index}"
                     : $"{choice.Name}\n{choice.Description}\nIndex {choice.Index}");

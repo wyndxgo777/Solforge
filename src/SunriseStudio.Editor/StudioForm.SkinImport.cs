@@ -90,19 +90,19 @@ public sealed partial class StudioForm
         StudioUi.Tip(StudioUi.MayNotWork);
         var selected = skinTemplates[skinTemplateIndex];
         bool canCreate = CompatibleSkinnedMesh.SupportsEntityCreation(skinImportEntity, selected.ModelTag);
-        if (ImGui.RadioButton("Replace model", !skinCreateAsset)) { skinCreateAsset = false; ClearSkinReview(); }
+        if (UiAuto.RadioButton("Replace model", !skinCreateAsset)) { skinCreateAsset = false; ClearSkinReview(); }
         ImGui.SameLine(); ImGui.BeginDisabled(!canCreate);
-        if (ImGui.RadioButton("Create asset", skinCreateAsset)) { skinCreateAsset = true; ClearSkinReview(); }
+        if (UiAuto.RadioButton("Create asset", skinCreateAsset)) { skinCreateAsset = true; ClearSkinReview(); }
         ImGui.EndDisabled();
         if (!canCreate && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
             ImGui.SetTooltip("Create asset supports the installed Hob rig profile");
         string Label(int index) => $"{workspace.DisplayName(skinTemplates[index].ModelTag)} / Part {index + 1}";
         ImGui.SetNextItemWidth(470 * scale);
-        if (ImGui.BeginCombo("Template", Label(skinTemplateIndex)))
+        if (UiAuto.BeginCombo("Template", Label(skinTemplateIndex)))
         {
             for (int index = 0; index < skinTemplates.Count; index++)
             {
-                if (ImGui.Selectable(Label(index), index == skinTemplateIndex))
+                if (UiAuto.Selectable(Label(index), index == skinTemplateIndex))
                 {
                     skinTemplateIndex = index; ClearSkinReview();
                     if (!CompatibleSkinnedMesh.SupportsEntityCreation(skinImportEntity, skinTemplates[index].ModelTag))
@@ -110,12 +110,12 @@ public sealed partial class StudioForm
                 }
                 if (ImGui.IsItemHovered()) ImGui.SetTooltip(workspace.DisplayName(skinTemplates[index].MaterialTag));
             }
-            ImGui.EndCombo();
+            UiAuto.EndCombo();
         }
         ImGui.SetNextItemWidth(470 * scale);
-        if (ImGui.InputText("Name", ref skinImportName, 256)) ClearSkinReview();
+        if (UiAuto.InputText("Name", ref skinImportName, 256)) ClearSkinReview();
         ImGui.SetNextItemWidth(100 * scale);
-        if (ImGui.InputText("Package ID", ref skinImportPackage, 4, ImGuiInputTextFlags.CharsHexadecimal)) ClearSkinReview();
+        if (UiAuto.InputText("Package ID", ref skinImportPackage, 4, ImGuiInputTextFlags.CharsHexadecimal)) ClearSkinReview();
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Unused package for the new native entries");
         bool valid = ushort.TryParse(skinImportPackage, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out ushort package)
             && PackageWriter.IsNewPackageId(package) && workspace.Catalog?.ContainsInstalledPackage(package) == false
@@ -146,7 +146,7 @@ public sealed partial class StudioForm
         ImGui.Spacing();
         ImGui.BeginDisabled(!workspace.CanEdit || !valid);
         string button = reviewed is null ? "Review import" : skinCreateAsset ? "Create asset" : "Replace model";
-        if (ImGui.Button(button, new(170 * scale, 0)))
+        if (UiAuto.Button(button, new(170 * scale, 0)))
         {
             if (reviewed is null)
             {
@@ -177,7 +177,7 @@ public sealed partial class StudioForm
             }
         }
         ImGui.EndDisabled(); ImGui.SameLine();
-        if (ImGui.Button("Cancel", new(110 * scale, 0))) { ClearSkinReview(); skinReviewPending = false; ImGui.CloseCurrentPopup(); }
+        if (UiAuto.Button("Cancel", new(110 * scale, 0))) { ClearSkinReview(); skinReviewPending = false; ImGui.CloseCurrentPopup(); }
         ImGui.EndPopup();
     }
 }

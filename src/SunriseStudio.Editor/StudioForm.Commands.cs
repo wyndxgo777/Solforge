@@ -18,128 +18,128 @@ public sealed partial class StudioForm
     private void DrawMenu()
     {
         if (!ImGui.BeginMainMenuBar()) return;
-        if (ImGui.BeginMenu("File"))
+        if (UiAuto.BeginMenu("File"))
         {
-            if (ImGui.MenuItem("New project", ShortcutInput.Text(ShortcutActions.NewProject), false, !workspace.IsBusy)) projectDialog = true;
-            if (ImGui.MenuItem("Open project...", ShortcutInput.Text(ShortcutActions.OpenProject), false, !workspace.IsBusy)) OpenProjectDialog();
-            if (ImGui.BeginMenu("Recent projects", settings.RecentProjects.Count != 0 && !workspace.IsBusy))
+            if (UiAuto.MenuItem("New project", ShortcutInput.Text(ShortcutActions.NewProject), false, !workspace.IsBusy)) projectDialog = true;
+            if (UiAuto.MenuItem("Open project...", ShortcutInput.Text(ShortcutActions.OpenProject), false, !workspace.IsBusy)) OpenProjectDialog();
+            if (UiAuto.BeginMenu("Recent projects", settings.RecentProjects.Count != 0 && !workspace.IsBusy))
             {
                 foreach (string path in settings.RecentProjects.ToArray())
                 {
                     ImGui.PushID(path);
                     // A moved or deleted project stays listed but cannot be opened.
                     bool exists = IconChecks.Exists(path);
-                    if (ImGui.MenuItem(Path.GetFileName(Path.GetDirectoryName(path)), "", false, exists)) OpenProject(path);
+                    if (UiAuto.MenuItem(Path.GetFileName(Path.GetDirectoryName(path)), "", false, exists)) OpenProject(path);
                     if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
                         ImGui.SetTooltip(exists ? path : path + " (missing)");
                     ImGui.PopID();
                 }
-                ImGui.EndMenu();
+                UiAuto.EndMenu();
             }
-            if (ImGui.MenuItem("New mission script...", ShortcutInput.Text(ShortcutActions.CreateMissionScript), false,
+            if (UiAuto.MenuItem("New mission script...", ShortcutInput.Text(ShortcutActions.CreateMissionScript), false,
                 workspace.Catalog is not null && !workspace.IsBusy))
                 NewMissionScript();
-            if (ImGui.MenuItem(missionGraphActive ? "Save script" : "Save project",
+            if (UiAuto.MenuItem(missionGraphActive ? "Save script" : "Save project",
                 ShortcutInput.Text(ShortcutActions.SaveProject), false, CanSaveActive))
                 SaveActiveDocument();
-            if (ImGui.MenuItem("Close project", "", false, workspace.CanEdit)) workspace.Run(() =>
+            if (UiAuto.MenuItem("Close project", "", false, workspace.CanEdit)) workspace.Run(() =>
             { if (ConfirmMissionDraft()) workspace.CloseProject(); });
-            if (ImGui.MenuItem("Close world", "", false, workspace.World is not null && !workspace.IsBusy)) workspace.Run(workspace.CloseWorld);
+            if (UiAuto.MenuItem("Close world", "", false, workspace.World is not null && !workspace.IsBusy)) workspace.Run(workspace.CloseWorld);
             ImGui.Separator();
-            if (ImGui.MenuItem("Sunrise location...", "", false, !workspace.IsBusy)) settingsDialog = true;
-            if (ImGui.MenuItem("Cache...", "", false, !workspace.IsBusy)) cacheDialog = true;
-            if (ImGui.MenuItem("Settings...", ShortcutInput.Text(ShortcutActions.OpenSettings))) preferencesOpen = true;
+            if (UiAuto.MenuItem("Sunrise location...", "", false, !workspace.IsBusy)) settingsDialog = true;
+            if (UiAuto.MenuItem("Cache...", "", false, !workspace.IsBusy)) cacheDialog = true;
+            if (UiAuto.MenuItem("Settings...", ShortcutInput.Text(ShortcutActions.OpenSettings))) preferencesOpen = true;
             ImGui.Separator();
-            if (ImGui.MenuItem("Exit")) BeginInvoke(Close);
-            ImGui.EndMenu();
+            if (UiAuto.MenuItem("Exit")) BeginInvoke(Close);
+            UiAuto.EndMenu();
         }
-        if (ImGui.BeginMenu("Edit"))
+        if (UiAuto.BeginMenu("Edit"))
         {
-            if (ImGui.MenuItem("Undo", ShortcutInput.Text(ShortcutActions.Undo), false, CanUndoActive)) UndoActive();
-            if (ImGui.MenuItem("Redo", ShortcutInput.Text(ShortcutActions.Redo), false, CanRedoActive)) RedoActive();
+            if (UiAuto.MenuItem("Undo", ShortcutInput.Text(ShortcutActions.Undo), false, CanUndoActive)) UndoActive();
+            if (UiAuto.MenuItem("Redo", ShortcutInput.Text(ShortcutActions.Redo), false, CanRedoActive)) RedoActive();
             ImGui.Separator();
-            if (ImGui.MenuItem("Convert placement deltas to object edits", "", false,
+            if (UiAuto.MenuItem("Convert placement deltas to object edits", "", false,
                 workspace.CanEdit && workspace.Project?.Changes.Count > 0))
                 workspace.Run(() => workspace.ConvertPlacementDeltas());
             ImGui.Separator();
-            if (ImGui.MenuItem("Shortcuts...")) shortcutsDialog = true;
-            if (ImGui.MenuItem("Settings...", ShortcutInput.Text(ShortcutActions.OpenSettings))) preferencesOpen = true;
-            ImGui.EndMenu();
+            if (UiAuto.MenuItem("Shortcuts...")) shortcutsDialog = true;
+            if (UiAuto.MenuItem("Settings...", ShortcutInput.Text(ShortcutActions.OpenSettings))) preferencesOpen = true;
+            UiAuto.EndMenu();
         }
-        if (ImGui.BeginMenu("Assets"))
+        if (UiAuto.BeginMenu("Assets"))
         {
-            if (ImGui.MenuItem("Export full asset to Blender...", "", false, CanExportBundle)) ExportFullAsset();
+            if (UiAuto.MenuItem("Export full asset to Blender...", "", false, CanExportBundle)) ExportFullAsset();
             MapBundleTooltip();
-            if (ImGui.MenuItem("Export world to Blender...", "", false,
+            if (UiAuto.MenuItem("Export world to Blender...", "", false,
                 !workspace.IsBusy && workspace.World is not null)) ExportWorldScene();
-            if (ImGui.MenuItem("Import Blender asset...", "", false, workspace.CanEdit)) BeginBundleImport();
-            if (ImGui.MenuItem("Import skinned model...", "", false, CanReplaceSkin)) BeginSkinImport();
+            if (UiAuto.MenuItem("Import Blender asset...", "", false, workspace.CanEdit)) BeginBundleImport();
+            if (UiAuto.MenuItem("Import skinned model...", "", false, CanReplaceSkin)) BeginSkinImport();
             ImGui.Separator();
-            if (ImGui.MenuItem("Export...", "", false, workspace.Document is not null && !workspace.IsBusy)) ExportSelected();
-            if (ImGui.MenuItem("Export animation...", "", false,
+            if (UiAuto.MenuItem("Export...", "", false, workspace.Document is not null && !workspace.IsBusy)) ExportSelected();
+            if (UiAuto.MenuItem("Export animation...", "", false,
                 AssetPreviewViewport?.Animation is { Source.Binding: not null, Clip: not null })) ExportAnimation();
-            if (ImGui.MenuItem("Export editable animation...", "", false, SelectedClipTag() is not null
+            if (UiAuto.MenuItem("Export editable animation...", "", false, SelectedClipTag() is not null
                 && !workspace.IsBusy)) ExportAnimationControls();
-            if (ImGui.MenuItem("Import animation controls...", "", false, SelectedClipTag() is not null
+            if (UiAuto.MenuItem("Import animation controls...", "", false, SelectedClipTag() is not null
                 && workspace.CanEdit)) ImportAnimationControls();
-            if (ImGui.MenuItem("Export material to Blender...", "", false,
+            if (UiAuto.MenuItem("Export material to Blender...", "", false,
                 workspace.Document?.Entry.Reference == 0x808071E8 && !workspace.IsBusy)) ExportMaterialBundle();
-            if (ImGui.MenuItem("Export collision...", "", false, CanExportCollision)) ExportCollision();
-            if (ImGui.MenuItem("Import collision...", "", false, workspace.CanEdit && CanExportCollision)) ImportCollision();
-            if (ImGui.MenuItem("Import as delta...", "", false, workspace.CanEdit && workspace.Document is not null)) ImportDelta();
-            if (ImGui.MenuItem("Add asset...", "", false, workspace.CanEdit)) addDialog = true;
-            if (ImGui.MenuItem("Edit perk behavior...", "", false,
+            if (UiAuto.MenuItem("Export collision...", "", false, CanExportCollision)) ExportCollision();
+            if (UiAuto.MenuItem("Import collision...", "", false, workspace.CanEdit && CanExportCollision)) ImportCollision();
+            if (UiAuto.MenuItem("Import as delta...", "", false, workspace.CanEdit && workspace.Document is not null)) ImportDelta();
+            if (UiAuto.MenuItem("Add asset...", "", false, workspace.CanEdit)) addDialog = true;
+            if (UiAuto.MenuItem("Edit perk behavior...", "", false,
                 workspace.Catalog is not null && !workspace.IsBusy)) OpenPerkBehaviorPicker();
             ImGui.Separator();
-            if (ImGui.MenuItem("Resolve asset names", "", false, workspace.Catalog is not null && !workspace.IsBusy))
+            if (UiAuto.MenuItem("Resolve asset names", "", false, workspace.Catalog is not null && !workspace.IsBusy))
                 workspace.Run(workspace.IndexNames);
-            ImGui.EndMenu();
+            UiAuto.EndMenu();
         }
-        if (ImGui.BeginMenu("Build"))
+        if (UiAuto.BeginMenu("Build"))
         {
-            if (ImGui.MenuItem("Build packages", ShortcutInput.Text(ShortcutActions.BuildPackages), false, workspace.CanEdit))
+            if (UiAuto.MenuItem("Build packages", ShortcutInput.Text(ShortcutActions.BuildPackages), false, workspace.CanEdit))
                 workspace.Run(() => workspace.Build());
-            if (ImGui.MenuItem("Build and install", ShortcutInput.Text(ShortcutActions.BuildAndInstall), false, workspace.CanEdit)) InstallMod();
-            if (ImGui.MenuItem("Update running game", ShortcutInput.Text(ShortcutActions.UpdateRunningGame), false, workspace.CanEdit))
+            if (UiAuto.MenuItem("Build and install", ShortcutInput.Text(ShortcutActions.BuildAndInstall), false, workspace.CanEdit)) InstallMod();
+            if (UiAuto.MenuItem("Update running game", ShortcutInput.Text(ShortcutActions.UpdateRunningGame), false, workspace.CanEdit))
                 UpdateRunningGame();
-            if (ImGui.MenuItem("Build to folder...", "", false, workspace.CanEdit))
+            if (UiAuto.MenuItem("Build to folder...", "", false, workspace.CanEdit))
                 PickFolder("Build output", folder => workspace.Build(folder));
             ImGui.Separator();
-            if (ImGui.MenuItem("Mod details...", "", false, workspace.CanEdit)) workspace.Run(OpenModDialog);
+            if (UiAuto.MenuItem("Mod details...", "", false, workspace.CanEdit)) workspace.Run(OpenModDialog);
             DrawPackagingMenuItems();
-            ImGui.EndMenu();
+            UiAuto.EndMenu();
         }
-        if (ImGui.BeginMenu("View"))
+        if (UiAuto.BeginMenu("View"))
         {
-            if (ImGui.MenuItem("Mission Graph")) focusMissionGraph = true;
-            if (ImGui.MenuItem("Live")) focusLive = true;
-            if (ImGui.MenuItem("Local Server")) focusLocalServer = true;
-            if (ImGui.MenuItem("Items", "", false, workspace.Catalog is not null)) ShowItems();
-            if (ImGui.MenuItem("Data explorer (decomp, tags, strings)")) dataExplorerOpen = true;
+            if (UiAuto.MenuItem("Mission Graph")) focusMissionGraph = true;
+            if (UiAuto.MenuItem("Live")) focusLive = true;
+            if (UiAuto.MenuItem("Local Server")) focusLocalServer = true;
+            if (UiAuto.MenuItem("Items", "", false, workspace.Catalog is not null)) ShowItems();
+            if (UiAuto.MenuItem("Data explorer (decomp, tags, strings)")) dataExplorerOpen = true;
             ImGui.Separator();
-            if (ImGui.MenuItem("Frame selection", ShortcutInput.Text(ShortcutActions.FrameSelection3D), false,
+            if (UiAuto.MenuItem("Frame selection", ShortcutInput.Text(ShortcutActions.FrameSelection3D), false,
                 viewport?.Camera.PivotFree == true)) viewport?.FocusSelection();
-            if (ImGui.MenuItem("Set cursor to selection", ShortcutInput.Text(ShortcutActions.SetCursor3D), false,
+            if (UiAuto.MenuItem("Set cursor to selection", ShortcutInput.Text(ShortcutActions.SetCursor3D), false,
                 (viewport?.SelectedObject is not null || viewport?.SelectedCollision >= 0) && viewport!.Camera.PivotFree))
                 viewport?.SetCursorToSelection();
             bool wire = viewport?.Wireframe ?? false, grid = viewport?.ShowGrid ?? true;
-            if (ImGui.MenuItem("Wireframe", "", ref wire)) viewport!.Wireframe = wire;
-            if (ImGui.MenuItem("Grid", "", ref grid)) viewport!.ShowGrid = grid;
+            if (UiAuto.MenuItem("Wireframe", "", ref wire)) viewport!.Wireframe = wire;
+            if (UiAuto.MenuItem("Grid", "", ref grid)) viewport!.ShowGrid = grid;
             ImGui.Separator();
             DrawRenderingMenuItem();
-            ImGui.EndMenu();
+            UiAuto.EndMenu();
         }
         DrawWindowMenu();
-        if (ImGui.BeginMenu("Help"))
+        if (UiAuto.BeginMenu("Help"))
         {
             DrawHelpMenuItems();
-            if (ImGui.MenuItem("Third-party notices")) noticesDialog = true;
+            if (UiAuto.MenuItem("Third-party notices")) noticesDialog = true;
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("Licenses of the libraries and code Studio includes");
             // About: Solforge is a fork; the upstream author keeps the credit.
             ImGui.Separator();
             ImGui.TextDisabled($"Solforge {StudioVersion.Text}");
             ImGui.TextDisabled(AboutCredit);
-            ImGui.EndMenu();
+            UiAuto.EndMenu();
         }
         chrome.DrawButtons(ImGui.GetFrameHeight());
         ImGui.EndMainMenuBar();
@@ -230,17 +230,17 @@ public sealed partial class StudioForm
         int lighting = Math.Clamp((int)settings.LightingMode, 0, LightingNames.Length - 1);
         // The preview names the setting so a bare "Studio" doesn't read as the app or layout name.
         ImGui.SetNextItemWidth(ImGui.CalcTextSize("Lighting: Ambient").X + ImGui.GetFrameHeight() + ImGui.GetStyle().FramePadding.X * 2);
-        if (ImGui.BeginCombo("##lighting", "Lighting: " + LightingNames[lighting]))
+        if (UiAuto.BeginCombo("##lighting", "Lighting: " + LightingNames[lighting]))
         {
             for (int i = 0; i < LightingNames.Length; i++)
-                if (ImGui.Selectable(LightingNames[i], i == lighting) && i != lighting)
+                if (UiAuto.Selectable(LightingNames[i], i == lighting) && i != lighting)
                 {
                     lighting = i;
                     settings.LightingMode = (SunriseStudio.Rendering.NativeLightingMode)lighting;
                     if (viewport?.NativeRenderer is { } scene) scene.LightingMode = settings.LightingMode;
                     if (assetViewport?.NativeRenderer is { } asset) asset.LightingMode = settings.LightingMode;
                 }
-            ImGui.EndCombo();
+            UiAuto.EndCombo();
         }
         if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.SetTooltip(lighting == 1
             ? "Lighting: atmosphere preview\nLocal probes and shadows are not drawn"
@@ -295,21 +295,21 @@ public sealed partial class StudioForm
         if (!ImGui.BeginPopupModal("Sunrise location", ImGuiWindowFlags.AlwaysAutoResize)) return;
         ImGui.TextUnformatted("Installation folder");
         ImGui.SetNextItemWidth(465 * scale);
-        ImGui.InputText("##install", ref location, 4096);
+        UiAuto.InputText("##install", ref location, 4096);
         ImGui.SameLine();
-        if (ImGui.Button("Browse")) PickFolder("Sunrise installation", path => location = path);
+        if (UiAuto.Button("Browse")) PickFolder("Sunrise installation", path => location = path);
         if (ImGui.CollapsingHeader("Package key source"))
         {
             ImGui.SetNextItemWidth(465 * scale);
-            ImGui.InputTextWithHint("##keySource", "Automatic", ref keySource, 4096);
+            UiAuto.InputTextWithHint("##keySource", "Automatic", ref keySource, 4096);
             StudioUi.Tip("Empty: read the keys from the installation");
             ImGui.SameLine();
-            if (ImGui.Button("Browse##keys"))
+            if (UiAuto.Button("Browse##keys"))
                 PickFile("Package key export|*.bin|Executable|*.exe|All files|*.*", path => keySource = path);
         }
         if (workspace.Error.Length != 0) ImGui.TextWrapped(workspace.Error);
         ImGui.Spacing();
-        if (ImGui.Button("Open Sunrise", new(150 * scale, 0))) workspace.Run(() =>
+        if (UiAuto.Button("Open Sunrise", new(150 * scale, 0))) workspace.Run(() =>
         {
             string root = StudioSettings.ResolveGameRoot(location);
             if (!ConfirmMissionDraft()) return;
@@ -322,7 +322,7 @@ public sealed partial class StudioForm
         if (!setup)
         {
             ImGui.SameLine();
-            if (ImGui.Button("Cancel")) { settingsDialog = false; ImGui.CloseCurrentPopup(); }
+            if (UiAuto.Button("Cancel")) { settingsDialog = false; ImGui.CloseCurrentPopup(); }
         }
         ImGui.EndPopup();
     }
@@ -332,15 +332,15 @@ public sealed partial class StudioForm
         CenterModal(600);
         if (!ImGui.BeginPopupModal("New project", ImGuiWindowFlags.AlwaysAutoResize)) return;
         ImGui.TextUnformatted("Name"); ImGui.SetNextItemWidth(-1);
-        ImGui.InputText("##projectName", ref projectName, 128);
+        UiAuto.InputText("##projectName", ref projectName, 128);
         ImGui.TextUnformatted("Parent folder");
-        ImGui.SetNextItemWidth(465 * scale); ImGui.InputText("##projectFolder", ref projectFolder, 4096);
+        ImGui.SetNextItemWidth(465 * scale); UiAuto.InputText("##projectFolder", ref projectFolder, 4096);
         ImGui.SameLine();
-        if (ImGui.Button("Browse")) PickFolder("Projects folder", path => projectFolder = path);
+        if (UiAuto.Button("Browse")) PickFolder("Projects folder", path => projectFolder = path);
         if (workspace.Error.Length != 0) ImGui.TextWrapped(workspace.Error);
         ImGui.BeginDisabled(string.IsNullOrWhiteSpace(projectName) || string.IsNullOrWhiteSpace(projectFolder)
             || workspace.IsBusy);
-        if (ImGui.Button("Create project", new(150 * scale, 0))) workspace.Run(() =>
+        if (UiAuto.Button("Create project", new(150 * scale, 0))) workspace.Run(() =>
         {
             string name = projectName.Trim();
             if (name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || name is "." or "..")
@@ -354,7 +354,7 @@ public sealed partial class StudioForm
         });
         ImGui.EndDisabled();
         ImGui.SameLine();
-        if (ImGui.Button("Cancel")) ImGui.CloseCurrentPopup();
+        if (UiAuto.Button("Cancel")) ImGui.CloseCurrentPopup();
         ImGui.EndPopup();
     }
 
@@ -367,30 +367,30 @@ public sealed partial class StudioForm
         else
         {
             ImGui.TextUnformatted("File");
-            ImGui.SetNextItemWidth(465 * scale); ImGui.InputText("##addPath", ref addPath, 4096);
+            ImGui.SetNextItemWidth(465 * scale); UiAuto.InputText("##addPath", ref addPath, 4096);
             ImGui.SameLine();
-            if (ImGui.Button("Browse")) PickFile("All assets|*.*", path =>
+            if (UiAuto.Button("Browse")) PickFile("All assets|*.*", path =>
             { addPath = path; addName = Path.GetFileName(path); });
         }
         ImGui.TextUnformatted("Name"); ImGui.SetNextItemWidth(-1);
-        ImGui.InputText("##addName", ref addName, 128);
+        UiAuto.InputText("##addName", ref addName, 128);
         ImGui.SetNextItemWidth(-1);
-        if (cloneSource is null) ImGui.Combo("##assetKind", ref addKind, ["Source asset", "Native package entry"], 2);
+        if (cloneSource is null) UiAuto.Combo("##assetKind", ref addKind, ["Source asset", "Native package entry"], 2);
         if (addKind == 1)
         {
-            ImGui.SetNextItemWidth(140 * scale); ImGui.InputText("Package ID", ref addPackageId, 4, ImGuiInputTextFlags.CharsHexadecimal);
+            ImGui.SetNextItemWidth(140 * scale); UiAuto.InputText("Package ID", ref addPackageId, 4, ImGuiInputTextFlags.CharsHexadecimal);
             if (cloneSource is null)
             {
-                ImGui.SetNextItemWidth(140 * scale); ImGui.InputText("Class / reference", ref addReference, 8, ImGuiInputTextFlags.CharsHexadecimal);
-                ImGui.SetNextItemWidth(140 * scale); ImGui.InputInt("Type", ref addType);
-                ImGui.SetNextItemWidth(140 * scale); ImGui.InputInt("Subtype", ref addSubType);
+                ImGui.SetNextItemWidth(140 * scale); UiAuto.InputText("Class / reference", ref addReference, 8, ImGuiInputTextFlags.CharsHexadecimal);
+                ImGui.SetNextItemWidth(140 * scale); UiAuto.InputInt("Type", ref addType);
+                ImGui.SetNextItemWidth(140 * scale); UiAuto.InputInt("Subtype", ref addSubType);
             }
             else ImGui.TextDisabled("Stored as a delta from the original");
         }
         else ImGui.TextDisabled("Source file; excluded from package builds");
         if (workspace.Error.Length != 0) ImGui.TextWrapped(workspace.Error);
         ImGui.BeginDisabled(!workspace.CanEdit || cloneSource is null && !IconChecks.Exists(addPath) || string.IsNullOrWhiteSpace(addName));
-        if (ImGui.Button(cloneSource is null ? "Add asset" : "Create copy", new(150 * scale, 0))) workspace.Run(() =>
+        if (UiAuto.Button(cloneSource is null ? "Add asset" : "Create copy", new(150 * scale, 0))) workspace.Run(() =>
         {
             int kind = addKind;
             string path = addPath, name = addName;
@@ -414,7 +414,7 @@ public sealed partial class StudioForm
         });
         ImGui.EndDisabled();
         ImGui.SameLine();
-        if (ImGui.Button("Cancel")) { cloneSource = null; ImGui.CloseCurrentPopup(); }
+        if (UiAuto.Button("Cancel")) { cloneSource = null; ImGui.CloseCurrentPopup(); }
         ImGui.EndPopup();
     }
 

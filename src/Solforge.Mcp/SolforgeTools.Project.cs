@@ -67,9 +67,12 @@ public static partial class SolforgeTools
         yield return Query("list_maps", "Every map in the installed game with its tag and its zones (bubbles) by name. No map needs " +
             "to be open. Filter matches the map name, tag or a zone name, e.g. 'edz' or 'dark forest'.",
             Paged(("filter", "string", "Optional words a map or one of its zones must contain", false)));
-        yield return Query("list_missions", "Missions and activities with their tags, zones and the maps they load on. No map needs to be open.",
+        yield return Query("list_missions", "Missions and activities with their tags, zones and the maps they load on. With a map " +
+            "open, only that map's missions are listed (the reply's map says which); name another map, or all=true for every " +
+            "mission. No map needs to be open.",
             Paged(("filter", "string", "Optional words the name, tag or a zone must contain", false),
-                ("map", "string", "Optional map tag to list only its missions", false)));
+                ("map", "string", "Optional map tag to list only its missions (default: the open map)", false),
+                ("all", "boolean", "List every mission, not just the open map's (default false)", false)));
         yield return Query("list_packages", "Installed packages with entry counts, filtered and paged. Works without a map.",
             Paged(("filter", "string", "Optional text the package name must contain", false)));
         yield return Query("list_package_entries", "Entries of one package (tag, index, type, subtype, name), paged.",
@@ -115,11 +118,15 @@ public static partial class SolforgeTools
             McpJson.Schema(("key", "string", "Type key from list_creation_types", true), ("mode", "string", "new or clone", true)));
 
         // Actions: each waits for the user's approve click.
-        yield return act("open_map", "Open a map (and optionally its mission) in Solforge. Large maps take a while; poll " +
+        yield return act("open_map", "Open a map, a mission on its map, or both, in Solforge. A mission alone opens on the map it " +
+            "belongs to (resolved for you); a map alone lists its missions in the reply. Large maps take a while; poll " +
             "get_editor_state until it is no longer busy.",
-            McpJson.Schema(("map", "string", "Map tag from list_maps", true), ("mission", "string", "Optional mission tag from list_missions", false)),
-            args => Need(args, "map", "Give a map tag from list_maps."), args => $"Open map {Arg(args, "map")}"
-                + (McpJson.String(args, "mission") is { Length: > 0 } mission ? $" with mission {mission}" : ""));
+            McpJson.Schema(("map", "string", "Map tag from list_maps (optional when mission is given)", false),
+                ("mission", "string", "Mission tag from list_missions", false)),
+            args => ParseHash(McpJson.String(args, "map")) is null && ParseHash(McpJson.String(args, "mission")) is null
+                ? "Give a map tag from list_maps or a mission tag from list_missions." : null,
+            args => (McpJson.String(args, "mission") is { Length: > 0 } mission ? $"Open mission {mission}" : $"Open map {Arg(args, "map")}")
+                + (McpJson.String(args, "mission") is { Length: > 0 } && McpJson.String(args, "map") is { Length: > 0 } map ? $" on map {map}" : ""));
         yield return act("open_asset", "Open an asset (item, vendor, material, any tag) in Solforge's inspector and editor pages.",
             McpJson.Schema(("tag", "string", "Tag hash (0x...)", true)),
             args => ParseHash(McpJson.String(args, "tag")) is null ? "Give a tag such as 0x80A1B2C3." : null, args => $"Open asset {Arg(args, "tag")}");

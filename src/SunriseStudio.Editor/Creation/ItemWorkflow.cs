@@ -708,7 +708,7 @@ public sealed class ItemWorkflow : CreationWorkflow
                 float current = profile.Value(table.Index, column);
                 float value = valueDrafts.TryGetValue((table.Index, column), out float draft) ? draft : current;
                 ImGui.SetNextItemWidth(84 * CreationWidgets.Scale);
-                if (ImGui.InputFloat($"##c{column}", ref value, 0, 0, "%.5g") && float.IsFinite(value))
+                if (UiAuto.InputFloat($"##c{column}", ref value, 0, 0, "%.5g") && float.IsFinite(value))
                 {
                     if (value == current) valueDrafts.Remove((table.Index, column));
                     else valueDrafts[(table.Index, column)] = value;
@@ -735,7 +735,7 @@ public sealed class ItemWorkflow : CreationWorkflow
             var draft = statDrafts[i];
             ImGui.PushID(i);
             bool keep = !draft.Remove;
-            bool toggled = ImGui.Checkbox("##keep", ref keep);
+            bool toggled = UiAuto.Checkbox("##keep", ref keep);
             StudioUi.Tip("Uncheck to remove");
             if (toggled)
             {
@@ -744,7 +744,7 @@ public sealed class ItemWorkflow : CreationWorkflow
             }
             ImGui.SameLine(); ImGui.SetNextItemWidth(120 * CreationWidgets.Scale);
             ImGui.BeginDisabled(draft.Remove);
-            ImGui.InputInt("##value", ref draft.Value);
+            UiAuto.InputInt("##value", ref draft.Value);
             StudioUi.Tip("Zero uses the stat's level curve when one exists.");
             ImGui.EndDisabled();
             ImGui.SameLine();
@@ -760,7 +760,7 @@ public sealed class ItemWorkflow : CreationWorkflow
         if (choices.Length == 0) return;
         if (choices.All(choice => choice.Value != newStat)) newStat = choices[0].Value;
         CreationWidgets.Choice("##new-stat", ref newStat, choices, 200);
-        ImGui.SameLine(); ImGui.SetNextItemWidth(110 * CreationWidgets.Scale); ImGui.InputInt("##new-stat-value", ref newStatValue);
+        ImGui.SameLine(); ImGui.SetNextItemWidth(110 * CreationWidgets.Scale); UiAuto.InputInt("##new-stat-value", ref newStatValue);
         ImGui.SameLine();
         if (StudioUi.IconButton("add-stat", StudioIcon.Plus, "Add stat"))
             statDrafts.Add(new() { Index = (byte)newStat, Value = newStatValue });
@@ -775,7 +775,7 @@ public sealed class ItemWorkflow : CreationWorkflow
             var draft = perkDrafts[i];
             ImGui.PushID(i);
             bool keep = !draft.Remove;
-            bool toggled = ImGui.Checkbox("##keep", ref keep);
+            bool toggled = UiAuto.Checkbox("##keep", ref keep);
             StudioUi.Tip("Uncheck to remove");
             if (toggled)
             {

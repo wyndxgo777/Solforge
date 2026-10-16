@@ -96,12 +96,12 @@ public sealed partial class AssetViewport
         float pad = ImGui.GetStyle().FramePadding.X * 2;
         string space = GizmoLocal ? "Local" : "World";
         next(ImGui.CalcTextSize("World").X + pad);
-        if (ImGui.Button(space + "##gizmo-space")) GizmoLocal = !GizmoLocal;
+        if (UiAuto.Button(space + "##gizmo-space")) GizmoLocal = !GizmoLocal;
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Move and rotate along the world axes or the selection's own axes");
         next(ImGui.CalcTextSize("Snap").X + pad);
         bool enabled = snap.Enabled;
         if (enabled) ImGui.PushStyleColor(ImGuiCol.Button, SolTheme.Sun2 with { W = .55f });
-        if (ImGui.Button("Snap##gizmo-snap")) snap = snap with { Enabled = !enabled };
+        if (UiAuto.Button("Snap##gizmo-snap")) snap = snap with { Enabled = !enabled };
         if (enabled) ImGui.PopStyleColor();
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip("Grid, angle and scale snapping; Ctrl inverts it while dragging. Right-click for steps.\n"
@@ -109,11 +109,11 @@ public sealed partial class AssetViewport
         if (!ImGui.BeginPopupContextItem("##gizmo-snap-steps")) return;
         float move = snap.MoveStep, angle = snap.AngleStepDegrees, scale = snap.ScaleStep;
         ImGui.SetNextItemWidth(120 * SolTheme.Scale);
-        if (ImGui.DragFloat("Grid", ref move, .05f, 0, 1000, "%.2f")) snap = snap with { MoveStep = move };
+        if (UiAuto.DragFloat("Grid", ref move, .05f, 0, 1000, "%.2f")) snap = snap with { MoveStep = move };
         ImGui.SetNextItemWidth(120 * SolTheme.Scale);
-        if (ImGui.DragFloat("Angle", ref angle, .5f, 0, 180, "%.1f deg")) snap = snap with { AngleStepDegrees = angle };
+        if (UiAuto.DragFloat("Angle", ref angle, .5f, 0, 180, "%.1f deg")) snap = snap with { AngleStepDegrees = angle };
         ImGui.SetNextItemWidth(120 * SolTheme.Scale);
-        if (ImGui.DragFloat("Scale", ref scale, .01f, 0, 10, "%.2f")) snap = snap with { ScaleStep = scale };
+        if (UiAuto.DragFloat("Scale", ref scale, .01f, 0, 10, "%.2f")) snap = snap with { ScaleStep = scale };
         ImGui.EndPopup();
     }
 }

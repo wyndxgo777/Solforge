@@ -447,7 +447,7 @@ public static unsafe class SolTheme
         bool font = PushFont(HeadingFont);
         ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
         ImGui.PushStyleColor(ImGuiCol.Text, active ? Text : Dim);
-        bool clicked = ImGui.SmallButton(label);
+        bool clicked = UiAuto.SmallButton(label);
         ImGui.PopStyleColor(2);
         if (font) ImGui.PopFont();
         if (active) Underline();

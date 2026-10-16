@@ -524,6 +524,7 @@ public sealed unsafe partial class Dx11Renderer : IDisposable
         Context.ClearState();
         Context.Flush();
         DisposeSceneResources();
+        ReleaseGrabs();
         white.Dispose();
         sampler.Dispose();
         noDepthState.Dispose();

@@ -62,12 +62,12 @@ public sealed partial class StudioForm
         ImGui.PushStyleColor(ImGuiCol.Button, !inspectAsset ? ImGui.GetStyle().Colors[(int)ImGuiCol.Header]
             : ImGui.GetStyle().Colors[(int)ImGuiCol.Button]);
         // The mode buttons share labels with asset sections, so they carry their own IDs.
-        if (ImGui.SmallButton("Collision##inspector-mode")) inspectAsset = false;
+        if (UiAuto.SmallButton("Collision##inspector-mode")) inspectAsset = false;
         ImGui.PopStyleColor();
         ImGui.SameLine();
         ImGui.PushStyleColor(ImGuiCol.Button, inspectAsset ? ImGui.GetStyle().Colors[(int)ImGuiCol.Header]
             : ImGui.GetStyle().Colors[(int)ImGuiCol.Button]);
-        if (ImGui.SmallButton("Asset##inspector-mode")) inspectAsset = true;
+        if (UiAuto.SmallButton("Asset##inspector-mode")) inspectAsset = true;
         ImGui.PopStyleColor();
         if (inspectAsset) return false;
         var piece = scene.Pieces[placement.Piece];
@@ -105,11 +105,11 @@ public sealed partial class StudioForm
         facts.Add(("World position", $"{at.X:0.###}, {at.Y:0.###}, {at.Z:0.###}", ""));
         StudioUi.Facts("collision-facts", facts);
         ImGui.TextDisabled("Shape");
-        if (ImGui.Selectable($"{workspace.DisplayName(piece.Tag)}##collision-shape")) OpenObjectAsset(piece.Tag);
+        if (UiAuto.Selectable($"{workspace.DisplayName(piece.Tag)}##collision-shape")) OpenObjectAsset(piece.Tag);
         if (placement.Instance >= 0)
         {
             ImGui.TextDisabled("Compound");
-            if (ImGui.Selectable($"{workspace.DisplayName(placement.CompoundTag)}##collision-compound")) OpenObjectAsset(placement.CompoundTag);
+            if (UiAuto.Selectable($"{workspace.DisplayName(placement.CompoundTag)}##collision-compound")) OpenObjectAsset(placement.CompoundTag);
         }
         DrawCollisionParts(view, scene, placement);
         if (view.Scene is { } source && entity.Source == CollisionSource.StaticEntity && placement.Instance >= 0)
@@ -124,7 +124,7 @@ public sealed partial class StudioForm
                 {
                     ImGui.PushID($"{row.InstanceSourceTag:X8}:{row.InstanceSourceIndex}:{row.PlacementSourceTag:X8}:{row.PlacementSourceOffset}");
                     string where = $"Table {row.InstanceSourceTag:X8} row {row.InstanceSourceIndex}";
-                    if (ImGui.SmallButton("Select")) SelectCollisionRow(view, row);
+                    if (UiAuto.SmallButton("Select")) SelectCollisionRow(view, row);
                     StudioUi.Tip(where);
                     ImGui.SameLine();
                     ImGui.TextUnformatted(row.Name.Length > 0 ? row.Name : $"Row {row.InstanceSourceIndex}");
@@ -154,7 +154,7 @@ public sealed partial class StudioForm
             ImGui.TextWrapped($"Picked part: {parts.Triangles[picked].Length} triangles"
                 + (parts.IsPrimitive(shape, picked) ? ", a convex piece" : ""));
             bool chosen = view.SelectedCollisionParts.Contains(picked);
-            if (ImGui.Button(chosen ? "Remove picked part" : "Add picked part", new(-1, 0))) view.ToggleCollisionPart(picked);
+            if (UiAuto.Button(chosen ? "Remove picked part" : "Add picked part", new(-1, 0))) view.ToggleCollisionPart(picked);
         }
         else ImGui.TextDisabled("Click a triangle to pick a part");
         DrawCollisionConnected(view, scene);
@@ -170,7 +170,7 @@ public sealed partial class StudioForm
         var (min, max) = (summary.Min, summary.Max);
         ImGui.TextUnformatted($"{selected.Count:N0} parts, {summary.Shapes:N0} shapes, {summary.Triangles:N0} tris");
         StudioUi.Tip($"Box {max.X - min.X:0.##} x {max.Y - min.Y:0.##} x {max.Z - min.Z:0.##} m");
-        if (ImGui.SmallButton("Clear parts")) { view.ClearCollisionParts(); return; }
+        if (UiAuto.SmallButton("Clear parts")) { view.ClearCollisionParts(); return; }
         DrawCollisionGroupPicker(view);
         if (summary.Others > 0)
         {
@@ -181,14 +181,14 @@ public sealed partial class StudioForm
         DrawAccentNote(refusal ?? "");
         ImGui.InputFloat3("Move", ref partMove);
         ImGui.InputFloat3("Rotate (deg)", ref partRotate);
-        ImGui.InputFloat("Scale", ref partScale);
+        UiAuto.InputFloat("Scale", ref partScale);
         ImGui.InputFloat3("Pivot", ref partPivot);
-        if (ImGui.SmallButton("Pivot at parts center")) partPivot = (min + max) * .5f;
+        if (UiAuto.SmallButton("Pivot at parts center")) partPivot = (min + max) * .5f;
         ImGui.SameLine();
-        if (ImGui.SmallButton("Pivot at cursor")) partPivot = view.Camera.Pivot;
+        if (UiAuto.SmallButton("Pivot at cursor")) partPivot = view.Camera.Pivot;
         bool valid = float.IsFinite(partScale) && partScale > 0;
         ImGui.BeginDisabled(!valid || !workspace.CanEdit || refusal is not null);
-        if (ImGui.Button("Apply to parts", new(-1, 0)))
+        if (UiAuto.Button("Apply to parts", new(-1, 0)))
         {
             const float degrees = MathF.PI / 180;
             var turn = Matrix4x4.CreateFromYawPitchRoll(partRotate.Y * degrees, partRotate.X * degrees, partRotate.Z * degrees);
@@ -240,14 +240,14 @@ public sealed partial class StudioForm
         var connectScope = connectScopes.GetValueOrDefault(kind, kind);
         int scope = (int)connectScope;
         ImGui.SetNextItemWidth(-1);
-        if (ImGui.Combo("##connect-scope", ref scope, scopes, scopes.Length)) connectScopes[kind] = connectScope = (CollisionConnectScope)scope;
+        if (UiAuto.Combo("##connect-scope", ref scope, scopes, scopes.Length)) connectScopes[kind] = connectScope = (CollisionConnectScope)scope;
         StudioUi.Tip("This shape: the picked placement\nThis entity: its shown shapes\nTouching shapes: any shown shape that touches");
         ImGui.SetNextItemWidth(-1);
-        ImGui.InputFloat("##connect-gap", ref connectGap, .01f, .1f, "Gap %.3f m");
+        UiAuto.InputFloat("##connect-gap", ref connectGap, .01f, .1f, "Gap %.3f m");
         connectGap = float.IsFinite(connectGap) ? MathF.Max(0, connectGap) : 0;
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Parts nearer than this count as connected");
         ImGui.BeginDisabled(view.CollisionConnecting);
-        if (ImGui.Button(view.CollisionConnecting ? "Searching..." : "Select connected", new(-1, 0)))
+        if (UiAuto.Button(view.CollisionConnecting ? "Searching..." : "Select connected", new(-1, 0)))
             view.SelectConnectedCollision(new(connectGap, connectScope));
         ImGui.EndDisabled();
         if (view.LastCollisionConnect is ({ } result, double milliseconds))
@@ -268,18 +268,18 @@ public sealed partial class StudioForm
         var project = workspace.Project;
         ImGui.BeginDisabled(reason is not null || !workspace.CanEdit);
         ImGui.SetNextItemWidth(-1);
-        bool open = ImGui.BeginCombo("##collision-group", "Add to group");
+        bool open = UiAuto.BeginCombo("##collision-group", "Add to group");
         if (reason is not null) StudioUi.Tip(reason);
         if (open)
         {
             foreach (var group in project?.ObjectGroups ?? [])
             {
                 ImGui.PushID(group.Id);
-                if (ImGui.Selectable(group.Name)) AddCollisionPartsToGroup(view, group);
+                if (UiAuto.Selectable(group.Name)) AddCollisionPartsToGroup(view, group);
                 ImGui.PopID();
             }
-            if (ImGui.Selectable("New group")) AddCollisionPartsToGroup(view, null);
-            ImGui.EndCombo();
+            if (UiAuto.Selectable("New group")) AddCollisionPartsToGroup(view, null);
+            UiAuto.EndCombo();
         }
         ImGui.EndDisabled();
         if (reason is null) DrawAccentNote(groupPartsNote);

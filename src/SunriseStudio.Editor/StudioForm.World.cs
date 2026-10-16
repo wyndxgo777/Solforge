@@ -33,7 +33,7 @@ public sealed partial class StudioForm
     private unsafe void DrawMapBrowser()
     {
         ImGui.SetNextItemWidth(-1);
-        ImGui.InputTextWithHint("##mapSearch", "Find map", ref mapSearch, 256);
+        UiAuto.InputTextWithHint("##mapSearch", "Find map", ref mapSearch, 256);
         if (workspace.WorldCatalog is null)
         { ImGui.TextDisabled(workspace.Catalog is null ? "Open Sunrise" : "Reading maps..."); return; }
         ImGui.BeginChild("map-list");
@@ -46,7 +46,7 @@ public sealed partial class StudioForm
                 var (map, label) = rows[index];
                 ImGui.PushID(unchecked((int)map.Tag));
                 ImGui.BeginDisabled(workspace.IsBusy);
-                if (ImGui.Selectable(label, workspace.World?.Map.Tag == map.Tag))
+                if (UiAuto.Selectable(label, workspace.World?.Map.Tag == map.Tag))
                 {
                     // The open map is already loaded; choosing it again only shows its scene.
                     if (workspace.World is not { MissionTag: null } open || open.Map.Tag != map.Tag) workspace.OpenMap(map.Tag);
@@ -64,7 +64,7 @@ public sealed partial class StudioForm
     private unsafe void DrawMissionBrowser()
     {
         ImGui.SetNextItemWidth(-1);
-        ImGui.InputTextWithHint("##missionSearch", "Find mission", ref missionSearch, 256);
+        UiAuto.InputTextWithHint("##missionSearch", "Find mission", ref missionSearch, 256);
         if (workspace.WorldCatalog is null)
         { ImGui.TextDisabled("Reading missions..."); return; }
         if (workspace.World is { } current) ImGui.TextDisabled(workspace.DisplayName(current.Map.Tag));
@@ -80,7 +80,7 @@ public sealed partial class StudioForm
                 ImGui.PushID(unchecked((int)mission.Tag));
                 ImGui.BeginDisabled(workspace.IsBusy || mission.MapTags.Count == 0);
                 bool openMission = workspace.World?.MissionTag == mission.Tag;
-                if (ImGui.Selectable(label, openMission))
+                if (UiAuto.Selectable(label, openMission))
                 {
                     // The open mission is already loaded; choosing it again only shows its scene.
                     if (!openMission)
@@ -103,8 +103,8 @@ public sealed partial class StudioForm
         // A click outside closes the popup, and that also drops the pending mission.
         if (!ImGui.BeginPopup("Choose mission map")) { pendingMission = null; return; }
         foreach (uint map in pendingMission?.MapTags ?? [])
-            if (ImGui.Selectable(workspace.DisplayName(map) + "##" + map)) { workspace.OpenMission(map, pendingMission!.Tag); break; }
-        ImGui.Selectable("Cancel");
+            if (UiAuto.Selectable(workspace.DisplayName(map) + "##" + map)) { workspace.OpenMission(map, pendingMission!.Tag); break; }
+        UiAuto.Selectable("Cancel");
         ImGui.EndPopup();
     }
 
@@ -122,20 +122,20 @@ public sealed partial class StudioForm
             shownPage = "world:scene";
             DrawSceneFilters();
             DrawSceneWithTree();
-            ImGui.EndTabItem();
+            UiAuto.EndTabItem();
         }
         if (world.MissionTag is not null && BeginEditorTab("Mission", focusMissionPage))
-        { EnterWorldPage(false); focusMissionPage = false; shownPage = "world:mission"; DrawMissionEditor(); ImGui.EndTabItem(); }
+        { EnterWorldPage(false); focusMissionPage = false; shownPage = "world:mission"; DrawMissionEditor(); UiAuto.EndTabItem(); }
         if (BeginEditorTab("Asset", focusAssetPage))
         {
             EnterWorldPage(true);
             focusAssetPage = false;
             shownPage = "world:asset";
             DrawWorldAsset();
-            ImGui.EndTabItem();
+            UiAuto.EndTabItem();
         }
         if (BeginEditorTab("Report", focusWorldReport))
-        { EnterWorldPage(false); focusWorldReport = false; shownPage = "world:report"; DrawWorldReport(); ImGui.EndTabItem(); }
+        { EnterWorldPage(false); focusWorldReport = false; shownPage = "world:report"; DrawWorldReport(); UiAuto.EndTabItem(); }
         ImGui.EndTabBar();
     }
 
@@ -170,33 +170,33 @@ public sealed partial class StudioForm
         if (ImGuiIcons.Toggle("scene-tree", StudioIcon.Tree, "Object tree", ref treeVisible)) settings.ShowSceneTree = treeVisible;
         Next(150 * scale);
         ImGui.SetNextItemWidth(150 * scale);
-        if (ImGui.BeginCombo("##bubbleVisibility", "Bubbles", ImGuiComboFlags.HeightLarge))
+        if (UiAuto.BeginCombo("##bubbleVisibility", "Bubbles", ImGuiComboFlags.HeightLarge))
         {
-            if (ImGui.Selectable("Show all")) hiddenBubbles.Clear();
+            if (UiAuto.Selectable("Show all")) hiddenBubbles.Clear();
             foreach (var bubble in world.Scene.Bubbles.GroupBy(bubble => world.CanonicalBubble(bubble.TagHash)).Select(group => group.First()))
             {
                 uint canonical = world.CanonicalBubble(bubble.TagHash);
                 bool visible = !hiddenBubbles.Contains(canonical);
                 string name = BubbleTitle(canonical, bubble.Name);
-                if (ImGui.Checkbox($"{name}##{canonical:X8}", ref visible))
+                if (UiAuto.Checkbox($"{name}##{canonical:X8}", ref visible))
                 { if (visible) hiddenBubbles.Remove(canonical); else hiddenBubbles.Add(canonical); }
             }
-            ImGui.EndCombo();
+            UiAuto.EndCombo();
         }
         Next(130 * scale);
         ImGui.SetNextItemWidth(130 * scale);
-        if (ImGui.BeginCombo("##layerVisibility", "Layers"))
+        if (UiAuto.BeginCombo("##layerVisibility", "Layers"))
         {
             SceneLayerMenu.Draw(viewport!.Visibility, null, viewport);
-            ImGui.EndCombo();
+            UiAuto.EndCombo();
         }
         if (world.MissionTag is not null)
         {
-            Next(CheckWidth("Map")); ImGui.Checkbox("Map", ref showMap);
-            Next(CheckWidth("Mission")); ImGui.Checkbox("Mission", ref showMission);
+            Next(CheckWidth("Map")); UiAuto.Checkbox("Map", ref showMap);
+            Next(CheckWidth("Mission")); UiAuto.Checkbox("Mission", ref showMission);
         }
         if (isolatedObject is not null)
-        { Next(ImGui.CalcTextSize("Show all").X + ImGui.GetStyle().FramePadding.X * 2); if (ImGui.Button("Show all")) isolatedObject = null; }
+        { Next(ImGui.CalcTextSize("Show all").X + ImGui.GetStyle().FramePadding.X * 2); if (UiAuto.Button("Show all")) isolatedObject = null; }
     }
 
     private void DrawWorldHierarchy() => DrawObjectTree("browser-tree");

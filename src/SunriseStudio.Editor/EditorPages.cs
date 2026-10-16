@@ -83,7 +83,7 @@ public sealed partial class ScenePage : IStudioPage
         if (scene.EntityParameters.Count != 0) ParameterInputs(context, scene);
         if (scene.ObjectChannels.Count != 0) ChannelInputs(context, scene);
         ImGui.SetNextItemWidth(-1);
-        ImGui.InputTextWithHint("##sceneSearch", "Find part", ref filter, 256);
+        UiAuto.InputTextWithHint("##sceneSearch", "Find part", ref filter, 256);
         if (!ReferenceEquals(lastScene, scene) || filter != appliedFilter)
         {
             if (!ReferenceEquals(lastScene, scene))
@@ -116,7 +116,7 @@ public sealed partial class ScenePage : IStudioPage
                 bool shared = string.IsNullOrWhiteSpace(instance.Name) || nameCounts.GetValueOrDefault(instance.Name) > 1;
                 string label = shared ? $"Part {ordinals.GetValueOrDefault(instance)}" + (mesh.LodLevel != 0 ? $" LOD {mesh.LodLevel}" : "")
                     : instance.Name;
-                if (ImGui.Selectable(label, context.SelectedMesh == instance,
+                if (UiAuto.Selectable(label, context.SelectedMesh == instance,
                     ImGuiSelectableFlags.SpanAllColumns)) context.SelectMesh?.Invoke(instance);
                 StudioUi.Tip((string.IsNullOrWhiteSpace(instance.Name) ? "" : instance.Name + "\n")
                     + $"Mesh {mesh.TagHash:X8} / {mesh.PartIndex}");
@@ -150,15 +150,15 @@ public sealed partial class ScenePage : IStudioPage
             : scene.PreviewVariant != 0 ? $"Variant {Variant(scene.PreviewVariant)}" : native;
         ImGui.BeginDisabled(context.Workspace.IsBusy);
         ImGui.SetNextItemWidth(-1);
-        if (ImGui.BeginCombo("##spawnInput", current))
+        if (UiAuto.BeginCombo("##spawnInput", current))
         {
             bool isNative = scene.PreviewSpawn is null && scene.PreviewVariant == 0;
-            if (ImGui.Selectable(native, isNative) && !isNative) context.Workspace.PreviewSpawn(null);
+            if (UiAuto.Selectable(native, isNative) && !isNative) context.Workspace.PreviewSpawn(null);
             for (int i = 0; i < scene.SpawnChoices.Count; i++)
             {
                 var choice = scene.SpawnChoices[i];
                 ImGui.PushID(i);
-                bool picked = ImGui.Selectable(Label(choice, i), choice.Input == scene.PreviewSpawn);
+                bool picked = UiAuto.Selectable(Label(choice, i), choice.Input == scene.PreviewSpawn);
                 StudioUi.Tip(Detail(choice));
                 if (picked && choice.Input != scene.PreviewSpawn) context.Workspace.PreviewSpawn(choice.Input);
                 ImGui.PopID();
@@ -167,12 +167,12 @@ public sealed partial class ScenePage : IStudioPage
                 foreach (uint name in scene.EntityVariants)
                 {
                     ImGui.PushID(unchecked((int)name));
-                    bool picked = ImGui.Selectable($"Variant {Variant(name)}", name == scene.PreviewVariant);
+                    bool picked = UiAuto.Selectable($"Variant {Variant(name)}", name == scene.PreviewVariant);
                     StudioUi.Tip($"0x{name:X8}\nNot an authored spawn.");
                     if (picked && name != scene.PreviewVariant) context.Workspace.PreviewVariant(name);
                     ImGui.PopID();
                 }
-            ImGui.EndCombo();
+            UiAuto.EndCombo();
         }
         ImGui.EndDisabled();
     }
@@ -209,13 +209,13 @@ public sealed partial class ScenePage
                 bool picked = scene.PreviewParameters.ContainsKey(parameter.Key);
                 string current = parameter.Value == 0 ? "Unresolved" : Name(parameter.Value);
                 ImGui.BeginDisabled(parameter.Values.Count == 0);
-                if (ImGui.BeginCombo("##value", current))
+                if (UiAuto.BeginCombo("##value", current))
                 {
                     foreach (uint value in parameter.Values)
-                        if (ImGui.Selectable(Name(value), value == parameter.Value) && value != parameter.Value)
+                        if (UiAuto.Selectable(Name(value), value == parameter.Value) && value != parameter.Value)
                             context.Workspace.PreviewParameters(new Dictionary<uint, uint>(scene.PreviewParameters)
                                 { [parameter.Key] = value });
-                    ImGui.EndCombo();
+                    UiAuto.EndCombo();
                 }
                 ImGui.EndDisabled();
                 StudioUi.Tip(parameter.Values.Count == 0 ? "No value is authored." : picked ? "Your pick." : "From the spawn.");
@@ -242,7 +242,7 @@ public sealed partial class ScenePage
         if (StudioUi.IconButton("channelsReset", StudioIcon.Reset, "Every channel at its rest value", scene.ChannelValues.Count != 0))
             context.Workspace.PreviewChannels(new Dictionary<uint, float>());
         ImGui.SameLine();
-        if (ImGui.SmallButton("All 0"))
+        if (UiAuto.SmallButton("All 0"))
             context.Workspace.PreviewChannels(scene.ObjectChannels.ToDictionary(channel => channel.NameHash, _ => 0f));
         StudioUi.Tip("Every channel at 0, the value the game starts from before run-time inputs.");
         foreach (var channel in scene.ObjectChannels)
@@ -252,7 +252,7 @@ public sealed partial class ScenePage
                 ?? $"0x{channel.NameHash:X8}";
             float value = channelEdits.TryGetValue(channel.NameHash, out float edit) ? edit : channel.Value.X;
             ImGui.SetNextItemWidth(-1);
-            if (ImGui.SliderFloat("##channel", ref value, 0, 1, $"{channel.Index} {name.Replace("%", "%%")}: %.2f")) channelEdits[channel.NameHash] = value;
+            if (UiAuto.SliderFloat("##channel", ref value, 0, 1, $"{channel.Index} {name.Replace("%", "%%")}: %.2f")) channelEdits[channel.NameHash] = value;
             StudioUi.Tip($"Channel {channel.Index}, 0x{channel.NameHash:X8}. {RestText(channel.Rest)} Ctrl+click to type a value.");
             if (ImGui.IsItemDeactivatedAfterEdit())
             {
@@ -302,7 +302,7 @@ public sealed class PropertiesPage : IStudioPage
     {
         if (context.Workspace.Document is not { } document) return;
         ImGui.SetNextItemWidth(-1);
-        ImGui.InputTextWithHint("##propertySearch", "Find property", ref filter, 256);
+        UiAuto.InputTextWithHint("##propertySearch", "Find property", ref filter, 256);
         if (filter != matchedFilter || !ReferenceEquals(document.Inspection, matchedInspection))
         {
             matchedFilter = filter; matchedInspection = document.Inspection;
@@ -359,7 +359,7 @@ public sealed class PropertiesPage : IStudioPage
             {
                 ImGui.PushID($"{property.Offset}:{property.Name}");
                 ImGui.TableNextRow(); ImGui.TableNextColumn();
-                if (ImGui.Selectable(property.Name, false, ImGuiSelectableFlags.SpanAllColumns))
+                if (UiAuto.Selectable(property.Name, false, ImGuiSelectableFlags.SpanAllColumns))
                     context.SelectProperty(property);
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted(property.Value);
@@ -406,7 +406,7 @@ public sealed class ReferencesPage : IStudioPage
                 // Offsets can repeat, so the row index is the identity.
                 ImGui.PushID(index);
                 ImGui.TableNextRow(); ImGui.TableNextColumn();
-                if (ImGui.Selectable(reference.Name, false, ImGuiSelectableFlags.SpanAllColumns
+                if (UiAuto.Selectable(reference.Name, false, ImGuiSelectableFlags.SpanAllColumns
                     | ImGuiSelectableFlags.AllowDoubleClick) && ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
                     context.Workspace.Select(reference.TagHash);
                 ImGui.TableNextColumn(); ImGui.TextUnformatted($"{reference.Offset:X8}");
@@ -431,17 +431,17 @@ public sealed class HexPage : IStudioPage
     {
         if (context.Workspace.Document is not { } document) return;
         ImGui.SetNextItemWidth(110);
-        ImGui.InputTextWithHint("##offset", "Hex offset", ref offsetText, 16,
+        UiAuto.InputTextWithHint("##offset", "Hex offset", ref offsetText, 16,
             ImGuiInputTextFlags.CharsHexadecimal);
         ImGui.SameLine();
-        if (ImGui.Button("Go") && int.TryParse(offsetText, NumberStyles.HexNumber,
+        if (UiAuto.Button("Go") && int.TryParse(offsetText, NumberStyles.HexNumber,
             CultureInfo.InvariantCulture, out int offset)) targetRow = Math.Clamp(offset / 16, 0, document.Bytes.Length / 16);
         ImGui.SameLine(); ImGui.TextDisabled($"{document.Bytes.Length:N0} bytes");
         ImGui.BeginDisabled(!context.Workspace.CanEdit);
         ImGui.SetNextItemWidth(Math.Max(80, ImGui.GetContentRegionAvail().X - 74));
-        ImGui.InputTextWithHint("##replace", "Replacement bytes", ref replacement, 4096);
+        UiAuto.InputTextWithHint("##replace", "Replacement bytes", ref replacement, 4096);
         ImGui.SameLine();
-        if (ImGui.Button("Apply")) context.Workspace.Run(() =>
+        if (UiAuto.Button("Apply")) context.Workspace.Run(() =>
         {
             int at = int.Parse(offsetText, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
             var value = Convert.FromHexString(string.Concat(replacement.Where(c => !char.IsWhiteSpace(c))));
@@ -461,7 +461,7 @@ public sealed class HexPage : IStudioPage
                 var bytes = document.Bytes.AsSpan(at, count);
                 string hex = string.Join(' ', bytes.ToArray().Select(value => value.ToString("X2"))).PadRight(47);
                 string ascii = new(bytes.ToArray().Select(value => value is >= 32 and <= 126 ? (char)value : '.').ToArray());
-                if (ImGui.Selectable($"{at:X8}  {hex}  {ascii}##{row}", false)) offsetText = at.ToString("X8");
+                if (UiAuto.Selectable($"{at:X8}  {hex}  {ascii}##{row}", false)) offsetText = at.ToString("X8");
             }
         clipper.End(); clipper.Destroy();
         if (context.MonospaceFont.NativePtr != null) ImGui.PopFont();

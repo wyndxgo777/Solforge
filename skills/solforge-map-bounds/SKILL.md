@@ -26,7 +26,7 @@ Goal: change where players can go (volumes, walls, placement) using what Studio 
 5. `set_viewport_rendering` to show Volumes / Collision layers; `get_viewport_screenshot` to check.
 6. Each edit needs the user's approve click. Undo with `revert_object_edit`.
 7. `build_project` with `install=true` (game closed). Startup `_unp1_` packages cannot be patched.
-8. Test: walk the route in game; confirm you are not killed/teleported and the path is open.
+8. Test: walk the route in game; confirm you are not killed/teleported and the path is open. `wait_for_player_near` with the target point and `get_player_position` (xyz, zone) confirm the player got there; `get_viewport_frame` with Follow player on shows it.
 
 ## UI fallback
 Layers > Show Volumes / Collision; select object; Inspector > World placement > Apply bounds; Move tool for placement; Revert object or Ctrl+Z.

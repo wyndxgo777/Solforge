@@ -66,10 +66,10 @@ public sealed partial class MissionGraphPage
             if (node.Kind == MissionScriptNodeKind.If)
             {
                 ImGui.SeparatorText("Branches");
-                if (ImGui.SmallButton("Add else if")) AddScript(view => view.AddBranch(view.Node(node.Key), "false"));
+                if (UiAuto.SmallButton("Add else if")) AddScript(view => view.AddBranch(view.Node(node.Key), "false"));
                 ImGui.SameLine();
                 ImGui.BeginDisabled(node.Control!.Bodies.Any(body => body.Label == "else"));
-                if (ImGui.SmallButton("Add else")) AddScript(view => view.AddBranch(view.Node(node.Key), null));
+                if (UiAuto.SmallButton("Add else")) AddScript(view => view.AddBranch(view.Node(node.Key), null));
                 ImGui.EndDisabled();
             }
             ImGui.EndDisabled();
@@ -96,13 +96,13 @@ public sealed partial class MissionGraphPage
         {
             ImGui.SeparatorText("Uses");
             foreach (var edge in uses)
-                if (ImGui.Selectable(edge.Label + "##uses-" + edge.Source)) selected = edge.Source;
+                if (UiAuto.Selectable(edge.Label + "##uses-" + edge.Source)) selected = edge.Source;
         }
         if (users.Length != 0)
         {
             ImGui.SeparatorText("Used by");
             foreach (var edge in users)
-                if (ImGui.Selectable(NodeTitle(scriptGraph.Node(edge.Target)) + "##used-" + edge.Target)) selected = edge.Target;
+                if (UiAuto.Selectable(NodeTitle(scriptGraph.Node(edge.Target)) + "##used-" + edge.Target)) selected = edge.Target;
         }
     }
 
@@ -158,16 +158,16 @@ public sealed partial class MissionGraphPage
         {
             if (ImGui.IsWindowAppearing()) ImGui.SetKeyboardFocusHere();
             ImGui.SetNextItemWidth(200);
-            ImGui.InputTextWithHint("##new-name", "Name", ref newId, 64);
+            UiAuto.InputTextWithHint("##new-name", "Name", ref newId, 64);
             Tip("Name of a new function or value");
             string name = LuaScript.IsName(newId) ? newId : "";
             ImGui.BeginDisabled(name.Length == 0);
             string parameters = string.Join(", ", apiSchema?.Program.StartParameters ?? []);
-            if (ImGui.Selectable("Function")) AddScript(view => view.AddStatement($"local function {name}({parameters})\nend"));
-            if (ImGui.Selectable("Value")) AddScript(view => view.AddStatement($"local {name} = nil"));
+            if (UiAuto.Selectable("Function")) AddScript(view => view.AddStatement($"local function {name}({parameters})\nend"));
+            if (UiAuto.Selectable("Value")) AddScript(view => view.AddStatement($"local {name} = nil"));
             ImGui.EndDisabled();
             foreach (var (label, code) in BodyTemplates)
-                if (label != "Return" && ImGui.Selectable(label)) AddScript(view => view.AddStatement(code));
+                if (label != "Return" && UiAuto.Selectable(label)) AddScript(view => view.AddStatement(code));
             DrawCallbackPalette();
             if (apiSchema is null) { ImGui.TextDisabled("No API schema"); ApiStatusTip(); }
         }
@@ -180,8 +180,8 @@ public sealed partial class MissionGraphPage
                 scope = scriptGraph.Scopes(owner).First().Key;
             }
             foreach (var (label, code) in BodyTemplates)
-                if (ImGui.Selectable(label)) { AddScript(view => view.AddToScope(scope, code)); addScriptScope = ""; }
-            if (scriptGraph!.CanBreak(scope) && ImGui.Selectable("Break"))
+                if (UiAuto.Selectable(label)) { AddScript(view => view.AddToScope(scope, code)); addScriptScope = ""; }
+            if (scriptGraph!.CanBreak(scope) && UiAuto.Selectable("Break"))
             { AddScript(view => view.AddToScope(scope, "break")); addScriptScope = ""; }
             DrawMemberPalette(scope);
             if (apiSchema is null) { ImGui.TextDisabled("No API schema"); ApiStatusTip(); }
@@ -214,11 +214,11 @@ public sealed partial class MissionGraphPage
         }
         if (!currentInputs) ImGui.TextWrapped("These inputs changed. Copy your drafts, then revert.");
         ImGui.BeginDisabled(changes.Count == 0 || !currentInputs);
-        if (ImGui.SmallButton("Apply##inputs")) ApplyScriptInputs(node.Key, changes);
+        if (UiAuto.SmallButton("Apply##inputs")) ApplyScriptInputs(node.Key, changes);
         ImGui.EndDisabled();
         ImGui.SameLine();
         ImGui.BeginDisabled(changes.Count == 0 && currentInputs);
-        if (ImGui.SmallButton("Revert##inputs"))
+        if (UiAuto.SmallButton("Revert##inputs"))
             foreach (var input in node.Inputs)
             {
                 string current = input.Span.Read(graph!.Source);

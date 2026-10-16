@@ -59,12 +59,12 @@ public sealed partial class MissionGraphPage
         if (catalog is not { } installed) { ImGui.CloseCurrentPopup(); ImGui.EndPopup(); return; }
         if (newFlowProblem.Length > 0) Problem(newFlowProblem);
         ImGui.SetNextItemWidth(360);
-        if (ImGui.BeginCombo("Activity", newActivity is null ? "Choose activity" : Friendly(newActivity.Key.ToLowerInvariant())))
+        if (UiAuto.BeginCombo("Activity", newActivity is null ? "Choose activity" : Friendly(newActivity.Key.ToLowerInvariant())))
         {
-            ImGui.SetNextItemWidth(-1); ImGui.InputTextWithHint("##find-activity", "Find activity", ref newActivitySearch, 128);
+            ImGui.SetNextItemWidth(-1); UiAuto.InputTextWithHint("##find-activity", "Find activity", ref newActivitySearch, 128);
             foreach (var activity in installed.Activities.Where(value => newActivitySearch.Length == 0
                 || value.Key.Contains(newActivitySearch, StringComparison.OrdinalIgnoreCase)).Take(150))
-                if (ImGui.Selectable(Friendly(activity.Key.ToLowerInvariant()) + "##" + activity.Key, activity == newActivity))
+                if (UiAuto.Selectable(Friendly(activity.Key.ToLowerInvariant()) + "##" + activity.Key, activity == newActivity))
                 {
                     Try(() =>
                     {
@@ -75,18 +75,18 @@ public sealed partial class MissionGraphPage
                         newActivity = activity; newModule = entry.SdkModule; newInitialState = null; newGraphKey = entry.Name;
                     });
                 }
-            ImGui.EndCombo();
+            UiAuto.EndCombo();
         }
         if (installed.SdkProblem(newModule) is { Length: > 0 } sdk) Problem(sdk);
         if (Pick("Arrival region", newInitialState, newStates, out var state)) newInitialState = state;
         Tip("Where the player starts. Change it later with a Select state action.");
-        ImGui.SetNextItemWidth(360); ImGui.InputText("Graph key", ref newGraphKey, 128);
+        ImGui.SetNextItemWidth(360); UiAuto.InputText("Graph key", ref newGraphKey, 128);
         ImGui.TextDisabled("Save to");
-        if (ImGui.RadioButton("Installed scripts", !newInProject)) newInProject = false;
+        if (UiAuto.RadioButton("Installed scripts", !newInProject)) newInProject = false;
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("A normal mission's script. It belongs to no project.");
         ImGui.SameLine();
         ImGui.BeginDisabled(!workspace.CanEdit);
-        if (ImGui.RadioButton("This project (mod)", newInProject)) newInProject = true;
+        if (UiAuto.RadioButton("This project (mod)", newInProject)) newInProject = true;
         ImGui.EndDisabled();
         if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
             ImGui.SetTooltip(workspace.CanEdit ? "A script the project's mod installs." : "Open a project to add a mod script.");
@@ -97,11 +97,11 @@ public sealed partial class MissionGraphPage
         }
         ImGui.BeginDisabled(newActivity is null || newInitialState is null || string.IsNullOrWhiteSpace(newGraphKey)
             || newFlowProblem.Length > 0);
-        if (ImGui.Button("Create script") && Try(() => CreateFlow(workspace, newActivity!, newInitialState!, newGraphKey, newInProject)))
+        if (UiAuto.Button("Create script") && Try(() => CreateFlow(workspace, newActivity!, newInitialState!, newGraphKey, newInProject)))
             ImGui.CloseCurrentPopup();
         Tip(newFlowProblem);
         ImGui.EndDisabled(); ImGui.SameLine();
-        if (ImGui.Button("Cancel")) ImGui.CloseCurrentPopup();
+        if (UiAuto.Button("Cancel")) ImGui.CloseCurrentPopup();
         ImGui.EndPopup();
     }
 }

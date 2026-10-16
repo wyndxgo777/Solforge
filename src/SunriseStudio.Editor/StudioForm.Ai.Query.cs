@@ -52,6 +52,7 @@ public sealed partial class StudioForm
                 "search_items" or "get_item" or "search_perks" or "list_vendors" or "get_vendor" => await AiInvestmentAsync(tool, args, cancel),
                 "list_creation_types" => AiCreationTypes(McpJson.String(args, "filter")),
                 "get_help" => await OnUi(() => AiHelp(args)).WaitAsync(cancel),
+                "get_player_position" => await AiPlayerPositionAsync(args, cancel),
                 "describe_creation" => await OnUi(() => AiDescribeCreation(McpJson.String(args, "key") ?? "", McpJson.String(args, "mode") ?? "")).WaitAsync(cancel),
                 _ => AiError("Unknown tool.")
             };
@@ -228,10 +229,15 @@ public sealed partial class StudioForm
             return AiError(workspace.Catalog is null ? "No installation is open." : "Solforge is still reading maps and missions; try again shortly.");
         string? filter = McpJson.String(args, "filter"), map = McpJson.String(args, "map");
         uint? mapTag = SolforgeTools.ParseHash(map);
+        // list_missions is scoped to the open map unless a map is named or all=true.
+        if (tool == "list_missions" && mapTag is null && !McpJson.Bool(args, "all", false))
+            mapTag = await OnUi(() => workspace.World?.Map.Tag).WaitAsync(cancel).ConfigureAwait(false);
         var source = tool == "list_maps" ? lists.Maps : lists.Missions;
-        return await Task.Run(() => McpPages.Page(source
-            .Where(row => mapTag is not { } wanted || row["maps"] is JsonArray maps && maps.Any(node => node?.ToString() == Hex(wanted)))
+        var page = await Task.Run(() => McpPages.Page(source
+            .Where(row => tool == "list_maps" || mapTag is not { } wanted || row["maps"] is JsonArray maps && maps.Any(node => node?.ToString() == Hex(wanted)))
             .Where(row => AllWords(filter, row.ToJsonString())), Offset(args), Limit(args), row => row.DeepClone()), cancel).ConfigureAwait(false);
+        if (tool == "list_missions") page["map"] = mapTag is { } scoped ? Hex(scoped) : "all";
+        return page;
     }
 
     private static JsonObject AiPackages(PackageCatalog? catalog, JsonObject args)
@@ -501,11 +507,29 @@ public sealed partial class StudioForm
         {
             case "open_map":
             {
-                if (SolforgeTools.ParseHash(McpJson.String(args, "map")) is not { } map) return "Give a map tag.";
+                // Missions belong to maps: a mission alone opens on its own map, and a map alone lists its missions.
+                uint? mission = SolforgeTools.ParseHash(McpJson.String(args, "mission"));
+                var entry = mission is { } wanted ? workspace.WorldCatalog?.Missions.FirstOrDefault(row => row.Tag == wanted) : null;
+                uint? map = SolforgeTools.ParseHash(McpJson.String(args, "map"));
+                if (map is null && mission is not null)
+                {
+                    if (entry is null) return workspace.WorldCatalog is null ? "Solforge is still reading maps and missions; try again shortly."
+                        : $"No mission {Hex(mission.Value)}; find it with list_missions.";
+                    if (entry.MapTags.Count == 0) return $"Mission {entry.Name} names no map.";
+                    map = workspace.World is { } open && entry.MapTags.Contains(open.Map.Tag) ? open.Map.Tag : entry.MapTags[0];
+                }
+                if (map is not { } target) return "Give a map tag (list_maps) or a mission tag (list_missions).";
+                if (entry is not null && entry.MapTags.Count > 0 && !entry.MapTags.Contains(target))
+                    return $"Mission {entry.Name} loads on {string.Join(", ", entry.MapTags.Select(Hex))}, not {Hex(target)}; leave map out to use its own.";
                 if (workspace.IsBusy) return "Solforge is busy (" + workspace.Status + "); try again when get_editor_state says it is idle.";
-                if (SolforgeTools.ParseHash(McpJson.String(args, "mission")) is { } mission) workspace.Run(() => workspace.OpenMission(map, mission));
-                else workspace.Run(() => workspace.OpenMap(map));
-                return workspace.Error.Length > 0 ? workspace.Error : $"Opening map {Hex(map)}; poll get_editor_state until busy is false.";
+                if (mission is { } chosen) workspace.Run(() => workspace.OpenMission(target, chosen));
+                else workspace.Run(() => workspace.OpenMap(target));
+                if (workspace.Error.Length > 0) return workspace.Error;
+                var missions = workspace.WorldCatalog?.Missions.Where(row => row.MapTags.Contains(target)).ToArray() ?? [];
+                string listed = missions.Length == 0 ? "" : $" Its {missions.Length} mission(s): " +
+                    string.Join(", ", missions.Take(8).Select(row => $"{row.Name} {Hex(row.Tag)}")) + (missions.Length > 8 ? ", ..." : "") + ".";
+                return (mission is { } opened ? $"Opening mission {entry?.Name ?? Hex(opened)} on map {Hex(target)}" : $"Opening map {Hex(target)}")
+                    + "; poll get_editor_state until busy is false." + (mission is null ? listed + " open_map with mission opens one." : "");
             }
             case "open_asset":
             {

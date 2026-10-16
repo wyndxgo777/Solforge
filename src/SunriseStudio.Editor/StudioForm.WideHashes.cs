@@ -54,7 +54,7 @@ public sealed partial class StudioForm
     private string wideHashText = "", wideHashError = "";
     private bool openWideHashes;
 
-    internal static bool WideHashInput(ref string value) => ImGui.InputText("Wide hash", ref value, 19);
+    internal static bool WideHashInput(ref string value) => UiAuto.InputText("Wide hash", ref value, 19);
 
     private void BeginWideHashes(string id)
     {
@@ -77,7 +77,7 @@ public sealed partial class StudioForm
             ImGui.SetNextItemWidth(360 * scale);
             WideHashInput(ref wideHashText);
             ImGui.SameLine();
-            if (ImGui.Button("Add"))
+            if (UiAuto.Button("Add"))
             {
                 try { draft.Add(wideHashText); wideHashText = wideHashError = ""; }
                 catch (Exception error) when (error is InvalidDataException or ArgumentException) { wideHashError = error.Message; }
@@ -95,7 +95,7 @@ public sealed partial class StudioForm
                             ulong value = values[i];
                             ImGui.PushID(value.ToString("X16", CultureInfo.InvariantCulture));
                             ImGui.TextUnformatted(value.ToString("X16", CultureInfo.InvariantCulture)); ImGui.SameLine();
-                            if (ImGui.SmallButton("Remove")) draft.Remove(value);
+                            if (UiAuto.SmallButton("Remove")) draft.Remove(value);
                             ImGui.PopID();
                         }
                 }
@@ -105,7 +105,7 @@ public sealed partial class StudioForm
             ImGui.EndChild();
             if (wideHashError.Length > 0) ImGui.TextWrapped(wideHashError);
             ImGui.BeginDisabled(!workspace.CanEdit);
-            if (ImGui.Button("Save aliases"))
+            if (UiAuto.Button("Save aliases"))
             {
                 try { draft.Save(workspace); wideHashDraft = null; ImGui.CloseCurrentPopup(); }
                 catch (Exception error) when (error is InvalidDataException or InvalidOperationException
@@ -113,7 +113,7 @@ public sealed partial class StudioForm
             }
             ImGui.EndDisabled(); ImGui.SameLine();
         }
-        if (ImGui.Button("Cancel")) { wideHashDraft = null; ImGui.CloseCurrentPopup(); }
+        if (UiAuto.Button("Cancel")) { wideHashDraft = null; ImGui.CloseCurrentPopup(); }
         ImGui.EndPopup();
     }
 }

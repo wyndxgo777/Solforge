@@ -109,7 +109,7 @@ public sealed partial class StudioForm
             if (retry && SolTheme.PrimaryButton("Retry"))
                 workspace.Run(() => workspace.OpenInstallation(location, keySource));
             if (retry) ImGui.SameLine();
-            if (!workspace.IsBusy && (retry ? ImGui.Button("Choose Sunrise location") : SolTheme.PrimaryButton("Choose Sunrise location")))
+            if (!workspace.IsBusy && (retry ? UiAuto.Button("Choose Sunrise location") : SolTheme.PrimaryButton("Choose Sunrise location")))
                 setup = true;
         }
         ImGui.EndGroup();

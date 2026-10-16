@@ -71,7 +71,7 @@ public sealed partial class StudioForm
         {
             if (draft.Settings.Count == 0) ImGui.TextWrapped("Add a setting in Build > Mod details first.");
             ImGui.SetNextItemWidth(520 * scale);
-            ImGui.InputTextWithHint("##configSiteFilter", "Find scalar property or comparison", ref configBindingFilter, 128);
+            UiAuto.InputTextWithHint("##configSiteFilter", "Find scalar property or comparison", ref configBindingFilter, 128);
             StudioUi.Help("Studio shows defaults; the game applies settings after restart.");
             if (ImGui.BeginChild("Config sites", new(600 * scale, 220 * scale), ImGuiChildFlags.Borders))
             {
@@ -81,7 +81,7 @@ public sealed partial class StudioForm
                     if (!site.Site.Name.Contains(configBindingFilter, StringComparison.OrdinalIgnoreCase)) continue;
                     var bound = draft.Bindings.FirstOrDefault(value => value.TagHash == draft.Tag && value.Site.Identity == site.Site.Identity);
                     ImGui.PushID(i);
-                    if (ImGui.Selectable(site.Site.Name + (bound is null ? "" : "  = " + bound.Key), configSiteIndex == i))
+                    if (UiAuto.Selectable(site.Site.Name + (bound is null ? "" : "  = " + bound.Key), configSiteIndex == i))
                     { configSiteIndex = i; configSettingKey = bound?.Key ?? ""; }
                     ImGui.PopID();
                 }
@@ -93,14 +93,14 @@ public sealed partial class StudioForm
                 var settings = draft.Settings.Where(value => value.Type == site.Type).ToArray();
                 ImGui.TextUnformatted(site.Site.Name);
                 ImGui.SetNextItemWidth(330 * scale);
-                if (ImGui.BeginCombo("Setting", configSettingKey.Length == 0 ? "Choose " + site.Type.ToString().ToLowerInvariant() + " setting" : configSettingKey))
+                if (UiAuto.BeginCombo("Setting", configSettingKey.Length == 0 ? "Choose " + site.Type.ToString().ToLowerInvariant() + " setting" : configSettingKey))
                 {
                     foreach (var setting in settings)
-                        if (ImGui.Selectable($"{setting.Key} = {setting.Default}", configSettingKey == setting.Key)) configSettingKey = setting.Key;
-                    ImGui.EndCombo();
+                        if (UiAuto.Selectable($"{setting.Key} = {setting.Default}", configSettingKey == setting.Key)) configSettingKey = setting.Key;
+                    UiAuto.EndCombo();
                 }
                 ImGui.BeginDisabled(!settings.Any(value => value.Key == configSettingKey));
-                if (ImGui.Button("Bind setting"))
+                if (UiAuto.Button("Bind setting"))
                 {
                     try { draft.Bind(workspace, site, configSettingKey); configBindingError = ""; }
                     catch (Exception error) when (BindingFailure(error)) { configBindingError = error.Message; }
@@ -117,21 +117,21 @@ public sealed partial class StudioForm
                 foreach (var binding in boundRows)
                 {
                     ImGui.PushID(binding.Identity); ImGui.TextUnformatted($"{binding.Site.Name}: {binding.Key}"); ImGui.SameLine();
-                    if (ImGui.SmallButton("Unbind")) draft.Unbind(binding.Identity);
+                    if (UiAuto.SmallButton("Unbind")) draft.Unbind(binding.Identity);
                     ImGui.PopID();
                 }
             }
             if (boundRows.Length != 0) ImGui.EndChild();
             if (configBindingError.Length != 0) ImGui.TextWrapped(configBindingError);
             ImGui.BeginDisabled(!workspace.CanEdit);
-            if (ImGui.Button("Save bindings"))
+            if (UiAuto.Button("Save bindings"))
             {
                 try { draft.Save(workspace); configBindingDraft = null; ImGui.CloseCurrentPopup(); }
                 catch (Exception error) when (BindingFailure(error)) { configBindingError = error.Message; }
             }
             ImGui.EndDisabled(); ImGui.SameLine();
         }
-        if (ImGui.Button("Cancel")) { configBindingDraft = null; ImGui.CloseCurrentPopup(); }
+        if (UiAuto.Button("Cancel")) { configBindingDraft = null; ImGui.CloseCurrentPopup(); }
         ImGui.EndPopup();
     }
 

@@ -74,7 +74,7 @@ public sealed partial class AudioPage : IStudioPage, IDisposable
         {
             if (operation is null && !ReferenceEquals(requestedSource, source))
             { requestedSource = source; Load(catalog, context.Workspace.DisplayName); }
-            if (operation is null && ImGui.Button("Load audio")) Load(catalog, context.Workspace.DisplayName);
+            if (operation is null && UiAuto.Button("Load audio")) Load(catalog, context.Workspace.DisplayName);
             DrawBusy(); return;
         }
         // A worker may replace Compositions mid-frame; read it once.
@@ -85,7 +85,7 @@ public sealed partial class AudioPage : IStudioPage, IDisposable
         if (session.Document.Bank is not null)
         {
             ImGui.BeginDisabled(IsBusy || session.Compositions.Count > 0);
-            if (ImGui.Button("Build composition previews"))
+            if (UiAuto.Button("Build composition previews"))
             {
                 var active = session;
                 Begin("Resolving bank routing", async token => { await active.GenerateCompositions(token); return new(); });
@@ -104,7 +104,7 @@ public sealed partial class AudioPage : IStudioPage, IDisposable
         DrawBusy();
         float height = Math.Max(100, ImGui.GetContentRegionAvail().Y - 160);
         ImGui.BeginChild("audio-items", new(0, height), ImGuiChildFlags.Borders);
-        ImGui.SetNextItemWidth(-1); ImGui.InputTextWithHint("##audio-find", "Find track or composition", ref filter, 256);
+        ImGui.SetNextItemWidth(-1); UiAuto.InputTextWithHint("##audio-find", "Find track or composition", ref filter, 256);
         if (compositions.Count > 0)
         {
             ImGui.SeparatorText("Compositions");
@@ -113,7 +113,7 @@ public sealed partial class AudioPage : IStudioPage, IDisposable
                 var item = compositions[i]; if (!Matches(item.Name)) continue;
                 ImGui.PushID(i);
                 ImGui.BeginDisabled(IsBusy);
-                if (ImGui.Selectable(item.Name, selectedComposition == i)) Select(-1, i);
+                if (UiAuto.Selectable(item.Name, selectedComposition == i)) Select(-1, i);
                 ImGui.EndDisabled(); ImGui.PopID();
             }
         }
@@ -122,7 +122,7 @@ public sealed partial class AudioPage : IStudioPage, IDisposable
         {
             var item = session.Document.Media[i]; string label = MediaLabel(item, i); if (!Matches(label) && !Matches(item.Name)) continue;
             ImGui.PushID(i + 10000); ImGui.BeginDisabled(IsBusy);
-            if (ImGui.Selectable(label, selectedMedia == i)) Select(i, -1);
+            if (UiAuto.Selectable(label, selectedMedia == i)) Select(i, -1);
             ImGui.EndDisabled();
             if (ImGui.IsItemHovered()) ImGui.SetTooltip($"{item.Name}\nMedia {item.Id} - {item.Size:N0} bytes");
             ImGui.PopID();
@@ -174,16 +174,16 @@ public sealed partial class AudioPage : IStudioPage, IDisposable
         if (ImGuiIcons.Button("audio-stop", StudioIcon.Reset, "Stop")) Try(player.Stop);
         ImGui.SameLine();
         ImGui.BeginDisabled(!canDecode);
-        if (ImGui.Button("Prepare WAV")) Decode(false);
+        if (UiAuto.Button("Prepare WAV")) Decode(false);
         ImGui.EndDisabled(); StudioUi.Tip(unsupported);
         ImGui.SameLine(); ImGui.SetNextItemWidth(110);
-        if (ImGui.SliderFloat("Volume", ref volume, 0, 1, "%.2f")) Try(() => player.SetVolume(volume));
+        if (UiAuto.SliderFloat("Volume", ref volume, 0, 1, "%.2f")) Try(() => player.SetVolume(volume));
         ImGui.EndDisabled();
         float position = (float)player.Position;
         double duration = player.Wave is not null ? player.Duration : info?.DurationSeconds ?? 0;
         ImGui.BeginDisabled(player.Wave is null);
         ImGui.SetNextItemWidth(-1);
-        if (ImGui.SliderFloat("##audio-position", ref position, 0, (float)Math.Max(.001, duration),
+        if (UiAuto.SliderFloat("##audio-position", ref position, 0, (float)Math.Max(.001, duration),
             Time(position) + " / " + Time(duration))) Try(() => player.Seek(position));
         ImGui.EndDisabled();
         if (info is not null) ImGui.TextDisabled($"{info.SampleRate:N0} Hz   {info.Channels} channels   {info.Encoding}");
@@ -191,18 +191,18 @@ public sealed partial class AudioPage : IStudioPage, IDisposable
         if (ImGuiIcons.Button("audio-export", StudioIcon.Export, "Export")) ImGui.OpenPopup("audio-export-menu");
         ImGui.EndDisabled();
         if (!ImGui.BeginPopup("audio-export-menu")) return;
-        if (ImGui.MenuItem("WAV...", "", false, !IsBusy && loadedWave.Length > 0)) Try(() =>
+        if (UiAuto.MenuItem("WAV...", "", false, !IsBusy && loadedWave.Length > 0)) Try(() =>
         {
             using var dialog = new SaveFileDialog { Filter = "Wave audio|*.wav", FileName = "audio.wav", AddExtension = true };
             if (dialog.ShowDialog() == DialogResult.OK) AudioSession.ExportWave(loadedWave, dialog.FileName, workspace.Catalog!.GameRoot);
         });
-        if (ImGui.MenuItem("WEM...", "", false, !IsBusy && selectedMedia >= 0)) Try(() =>
+        if (UiAuto.MenuItem("WEM...", "", false, !IsBusy && selectedMedia >= 0)) Try(() =>
         {
             var item = session!.Document.Media[selectedMedia];
             using var dialog = new SaveFileDialog { Filter = "Wwise media|*.wem", FileName = item.Id + ".wem", AddExtension = true };
             if (dialog.ShowDialog() == DialogResult.OK) session!.ExportMedia(item.Id, dialog.FileName, workspace.Catalog!.GameRoot);
         });
-        if (ImGui.MenuItem("Composition WAVs and routing...", "", false, !IsBusy && session!.Compositions.Count > 0)) Try(() =>
+        if (UiAuto.MenuItem("Composition WAVs and routing...", "", false, !IsBusy && session!.Compositions.Count > 0)) Try(() =>
         {
             using var dialog = new FolderBrowserDialog { Description = "Export one WAV per composition, routing.txt and the media",
                 UseDescriptionForTitle = true };
@@ -269,7 +269,7 @@ public sealed partial class AudioPage : IStudioPage, IDisposable
     {
         if (status.Length > 0) ImGui.TextDisabled(status);
         else if (unsupported.Length > 0) ImGui.TextDisabled(unsupported);
-        if (IsBusy) { ImGui.SameLine(); if (ImGui.SmallButton("Cancel")) cancellation?.Cancel(); }
+        if (IsBusy) { ImGui.SameLine(); if (UiAuto.SmallButton("Cancel")) cancellation?.Cancel(); }
     }
 
     /** Old sessions are deleted only after their last operation has finished. */

@@ -209,7 +209,7 @@ public sealed partial class CuiPage
             liveRecordAt = now;
             LiveCall(connection => connection.RequestCuiWidget(target));
         }
-        if (ImGui.SmallButton("Refresh##cui-live")) { liveRecordAt = now; LiveCall(connection => connection.RequestCuiWidget(target)); }
+        if (UiAuto.SmallButton("Refresh##cui-live")) { liveRecordAt = now; LiveCall(connection => connection.RequestCuiWidget(target)); }
         StudioUi.Tip("Ask the game again for this widget's record");
         ImGui.SameLine();
         ImGuiIcons.Toggle("cui-live-auto", StudioIcon.Loop, "Auto: ask the game again twice a second", ref liveAuto);

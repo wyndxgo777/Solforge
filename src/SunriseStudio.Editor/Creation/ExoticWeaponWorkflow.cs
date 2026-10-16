@@ -355,7 +355,7 @@ public sealed class ExoticWeaponWorkflow : CreationWorkflow
     private void DrawBehavior(PerkBehaviorEditor editor, string title, string perkName)
     {
         var graph = editor.Document;
-        if (ImGui.Button("Edit nodes##" + title)) ImGui.OpenPopup(title);
+        if (UiAuto.Button("Edit nodes##" + title)) ImGui.OpenPopup(title);
         ImGui.SameLine();
         ImGui.TextDisabled($"{graph.Activation.Count} / {graph.Effects.Count} / {graph.Deactivation.Count} nodes");
         StudioUi.Tip("Activation / effect / deactivation");
@@ -366,7 +366,7 @@ public sealed class ExoticWeaponWorkflow : CreationWorkflow
         ImGui.BeginChild("perk-node-editor", new(0, -38 * CreationWidgets.Scale));
         editor.Draw(title, workspace.CanEdit);
         ImGui.EndChild();
-        if (ImGui.Button("Done")) ImGui.CloseCurrentPopup();
+        if (UiAuto.Button("Done")) ImGui.CloseCurrentPopup();
         ImGui.EndPopup();
     }
 
@@ -377,7 +377,7 @@ public sealed class ExoticWeaponWorkflow : CreationWorkflow
         {
             ImGui.PushID(index); int value = stored;
             ImGui.SetNextItemWidth(120 * CreationWidgets.Scale);
-            if (ImGui.InputInt(investment.StatName(index), ref value)) SetCatalystStat(index, value);
+            if (UiAuto.InputInt(investment.StatName(index), ref value)) SetCatalystStat(index, value);
             ImGui.SameLine();
             if (StudioUi.IconButton("remove", StudioIcon.Remove, "Remove stat")) catalystStats.Remove(index);
             ImGui.PopID();
@@ -386,7 +386,7 @@ public sealed class ExoticWeaponWorkflow : CreationWorkflow
             statChoices = (workspace.InvestmentRevision,
                 investment.StatDefinitions.Select(stat => new CreationChoice(stat.Index, stat.Name)).ToArray());
         CreationWidgets.Choice("##bonus-stat", ref newStat, statChoices.Rows, 180);
-        ImGui.SameLine(); ImGui.SetNextItemWidth(110 * CreationWidgets.Scale); ImGui.InputInt("##bonus-value", ref newStatValue);
+        ImGui.SameLine(); ImGui.SetNextItemWidth(110 * CreationWidgets.Scale); UiAuto.InputInt("##bonus-value", ref newStatValue);
         ImGui.SameLine();
         if (StudioUi.IconButton("add-stat", StudioIcon.Plus, "Add stat")) SetCatalystStat(checked((byte)newStat), newStatValue);
     }
@@ -406,7 +406,7 @@ public sealed class ExoticWeaponWorkflow : CreationWorkflow
     {
         string value = package.Text;
         ImGui.SetNextItemWidth(150 * CreationWidgets.Scale);
-        if (ImGui.InputText("Package ID", ref value, 4, ImGuiInputTextFlags.CharsHexadecimal)) package.Text = value;
+        if (UiAuto.InputText("Package ID", ref value, 4, ImGuiInputTextFlags.CharsHexadecimal)) package.Text = value;
         StudioUi.Help(package.Hint);
         if (detail is not null)
             ImGui.TextDisabled($"Sockets: intrinsic {firstSocket + 1}, trait {secondSocket + 1}, catalyst {catalystSocket + 1}");

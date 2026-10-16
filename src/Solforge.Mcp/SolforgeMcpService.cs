@@ -26,8 +26,9 @@ public sealed class SolforgeMcpService : IAsyncDisposable
         var localServer = LocalServer.LocalServerTools.Create(LocalServer.LocalServerManager.CreateDefault(), () => host.ProjectRoot, host.ApproveAsync);
         var dispatcher = new McpDispatcher([.. SolforgeTools.Create(host), .. localServer], version,
             SolforgeTools.Instructions + LocalServer.LocalServerTools.Instructions);
-        var server = new McpHttpServer(dispatcher);
+        var server = new McpHttpServer(dispatcher) { Viewport = host.Viewport };
         server.Start();
+        host.Viewport.LocalUrl = server.ViewportUrl;
         McpDiscovery.CleanStale();
         var service = new SolforgeMcpService(server, dispatcher);
         service.Publish(host.ProjectRoot);
@@ -61,6 +62,7 @@ public sealed class SolforgeMcpService : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         McpDiscovery.Remove(Environment.ProcessId);
+        if (server.Viewport is { } feed) { feed.Relay?.Stop(); feed.LocalUrl = null; }
         await server.DisposeAsync().ConfigureAwait(false);
     }
 

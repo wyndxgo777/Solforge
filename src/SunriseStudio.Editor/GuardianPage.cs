@@ -119,12 +119,12 @@ public sealed class GuardianPage : IStudioPage
     {
         var workspace = context.Workspace;
         ImGui.SetNextItemWidth(ImGui.GetFontSize() * 7);
-        if (ImGui.BeginCombo("##guardian-class", GuardianClasses.ForBody(body)?.Name ?? "Class"))
+        if (UiAuto.BeginCombo("##guardian-class", GuardianClasses.ForBody(body)?.Name ?? "Class"))
         {
             foreach (var item in GuardianClasses.All)
-                if (ImGui.Selectable(item.Name, item.BodyTag == body) && item.BodyTag != body)
+                if (UiAuto.Selectable(item.Name, item.BodyTag == body) && item.BodyTag != body)
                     workspace.Run(() => workspace.OpenGuardian(item.BodyTag, loadout));
-            ImGui.EndCombo();
+            UiAuto.EndCombo();
         }
         StudioUi.Tip("Classes share one body; armor shows the class.");
         ImGui.SameLine();
@@ -251,16 +251,16 @@ public sealed class GuardianPage : IStudioPage
         ImGui.TextUnformatted(label);
         ImGui.SameLine(ImGui.GetFontSize() * 6);
         ImGui.SetNextItemWidth(PickerWidth());
-        if (!ImGui.BeginCombo("##" + label, (uint)current < (uint)count ? name(current) : blank)) return false;
+        if (!UiAuto.BeginCombo("##" + label, (uint)current < (uint)count ? name(current) : blank)) return false;
         for (int index = 0; index < count; index++)
         {
             ImGui.PushID(index);
             var flags = usable?.Invoke(index) == false ? ImGuiSelectableFlags.Disabled : ImGuiSelectableFlags.None;
-            if (ImGui.Selectable(name(index), index == current, flags)) picked = index;
+            if (UiAuto.Selectable(name(index), index == current, flags)) picked = index;
             if (tip is not null) StudioUi.Tip(tip(index));
             ImGui.PopID();
         }
-        ImGui.EndCombo();
+        UiAuto.EndCombo();
         return picked != current;
     }
 
@@ -286,15 +286,15 @@ public sealed class GuardianPage : IStudioPage
         string preview = current is { } chosen and not 0 ? LabelOf(workspace, chosen)
             : leading.FirstOrDefault(row => row.Value == current)?.Label ?? "None";
         string placeholderTip = placeholder != 0 ? $"Class default: {LabelOf(workspace, placeholder)}. {PlaceholderNote}" : "";
-        if (ImGui.BeginCombo("##item", preview, ImGuiComboFlags.HeightLarge))
+        if (UiAuto.BeginCombo("##item", preview, ImGuiComboFlags.HeightLarge))
         {
             if (ImGui.IsWindowAppearing()) ImGui.SetKeyboardFocusHere();
             ImGui.SetNextItemWidth(-1);
-            ImGui.InputTextWithHint("##search", "Search", ref picker.Search, 128);
+            UiAuto.InputTextWithHint("##search", "Search", ref picker.Search, 128);
             picker.Refresh(rows);
             foreach (var row in leading)
             {
-                if (ImGui.Selectable(row.Label, row.Value == current)) picked = row.Value;
+                if (UiAuto.Selectable(row.Label, row.Value == current)) picked = row.Value;
                 if (row.Value != 0 || placeholder == 0) continue;
                 StudioUi.Tip(placeholderTip);
             }
@@ -306,13 +306,13 @@ public sealed class GuardianPage : IStudioPage
                 {
                     int at = picker.Hits[i];
                     uint tag = rows[at].Entry.TagHash;
-                    if (ImGui.Selectable(picker.Ids[at], tag == current)) picked = tag;
+                    if (UiAuto.Selectable(picker.Ids[at], tag == current)) picked = tag;
                     ImGui.SameLine(right - ImGui.CalcTextSize(picker.Tags[at]).X);
                     ImGui.TextDisabled(picker.Tags[at]);
                 }
             clipper.End(); clipper.Destroy();
             if (picker.Hits.Length == 0) ImGui.TextDisabled("No matches");
-            ImGui.EndCombo();
+            UiAuto.EndCombo();
         }
         ImGui.SameLine();
         uint open = current == 0 ? placeholder : current ?? 0;

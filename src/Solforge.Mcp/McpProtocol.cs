@@ -7,7 +7,7 @@ namespace Solforge.Mcp;
 public sealed record McpTool(string Name, string Description, JsonObject InputSchema, bool RequiresApproval,
     Func<JsonObject, CancellationToken, Task<McpToolResult>> Handler);
 
-/** A tool result: text blocks, optional PNG images, and the error flag MCP clients show to the model. */
+/** A tool result: text blocks, optional PNG or JPEG images, and the error flag MCP clients show to the model. */
 public sealed class McpToolResult
 {
     public List<string> Texts { get; } = [];
@@ -22,10 +22,14 @@ public sealed class McpToolResult
     {
         var content = new JsonArray();
         foreach (string text in Texts) content.Add(new JsonObject { ["type"] = "text", ["text"] = text });
-        foreach (byte[] png in Images)
-            content.Add(new JsonObject { ["type"] = "image", ["data"] = Convert.ToBase64String(png), ["mimeType"] = "image/png" });
+        foreach (byte[] image in Images)
+            content.Add(new JsonObject { ["type"] = "image", ["data"] = Convert.ToBase64String(image), ["mimeType"] = MimeType(image) });
         return new JsonObject { ["content"] = content, ["isError"] = IsError };
     }
+
+    /** JPEG starts FF D8 FF; everything else Solforge sends is PNG. */
+    public static string MimeType(byte[] image) =>
+        image.Length > 2 && image[0] == 0xFF && image[1] == 0xD8 && image[2] == 0xFF ? "image/jpeg" : "image/png";
 }
 
 public static class McpJson

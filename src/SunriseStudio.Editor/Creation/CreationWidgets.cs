@@ -63,10 +63,10 @@ public static class CreationWidgets
         if (value is not null)
         {
             ImGui.SameLine();
-            if (ImGui.SmallButton("Clear")) { value = null; label = ""; changed = true; }
+            if (UiAuto.SmallButton("Clear")) { value = null; label = ""; changed = true; }
         }
         ImGui.SetNextItemWidth(-1);
-        ImGui.InputTextWithHint("##search", "Search", ref state.Search, 256);
+        UiAuto.InputTextWithHint("##search", "Search", ref state.Search, 256);
         if (state.Search != state.Searched || state.Revision != revision)
         {
             state.Searched = state.Search; state.Revision = revision;
@@ -79,7 +79,7 @@ public static class CreationWidgets
         foreach (var choice in state.Results)
         {
             ImGui.PushID(unchecked((int)choice.Value));
-            if (ImGui.Selectable(choice.Label.Length == 0 ? $"{choice.Value:X8}" : choice.Label, value == choice.Value))
+            if (UiAuto.Selectable(choice.Label.Length == 0 ? $"{choice.Value:X8}" : choice.Label, value == choice.Value))
             { value = choice.Value; label = choice.Label; changed = true; }
             StudioUi.Tip(choice.Detail);
             ImGui.PopID();
@@ -87,7 +87,7 @@ public static class CreationWidgets
         if (state.Error.Length != 0)
         {
             ImGui.TextWrapped(state.Error);
-            if (ImGui.SmallButton("Retry search")) state.Revision = -1;
+            if (UiAuto.SmallButton("Retry search")) state.Revision = -1;
         }
         else if (state.Results.Length == 0) ImGui.TextDisabled(Empty(empty, state.Search));
         else if (state.Results.Length == PickerRows) ImGui.TextDisabled("Search to see more");
@@ -117,10 +117,10 @@ public static class CreationWidgets
         if (value is not null && clearable)
         {
             ImGui.SameLine();
-            if (ImGui.SmallButton("Clear")) { value = null; label = ""; changed = true; }
+            if (UiAuto.SmallButton("Clear")) { value = null; label = ""; changed = true; }
         }
         ImGui.SetNextItemWidth(-1);
-        if (ImGui.InputTextWithHint("##search", "Search", ref state.Search, 256)) state.Edited = ImGui.GetTime();
+        if (UiAuto.InputTextWithHint("##search", "Search", ref state.Search, 256)) state.Edited = ImGui.GetTime();
         TakeRows(state);
         if (state.Revision != revision || !ReferenceEquals(state.Rows, rows)
             || state.Search != state.Searched && ImGui.GetTime() - state.Edited > SearchSettle)
@@ -146,7 +146,7 @@ public static class CreationWidgets
                 ImGui.PushID(i);
                 var start = ImGui.GetCursorScreenPos();
                 float width = ImGui.GetContentRegionAvail().X, detailWidth = ImGui.CalcTextSize(detail).X;
-                if (ImGui.Selectable("##row", value == tag, ImGuiSelectableFlags.None, new(0, line)))
+                if (UiAuto.Selectable("##row", value == tag, ImGuiSelectableFlags.None, new(0, line)))
                 { value = tag; label = name; changed = true; }
                 StudioUi.Tip($"{name}\n{row.Entry.PackageName}  {tag:X8}");
                 var draw = ImGui.GetWindowDrawList();
@@ -185,16 +185,16 @@ public static class CreationWidgets
         var selected = choices.FirstOrDefault(choice => choice.Value == current);
         bool changed = false;
         ImGui.SetNextItemWidth(width * Scale);
-        if (ImGui.BeginCombo(id, selected?.Label ?? $"{value}"))
+        if (UiAuto.BeginCombo(id, selected?.Label ?? $"{value}"))
         {
             foreach (var choice in choices)
             {
                 ImGui.PushID(unchecked((int)choice.Value));
-                if (ImGui.Selectable(choice.Label, choice.Value == value)) { value = choice.Value; changed = true; }
+                if (UiAuto.Selectable(choice.Label, choice.Value == value)) { value = choice.Value; changed = true; }
                 StudioUi.Tip(choice.Detail);
                 ImGui.PopID();
             }
-            ImGui.EndCombo();
+            UiAuto.EndCombo();
         }
         return changed;
     }

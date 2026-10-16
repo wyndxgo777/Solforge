@@ -9,6 +9,8 @@ namespace Solforge.Mcp;
  * MCP streamable HTTP on 127.0.0.1 only: POST /mcp carries one JSON-RPC message, GET /mcp opens an SSE
  * stream (keep-alive only; Solforge sends no server requests), DELETE /mcp ends the session. Every request
  * needs "Authorization: Bearer <token>". A plain TcpListener keeps http.sys URL ACLs and ASP.NET Core out.
+ * GET /viewport, /viewport.mjpeg and /viewport.jpg show the live viewport in a local browser; they need ?key=<ViewKey>,
+ * a separate random key that grants nothing else, and refuse framing.
  */
 public sealed class McpHttpServer : IAsyncDisposable
 {
@@ -24,7 +26,13 @@ public sealed class McpHttpServer : IAsyncDisposable
         this.dispatcher = dispatcher;
         listener = new TcpListener(IPAddress.Loopback, port);
         Token = Convert.ToHexString(RandomNumberGenerator.GetBytes(24)).ToLowerInvariant();
+        ViewKey = Convert.ToHexString(RandomNumberGenerator.GetBytes(16)).ToLowerInvariant();
     }
+
+    /** The live viewport frames the /viewport pages show; null serves 404. */
+    public ViewportFeed? Viewport { get; set; }
+    public string ViewKey { get; }
+    public string ViewportUrl => $"http://127.0.0.1:{Port}/viewport?key={ViewKey}";
 
     public string Token { get; }
     public int Port { get; private set; }
@@ -71,6 +79,8 @@ public sealed class McpHttpServer : IAsyncDisposable
         // DNS rebinding: a browser page may only reach this server from a loopback origin.
         if (request.Header("origin") is { } origin && !IsLoopbackOrigin(origin))
         { await Write(stream, 403, "text/plain", "Origin not allowed").ConfigureAwait(false); return; }
+        if (request.Method == "GET" && request.Path.StartsWith("/viewport", StringComparison.Ordinal))
+        { await ServeViewport(stream, request).ConfigureAwait(false); return; }
         if (!CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(request.Header("authorization") ?? ""),
                 Encoding.UTF8.GetBytes("Bearer " + Token)))
         { await Write(stream, 401, "text/plain", "Missing or wrong Solforge MCP token").ConfigureAwait(false); return; }
@@ -122,10 +132,75 @@ public sealed class McpHttpServer : IAsyncDisposable
         }
     }
 
+    private static readonly (string, string)[] ViewHeaders =
+        [("Cache-Control", "no-store"), ("X-Frame-Options", "DENY"), ("Content-Security-Policy", "frame-ancestors 'none'"),
+            ("Referrer-Policy", "no-referrer"), ("Cross-Origin-Resource-Policy", "same-origin"), ("X-Content-Type-Options", "nosniff")];
+
+    private async Task ServeViewport(NetworkStream stream, HttpRequest request)
+    {
+        if (!CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(request.QueryValue("key") ?? ""), Encoding.UTF8.GetBytes(ViewKey)))
+        { await Write(stream, 401, "text/plain", "Missing or wrong view key (get_viewport_stream gives the URL)", ViewHeaders).ConfigureAwait(false); return; }
+        if (Viewport is not { } feed) { await Write(stream, 404, "text/plain", "No viewport", ViewHeaders).ConfigureAwait(false); return; }
+        if (feed.Paused) { await Write(stream, 503, "text/plain", "Context publishing is paused in Solforge", ViewHeaders).ConfigureAwait(false); return; }
+        feed.Want();
+        switch (request.Path)
+        {
+            case "/viewport":
+                string key = Uri.EscapeDataString(ViewKey);
+                await Write(stream, 200, "text/html", "<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width'>" +
+                    "<title>Solforge viewport</title><body style='margin:0;background:#0b0c10;display:grid;place-items:center;min-height:100vh'>" +
+                    $"<img src='/viewport.mjpeg?key={key}' alt='Solforge viewport' style='max-width:100%;max-height:100vh'></body>",
+                    [.. ViewHeaders.Where(header => header.Item1 != "Content-Security-Policy"),
+                        ("Content-Security-Policy", "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; frame-ancestors 'none'")])
+                    .ConfigureAwait(false);
+                return;
+            case "/viewport.jpg":
+                var frame = feed.Latest ?? await feed.WaitForChangeAsync(0, TimeSpan.FromSeconds(3), stop.Token).ConfigureAwait(false);
+                if (frame is null) { await Write(stream, 503, "text/plain", "No frame yet: " + feed.Status, ViewHeaders).ConfigureAwait(false); return; }
+                var head = new StringBuilder("HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\n");
+                head.Append($"Content-Length: {frame.Jpeg.Length}\r\nX-Solforge-Frame: {frame.Id}\r\nConnection: close\r\n");
+                foreach (var (name, value) in ViewHeaders) head.Append($"{name}: {value}\r\n");
+                await stream.WriteAsync(Encoding.ASCII.GetBytes(head.Append("\r\n").ToString()), stop.Token).ConfigureAwait(false);
+                await stream.WriteAsync(frame.Jpeg, stop.Token).ConfigureAwait(false);
+                return;
+            case "/viewport.mjpeg":
+                await StreamFrames(stream, feed).ConfigureAwait(false);
+                return;
+            default:
+                await Write(stream, 404, "text/plain", "Not found", ViewHeaders).ConfigureAwait(false);
+                return;
+        }
+    }
+
+    /** multipart/x-mixed-replace: every browser shows it in an <img>; a still view resends its frame every 10 s. */
+    private async Task StreamFrames(NetworkStream stream, ViewportFeed feed)
+    {
+        var head = new StringBuilder("HTTP/1.1 200 OK\r\nContent-Type: multipart/x-mixed-replace; boundary=solforgeframe\r\nConnection: close\r\n");
+        foreach (var (name, value) in ViewHeaders) head.Append($"{name}: {value}\r\n");
+        await stream.WriteAsync(Encoding.ASCII.GetBytes(head.Append("\r\n").ToString()), stop.Token).ConfigureAwait(false);
+        feed.BeginStream();
+        try
+        {
+            long last = 0;
+            while (!stop.IsCancellationRequested && !feed.Paused)
+            {
+                var frame = await feed.WaitForChangeAsync(last, TimeSpan.FromSeconds(10), stop.Token).ConfigureAwait(false) ?? feed.Latest;
+                if (frame is null) continue;
+                last = frame.Id;
+                await stream.WriteAsync(Encoding.ASCII.GetBytes(
+                    $"--solforgeframe\r\nContent-Type: image/jpeg\r\nContent-Length: {frame.Jpeg.Length}\r\n\r\n"), stop.Token).ConfigureAwait(false);
+                await stream.WriteAsync(frame.Jpeg, stop.Token).ConfigureAwait(false);
+                await stream.WriteAsync("\r\n"u8.ToArray(), stop.Token).ConfigureAwait(false);
+                await Task.Delay(TimeSpan.FromSeconds(1.0 / feed.Fps), stop.Token).ConfigureAwait(false);
+            }
+        }
+        finally { feed.EndStream(); }
+    }
+
     private static bool IsLoopbackOrigin(string origin) =>
         Uri.TryCreate(origin, UriKind.Absolute, out var uri) && (uri.IsLoopback || uri.Host == "localhost");
 
-    private static async Task Write(NetworkStream stream, int status, string type, string body, List<(string, string)>? headers = null)
+    private static async Task Write(NetworkStream stream, int status, string type, string body, IReadOnlyList<(string, string)>? headers = null)
     {
         byte[] content = Encoding.UTF8.GetBytes(body);
         var head = new StringBuilder($"HTTP/1.1 {status} {Reason(status)}\r\n");
@@ -140,7 +215,7 @@ public sealed class McpHttpServer : IAsyncDisposable
     private static string Reason(int status) => status switch
     {
         200 => "OK", 202 => "Accepted", 401 => "Unauthorized", 403 => "Forbidden", 404 => "Not Found",
-        405 => "Method Not Allowed", 413 => "Payload Too Large", _ => "Error"
+        405 => "Method Not Allowed", 413 => "Payload Too Large", 503 => "Service Unavailable", _ => "Error"
     };
 
     public async ValueTask DisposeAsync()
@@ -157,6 +232,19 @@ internal sealed class HttpRequest
 {
     public string Method { get; private init; } = "";
     public string Path { get; private init; } = "";
+    public string Query { get; private init; } = "";
+
+    /** One query string value, percent-decoded; null when absent. */
+    public string? QueryValue(string name)
+    {
+        foreach (string pair in Query.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            int equals = pair.IndexOf('=');
+            string key = Uri.UnescapeDataString((equals < 0 ? pair : pair[..equals]).Replace('+', ' '));
+            if (key == name) return equals < 0 ? "" : Uri.UnescapeDataString(pair[(equals + 1)..].Replace('+', ' '));
+        }
+        return null;
+    }
     public byte[] Body { get; private set; } = [];
     private readonly Dictionary<string, string> headers = new(StringComparer.OrdinalIgnoreCase);
 
@@ -181,7 +269,8 @@ internal sealed class HttpRequest
         if (start.Length < 2) return null;
         string target = start[1];
         int query = target.IndexOf('?');
-        var request = new HttpRequest { Method = start[0].ToUpperInvariant(), Path = query < 0 ? target : target[..query] };
+        var request = new HttpRequest { Method = start[0].ToUpperInvariant(), Path = query < 0 ? target : target[..query],
+            Query = query < 0 ? "" : target[(query + 1)..] };
         foreach (string line in lines.Skip(1))
             if (line.IndexOf(':') is var colon and > 0) request.headers[line[..colon].Trim()] = line[(colon + 1)..].Trim();
         int length = int.TryParse(request.Header("content-length"), out int parsed) ? parsed : 0;

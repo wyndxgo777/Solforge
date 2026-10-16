@@ -22,10 +22,10 @@ public sealed partial class StudioForm
         if (!ImGui.BeginPopupModal("Disk cache", ImGuiWindowFlags.AlwaysAutoResize)) return;
         bool enabled = settings.DiskCacheEnabled;
         int limit = settings.DiskCacheLimitMiB;
-        bool toggled = ImGui.Checkbox("Cache package loads", ref enabled);
+        bool toggled = UiAuto.Checkbox("Cache package loads", ref enabled);
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Used the next time Sunrise is opened");
         ImGui.SetNextItemWidth(230 * scale);
-        bool moved = ImGui.SliderInt("Limit", ref limit, 128, 4096, "%d MiB");
+        bool moved = UiAuto.SliderInt("Limit", ref limit, 128, 4096, "%d MiB");
         // A drag changes the value every frame; the file is written once, on release.
         bool released = ImGui.IsItemDeactivatedAfterEdit();
         if (toggled || moved)
@@ -43,11 +43,11 @@ public sealed partial class StudioForm
             ImGui.TextDisabled($"{FormatBytes(cacheStats.StoredBytes)} stored");
             if (ImGui.IsItemHovered()) ImGui.SetTooltip(cache.DirectoryPath);
             if (cacheStats.LastError is { Length: > 0 } error) ImGui.TextWrapped(error);
-            if (ImGui.Button("Clear cache")) workspace.Execute("Clearing cache", () => cache.Clear());
+            if (UiAuto.Button("Clear cache")) workspace.Execute("Clearing cache", () => cache.Clear());
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("Remove local cache files");
         }
         ImGui.Spacing();
-        if (ImGui.Button("Close", new(100 * scale, 0))) ImGui.CloseCurrentPopup();
+        if (UiAuto.Button("Close", new(100 * scale, 0))) ImGui.CloseCurrentPopup();
         ImGui.EndPopup();
     }
 }

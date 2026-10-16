@@ -2,6 +2,7 @@
 // labels, the attention log, project path rules, per-client config generation, engine command resolution, the
 // Claude Code launch line, the shim's --context hook output, get_open_documents and the auto-allow prompt detector. No game install needed.
 using System.Diagnostics;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text.Json.Nodes;
 using Solforge.Mcp;
@@ -33,10 +34,18 @@ try
     checks.Add("mission slots stay fast at EDZ scale: 120k slots index, page and resolve in seconds, pages carry total and next");
     CodeRefsCheck();
     checks.Add("code refs: slot id, quoted name and whole-word constants in this mission's SDK file and the server scripts; everywhere reads other missions; limit and folder discovery");
+    UiControlChecks();
+    checks.Add("ui controls: exact ids, label queries ranked (label, prefix, words, scope), kind/window filters, ties refused with the candidates, operations per kind, approve summaries");
+    ViewportFeedChecks();
+    PlayerSourceChecks();
+    checks.Add("player sources: recorder lines (cam over a frozen or stale pos, menus and marks skipped, newest line decides), server /coop rows, yaw and facing, trail spacing, cap and teleport reset; get_player_position and wait_for_player_near reach, time out and refuse a bad target");
+    checks.Add("viewport feed: luminance grid, unchanged captures add no frame and skip encoding, change text says how much and where, ids, since, ring capacity, wait_for_change wakes and times out");
     ReferenceCheck();
     checks.Add("reference library: found above the project, index.json plus unindexed front matter, ranked search with tag filter, read by path or url with paging, half-written index and path escapes are safe");
     await StdioRoundTrip();
-    checks.Add("initialize, tools/list (73 tools with object schemas), tools/call, get_open_documents, mission, read_panel and reference tools round trip over the stdio shim");
+    checks.Add("initialize, tools/list (all tools with object schemas), tools/call, get_open_documents, mission, read_panel and reference tools round trip over the stdio shim");
+    checks.Add("ui and viewport tools: list_ui_controls pages, ui_* resolve before asking and wait for approval, an approved ui_set_checked reaches the host, get_viewport_frame sends JPEG plus text and skips the image for a known id, wait_for_viewport_change times out, /viewport pages need the view key");
+    checks.Add("generic client: the official MCP Python SDK lists the tools and calls frame, control and approval-gated tools over streamable HTTP and over stdio (skipped only when Python or the mcp package is missing)");
     checks.Add("project tools: list_maps and other catalog reads reach the host and work while paused, find_world_objects stops while paused, host errors become tool errors, edit_bounds validates before asking, edit_placement waits for approval");
     SessionChecks(scratch);
     checks.Add("session context: SESSION.md lists project, map, skills and tools; the AGENTS.md block is appended once, replaced in place and keeps the user's text; skills copy only when they differ");
@@ -230,10 +239,14 @@ async Task StdioRoundTrip()
             "list_creation_types", "describe_creation",
             "open_map", "open_asset", "set_viewport_rendering", "edit_placement", "edit_bounds", "revert_object_edit",
             "apply_item_edit", "apply_vendor_edit", "start_creation", "replace_texture_pixels", "build_project",
-            .. SolforgeTools.DecompToolNames, .. SolforgeTools.PackageDataToolNames];
+            .. SolforgeTools.DecompToolNames, .. SolforgeTools.PackageDataToolNames,
+            "list_ui_controls", "ui_invoke", "ui_set_value", "ui_set_checked", "ui_select",
+            "get_viewport_frame", "get_viewport_frames", "wait_for_viewport_change", "get_viewport_stream", "set_viewport_stream",
+            "get_player_position", "wait_for_player_near"];
+
         string[] actions = ["select_object", "focus_camera", "highlight", "open_file", "apply_project_edit", "open_map", "open_asset",
             "set_viewport_rendering", "edit_placement", "edit_bounds", "revert_object_edit", "apply_item_edit", "apply_vendor_edit",
-            "start_creation", "replace_texture_pixels", "build_project", "rename_function"];
+            "start_creation", "replace_texture_pixels", "build_project", "rename_function", "ui_invoke", "ui_set_value", "ui_set_checked", "ui_select", "set_viewport_stream"];
         Expect(tools.Select(tool => tool?["name"]?.ToString()).SequenceEqual(expected), "tool names: " + string.Join(",", tools.Select(tool => tool?["name"])));
         foreach (var tool in tools)
         {
@@ -284,6 +297,50 @@ async Task StdioRoundTrip()
             ["arguments"] = new JsonObject { ["id"] = "w:9", ["position"] = new JsonArray(1, 2, 3) } });
         Expect(move["isError"]?.GetValue<bool>() == true && host.Approvals == asked + 1 && host.LastSummary?.Contains("[1,2,3]") == true,
             "edit_placement waits for approval: " + host.LastSummary);
+        // UI control and live viewport tools.
+        var controls = Body(await Call(40, "tools/call", new JsonObject { ["name"] = "list_ui_controls", ["arguments"] = new JsonObject { ["query"] = "grid" } }));
+        Expect(controls["rows"]?[0]?["id"]?.ToString() == "main:00000003" && controls["rows"]?[0]?["checked"]?.GetValue<bool>() == true
+            && controls["drawn"]?.GetValue<int>() == FixtureHost.Controls.Length, "list_ui_controls: " + controls.ToJsonString());
+        asked = host.Approvals;
+        var ambiguous = await Call(41, "tools/call", new JsonObject { ["name"] = "ui_invoke", ["arguments"] = new JsonObject { ["query"] = "Delete" } });
+        Expect(ambiguous["isError"]?.GetValue<bool>() == true && host.Approvals == asked
+            && ambiguous["content"]![0]!["text"]!.ToString().Contains("main:00000006", StringComparison.Ordinal), "a tied query is refused before asking");
+        var wrongKind = await Call(42, "tools/call", new JsonObject { ["name"] = "ui_set_checked", ["arguments"] = new JsonObject { ["id"] = "main:00000001", ["checked"] = true } });
+        Expect(wrongKind["isError"]?.GetValue<bool>() == true && host.Approvals == asked, "a button does not take ui_set_checked");
+        var declined = await Call(43, "tools/call", new JsonObject { ["name"] = "ui_invoke", ["arguments"] = new JsonObject { ["query"] = "Build" } });
+        Expect(declined["isError"]?.GetValue<bool>() == true && host.Approvals == asked + 1 && host.LastSummary == "Click button 'Build' in Toolbar"
+            && host.Commands.Count == 0, "ui_invoke waits for approval: " + host.LastSummary);
+        host.ApproveAll = true;
+        var approved = await Call(44, "tools/call", new JsonObject { ["name"] = "ui_set_checked", ["arguments"] = new JsonObject { ["query"] = "grid", ["checked"] = false } });
+        Expect(approved["isError"]?.GetValue<bool>() != true && host.Commands.Count == 1 && host.Commands[0] == new UiCommand("main:00000003", UiOperation.SetChecked, null, false),
+            "an approved ui_set_checked reaches the host");
+        var combo = await Call(45, "tools/call", new JsonObject { ["name"] = "ui_set_value", ["arguments"] = new JsonObject { ["query"] = "follow", ["kind"] = "combo", ["value"] = "Free" } });
+        Expect(combo["isError"]?.GetValue<bool>() != true && host.Commands[^1].Operation == UiOperation.Select && host.Commands[^1].Value == "Free", "a combo's value is a select");
+        host.ApproveAll = false;
+        var frame = await Call(46, "tools/call", new JsonObject { ["name"] = "get_viewport_frame", ["arguments"] = new JsonObject() });
+        var frameText = Body(frame);
+        Expect(frame["content"]?.AsArray().Count == 2 && frame["content"]![1]!["mimeType"]?.ToString() == "image/jpeg"
+            && frameText["frames"]?[0]?["frame"]?.GetValue<long>() == 1 && frameText["frames"]?[0]?["change"]?.ToString() == "first frame"
+            && frameText["objects"] is JsonArray, "get_viewport_frame: JPEG plus text: " + frameText.ToJsonString());
+        var known = await Call(47, "tools/call", new JsonObject { ["name"] = "get_viewport_frame", ["arguments"] = new JsonObject { ["since"] = 1 } });
+        Expect(known["content"]?.AsArray().Count == 1 && Body(known)["note"] is not null, "a known frame id returns text only");
+        var still = Body(await Call(48, "tools/call", new JsonObject { ["name"] = "wait_for_viewport_change", ["arguments"] = new JsonObject { ["timeout"] = 0.2 } }));
+        Expect(still["changed"]?.GetValue<bool>() == false && still["latest"]?.GetValue<long>() == 1, "wait_for_viewport_change times out on a still view");
+        var streamInfo = Body(await Call(49, "tools/call", new JsonObject { ["name"] = "get_viewport_stream", ["arguments"] = new JsonObject() }));
+        Expect(streamInfo["relay"]?["on"]?.GetValue<bool>() == false, "the relay is off by default: " + streamInfo.ToJsonString());
+        // Player position.
+        var player = Body(await Call(50, "tools/call", new JsonObject { ["name"] = "get_player_position", ["arguments"] = new JsonObject() }));
+        Expect(player["source"]?.ToString() == "recorder" && host.Queries.Contains("get_player_position"), "get_player_position reaches the host");
+        var arrived = Body(await Call(51, "tools/call", new JsonObject { ["name"] = "wait_for_player_near",
+            ["arguments"] = new JsonObject { ["target"] = "slot/generator", ["radius"] = 5, ["timeout"] = 10 } }));
+        Expect(arrived["reached"]?.GetValue<bool>() == true && arrived["distance"]?.GetValue<double>() <= 5, "wait_for_player_near: " + arrived.ToJsonString());
+        var away = Body(await Call(52, "tools/call", new JsonObject { ["name"] = "wait_for_player_near",
+            ["arguments"] = new JsonObject { ["position"] = new JsonArray(500, 0, 0), ["radius"] = 1, ["timeout"] = 0.3 } }));
+        Expect(away["reached"]?.GetValue<bool>() == false && away["note"]?.ToString() == "Timed out.", "wait_for_player_near times out");
+        var missing = await Call(53, "tools/call", new JsonObject { ["name"] = "wait_for_player_near", ["arguments"] = new JsonObject { ["target"] = "missing" } });
+        Expect(missing["isError"]?.GetValue<bool>() == true, "an unknown target is a tool error");
+        var noGoal = await Call(54, "tools/call", new JsonObject { ["name"] = "wait_for_player_near", ["arguments"] = new JsonObject() });
+        Expect(noGoal["isError"]?.GetValue<bool>() == true, "wait_for_player_near needs a target or position");
         host.Paused = true;
         var pausedMaps = await Call(34, "tools/call", new JsonObject { ["name"] = "list_maps", ["arguments"] = new JsonObject() });
         Expect(pausedMaps["isError"]?.GetValue<bool>() != true, "catalog reads work while paused");
@@ -306,6 +363,155 @@ async Task StdioRoundTrip()
     using var http = new HttpClient();
     var wrong = await http.PostAsync(server.Url, new StringContent("{}"));
     Expect((int)wrong.StatusCode == 401, "token check");
+    // The local viewport pages take their own key, never the MCP token, and refuse framing.
+    server.Viewport = host.Viewport;
+    string root = server.Url[..server.Url.LastIndexOf("/mcp", StringComparison.Ordinal)];
+    var noKey = await http.GetAsync(root + "/viewport.jpg");
+    var tokenKey = await http.GetAsync(root + "/viewport.jpg?key=" + server.Token);
+    var jpeg = await http.GetAsync(root + "/viewport.jpg?key=" + server.ViewKey);
+    var page = await http.GetAsync(server.ViewportUrl);
+    Expect((int)noKey.StatusCode == 401 && (int)tokenKey.StatusCode == 401 && (int)jpeg.StatusCode == 200
+        && jpeg.Content.Headers.ContentType?.MediaType == "image/jpeg" && (await jpeg.Content.ReadAsByteArrayAsync()).SequenceEqual(FixtureHost.Jpeg)
+        && jpeg.Headers.TryGetValues("X-Frame-Options", out var frameOptions) && frameOptions.Single() == "DENY"
+        && (await page.Content.ReadAsStringAsync()).Contains("/viewport.mjpeg?key=" + server.ViewKey, StringComparison.Ordinal), "local viewport pages");
+    await GenericClient(host, server, shim, project, discovery);
+}
+
+/** The official MCP Python SDK as a client nobody here wrote: over streamable HTTP and through the stdio shim. */
+async Task GenericClient(FixtureHost host, McpHttpServer server, string shim, string project, string discovery)
+{
+    string? script = null;
+    for (var folder = new DirectoryInfo(AppContext.BaseDirectory); folder is not null && script is null; folder = folder.Parent)
+        foreach (string candidate in new[] { Path.Combine(folder.FullName, "generic_client.py"),
+                     Path.Combine(folder.FullName, "tests", "SunriseStudio.Mcp.Tests", "generic_client.py") })
+            if (File.Exists(candidate)) { script = candidate; break; }
+    Expect(script is not null, "generic_client.py not found");
+    async Task<JsonNode?> Run(params string[] arguments)
+    {
+        var start = new ProcessStartInfo("python") { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false };
+        start.ArgumentList.Add(script!);
+        foreach (string argument in arguments) start.ArgumentList.Add(argument);
+        start.Environment["SOLFORGE_MCP_DISCOVERY"] = discovery;
+        start.Environment["PYTHONIOENCODING"] = "utf-8";
+        Process? process;
+        try { process = Process.Start(start); }
+        catch (System.ComponentModel.Win32Exception) { Console.WriteLine("SKIP generic client: python is not on PATH"); return null; }
+        using var _ = process!;
+        var output = process.StandardOutput.ReadToEndAsync();
+        var errors = process.StandardError.ReadToEndAsync();
+        if (!process.WaitForExit(60_000)) { process.Kill(); Expect(false, "generic client hung: " + await errors); }
+        if (process.ExitCode == 3) { Console.WriteLine("SKIP generic client: pip install mcp"); return null; }
+        Expect(process.ExitCode == 0, $"generic client ({arguments[0]}) failed: {await errors}");
+        return JsonNode.Parse((await output).Trim().Split('\n')[^1]);
+    }
+    foreach (var result in new[] { await Run("http", server.Url, server.Token), await Run("stdio", "dotnet", shim, "--project", project) })
+    {
+        if (result is null) continue;
+        var tools = result["tools"]!.AsArray().Select(node => node!.ToString()).ToArray();
+        Expect(result["server"]?.ToString() == "solforge" && tools.Contains("ui_invoke") && tools.Contains("wait_for_viewport_change")
+            && result["schemas"]?.GetValue<bool>() == true, "generic client sees the tools: " + result.ToJsonString());
+        Expect(result["mimes"]?[0]?.ToString() == "image/jpeg" && result["frameText"]?.ToString().Contains("\"frame\"", StringComparison.Ordinal) == true,
+            "generic client gets the frame with its text");
+        Expect(result["controls"]?.ToString().Contains("main:00000003", StringComparison.Ordinal) == true && result["deniedError"]?.GetValue<bool>() == true,
+            "generic client lists controls and is held at the approval gate");
+    }
+}
+
+static void PlayerSourceChecks()
+{
+    var when = DateTimeOffset.UnixEpoch;
+    var walking = PlayerSources.ParseRecorder("{\"t\":1,\"utc\":\"2026-10-15T18:31:49.044Z\",\"ui\":{\"in_world\":true},\"loc\":{\"activity\":\"The EDZ\",\"bubble\":\"Trostland\",\"slice\":\"3 x\"},\"pos\":[10,20,5],\"cam\":[10.5,20,6.7],\"yaw\":90,\"pitch\":0}", when);
+    Expect(walking is { Source: "recorder", Activity: "The EDZ", Bubble: "Trostland" } && walking.Position == new Vector3(10, 20, 5) && walking.Yaw == 90
+        && walking.Time.Year == 2026, "recorder pos");
+    var frozen = PlayerSources.ParseRecorder("{\"ui\":{\"in_world\":true},\"pos\":[0,0,0],\"cam\":[100,50,11.7],\"yaw\":0}", when);
+    Expect(frozen is not null && Vector3.Distance(frozen.Position, new Vector3(100, 50, 10)) < 1e-3f && frozen.Time == when, "a frozen pos gives way to the camera, lowered to the feet");
+    var stale = PlayerSources.ParseRecorder("{\"pos\":[1,1,1],\"pos_stale_ms\":900,\"cam\":[1,1,2.7]}", when);
+    Expect(stale is not null && Vector3.Distance(stale.Position, new Vector3(1, 1, 1)) < 1e-3f, "a stale pos uses the camera");
+    Expect(PlayerSources.ParseRecorder("{\"ui\":{\"in_world\":false},\"pos\":null,\"cam\":null}", when) is null
+        && PlayerSources.ParseRecorder("{\"mark\":\"x\",\"pos\":[1,2,3]}", when) is null && PlayerSources.ParseRecorder("not json", when) is null, "menus, marks and junk");
+    string root = Path.Combine(Path.GetTempPath(), "solforge-recorder-" + Environment.ProcessId);
+    Directory.CreateDirectory(Path.Combine(root, "20261015-120000"));
+    try
+    {
+        File.WriteAllText(Path.Combine(root, "20261015-120000", "snapshots.jsonl"),
+            "{\"ui\":{\"in_world\":true},\"pos\":[1,2,3]}
+{\"mark\":\"note\"}
+");
+        Expect(PlayerSources.LatestRecorder(root)?.Position == new Vector3(1, 2, 3), "the newest snapshot, skipping marks");
+        File.AppendAllText(Path.Combine(root, "20261015-120000", "snapshots.jsonl"), "{\"ui\":{\"in_world\":false},\"pos\":null}
+");
+        Expect(PlayerSources.LatestRecorder(root) is null, "a menu after a position hides the old position");
+    }
+    finally { Directory.Delete(root, true); }
+    var coop = PlayerSources.ParseCoop("{\"ok\":true,\"players\":[{\"id\":1,\"name\":\"wyndxgo\",\"room\":\"0x1234ABCD\",\"x\":1.5,\"y\":2,\"z\":3}," +
+        "{\"id\":2,\"name\":\"loading\",\"room\":\"0x00000000\",\"x\":0,\"y\":0,\"z\":0}]}", when);
+    Expect(coop.Count == 1 && coop[0] is { Source: "server", Player: "wyndxgo", ActivityHash: 0x1234ABCD } && coop[0].Position == new Vector3(1.5f, 2, 3), "server /coop rows");
+    Expect(MathF.Abs(PlayerSources.YawFromForward(new Vector3(0, 1, 0)) - 90) < 1e-3f && Vector3.Distance(PlayerSources.Facing(180), new Vector3(-1, 0, 0)) < 1e-3f, "yaw and facing");
+    var trail = new PlayerTrail(capacity: 3, spacing: 1, teleport: 50);
+    trail.Add(Vector3.Zero); trail.Add(new Vector3(.5f, 0, 0)); trail.Add(new Vector3(2, 0, 0)); trail.Add(new Vector3(4, 0, 0)); trail.Add(new Vector3(6, 0, 0));
+    Expect(trail.Points.Count == 3 && trail.Points[0] == new Vector3(2, 0, 0), "trail spacing and capacity");
+    trail.Add(new Vector3(500, 0, 0));
+    Expect(trail.Points.Count == 1, "a teleport restarts the trail");
+}
+
+static void UiControlChecks()
+{
+    var controls = FixtureHost.Controls;
+    Expect(UiControls.Resolve(controls, new JsonObject { ["id"] = "MAIN:00000003" }).Control?.Label == "Grid", "id is exact, case-insensitive");
+    Expect(UiControls.Resolve(controls, new JsonObject { ["id"] = "main:0000FFFF" }).Error is not null, "unknown id");
+    Expect(UiControls.Resolve(controls, new JsonObject { ["query"] = "build" }).Control?.Id == "main:00000001", "exact label beats a prefix");
+    Expect(UiControls.Resolve(controls, new JsonObject { ["query"] = "build to" }).Control?.Id == "main:00000002", "prefix");
+    Expect(UiControls.Resolve(controls, new JsonObject { ["query"] = "delete" }).Error?.Contains("main:00000007", StringComparison.Ordinal) == true, "a tie lists the candidates");
+    Expect(UiControls.Resolve(controls, new JsonObject { ["query"] = "delete", ["window"] = "hierarchy" }).Control?.Id == "main:00000007", "window narrows a tie");
+    Expect(UiControls.Resolve(controls, new JsonObject { ["query"] = "file folder" }).Control?.Id == "main:00000002", "words in scope and label");
+    Expect(UiControls.Find(controls, null, "checkbox", null, false).Single().Id == "main:00000003", "kind filter");
+    Expect(UiControls.Find(controls, null, null, null, false).All(control => control.Visible)
+        && UiControls.Find(controls, null, null, null, true).Count == controls.Length, "hidden controls only with all");
+    Expect(UiControls.Allows("checkbox", UiOperation.SetChecked) && !UiControls.Allows("button", UiOperation.SetValue)
+        && UiControls.Allows("combo", UiOperation.Select) && UiControls.Allows("text", UiOperation.SetValue), "operations per kind");
+    Expect(UiControls.Summary(controls[2], UiOperation.SetChecked, null, false) == "Turn off 'Grid' in Viewport", "summary");
+    Expect(UiControls.ToJson(controls[3])["options"]?.AsArray().Count == 2 && UiControls.ToJson(controls[3])["name"]?.ToString() == "##follow", "json row");
+}
+
+static void ViewportFeedChecks()
+{
+    static byte[] Image(int width, int height, Func<int, int, byte> shade)
+    {
+        var pixels = new byte[width * height * 4];
+        for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
+            {
+                byte value = shade(x, y);
+                pixels[(y * width + x) * 4] = value; pixels[(y * width + x) * 4 + 1] = value; pixels[(y * width + x) * 4 + 2] = value; pixels[(y * width + x) * 4 + 3] = 255;
+            }
+        return pixels;
+    }
+    var dark = ViewportFeed.Measure(Image(64, 36, (_, _) => 10), 64, 36, 64 * 4);
+    Expect(dark.Length == ViewportFeed.GridWidth * ViewportFeed.GridHeight && dark.All(value => value == 10), "grid of a flat image");
+    var noisy = ViewportFeed.Measure(Image(64, 36, (x, y) => (byte)(10 + (x + y) % 2)), 64, 36, 64 * 4);
+    var corner = ViewportFeed.Measure(Image(64, 36, (x, y) => x >= 48 && y < 9 ? (byte)200 : (byte)10), 64, 36, 64 * 4);
+    var feed = new ViewportFeed(3);
+    int encoded = 0;
+    (byte[], int, int) Encode() { encoded++; return ([0xFF, 0xD8, 0xFF, (byte)encoded], 64, 36); }
+    var first = feed.Offer(dark, 1, Encode);
+    Expect(first?.Id == 1 && first.Change == "first frame" && encoded == 1, "first frame");
+    Expect(feed.Offer(noisy, 2, Encode) is null && encoded == 1 && feed.LastCapture is not null, "noise is not a change and is not encoded");
+    var moved = feed.Offer(corner, 3, Encode);
+    Expect(moved?.Id == 2 && moved.Change.Contains("top-right", StringComparison.Ordinal) && moved.Change.Contains("brighter", StringComparison.Ordinal)
+        && moved.Change.StartsWith("6.3% of the view changed", StringComparison.Ordinal), "change text: " + moved?.Change);
+    feed.Offer(dark, 4, Encode);
+    feed.Offer(corner, 5, Encode);
+    Expect(feed.Latest?.Id == 4 && feed.Since(0, 10).Select(frame => frame.Id).SequenceEqual([2L, 3L, 4L]) && feed.Since(2, 1).Single().Id == 4, "ids, since and capacity");
+    var waiting = feed.WaitForChangeAsync(4, TimeSpan.FromSeconds(5), CancellationToken.None);
+    Expect(!waiting.IsCompleted, "wait blocks on a still view");
+    feed.Offer(dark, 6, Encode);
+    Expect(waiting.Wait(2000) && waiting.Result?.Id == 5, "wait wakes on a change");
+    Expect(feed.WaitForChangeAsync(5, TimeSpan.FromMilliseconds(50), CancellationToken.None).Result is null, "wait times out");
+    Expect(feed.WaitForChangeAsync(3, TimeSpan.Zero, CancellationToken.None).Result?.Id == 5, "an old id returns the newest frame at once");
+    Expect(new ViewportFrame(1, DateTimeOffset.UnixEpoch, 1, 1, [0xFF, 0xD8, 0xFF], 1, "x").Jpeg.Length == 3
+        && McpToolResult.MimeType([0xFF, 0xD8, 0xFF]) == "image/jpeg" && McpToolResult.MimeType([0x89, 0x50]) == "image/png", "image MIME types");
+    Expect(FrameRelay.Clean("My Stream!") == "my-stream" && FrameRelay.Clean("x") is null && FrameRelay.Clean("../etc") == "etc", "relay stream names");
+    Expect(!feed.Wanted || feed.Relay is null, "nothing keeps a fresh feed running except a recent want");
 }
 
 void CommandResolution()
@@ -805,8 +1011,35 @@ sealed class FixtureHost(string project) : ISolforgeHost
          "pinned":[{"id":"w:4","label":"Tube 50"}],
          "recent":[{"kind":"select","id":"w:1","label":"Static mesh 7489","secondsAgo":2.5}]}
         """;
-    public int Approvals;
+    public int Approvals, PlayerReads;
+    public bool ApproveAll;
     public bool Paused { get; set; }
+    public static readonly byte[] Jpeg = [0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0xFF, 0xD9];
+    public static readonly UiControl[] Controls =
+    [
+        new("main:00000001", "button", "Build", "Build", "Toolbar", "", [10, 10, 60, 20], true, null, null, null),
+        new("main:00000002", "menu_item", "Build to folder...", "Build to folder...", "Main menu", "File", [10, 40, 120, 20], true, null, null, null),
+        new("main:00000003", "checkbox", "Grid", "Grid", "Viewport", "", [10, 70, 60, 20], true, null, true, null),
+        new("main:00000004", "combo", "", "##follow", "Viewport", "", [10, 100, 90, 20], true, "Orbit", null, ["Orbit", "Free"]),
+        new("main:00000005", "text", "Package ID", "Package ID", "Inspector", "", [10, 130, 90, 20], true, "0123", null, null),
+        new("main:00000006", "button", "Delete", "Delete##asset", "Inspector", "", [10, 160, 60, 20], true, null, null, null),
+        new("main:00000007", "button", "Delete", "Delete##node", "Hierarchy", "", [10, 190, 60, 20], true, null, null, null),
+        new("main:00000008", "button", "Far away", "Far away", "Inspector", "", [10, 2000, 60, 20], false, null, null, null)
+    ];
+    public readonly List<UiCommand> Commands = [];
+    public ViewportFeed Viewport { get; } = CreateFeed();
+    private static ViewportFeed CreateFeed()
+    {
+        var feed = new ViewportFeed();
+        feed.Offer(new byte[ViewportFeed.GridWidth * ViewportFeed.GridHeight], 1, () => (Jpeg, 64, 36));
+        return feed;
+    }
+    public Task<IReadOnlyList<UiControl>> UiControlsAsync(CancellationToken cancel) => Task.FromResult<IReadOnlyList<UiControl>>(Controls);
+    public Task<(bool Ok, string Message)> UiCommandAsync(UiCommand command, CancellationToken cancel)
+    {
+        lock (Commands) Commands.Add(command);
+        return Task.FromResult((true, "done"));
+    }
     public string? ProjectRoot => project;
     public IReadOnlyList<string> SdkRoots => [];
     public string? CurrentMap => "Botza District";
@@ -839,7 +1072,7 @@ sealed class FixtureHost(string project) : ISolforgeHost
         Panels = panel;
         return Task.FromResult(new JsonObject { ["total"] = 0, ["rows"] = new JsonArray() });
     }
-    public Task<bool> ApproveAsync(string tool, string summary, CancellationToken cancel) { LastSummary = summary; Interlocked.Increment(ref Approvals); return Task.FromResult(false); }
+    public Task<bool> ApproveAsync(string tool, string summary, CancellationToken cancel) { LastSummary = summary; Interlocked.Increment(ref Approvals); return Task.FromResult(ApproveAll); }
     public Task<string> RunActionAsync(string tool, JsonObject args, CancellationToken cancel) => Task.FromResult("ran");
     public readonly List<string> Queries = [];
     public string? LastSummary;
@@ -848,6 +1081,13 @@ sealed class FixtureHost(string project) : ISolforgeHost
         lock (Queries) Queries.Add(tool);
         return Task.FromResult(tool switch
         {
+            // The player walks 4 m closer to the generator (at x = 20) on every read.
+            "get_player_position" when McpJson.String(args, "target") is "missing" => new JsonObject { ["error"] = "No object or mission slot 'missing' on the open map." },
+            "get_player_position" => new JsonObject
+            {
+                ["found"] = true, ["source"] = "recorder", ["position"] = new JsonArray(Math.Min(20, 4 * Interlocked.Increment(ref PlayerReads)), 0, 0),
+                ["target"] = McpJson.String(args, "target") is { } target ? new JsonObject { ["id"] = target, ["position"] = new JsonArray(20, 0, 0) } : null
+            },
             "list_maps" => new JsonObject { ["total"] = 1, ["rows"] = new JsonArray(new JsonObject { ["name"] = "The EDZ", ["zones"] = new JsonArray("Dark Forest") }) },
             "get_item" => new JsonObject { ["error"] = "Solforge is reading the item catalog (loading); call again shortly." },
             _ => new JsonObject { ["total"] = 0, ["rows"] = new JsonArray() }

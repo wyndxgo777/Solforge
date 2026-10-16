@@ -27,6 +27,7 @@ Goal: a cloned and edited armor item (stats, perks, name, icon, collections, ven
 10. Test in game: item shows in inventory/vendor, equips, stats match.
 
 ## UI fallback
+Any Solforge control can be driven with `list_ui_controls` then `ui_invoke` / `ui_set_value` / `ui_set_checked` / `ui_select` (approve click each).
 Armor > Clone dialog; Investment tab; Edit workflow; Build > Build and install.
 
 ## Verify

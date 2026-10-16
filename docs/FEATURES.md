@@ -110,6 +110,15 @@ Project facts (TFM, references, sizes) are in ARCHITECTURE.md; this file is abou
   mission SDK validation; `LiveConnection` over shared memory, CUI/object/pose/world protocols;
   Wwise bank reading, WEM decoding, event composition, playback.
 
+## MCP for any client (Phase 47, `Solforge.Mcp`, docs/MCP.md)
+- (Solforge) stdio shim + streamable HTTP; config snippets for Claude Code/Desktop, Cline, Cursor, Gemini CLI/Antigravity, Codex.
+- UI automation: `UiAuto` wraps the ImGui widgets the editor uses and records each drawn control (ImGui id, label, panel,
+  scope, rect, value); `list_ui_controls` + approval-gated `ui_invoke/ui_set_value/ui_set_checked/ui_select`.
+- Live viewport: `Dx11Renderer.GrabCycle` staging ring (no stall), `ViewportFeed` change-only JPEG ring, local MJPEG page,
+  opt-in outbound relay (`tools/stream-relay`, website login + allow-list).
+- Player tracking: Live link, recorder snapshots or the local server's /coop; viewport marker, facing, trail, Follow player;
+  `get_player_position`, `wait_for_player_near`. Map/mission link in `open_map` and `list_missions`.
+
 ## Checks (`tests/*.Tests`, run by verify.ps1)
 - (Exists) 36 console check programs (no test framework); `-Game` adds installation checks,
   `-Blender` the add-on checks; CI runs the install-free set on WARP.

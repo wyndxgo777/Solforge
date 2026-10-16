@@ -64,7 +64,7 @@ public sealed partial class CuiPage
             var other = reads ? binding.Source : binding.Target;
             ImGui.TextDisabled(reads ? "from" : "to"); ImGui.SameLine();
             var node = scene.Nodes.FirstOrDefault(candidate => candidate.Id == other.Node);
-            if (ImGui.SmallButton(node is null ? $"Node {other.Node}" : StructureName(node)) && node is not null)
+            if (UiAuto.SmallButton(node is null ? $"Node {other.Node}" : StructureName(node)) && node is not null)
             { selectedComposed = node.Id; revealComposed = true; }
             ImGui.SameLine(); ImGui.TextUnformatted(Describe(binding));
             if (ImGui.IsItemHovered())
@@ -91,7 +91,7 @@ public sealed partial class CuiPage
         ImGui.SameLine();
         if (!bindingInputs.TryGetValue(key, out var value))
         {
-            if (ImGui.SmallButton("Input")) { bindingInputs[key] = new(kind, 0); bindingValuesStale = true; }
+            if (UiAuto.SmallButton("Input")) { bindingInputs[key] = new(kind, 0); bindingValuesStale = true; }
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("Set the source value for the binding preview");
             return;
         }
@@ -100,25 +100,25 @@ public sealed partial class CuiPage
         {
             case CuiValueKind.Bool:
                 bool flag = value.AsBool;
-                if (ImGui.Checkbox("##input", ref flag)) bits = flag ? 1u : 0u;
+                if (UiAuto.Checkbox("##input", ref flag)) bits = flag ? 1u : 0u;
                 break;
             case CuiValueKind.Integer:
                 int number = unchecked((int)bits); ImGui.SetNextItemWidth(90);
-                if (ImGui.InputInt("##input", ref number)) bits = unchecked((uint)number);
+                if (UiAuto.InputInt("##input", ref number)) bits = unchecked((uint)number);
                 break;
             case CuiValueKind.Float:
                 float real = BitConverter.UInt32BitsToSingle(bits); ImGui.SetNextItemWidth(90);
-                if (ImGui.InputFloat("##input", ref real) && float.IsFinite(real)) bits = BitConverter.SingleToUInt32Bits(real);
+                if (UiAuto.InputFloat("##input", ref real) && float.IsFinite(real)) bits = BitConverter.SingleToUInt32Bits(real);
                 break;
             default:
                 string text = bits.ToString("X8", CultureInfo.InvariantCulture); ImGui.SetNextItemWidth(90);
-                if (ImGui.InputText("##input", ref text, 8, ImGuiInputTextFlags.CharsHexadecimal)
+                if (UiAuto.InputText("##input", ref text, 8, ImGuiInputTextFlags.CharsHexadecimal)
                     && uint.TryParse(text, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out uint hash)) bits = hash;
                 break;
         }
         if (bits != value.Bits) { bindingInputs[key] = value with { Bits = bits }; bindingValuesStale = true; }
         ImGui.SameLine();
-        if (ImGui.SmallButton("x##clear")) { bindingInputs.Remove(key); bindingValuesStale = true; }
+        if (UiAuto.SmallButton("x##clear")) { bindingInputs.Remove(key); bindingValuesStale = true; }
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Clear input");
     }
 
@@ -144,18 +144,18 @@ public sealed partial class CuiPage
         ImGui.BeginDisabled(!context.Workspace.CanEdit || structure is null);
         if (editingBinding != position)
         {
-            if (ImGui.SmallButton("Edit"))
+            if (UiAuto.SmallButton("Edit"))
             { editingBinding = position; bindingComparison = (int)row.Local.Transform.Comparison; bindingOperand = Operand(row.Local.Transform); }
             ImGui.EndDisabled(); return;
         }
         ImGui.SetNextItemWidth(60);
-        ImGui.Combo("##comparison", ref bindingComparison, ComparisonSymbols, ComparisonSymbols.Length);
+        UiAuto.Combo("##comparison", ref bindingComparison, ComparisonSymbols, ComparisonSymbols.Length);
         ImGui.SameLine(); ImGui.SetNextItemWidth(110);
-        ImGui.InputText("##operand", ref bindingOperand, 32);
+        UiAuto.InputText("##operand", ref bindingOperand, 32);
         ImGui.SameLine();
-        if (ImGui.SmallButton("Apply"))
+        if (UiAuto.SmallButton("Apply"))
             SaveComparisonDraft(context, scene, selected, row);
-        ImGui.SameLine(); if (ImGui.SmallButton("Cancel")) editingBinding = -1;
+        ImGui.SameLine(); if (UiAuto.SmallButton("Cancel")) editingBinding = -1;
         ImGui.EndDisabled();
     }
 

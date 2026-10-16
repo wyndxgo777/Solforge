@@ -437,36 +437,36 @@ public sealed class AssetAnimationPreview : IDisposable
         ImGui.SetNextItemWidth(MathF.Min(250, MathF.Max(1, available)));
         string label = IsLoading ? $"Loading {pendingTag:X8}" : Clip is null ? "Bind pose"
             : Source.ClipNames.GetValueOrDefault(Clip.TagHash, $"{Clip.TagHash:X8}");
-        bool clipsOpen = ImGui.BeginCombo("##clip", label, ImGuiComboFlags.HeightLarge);
+        bool clipsOpen = UiAuto.BeginCombo("##clip", label, ImGuiComboFlags.HeightLarge);
         if (!clipsOpen && !IsLoading && Clip is not null) TagTip(Clip.TagHash);
         if (clipsOpen)
         {
             if (ImGui.IsWindowAppearing()) { clipSearch = ""; ImGui.SetKeyboardFocusHere(); }
             ImGui.SetNextItemWidth(-1);
-            ImGui.InputTextWithHint("##clip-search", "Find animation", ref clipSearch, 256);
-            if (ImGui.Selectable("Bind pose", Clip is null)) ResetBindPose();
+            UiAuto.InputTextWithHint("##clip-search", "Find animation", ref clipSearch, 256);
+            if (UiAuto.Selectable("Bind pose", Clip is null)) ResetBindPose();
             foreach (uint tag in Source.Clips.Select(x => x.ClipTag).Distinct())
             {
                 if (clipSearch.Length != 0 && !Source.ClipNames[tag].Contains(clipSearch, StringComparison.OrdinalIgnoreCase)
                     && !tag.ToString("X8").Contains(clipSearch, StringComparison.OrdinalIgnoreCase)) continue;
-                if (ImGui.Selectable(Source.ClipNames[tag] + "##" + tag, Clip?.TagHash == tag)) SelectClip(tag);
+                if (UiAuto.Selectable(Source.ClipNames[tag] + "##" + tag, Clip?.TagHash == tag)) SelectClip(tag);
                 TagTip(tag);
             }
-            ImGui.EndCombo();
+            UiAuto.EndCombo();
         }
         if (Clip is { PoseMode: not 0 })
         {
             Next(230);
             ImGui.SetNextItemWidth(200);
-            if (ImGui.BeginCombo("Base", BaseClip is null ? "Rig pose" : Source.ClipNames[BaseClip.TagHash]))
+            if (UiAuto.BeginCombo("Base", BaseClip is null ? "Rig pose" : Source.ClipNames[BaseClip.TagHash]))
             {
-                if (ImGui.Selectable("Rig pose", BaseClip is null)) SelectBaseClip(null);
+                if (UiAuto.Selectable("Rig pose", BaseClip is null)) SelectBaseClip(null);
                 foreach (uint tag in Source.BaseClipTags)
                 {
-                    if (ImGui.Selectable(Source.ClipNames[tag] + "##" + tag, BaseClip?.TagHash == tag)) SelectBaseClip(tag);
+                    if (UiAuto.Selectable(Source.ClipNames[tag] + "##" + tag, BaseClip?.TagHash == tag)) SelectBaseClip(tag);
                     TagTip(tag);
                 }
-                ImGui.EndCombo();
+                UiAuto.EndCombo();
             }
         }
         Next(ImGui.GetFrameHeight());
@@ -478,7 +478,7 @@ public sealed class AssetAnimationPreview : IDisposable
         float speedWidth = MathF.Min(90, MathF.Max(1, available - speedLabel));
         Next(speedWidth + speedLabel);
         ImGui.SetNextItemWidth(speedWidth);
-        ImGui.SliderFloat("Speed", ref rate, .05f, 4, "%.2fx");
+        UiAuto.SliderFloat("Speed", ref rate, .05f, 4, "%.2fx");
         ImGui.EndDisabled();
         ImGui.EndDisabled();
         Next(ImGui.GetFrameHeight());
@@ -487,7 +487,7 @@ public sealed class AssetAnimationPreview : IDisposable
         {
             float selected = seconds;
             ImGui.SetNextItemWidth(-1);
-            if (ImGui.SliderFloat("##clip-time", ref selected, 0, DurationSeconds, "%.3f s")) Seek(selected);
+            if (UiAuto.SliderFloat("##clip-time", ref selected, 0, DurationSeconds, "%.3f s")) Seek(selected);
             if (clip.PoseSpace is { } space) DrawPoseInput(space);
         }
         if (Source.Binding?.Controls.Any(control => control.RotationFrame.Kind == 6) == true
@@ -519,10 +519,10 @@ public sealed class AssetAnimationPreview : IDisposable
         string[] labels = space.Kind == AnimationPoseSpaceKind.Sphere ? ["Pose yaw", "Pose pitch"] : ["Pose x", "Pose y"];
         bool changed = false;
         ImGui.SetNextItemWidth(-ImGui.CalcTextSize(labels[0]).X - ImGui.GetStyle().ItemInnerSpacing.X);
-        if (maximum.X > minimum.X) changed |= ImGui.SliderFloat(labels[0], ref poseInput.X, minimum.X, maximum.X, "%.3f");
+        if (maximum.X > minimum.X) changed |= UiAuto.SliderFloat(labels[0], ref poseInput.X, minimum.X, maximum.X, "%.3f");
         ImGui.SetNextItemWidth(-ImGui.CalcTextSize(labels[1]).X - ImGui.GetStyle().ItemInnerSpacing.X);
         if (space.Kind != AnimationPoseSpaceKind.Disk && maximum.Y > minimum.Y)
-            changed |= ImGui.SliderFloat(labels[1], ref poseInput.Y, minimum.Y, maximum.Y, "%.3f");
+            changed |= UiAuto.SliderFloat(labels[1], ref poseInput.Y, minimum.Y, maximum.Y, "%.3f");
         if (changed) ApplySample();
     }
 

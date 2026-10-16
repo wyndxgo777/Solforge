@@ -134,12 +134,12 @@ public sealed partial class StudioForm
         TrackAreaFocus();
         if (ImGui.BeginTabBar("browser-sections"))
         {
-            if (ImGui.BeginTabItem("Maps")) { DrawMapBrowser(); ImGui.EndTabItem(); }
-            if (ImGui.BeginTabItem("Missions")) { DrawMissionBrowser(); ImGui.EndTabItem(); }
+            if (UiAuto.BeginTabItem("Maps")) { DrawMapBrowser(); UiAuto.EndTabItem(); }
+            if (UiAuto.BeginTabItem("Missions")) { DrawMissionBrowser(); UiAuto.EndTabItem(); }
             if (BeginEditorTab("Hierarchy", focusHierarchy))
-            { focusHierarchy = false; DrawWorldHierarchy(); ImGui.EndTabItem(); }
+            { focusHierarchy = false; DrawWorldHierarchy(); UiAuto.EndTabItem(); }
             if (BeginEditorTab("Assets", focusAssetBrowser || options.Category is not null && !categoryTabSelected))
-            { categoryTabSelected = true; focusAssetBrowser = false; DrawAssetBrowserContents(); ImGui.EndTabItem(); }
+            { categoryTabSelected = true; focusAssetBrowser = false; DrawAssetBrowserContents(); UiAuto.EndTabItem(); }
             ImGui.EndTabBar();
         }
         ImGui.End();
@@ -152,11 +152,11 @@ public sealed partial class StudioForm
     {
         PollAssetFilter();
         ImGui.SetNextItemWidth(-1);
-        if (ImGui.InputTextWithHint("##assetSearch", "Search items, enemies and assets", ref search, 256))
+        if (UiAuto.InputTextWithHint("##assetSearch", "Search items, enemies and assets", ref search, 256))
         { browserDirty = true; searchChanged = clock.Elapsed.TotalSeconds; }
         if (browserDirty && clock.Elapsed.TotalSeconds - searchChanged > 0.2) FilterBrowser();
         // Drawn before the home view, so the home view can list every changed asset.
-        if (workspace.Project is not null && ImGui.Checkbox("Changed only", ref changesOnly)) FilterBrowser();
+        if (workspace.Project is not null && UiAuto.Checkbox("Changed only", ref changesOnly)) FilterBrowser();
         if (OpenCategory is { } open)
         {
             DrawListHeader(open.Label, open.Tooltip);
@@ -228,22 +228,22 @@ public sealed partial class StudioForm
     {
         float half = (ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X) / 2;
         ImGui.SetNextItemWidth(half);
-        if (ImGui.BeginCombo("##category", category))
+        if (UiAuto.BeginCombo("##category", category))
         {
             foreach (string value in categories)
-                if (ImGui.Selectable(value, value == category))
+                if (UiAuto.Selectable(value, value == category))
                 { category = value; assetType = AllTypes; otherAssets = true; RefreshAssetTypes(); FilterBrowser(); }
-            ImGui.EndCombo();
+            UiAuto.EndCombo();
         }
         StudioUi.Tip("Category");
         ImGui.SameLine();
         DrawTypeFilter(-1);
         ImGui.SetNextItemWidth(-1);
-        if (ImGui.BeginCombo("##package", package))
+        if (UiAuto.BeginCombo("##package", package))
         {
             foreach (string value in packageNames)
-                if (ImGui.Selectable(value, value == package)) { package = value; FilterBrowser(); }
-            ImGui.EndCombo();
+                if (UiAuto.Selectable(value, value == package)) { package = value; FilterBrowser(); }
+            UiAuto.EndCombo();
         }
         StudioUi.Tip("Package");
     }
@@ -252,11 +252,11 @@ public sealed partial class StudioForm
     {
         ImGui.SetNextItemWidth(width);
         ImGui.BeginDisabled(assetTypes.Length < 2);
-        if (ImGui.BeginCombo("##asset-type", assetType))
+        if (UiAuto.BeginCombo("##asset-type", assetType))
         {
             foreach (string value in assetTypes)
-                if (ImGui.Selectable(value, value == assetType)) { assetType = value; FilterBrowser(); }
-            ImGui.EndCombo();
+                if (UiAuto.Selectable(value, value == assetType)) { assetType = value; FilterBrowser(); }
+            UiAuto.EndCombo();
         }
         ImGui.EndDisabled();
         StudioUi.Tip("Type");
@@ -289,7 +289,7 @@ public sealed partial class StudioForm
         ImGui.PushID(id);
         float width = ImGui.GetContentRegionAvail().X, height = ImGui.GetFrameHeight();
         var start = ImGui.GetCursorScreenPos();
-        bool clicked = ImGui.Selectable("##category-row", false, ImGuiSelectableFlags.None, new(0, height));
+        bool clicked = UiAuto.Selectable("##category-row", false, ImGuiSelectableFlags.None, new(0, height));
         StudioUi.Tip(tooltip);
         var draw = ImGui.GetWindowDrawList();
         float line = ImGui.GetTextLineHeight(), textTop = start.Y + (height - line) / 2;
@@ -318,7 +318,7 @@ public sealed partial class StudioForm
                 ImGui.PushID(unchecked((int)row.Entry.TagHash));
                 var start = ImGui.GetCursorScreenPos();
                 bool active = row.Entry.TagHash == workspace.Document?.Entry.TagHash;
-                if (ImGui.Selectable("##asset", active, ImGuiSelectableFlags.None, new(0, rowHeight - 6 * scale)))
+                if (UiAuto.Selectable("##asset", active, ImGuiSelectableFlags.None, new(0, rowHeight - 6 * scale)))
                     workspace.Open(row.Entry.TagHash);
                 bool hovered = ImGui.IsItemHovered();
                 var draw = ImGui.GetWindowDrawList();
@@ -342,12 +342,12 @@ public sealed partial class StudioForm
                     ImGui.SetTooltip($"{name}\n{row.Entry.PackageName}\n{row.Entry.TagHash:X8}");
                 if (ImGui.BeginPopupContextItem("asset-context"))
                 {
-                    if (ImGui.MenuItem("Open")) workspace.Open(row.Entry.TagHash);
-                    if (row.InCategory && ImGui.MenuItem("Open as asset")) workspace.Open(row.Entry.TagHash, StudioWorkspace.PlainOpen);
+                    if (UiAuto.MenuItem("Open")) workspace.Open(row.Entry.TagHash);
+                    if (row.InCategory && UiAuto.MenuItem("Open as asset")) workspace.Open(row.Entry.TagHash, StudioWorkspace.PlainOpen);
                     var clone = CreationTypes.For(CreationTypes.KeyFor(row.Entry, workspace), CreationMode.Clone);
                     if (clone.Available && (!workspace.IsProjectTag(row.Entry.TagHash) || clone.ClonesProject))
                         CreationMenuItem("Clone", clone, () => StartCreation(clone, row.Entry.TagHash, row.Name));
-                    if (ImGui.MenuItem("Copy tag")) ImGui.SetClipboardText($"{row.Entry.TagHash:X8}");
+                    if (UiAuto.MenuItem("Copy tag")) ImGui.SetClipboardText($"{row.Entry.TagHash:X8}");
                     ImGui.EndPopup();
                 }
                 ImGui.PopID();
@@ -397,7 +397,7 @@ public sealed partial class StudioForm
             {
                 ImGui.TextColored(StudioTheme.Accent, "Modified");
                 ImGui.BeginDisabled(workspace.IsBusy);
-                if (ImGui.Button("Revert to original", new(-1, 0)))
+                if (UiAuto.Button("Revert to original", new(-1, 0)))
                     workspace.Run(() => workspace.Revert(document.Entry.TagHash));
                 ImGui.EndDisabled();
             }
@@ -419,11 +419,11 @@ public sealed partial class StudioForm
                     partFacts.Add(("Blend", SunriseStudio.Viewport.NativePartStates.Label(partNative), ""));
                 }
                 StudioUi.Facts("part-facts", partFacts);
-                if (ImGui.Button("Frame part")) AssetPreviewViewport?.FocusSelection();
+                if (UiAuto.Button("Frame part")) AssetPreviewViewport?.FocusSelection();
                 if (part.Mesh.MaterialTag is not (0 or uint.MaxValue))
                 {
                     ImGui.TextDisabled("Material");
-                    if (ImGui.Selectable(workspace.DisplayName(part.Mesh.MaterialTag)))
+                    if (UiAuto.Selectable(workspace.DisplayName(part.Mesh.MaterialTag)))
                         OpenPartMaterial(part);
                 }
             }
@@ -435,9 +435,9 @@ public sealed partial class StudioForm
                 var configured = workspace.ConfigBindingForProperty(property);
                 ImGui.BeginDisabled(!workspace.CanEdit || !property.Editable || configured is not null);
                 ImGui.SetNextItemWidth(-1);
-                bool enter = ImGui.InputText("##propertyValue", ref propertyValue, 1024,
+                bool enter = UiAuto.InputText("##propertyValue", ref propertyValue, 1024,
                     ImGuiInputTextFlags.EnterReturnsTrue);
-                if (ImGui.Button("Apply", new(-1, 0)) || enter)
+                if (UiAuto.Button("Apply", new(-1, 0)) || enter)
                     workspace.Run(() => workspace.ApplyInspectorProperty(property, propertyValue));
                 ImGui.EndDisabled();
                 if (configured is not null)
@@ -477,10 +477,10 @@ public sealed partial class StudioForm
         if (ImGui.BeginPopup("inspector-export"))
         {
             if (workspace.World is not null && document.Entry.Reference is 0x808091DE or 0x80809994
-                && ImGui.MenuItem("World to Blender...", "", false, !workspace.IsBusy)) ExportWorldScene();
-            if (ImGui.MenuItem("Full asset to Blender...", "", false, CanExportBundle)) ExportFullAsset();
+                && UiAuto.MenuItem("World to Blender...", "", false, !workspace.IsBusy)) ExportWorldScene();
+            if (UiAuto.MenuItem("Full asset to Blender...", "", false, CanExportBundle)) ExportFullAsset();
             MapBundleTooltip();
-            if (ImGui.MenuItem("Asset file...")) ExportSelected();
+            if (UiAuto.MenuItem("Asset file...")) ExportSelected();
             ImGui.EndPopup();
         }
         string? addedId = document.AddedAssetId;
@@ -494,14 +494,14 @@ public sealed partial class StudioForm
         if (aliases || bindings)
         {
             ImGui.SameLine();
-            if (ImGui.Button("...##inspector-more", new(0, ImGui.GetFrameHeight()))) ImGui.OpenPopup("inspector-more");
+            if (UiAuto.Button("...##inspector-more", new(0, ImGui.GetFrameHeight()))) ImGui.OpenPopup("inspector-more");
             if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.SetTooltip("More");
         }
         ImGui.EndDisabled();
         if (ImGui.BeginPopup("inspector-more"))
         {
-            if (aliases && ImGui.MenuItem("Wide-hash aliases...")) BeginWideHashes(addedId!);
-            if (bindings && ImGui.MenuItem("Config bindings...")) BeginConfigBindings();
+            if (aliases && UiAuto.MenuItem("Wide-hash aliases...")) BeginWideHashes(addedId!);
+            if (bindings && UiAuto.MenuItem("Config bindings...")) BeginConfigBindings();
             ImGui.EndPopup();
         }
     }
@@ -564,7 +564,7 @@ public sealed partial class StudioForm
             AddedProjectAsset addition => workspace.Document?.AddedAssetId == addition.Id,
             _ => false
         };
-        if (ImGui.Selectable(row.Label, active, ImGuiSelectableFlags.SpanAllColumns))
+        if (UiAuto.Selectable(row.Label, active, ImGuiSelectableFlags.SpanAllColumns))
             switch (row.Source)
             {
                 case ProjectConfigBinding binding: workspace.Open(binding.TagHash); break;
@@ -590,22 +590,22 @@ public sealed partial class StudioForm
         switch (source)
         {
             case ProjectConfigBinding binding:
-                if (ImGui.MenuItem("Unbind", "", false, workspace.CanEdit && workspace.Document is not null))
+                if (UiAuto.MenuItem("Unbind", "", false, workspace.CanEdit && workspace.Document is not null))
                     workspace.Run(() => workspace.SetConfigBindings(
                         project.ConfigBindings.Where(value => value.Identity != binding.Identity).ToArray()));
                 break;
             case ObjectEdit edit:
-                if (ImGui.MenuItem("Revert", "", false, workspace.CanEdit)) workspace.Run(() => workspace.RevertObjectEdit(edit.Key));
+                if (UiAuto.MenuItem("Revert", "", false, workspace.CanEdit)) workspace.Run(() => workspace.RevertObjectEdit(edit.Key));
                 break;
             case ProjectAssetChange change:
-                if (ImGui.MenuItem("Compare with base...", "", false, workspace.Catalog is not null)) BeginTagDiff(change.TagHash);
-                if (ImGui.MenuItem("Revert", "", false, workspace.CanEdit)) workspace.Run(() => workspace.Revert(change.TagHash));
+                if (UiAuto.MenuItem("Compare with base...", "", false, workspace.Catalog is not null)) BeginTagDiff(change.TagHash);
+                if (UiAuto.MenuItem("Revert", "", false, workspace.CanEdit)) workspace.Run(() => workspace.Revert(change.TagHash));
                 break;
             case AddedProjectAsset addition:
-                if (ImGui.MenuItem("Export")) ExportAdded(addition);
-                if (ImGui.MenuItem("Wide-hash aliases...", "", false, workspace.CanEdit && addition.Native is not null))
+                if (UiAuto.MenuItem("Export")) ExportAdded(addition);
+                if (UiAuto.MenuItem("Wide-hash aliases...", "", false, workspace.CanEdit && addition.Native is not null))
                     BeginWideHashes(addition.Id);
-                if (ImGui.MenuItem("Remove", "", false, workspace.CanEdit)) workspace.Run(() => workspace.RemoveAdded(addition.Id));
+                if (UiAuto.MenuItem("Remove", "", false, workspace.CanEdit)) workspace.Run(() => workspace.RemoveAdded(addition.Id));
                 break;
         }
     }
@@ -617,7 +617,7 @@ public sealed partial class StudioForm
         TrackAreaFocus();
         if (ImGui.BeginTabBar("project-tabs"))
         {
-            if (ImGui.BeginTabItem("Changes"))
+            if (UiAuto.BeginTabItem("Changes"))
             {
                 if (workspace.ObjectEditError.Length != 0)
                     ImGui.TextColored(SolTheme.Bad, "Object edits not applied: " + workspace.ObjectEditError);
@@ -640,9 +640,9 @@ public sealed partial class StudioForm
                     clipper.End(); clipper.Destroy();
                     ImGui.EndTable();
                 }
-                ImGui.EndTabItem();
+                UiAuto.EndTabItem();
             }
-            if (ImGui.BeginTabItem("Build"))
+            if (UiAuto.BeginTabItem("Build"))
             {
                 if (workspace.LastInstall is { } install)
                 {
@@ -653,14 +653,14 @@ public sealed partial class StudioForm
                         ("Patches", $"{install.PatchFiles}", ""),
                         ("Scripts", $"{install.ScriptFiles}", ""),
                         ("SDK modules", $"{install.SdkFiles}", "")]);
-                    if (ImGui.Button("Open mod folder")) OpenFolder(install.ModDirectory);
+                    if (UiAuto.Button("Open mod folder")) OpenFolder(install.ModDirectory);
                     ImGui.TextDisabled(install.ModDirectory);
                     ImGui.Separator();
                 }
                 if (workspace.LastBuild is { } build)
                 {
                     SolTheme.SectionHeader("Last build");
-                    if (ImGui.Button("Open output folder")) OpenFolder(build.OutputDirectory);
+                    if (UiAuto.Button("Open output folder")) OpenFolder(build.OutputDirectory);
                     if (ImGui.TreeNode($"Package files ({build.PackageFiles.Count})###package-files"))
                     {
                         foreach (string path in build.PackageFiles) ImGui.TextUnformatted(Path.GetFileName(path));
@@ -672,7 +672,7 @@ public sealed partial class StudioForm
                         $"{built.Edit.Summary()}\n" + string.Join(", ", built.Tags.Select(tag => tag.ToString("X8"))))));
                 }
                 else if (workspace.LastInstall is null) ImGui.TextDisabled("No build yet");
-                ImGui.EndTabItem();
+                UiAuto.EndTabItem();
             }
             ImGui.EndTabBar();
         }
