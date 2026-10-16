@@ -2,6 +2,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Solforge.Mcp;
 
@@ -11,6 +13,8 @@ namespace Solforge.Mcp;
  * needs "Authorization: Bearer <token>". A plain TcpListener keeps http.sys URL ACLs and ASP.NET Core out.
  * GET /viewport, /viewport.mjpeg and /viewport.jpg show the live viewport in a local browser; they need ?key=<ViewKey>,
  * a separate random key that grants nothing else, and refuse framing.
+ * POST /remote/ai (same bearer token, no Origin allowed) is the phone remote control's AI terminal hook: JSON
+ * {"text": "...", "keys": ["enter"], "rows": 40} in, the terminal's state and last rows out (ISolforgeHost.RemoteAiAsync).
  */
 public sealed class McpHttpServer : IAsyncDisposable
 {
@@ -32,6 +36,9 @@ public sealed class McpHttpServer : IAsyncDisposable
     /** The live viewport frames the /viewport pages show; null serves 404. */
     public ViewportFeed? Viewport { get; set; }
     public string ViewKey { get; }
+    /** The remote control AI terminal hook behind POST /remote/ai; null serves 404. */
+    public Func<RemoteAiRequest, CancellationToken, Task<JsonObject>>? Remote { get; set; }
+    private const int MaximumRemoteBody = 16 << 10, MaximumRemoteText = 4000;
     public string ViewportUrl => $"http://127.0.0.1:{Port}/viewport?key={ViewKey}";
 
     public string Token { get; }
@@ -84,6 +91,7 @@ public sealed class McpHttpServer : IAsyncDisposable
         if (!CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(request.Header("authorization") ?? ""),
                 Encoding.UTF8.GetBytes("Bearer " + Token)))
         { await Write(stream, 401, "text/plain", "Missing or wrong Solforge MCP token").ConfigureAwait(false); return; }
+        if (request.Path == "/remote/ai") { await ServeRemoteAi(stream, request).ConfigureAwait(false); return; }
         if (request.Path != "/mcp") { await Write(stream, 404, "text/plain", "Not found").ConfigureAwait(false); return; }
         string? session = request.Header("mcp-session-id");
         switch (request.Method)
@@ -197,6 +205,36 @@ public sealed class McpHttpServer : IAsyncDisposable
         finally { feed.EndStream(); }
     }
 
+    /** POST /remote/ai for the local screen_stream.py pusher; browsers are refused outright (no Origin may be sent). */
+    private async Task ServeRemoteAi(NetworkStream stream, HttpRequest request)
+    {
+        if (Remote is not { } remote) { await Write(stream, 404, "text/plain", "Not found").ConfigureAwait(false); return; }
+        if (request.Method != "POST") { await Write(stream, 405, "text/plain", "Method not allowed").ConfigureAwait(false); return; }
+        if (request.Header("origin") is not null) { await Write(stream, 403, "text/plain", "Origin not allowed").ConfigureAwait(false); return; }
+        if (request.Body.Length > MaximumRemoteBody) { await Write(stream, 413, "text/plain", "Too large").ConfigureAwait(false); return; }
+        string? text = null;
+        var keys = new List<string>();
+        int rows = 40;
+        try
+        {
+            if (request.Body.Length > 0 && JsonNode.Parse(request.Body) is JsonObject body)
+            {
+                if (body["text"] is JsonValue value && value.TryGetValue(out string? typed)) text = typed;
+                if (body["rows"] is JsonValue count && count.TryGetValue(out int asked)) rows = asked;
+                if (body["keys"] is JsonArray list)
+                    foreach (var key in list.Take(16))
+                        if (key is JsonValue name && name.TryGetValue(out string? k) && k.Length is > 0 and <= 16) keys.Add(k);
+            }
+        }
+        catch (JsonException) { await Write(stream, 400, "text/plain", "Bad JSON").ConfigureAwait(false); return; }
+        if (text is { Length: > MaximumRemoteText }) { await Write(stream, 413, "text/plain", "Text too long").ConfigureAwait(false); return; }
+        JsonObject reply;
+        try { reply = await remote(new RemoteAiRequest(text, keys, Math.Clamp(rows, 1, 200)), stop.Token).WaitAsync(TimeSpan.FromSeconds(10), stop.Token).ConfigureAwait(false); }
+        catch (TimeoutException) { reply = new JsonObject { ["error"] = "Solforge did not answer in time (busy?)." }; }
+        catch (InvalidOperationException exception) { reply = new JsonObject { ["error"] = exception.Message }; }
+        await Write(stream, 200, "application/json", reply.ToJsonString()).ConfigureAwait(false);
+    }
+
     private static bool IsLoopbackOrigin(string origin) =>
         Uri.TryCreate(origin, UriKind.Absolute, out var uri) && (uri.IsLoopback || uri.Host == "localhost");
 
@@ -214,7 +252,7 @@ public sealed class McpHttpServer : IAsyncDisposable
 
     private static string Reason(int status) => status switch
     {
-        200 => "OK", 202 => "Accepted", 401 => "Unauthorized", 403 => "Forbidden", 404 => "Not Found",
+        200 => "OK", 202 => "Accepted", 400 => "Bad Request", 401 => "Unauthorized", 403 => "Forbidden", 404 => "Not Found",
         405 => "Method Not Allowed", 413 => "Payload Too Large", 503 => "Service Unavailable", _ => "Error"
     };
 

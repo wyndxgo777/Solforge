@@ -26,7 +26,7 @@ public sealed class SolforgeMcpService : IAsyncDisposable
         var localServer = LocalServer.LocalServerTools.Create(LocalServer.LocalServerManager.CreateDefault(), () => host.ProjectRoot, host.ApproveAsync);
         var dispatcher = new McpDispatcher([.. SolforgeTools.Create(host), .. localServer], version,
             SolforgeTools.Instructions + LocalServer.LocalServerTools.Instructions);
-        var server = new McpHttpServer(dispatcher) { Viewport = host.Viewport };
+        var server = new McpHttpServer(dispatcher) { Viewport = host.Viewport, Remote = host.RemoteAiAsync };
         server.Start();
         host.Viewport.LocalUrl = server.ViewportUrl;
         McpDiscovery.CleanStale();

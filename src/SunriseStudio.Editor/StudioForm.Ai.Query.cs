@@ -96,7 +96,7 @@ public sealed partial class StudioForm
             ["busy"] = workspace.IsBusy, ["status"] = workspace.Status, ["progress"] = workspace.BackgroundStatus,
             ["error"] = workspace.Error.Length > 0 ? workspace.Error : null,
             ["notice"] = workspace.Notice?.Text,
-            ["viewportRendering"] = rendering,
+            ["viewportRendering"] = rendering, ["viewportQuality"] = settings.ViewportQuality.ToString(),
             ["liveAttached"] = livePage.IsAttached, ["destiny2Running"] = destiny2Detected,
             ["itemCatalogLoaded"] = workspace.Investment is not null,
             ["skillsFolder"] = SkillSync.Folder,

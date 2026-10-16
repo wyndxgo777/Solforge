@@ -58,7 +58,17 @@ public interface ISolforgeHost
     Task<(bool Ok, string Message)> UiCommandAsync(UiCommand command, CancellationToken cancel);
     /** The live viewport frames, captured continuously while anyone watches. */
     ViewportFeed Viewport { get; }
+    /**
+     * The phone remote control page (tools/stream-relay, through screen_stream.py on this PC; McpHttpServer POST /remote/ai):
+     * types text and named keys into the AI terminal as if typed there, then returns the terminal's state and its last rows.
+     * Not an MCP tool, so engines never see it; it needs the same bearer token as /mcp and is loopback only.
+     */
+    Task<JsonObject> RemoteAiAsync(RemoteAiRequest request, CancellationToken cancel) =>
+        Task.FromResult(new JsonObject { ["error"] = "This Solforge has no remote AI hook." });
 }
+
+/** One remote AI terminal call: Text is pasted (when not empty), then Keys are sent in order, then Rows rows come back. */
+public sealed record RemoteAiRequest(string? Text, IReadOnlyList<string> Keys, int Rows);
 
 /** A page of a panel: path picks a node or section, filter narrows rows. */
 public sealed record PanelQuery(string? Path, string? Filter, int Offset, int Limit);
