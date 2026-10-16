@@ -104,7 +104,7 @@ public static partial class SolforgeTools
             args => $"Create {McpJson.String(args, "kind")} graph {McpJson.String(args, "path")}",
             (args, _) =>
             {
-                string path = GraphPath(host, args, out _)!;
+                string path = GraphPath(host, args, out string? ignored)!;
                 if (File.Exists(path)) return Task.FromResult(McpToolResult.Error("That graph exists; use edit_graph."));
                 var kind = GraphCommands.ParseKind(McpJson.String(args, "kind"));
                 var document = GraphDocument.Create(kind, McpJson.String(args, "name") ?? Path.GetFileName(path)[..^GraphDocument.Extension.Length],
@@ -124,7 +124,7 @@ public static partial class SolforgeTools
                 .Select(op => (string?)op?["op"] ?? "?").GroupBy(op => op).Select(group => group.Count() > 1 ? $"{group.Key} x{group.Count()}" : group.Key)),
             (args, _) =>
             {
-                string path = GraphPath(host, args, out _)!;
+                string path = GraphPath(host, args, out string? ignored)!;
                 if (!File.Exists(path)) return Task.FromResult(McpToolResult.Error("No such graph; create_graph first."));
                 try
                 {
