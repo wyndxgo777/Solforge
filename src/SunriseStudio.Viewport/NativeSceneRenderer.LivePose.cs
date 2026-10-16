@@ -4,8 +4,10 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Viewport;
 
+/** Palette rows and centre for a live-posed entity. */
 public sealed record NativeLivePalette(NativeEntityPalette Kind, IReadOnlyList<Vector4> Rows, Vector3 Center);
 
+/** Live pose half of NativeSceneRenderer: per-instance palettes that replace authored ones. */
 public sealed partial class NativeSceneRenderer
 {
     private readonly Dictionary<MeshInstance, NativeLivePalette> livePalettes = [];
@@ -48,7 +50,9 @@ public sealed partial class NativeSceneRenderer
         RefreshLiveTransforms(changed);
     }
 
+    /** Drops every live palette. */
     public void ClearLivePalettes() { if (livePalettes.Count > 0) SetLivePalettes(new Dictionary<MeshInstance, NativeLivePalette>()); }
+    /** Drops the live palettes of the given instances and refreshes their transforms. */
     public void RemoveLivePalettes(IEnumerable<MeshInstance> instances)
     {
         var removed = instances.Where(livePalettes.ContainsKey).ToArray();

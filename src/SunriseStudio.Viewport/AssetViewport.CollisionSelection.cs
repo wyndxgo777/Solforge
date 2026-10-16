@@ -4,6 +4,7 @@ using SunriseStudio.Scene.Collision;
 
 namespace SunriseStudio.Viewport;
 
+/** Collision selection half of AssetViewport: selected placement, selected parts and their outlines. */
 public sealed partial class AssetViewport
 {
     // Outline meshes by placement, rebuilt when the shape or the placement's stamp changes.
@@ -60,6 +61,7 @@ public sealed partial class AssetViewport
         collisionPartsRevision++;
     }
 
+    /** Deselects every part of every collision placement. */
     public void ClearCollisionParts()
     {
         foreach (int placement in collisionPartSets.Keys) TouchOutline(placement);

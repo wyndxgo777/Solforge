@@ -3,17 +3,20 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Viewport;
 
+/** Whether a click selects a whole object or one mesh part. */
 public enum SceneSelectionMode { Object, MeshPart }
 
 /** The triangle faces a pick ray can hit. Front faces wind clockwise on screen, the D3D default. */
 public enum PickFaces { None, Both, Front, Back }
 
+/** A pickable point without a mesh, with its extents and details. */
 public sealed record ScenePointProxy(string Key, string Name, Vector3 Position,
     Vector3 Extents, SceneLayer Layer = SceneLayer.Objects, uint BubbleHash = 0, object? Details = null) : ISceneSelectionProxy
 {
     object ISceneSelectionProxy.Key => Details ?? Key;
 }
 
+/** Visibility filters of a scene: layers, bubbles and LOD levels. */
 public sealed class SceneVisibility
 {
     private readonly Dictionary<uint, int[]> detailLevels = [];
@@ -83,6 +86,7 @@ public sealed class SceneVisibility
         AvailableDetailLevels = detailLevels.Values.SelectMany(levels => levels).Distinct().Order().ToArray();
     }
 
+    /** Adds LOD levels of meshes spawned at runtime. */
     internal void AddRuntimeMeshes(IEnumerable<MeshInstance> meshes)
     {
         foreach (var group in meshes.GroupBy(instance => instance.Mesh.TagHash))
@@ -221,6 +225,7 @@ public sealed class SceneVisibility
     public static bool IsBox(object item) => item is not MeshInstance;
 }
 
+/** Axis-aligned bounds; Empty is the identity for Include. */
 public readonly record struct SelectionBounds(Vector3 Minimum, Vector3 Maximum)
 {
     public Vector3 Center => (Minimum + Maximum) * .5f;
@@ -228,6 +233,7 @@ public readonly record struct SelectionBounds(Vector3 Minimum, Vector3 Maximum)
     public static SelectionBounds Empty => new(new(float.PositiveInfinity), new(float.NegativeInfinity));
     public bool IsFinite => float.IsFinite(Minimum.X + Minimum.Y + Minimum.Z +
         Maximum.X + Maximum.Y + Maximum.Z);
+    /** Bounds grown to contain a point. */
     public SelectionBounds Include(Vector3 point) => new(Vector3.Min(Minimum, point), Vector3.Max(Maximum, point));
 
     /** Rotated boxes must include all eight corners. */
@@ -281,6 +287,7 @@ public sealed class SceneSelection
     /** Transient placements and world-space poses do not alter the authored grid snapshot. */
     public ulong AuthoredBoundsRevision { get; private set; }
 
+    /** Adds a runtime mesh and its local bounds. */
     internal void AddRuntimeMesh(MeshInstance instance)
     {
         if (!meshBounds.ContainsKey(instance.Mesh))
@@ -402,6 +409,7 @@ public sealed class SceneSelection
         instancePoses[instance] = positions; instancePoseBounds[instance] = box; bounds[instance] = box;
     }
 
+    /** Bounds of an item in world space, stored, mesh or marker. */
     public SelectionBounds GetBounds(object item) => bounds.TryGetValue(item, out var stored) ? stored : item switch
     {
         MeshInstance instance => MeshBounds(instance),
@@ -417,6 +425,7 @@ public sealed class SceneSelection
         meshBounds.TryGetValue(instance.Mesh, out var local) && local.IsFinite
             ? local.Transform(instance.RenderTransform) : new(instance.RenderTransform.Translation, instance.RenderTransform.Translation);
 
+    /** Pick index of an item, or -1. */
     public int IndexOf(object item) => objectIndices.GetValueOrDefault(item, -1);
 
     /** The static grid retains authored placements while live objects use a separate query. */
@@ -438,15 +447,19 @@ public sealed class SceneSelection
         bounds[item] = GetBounds(item);
     }
 
+    /** Mesh parts of an object; a mesh is its own single part. */
     public IReadOnlyList<MeshInstance> MeshParts(object selected) => objectGroups.TryGetValue(selected, out var group)
         ? group.Meshes : selected is MeshInstance mesh ? [mesh] : [];
 
+    /** Members of an object; an item without a group is its own member. */
     public IReadOnlyList<object> ObjectMembers(object selected) => objectGroups.TryGetValue(selected, out var group)
         ? group.Members : [selected];
 
+    /** First mesh of the object a mesh belongs to. */
     public MeshInstance ObjectRepresentative(MeshInstance selected) =>
         objectGroups.TryGetValue(selected, out var group) && group.Meshes.Count > 0 ? group.Meshes[0] : selected;
 
+    /** Resolves a mesh to its object's representative; other items pass through. */
     public object ResolveObject(object selected) => selected is MeshInstance mesh ? ObjectRepresentative(mesh) : selected;
 
     /** Decoder identities separate repeated placements without comparing mesh-local transforms. */

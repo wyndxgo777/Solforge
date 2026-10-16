@@ -3,6 +3,7 @@ using ImGuiNET;
 
 namespace SunriseStudio.Viewport;
 
+/** Icons drawn by the studio's ImGui buttons. */
 public enum StudioIcon
 {
     Eye, EyeOff, Frame, Focus, Cursor, Grid, Wireframe, Ortho, Tree, Filter,
@@ -29,6 +30,7 @@ public static class ImGuiIcons
         return clicked;
     }
 
+    /** Icon button that flips a bool when clicked; true when it changed. */
     public static bool Toggle(string id, StudioIcon icon, string tooltip, ref bool value)
     {
         if (!Button(id, icon, tooltip, value)) return false;

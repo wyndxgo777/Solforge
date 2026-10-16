@@ -8,6 +8,7 @@ using Vortice.DXGI;
 
 namespace SunriseStudio.Viewport;
 
+/** Counts from the last native frame: drawn and failed parts, draw calls and triangles. */
 public sealed record NativeSceneFrameStats(int DrawnParts, int DrawCalls, long Triangles, int FailedParts,
     IReadOnlyDictionary<string, int> StageParts, int MaterialEvaluations);
 
@@ -686,12 +687,14 @@ public sealed partial class NativeSceneRenderer : IDisposable
     /** Cloth display streams the last SetEntityPose wrote from a pose, not the bind stream. */
     public int PosedClothStreams { get; private set; }
 
+    /** True when the instance can move live, either by palette or by a group that allows it. */
     public bool SupportsLiveTransform(MeshInstance instance) => livePalettes.ContainsKey(instance) || (instanceGroups.TryGetValue(instance, out var matching)
         ? matching.All(group => group.Decorator is null) && matching.All(group => group.Runtime && group.Source.Kind == NativeMeshKind.Static
             || group.Source.Kind == NativeMeshKind.Entity && !group.Source.Material.ReadsWaterObject
                 && !group.Source.Material.ReadsAdvancedScope && !NativeEntityPalettes.RequiresDiagnosticPlacement(instance.RenderTransform, group.Source.Material.Palette))
         : instance.Mesh.Native?.Kind == NativeMeshKind.Entity);
 
+    /** Throws when a live transform cannot be applied to the instance. */
     public void ValidateLiveTransform(MeshInstance instance, Matrix4x4 transform)
     {
         if (livePalettes.ContainsKey(instance)) return;
@@ -776,6 +779,7 @@ public sealed partial class NativeSceneRenderer : IDisposable
     public IEnumerable<(MeshInstance Instance, int Handle)> PartHandles() =>
         handles.Select((item, index) => (item.Group.Source.Parts[item.Part].Instance, index));
 
+    /** Render stage of the group a part handle belongs to. */
     public int HandleStage(int handle) => handles[handle].Group.Source.RenderStage;
 
     /** The CB11 vectors the draw list uploads for a part handle. */
@@ -1072,6 +1076,7 @@ public sealed partial class NativeSceneRenderer : IDisposable
     {
         public int Program, Present, Channels;
         public GroupValues Values;
+        /** Compares keys by their raw bytes. */
         public readonly bool Equals(SharedKey other) => Bytes(in this).SequenceEqual(Bytes(in other));
         public override readonly bool Equals(object? other) => other is SharedKey key && Equals(key);
         public override readonly int GetHashCode()
@@ -1133,12 +1138,14 @@ public sealed partial class NativeSceneRenderer : IDisposable
     /** Stages match when everything the evaluator reads matches: bytecode, constants, template and samplers. */
     private sealed class StageContentComparer : IEqualityComparer<MaterialStageData>
     {
+        /** Stage data are equal when bytecode, constants, templates and samplers match. */
         public bool Equals(MaterialStageData? a, MaterialStageData? b) => ReferenceEquals(a, b) || a is not null && b is not null
             && a.Stage == b.Stage && a.TfxBytecode.AsSpan().SequenceEqual(b.TfxBytecode)
             && MemoryMarshal.AsBytes(a.TfxConstants.AsSpan()).SequenceEqual(MemoryMarshal.AsBytes(b.TfxConstants.AsSpan()))
             && MemoryMarshal.AsBytes(a.ConstantTemplate.AsSpan()).SequenceEqual(MemoryMarshal.AsBytes(b.ConstantTemplate.AsSpan()))
             && a.Samplers.SequenceEqual(b.Samplers);
 
+        /** Hash over the same fields Equals compares. */
         public int GetHashCode(MaterialStageData stage)
         {
             var hash = new HashCode();
@@ -2140,6 +2147,7 @@ public sealed partial class NativeSceneRenderer : IDisposable
     private static bool Recoverable(Exception error) => NativeScenePlan.Recoverable(error)
         || error is SharpGen.Runtime.SharpGenException;
 
+    /** Releases all GPU resources; safe to call twice. */
     public void Dispose()
     {
         if (disposed) return;

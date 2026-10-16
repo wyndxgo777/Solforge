@@ -7,10 +7,13 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Viewport;
 
+/** Minimum, median, 95th percentile and maximum of a sampled value. */
 public sealed record NativeShadingRange(float Minimum, float Median, float P95, float Maximum);
+/** Shading values read at one pixel. */
 public sealed record NativeShadingProbe(int X, int Y, float Depth, Vector4 Final, Vector4 Albedo,
     Vector4 Third, Vector4 Diffuse, Vector4 Scene, string Group, uint? MeshTag, uint? MaterialTag,
     int? Part, int? Stage, string? Name, Vector4? Ibl = null, string? Layer = null);
+/** Shading statistics over a captured frame. */
 public sealed record NativeShadingReport(int Width, int Height, int Samples, int GeometrySamples,
     int FinalBlack, int FinalClipped, int AlbedoBlack, int DiffuseBlack, int SceneBlack,
     NativeShadingRange FinalRange, NativeShadingRange AlbedoRange, NativeShadingRange DiffuseRange,

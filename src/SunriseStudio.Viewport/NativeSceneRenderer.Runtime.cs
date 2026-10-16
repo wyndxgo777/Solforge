@@ -5,6 +5,7 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Viewport;
 
+/** Runtime half of NativeSceneRenderer: uploads prototypes once and adds instance slots without new uploads. */
 public sealed partial class NativeSceneRenderer
 {
     private sealed record RuntimePrototype(IReadOnlyList<DrawGroup> Groups);

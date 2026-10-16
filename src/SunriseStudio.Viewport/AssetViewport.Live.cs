@@ -5,6 +5,7 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Viewport;
 
+/** Live transform half of AssetViewport: per-frame transform overrides for moving meshes and markers. */
 public sealed partial class AssetViewport
 {
     private readonly HashSet<MeshInstance> liveMeshes = [];
@@ -73,6 +74,7 @@ public sealed partial class AssetViewport
         if (changed.Length > 0 || changedMarkers.Length > 0) HoveredObject = null;
     }
 
+    /** Drops every live transform override. */
     public void ClearLiveTransforms() => SetLiveTransforms(
         new Dictionary<MeshInstance, Matrix4x4>(),
         new Dictionary<SceneMarker, (Vector3 Position, Quaternion Rotation)>());

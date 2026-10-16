@@ -47,6 +47,7 @@ public static class NativeStencil
     /** Marks a scene drawn as the first-person player view. */
     public static void SetFirstPersonView(SceneDocument scene) => FirstPersonScenes.AddOrUpdate(scene, scene);
 
+    /** True when the scene was marked as a first-person view. */
     public static bool IsFirstPersonView(SceneDocument scene) => FirstPersonScenes.TryGetValue(scene, out _);
 
     /** Decorators are entity models with 16-byte records, one or a ground cell's; static meshes are instances. */

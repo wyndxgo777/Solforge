@@ -120,6 +120,7 @@ internal static class EffectSimulation
         }
     }
 
+    /** Flare emitter setup for a marker's effect; the seed comes from the index and effect source. */
     public static EffectEmitterSetup CreateFlare(SceneMarker marker, int index)
     {
         var effect = marker.Effect!;
@@ -193,6 +194,7 @@ internal static class EffectSimulation
         return t * t * (3 - 2 * t);
     }
 
+    /** Mixes two values into a well-spread 32-bit hash. */
     internal static uint Hash(uint a, uint b)
     {
         uint h = a * 0x85EBCA6Bu ^ b * 0xC2B2AE35u;

@@ -197,7 +197,9 @@ public sealed class NativeDecoratorPayload
         return (fade, SpeedTreeLod.Blend(curve, fade));
     }
 
+    /** Distance fade of a record. */
     public float Fade(int record) => FadeAndBlend(record).Fade;
+    /** LOD blend of a record. */
     public float Blend(int record) => FadeAndBlend(record).Blend;
 
     /**

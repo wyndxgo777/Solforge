@@ -36,6 +36,7 @@ public sealed class ViewerCamera
     public float FarPlane => MathF.Max(MathF.Max(10000, sceneRadius * 8), Distance * 4);
 
     public Matrix4x4 View => Matrix4x4.CreateLookAt(Position, Position + Forward, Up);
+    /** Projection matrix for an aspect ratio. */
     public Matrix4x4 Projection(float aspect)
     {
         aspect = MathF.Max(0.01f, aspect);
@@ -44,8 +45,10 @@ public sealed class ViewerCamera
         float height = ViewHeight;
         return Matrix4x4.CreateOrthographic(height * aspect, height, NearPlane, FarPlane);
     }
+    /** Combined view and projection matrix for an aspect ratio. */
     public Matrix4x4 ViewProjection(float aspect) => View * Projection(aspect);
 
+    /** Vertical field of view for an aspect ratio, taken from the external pose when one is set. */
     public float VerticalFieldOfView(float aspect) => externalPose is { } pose
         ? 2 * MathF.Atan(MathF.Tan(pose.HorizontalFov / 2) / MathF.Max(.01f, aspect)) : FieldOfView;
 
@@ -112,6 +115,7 @@ public sealed class ViewerCamera
         Pivot += (Right * local.X + heading * local.Y + Vector3.UnitZ * local.Z) * speed * seconds;
     }
 
+    /** Sets yaw and pitch; pitch is clamped to the limit. */
     public void SetView(float yaw, float pitch)
     {
         Yaw = yaw;

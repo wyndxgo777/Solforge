@@ -5,6 +5,7 @@ namespace SunriseStudio.Viewport;
 /** A skin drawn rigidly on one bone: every one of Entries palette entries is that bone's object transform. */
 public sealed record BoneAttachment(int Bone, int Entries);
 
+/** Attached-skin half of AssetAnimationSource: skins that follow a single rig bone rigidly. */
 public sealed partial class AssetAnimationSource
 {
     /** Skins that follow one rig bone rigidly instead of their own weights. */

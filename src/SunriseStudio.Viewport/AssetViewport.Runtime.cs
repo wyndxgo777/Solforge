@@ -4,6 +4,7 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Viewport;
 
+/** Runtime half of AssetViewport: live prototypes and the pooled instances spawned from them. */
 public sealed partial class AssetViewport
 {
     private sealed class RuntimeClass(LiveScenePrototype source, object? native)
@@ -31,6 +32,7 @@ public sealed partial class AssetViewport
     public int LivePrototypeCount => runtimeClasses.Count;
     public int LiveSlotCount => runtimeClasses.Values.Sum(value => value.Slots.Count);
     public int LivePrototypeRevision { get; private set; }
+    /** True when a prototype for the class tag is registered. */
     public bool HasLivePrototype(uint classTag) => runtimeClasses.ContainsKey(classTag);
 
     /** Prototype upload runs on the graphics thread and leaves the authored scene collection untouched. */
@@ -127,9 +129,11 @@ public sealed partial class AssetViewport
         HoveredObject = null;
     }
 
+    /** Removes every live instance; prototypes stay registered. */
     public void ClearLiveInstances() => SetLiveInstances([]);
     public IEnumerable<LiveSceneInstanceView> LiveInstances =>
         runtimeInstances.Select(pair => new LiveSceneInstanceView(pair.Key, pair.Value.Prototype.Source.ClassTag, pair.Value.Meshes));
+    /** The live instance for a key with its meshes, or null. */
     public LiveSceneInstanceView? TryGetLiveInstance(string key) => runtimeInstances.TryGetValue(key, out var slot)
         ? new(key, slot.Prototype.Source.ClassTag, slot.Meshes) : null;
 

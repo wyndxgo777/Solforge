@@ -3,9 +3,11 @@ namespace SunriseStudio.Viewport;
 /** Menu shortcuts are global; 2D and 3D shortcuts apply only to the view under the pointer. */
 public enum ShortcutSection { Menus, View2D, View3D }
 
+/** Modifier keys of a binding. */
 [Flags]
 public enum ShortcutModifiers { None = 0, Ctrl = 1, Shift = 2, Alt = 4 }
 
+/** Kind of input a binding listens for. */
 public enum ShortcutKind { Key, Click, Drag, Wheel }
 
 /** Values match ImGui mouse button indices; Back and Forward are the side buttons. */
@@ -34,16 +36,20 @@ public readonly record struct ShortcutBinding
     /** Left for keys and the wheel. */
     public ShortcutButton Button { get; }
 
+    /** Key binding; throws for an unknown key name. */
     public static ShortcutBinding Keyboard(string key, ShortcutModifiers modifiers = ShortcutModifiers.None) =>
         ShortcutKeys.Find(key) is { } name ? new ShortcutBinding(ShortcutKind.Key, modifiers, name, ShortcutButton.Left)
             : throw new ArgumentException($"Unknown key '{key}'.", nameof(key));
 
+    /** Mouse click binding. */
     public static ShortcutBinding Click(ShortcutButton button, ShortcutModifiers modifiers = ShortcutModifiers.None) =>
         new(ShortcutKind.Click, modifiers, "", button);
 
+    /** Mouse drag binding. */
     public static ShortcutBinding Drag(ShortcutButton button, ShortcutModifiers modifiers = ShortcutModifiers.None) =>
         new(ShortcutKind.Drag, modifiers, "", button);
 
+    /** Mouse wheel binding. */
     public static ShortcutBinding Wheel(ShortcutModifiers modifiers = ShortcutModifiers.None) =>
         new(ShortcutKind.Wheel, modifiers, "", ShortcutButton.Left);
 

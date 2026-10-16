@@ -5,6 +5,7 @@ namespace SunriseStudio.Viewport;
 /** Solforge Phase 10: axis-aligned views. The world is Z up; Front looks along +Y, as in Blender. */
 public enum CameraViewPreset { Top, Bottom, Front, Back, Right, Left }
 
+/** Axis-aligned preset views and the Blender keypad that selects them. */
 public static class CameraViews
 {
     public static readonly CameraViewPreset[] All =
@@ -30,6 +31,7 @@ public static class CameraViews
     public static Vector3 Forward(float yaw, float pitch) =>
         new(MathF.Cos(pitch) * MathF.Cos(yaw), MathF.Cos(pitch) * MathF.Sin(yaw), MathF.Sin(pitch));
 
+    /** Display name of a preset. */
     public static string Name(CameraViewPreset preset) => preset.ToString();
 
     /** Blender keypad layout: 7 top, 1 front, 3 right; Ctrl gives the opposite side. */
@@ -102,6 +104,7 @@ public sealed class ViewportStatistics
         next = (next + 1) % frames.Length;
     }
 
+    /** Zeroes the accumulated frame statistics. */
     public void Reset()
     {
         count = next = 0;
@@ -110,5 +113,6 @@ public sealed class ViewportStatistics
         Triangles = 0;
     }
 
+    /** Overlay text with frame rate, frame time, draw calls and triangles. */
     public string Text() => $"{FramesPerSecond:0} FPS  {FrameMilliseconds:0.0} ms\n{DrawCalls:N0} draw calls\n{Triangles:N0} triangles";
 }

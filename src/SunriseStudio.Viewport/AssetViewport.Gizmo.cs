@@ -4,6 +4,7 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Viewport;
 
+/** Active transform tool of the viewport gizmo. */
 public enum TransformTool { Select, Move, Rotate, Scale }
 
 /** World-axis move, rotate and scale handles; one drag records one edit on release. */

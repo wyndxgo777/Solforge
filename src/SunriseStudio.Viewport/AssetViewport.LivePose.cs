@@ -4,12 +4,14 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Viewport;
 
+/** Live pose half of AssetViewport: posed vertex geometry that replaces a mesh's authored vertices. */
 public sealed partial class AssetViewport
 {
     private sealed class LivePoseMesh(GpuMesh active)
     {
         public GpuMesh Active = active;
         public GpuMesh? Spare;
+        /** Releases both vertex buffers. */
         public void Dispose() { Active.Dispose(); Spare?.Dispose(); }
     }
     private readonly Dictionary<MeshInstance, LivePoseMesh> livePoseMeshes = [];
@@ -63,6 +65,7 @@ public sealed partial class AssetViewport
         ReindexLivePoseGeometry(); HoveredObject = null;
     }
 
+    /** Drops all live pose geometry. */
     public void ClearLivePoseGeometry() => SetLivePoseGeometry(new Dictionary<MeshInstance, RenderVertex[]>());
 
     private void RemoveLivePoseGeometry(IEnumerable<MeshInstance> instances)

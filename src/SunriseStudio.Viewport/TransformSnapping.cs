@@ -12,6 +12,7 @@ public readonly record struct SnapSettings(bool Enabled, float MoveStep, float A
 /** Solforge Phase 13: grid, angle, scale and surface-normal snapping of a handle drag. */
 public static class TransformSnapping
 {
+    /** Rounds a value to the nearest step; unchanged when the step is not positive or the value not finite. */
     public static float Snap(float value, float step) => step > 0 && float.IsFinite(value) ? MathF.Round(value / step) * step : value;
 
     /**

@@ -17,9 +17,11 @@ public static class NativeGearDye
             && instance.Mesh.PartIndex >= 0 && instance.Mesh.PartIndex + PartSlotByte < model.Length
             ? model[instance.Mesh.PartIndex + PartSlotByte] & 1 : 0;
 
+    /** True when either stage reads the gear-dye extern. */
     public static bool Reads(MaterialExecutionData execution) =>
         new[] { execution.Vertex, execution.Pixel }.Any(stage => stage.TfxBytecode.Length != 0
             && TfxProgramInspection.Read(stage.TfxBytecode).Dependencies.Any(d => d.Extern == Key.Extern));
 
+    /** Sets the dye bit the shaders read. */
     public static void Apply(TfxInputs inputs, int bit) => inputs.Vectors[Key] = new Vector4(bit);
 }

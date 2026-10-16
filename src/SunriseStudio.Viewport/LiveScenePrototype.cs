@@ -4,7 +4,9 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Viewport;
 
+/** One live instance: key, class, transform and name. */
 public sealed record LiveSceneInstance(string Key, uint ClassTag, Matrix4x4 Transform, string Name = "");
+/** Scene and native plan that live instances of a class are spawned from, with load diagnostics. */
 public sealed record LiveScenePrototype(uint ClassTag, SceneDocument Scene, NativeScenePlan? NativePlan,
     IReadOnlyList<string> Diagnostics)
 {
@@ -36,4 +38,5 @@ public sealed record LiveScenePrototype(uint ClassTag, SceneDocument Scene, Nati
     }
 }
 
+/** The meshes backing one live instance. */
 public sealed record LiveSceneInstanceView(string Key, uint ClassTag, IReadOnlyList<MeshInstance> Meshes);

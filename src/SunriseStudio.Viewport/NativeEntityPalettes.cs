@@ -91,6 +91,7 @@ public static class NativeEntityPalettes
     // The CB11 window limit of a D3D11 constant buffer, in vectors.
     public const int MaximumRows = 4096;
 
+    /** Throws when a dual-quaternion placement cannot be decomposed. */
     public static void ValidatePlacement(Matrix4x4 placement, NativeEntityPalette form)
     { if (form == NativeEntityPalette.DualQuaternion && !RequiresDiagnosticPlacement(placement, form)) _ = Decompose(placement); }
 

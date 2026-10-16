@@ -2,6 +2,7 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Viewport;
 
+/** Placement half of AssetViewport: follows objects an edit moved in place. */
 public sealed partial class AssetViewport
 {
     /**

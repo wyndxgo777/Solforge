@@ -3,6 +3,7 @@ using SunriseStudio.Rendering;
 
 namespace SunriseStudio.Viewport;
 
+/** Memory half of AssetViewport: GPU byte accounting and releasing the native scene. */
 public sealed partial class AssetViewport
 {
     /** Uploaded stand-in meshes: count and GPU bytes (vertex and index buffers). */

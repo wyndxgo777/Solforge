@@ -15,6 +15,7 @@ public enum ViewportQuality
     Full
 }
 
+/** Quality half of AssetViewport: maps ViewportQuality onto LOD scale, native path and fallback texturing. */
 public sealed partial class AssetViewport
 {
     /** Asset views keep Full; the host lowers it for the map viewport. */
