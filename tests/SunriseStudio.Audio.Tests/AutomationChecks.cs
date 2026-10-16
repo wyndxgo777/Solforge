@@ -2,8 +2,10 @@ using System.Buffers.Binary;
 using SunriseStudio.Audio;
 using SunriseStudio.Packages;
 
+/** Checks that clip automation lanes stay tied to their clip index and trimmed playback time, and that malformed or duplicate lanes are refused. */
 internal static class AutomationChecks
 {
+    /** Runs the checks that use generated fixtures instead of installed game content. */
     public static void Synthetic(string directory)
     {
         AudioClipAutomation[] lanes =
@@ -41,6 +43,7 @@ internal static class AutomationChecks
         Console.WriteLine("audio_automation synthetic=pass clip_index=checked trim_clock=checked gain_product=sample_exact malformed=rejected");
     }
 
+    /** Runs the same kind of checks against the real packages of the owned installation. */
     public static async Task Owned(PackageCatalog catalog, string directory, string? output)
     {
         using var session = new AudioSession(catalog, 0x80B4F065, cacheDirectory: Path.Combine(directory, "automation-cache"));

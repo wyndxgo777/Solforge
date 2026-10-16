@@ -5,6 +5,7 @@ using SunriseStudio.Interchange;
 using SunriseStudio.Packages;
 using SunriseStudio.Scene;
 
+/** Checks bundle mesh edits against the native vertex codecs: unchanged geometry makes no edit and UV/position edits touch only their own lanes. */
 internal static class BundleMeshCodecChecks
 {
     /** Every supported UV encoding preserves other lanes and merges with position edits. */

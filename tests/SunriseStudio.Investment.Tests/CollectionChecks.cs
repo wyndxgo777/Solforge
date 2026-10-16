@@ -7,6 +7,7 @@ internal static class CollectionChecks
 {
     private const uint Collectibles = 0x81327CDE, Displays = 0x81327D67, Nodes = 0x8131933F;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(PackageCatalog packages, InvestmentCatalog investment)
     {
         var weapon = investment.Items.First(item => item.Name == "Austringer");

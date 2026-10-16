@@ -9,6 +9,7 @@ internal static class CombatantDamageChecks
     private const int Payload = 0x100, Parts = 0x500, Types = 0x660, Pools = 0x6B0;
     private const int PartRow = Parts + 16, TypeRow = Types + 16, PoolRow = Pools + 16;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run()
     {
         byte[] bytes = Build();

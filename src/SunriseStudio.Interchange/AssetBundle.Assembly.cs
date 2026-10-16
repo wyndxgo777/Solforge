@@ -7,6 +7,7 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Interchange;
 
+/** Exports an already assembled scene on one rig as a view-only bundle (ExportAssembly). */
 public static partial class AssetBundle
 {
     /** Same folder rules and staging as Export. The bundle is view only; PrepareImport refuses it. */

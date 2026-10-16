@@ -6,6 +6,7 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Authoring;
 
+/** Compiled weapon materials and their assets. */
 public sealed record PreparedWeaponMaterials(IReadOnlyList<ProjectAssetAddition> Assets,
     IReadOnlyDictionary<int, uint> MaterialTags, int NextEntryIndex);
 

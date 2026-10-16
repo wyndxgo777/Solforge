@@ -12,6 +12,7 @@ internal static class DecoratorChecks
     private const uint SabrePayload = 0x80FAA33A;
     private const int Canopy = 42;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(PackageCatalog catalog, string gameRoot)
     {
         var tags = DecoratorTags.Read(catalog, SabrePayload);

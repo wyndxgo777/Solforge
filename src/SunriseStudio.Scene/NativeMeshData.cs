@@ -2,7 +2,9 @@ using System.Numerics;
 
 namespace SunriseStudio.Scene;
 
+/** Kind of native mesh. This file holds the native mesh records. */
 public enum NativeMeshKind { Static, Terrain, Entity }
+/** How a vertex layout was established. */
 public enum NativeLayoutEvidence { None, PackageAndShader, NativeLayout }
 
 /** Values match DXGI_FORMAT so the renderer can map them without a graphics dependency. */
@@ -24,9 +26,11 @@ public enum NativeVertexFormat
     R8UNorm = 61
 }
 
+/** An occlusion map that applies to an instance, with its buffer, selector and offset. */
 public sealed record NativeOcclusionMapMatch(uint MapTag, uint BufferHeaderTag,
     uint Selector, ulong InstanceKey, uint BaseByteOffset);
 
+/** The placement that owns an occlusion map. */
 public sealed record NativeOcclusionOwner(uint BubbleHash, uint PlacementListTag,
     int PlacementOffset, uint MapTag);
 
@@ -47,12 +51,15 @@ public sealed class NativeStaticBinding
     public bool UseSingleScalar { get; init; }
 }
 
+/** A vertex stream with its stride, type and bytes. */
 public sealed record NativeVertexStream(uint HeaderTag, uint DataTag, int Stride, ushort Type,
     byte[] Data);
 
+/** One element of a vertex input layout. */
 public sealed record NativeInputElement(string Semantic, uint SemanticIndex, int Slot, int Offset,
     NativeVertexFormat Format, bool PerInstance = false, int StepRate = 0);
 
+/** One input a vertex shader declares. */
 public sealed record NativeShaderInput(string Semantic, uint SemanticIndex, uint Register,
     uint ComponentType, byte Mask, uint SystemValue);
 

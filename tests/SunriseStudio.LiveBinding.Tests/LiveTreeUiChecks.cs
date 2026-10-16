@@ -6,10 +6,12 @@ using SunriseStudio.Live;
 using SunriseStudio.Scene;
 using SunriseStudio.Viewport;
 
+/** Checks the live tree UI: runtime meshes enter the inspector index and selecting them exposes observed state and reveals their node. */
 internal static class LiveTreeUiChecks
 {
     private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static int Run(string[] args)
     {
         string root = Path.Combine(Path.GetTempPath(), "sunrise-live-tree-" + Guid.NewGuid().ToString("N"));

@@ -9,6 +9,7 @@ using SunriseStudio.Live;
 /** These publishers open only the test process's local mappings. */
 internal static class LiveAuditChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static async Task Run()
     {
         List<string> failures = [];

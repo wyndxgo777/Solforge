@@ -16,6 +16,7 @@ internal static class EntityInputChecks
     // Object channel 1 of the Hydra model; it rests at 0, and its shield plates draw only below 1.
     private const uint ShieldChannel = 0x1116DDC1, ShieldMaterial = 0x80F2FD71;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(string game, string temporary)
     {
         using var catalog = PackageCatalog.Open(game, cacheOptions: new() { Enabled = false });

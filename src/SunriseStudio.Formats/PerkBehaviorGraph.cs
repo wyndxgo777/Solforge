@@ -1,10 +1,13 @@
 namespace SunriseStudio.Formats;
 
+/** Editable perk behavior graph model. Whether a node is a condition or an effect. */
 public enum PerkBehaviorNodeKind { Condition, Effect }
 /** A Label value is bit index * 2^32 + label hash; the bit is the hash's row in the label table. */
 public enum PerkBehaviorValueKind { Float, Integer, Boolean, Tag, Hash, Label }
+/** One selectable value of a property, with its label. */
 public sealed record PerkBehaviorChoice(double Value, string Label);
 
+/** One property of a node: key, label, value kind, current value, range and optional choices or picker. */
 public sealed class PerkBehaviorProperty
 {
     public string Key { get; set; } = "";
@@ -20,6 +23,7 @@ public sealed class PerkBehaviorProperty
     public string Picker { get; set; } = "";
 }
 
+/** One node of the graph: ID, title, condition/effect kind, native class and properties; keeps its original bytes for nodes not edited. */
 public sealed class PerkBehaviorNode
 {
     public string Id { get; set; } = Guid.NewGuid().ToString("N");

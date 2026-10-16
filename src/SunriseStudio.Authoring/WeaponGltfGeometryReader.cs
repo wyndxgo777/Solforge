@@ -2,11 +2,13 @@ using SunriseStudio.Formats;
 
 namespace SunriseStudio.Authoring;
 
+/** One mesh primitive with the bone palette its vertices index. */
 public sealed record WeaponSourcePrimitive(InterchangeMesh Mesh, IReadOnlyList<short> PaletteIndices);
 
 /** A rigid weapon vertex keeps one authored joint; mixed weights need another native profile. */
 public static class WeaponGltfGeometryReader
 {
+    /** Reads the visual mesh primitives of a weapon glTF. */
     public static IReadOnlyList<WeaponSourcePrimitive> Read(string path,
         IReadOnlyDictionary<string, int> controls, IReadOnlySet<string> visualMeshNames)
     {

@@ -40,6 +40,7 @@ public sealed class WorldLoader(PackageCatalog catalog, StudioNameIndex? names =
         return index;
     }
 
+    /** Loads a map as a world document. */
     public WorldDocument LoadMap(uint mapTag, WorldLoadOptions? options = null, CancellationToken token = default)
     {
         var settings = Freeze(options ?? new());
@@ -53,6 +54,7 @@ public sealed class WorldLoader(PackageCatalog catalog, StudioNameIndex? names =
         return Compose(map, scene, null, settings, token);
     }
 
+    /** Loads a mission on top of its map. */
     public WorldDocument LoadMission(uint mapTag, uint missionTag, WorldLoadOptions? options = null,
         CancellationToken token = default) => LoadMission(LoadMap(mapTag, options, token), missionTag, options, token);
 
@@ -98,7 +100,9 @@ public sealed class WorldLoader(PackageCatalog catalog, StudioNameIndex? names =
         return Compose(world.Map, mapScene, overlay, settings, token);
     }
 
+    /** Describes a mission's bubbles and states without loading it. */
     public ScenarioInfo DescribeMission(uint missionTag) => CreateLoader(new()).DescribeScenario(missionTag);
+    /** Wraps an already decoded scene as a world document. */
     public WorldDocument DescribeScene(SceneDocument scene) => WorldDocument.FromScene(scene, names);
 
     // Decoding depends on the level-of-detail choice, so each choice has its own cache.

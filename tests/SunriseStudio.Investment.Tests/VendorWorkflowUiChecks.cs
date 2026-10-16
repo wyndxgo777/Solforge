@@ -5,6 +5,7 @@ using SunriseStudio.Editor.Creation;
 using SunriseStudio.Projects;
 using SunriseStudio.Rendering;
 
+/** Checks the vendor workflow UI: New is registered disabled with its reason, Clone is available, and blockers are explained. */
 internal static class VendorWorkflowUiChecks
 {
     /** The registered modal must retain a failed draft and adopt the created native identity. */

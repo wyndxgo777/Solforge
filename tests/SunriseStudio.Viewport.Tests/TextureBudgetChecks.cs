@@ -9,6 +9,7 @@ internal static class TextureBudgetChecks
     private const uint SceneTag = 0x80FAA33B;
     private const long SmallBudget = 4L * 1024 * 1024;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string install)
     {
         using var catalog = PackageCatalog.Open(install, cacheOptions: new() { Enabled = false });

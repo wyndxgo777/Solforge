@@ -4,7 +4,9 @@ using System.Security.Cryptography;
 
 namespace SunriseStudio.Formats;
 
+/** Widget kinds that can be created. */
 public enum CuiWidgetKind { Frame, Container, Text, Bitmap }
+/** Result of a hierarchy edit: new hierarchy and resource bytes, the node to select, and the nodes and bindings removed. */
 public sealed record CuiWidgetMutation(byte[] Hierarchy, byte[] Resource, ushort SelectedNode,
     IReadOnlySet<ushort> RemovedNodes, int RemovedBindings = 0);
 
@@ -49,6 +51,7 @@ public sealed class CuiWidgetAuthoring
         }
     }
 
+    /** Adds a widget of the given kind under parent with the given rectangle. */
     public CuiWidgetMutation Create(CuiWidgetKind kind, uint nameHash, ushort parent, Vector4 rectangle)
     {
         Capacity();
@@ -95,6 +98,7 @@ public sealed class CuiWidgetAuthoring
         return Checked(new(AppendHierarchy(id, parent), writer.Finish(), id, new HashSet<ushort>()));
     }
 
+    /** Moves a node under a new parent; throws if the parent is one of its descendants. */
     public CuiWidgetMutation Reparent(ushort node, ushort parent)
     {
         _ = Local(node); Parent(parent);
@@ -150,6 +154,7 @@ public sealed class CuiWidgetAuthoring
             + $":{row.Transform.Kind}:{row.Transform.Comparison}:{row.Transform.Operand}";
     }
 
+    /** Throws unless both tags still match the hashes of the bytes this editor was built from. */
     public void RequireUnchanged(ReadOnlySpan<byte> currentHierarchy, ReadOnlySpan<byte> currentResource)
     {
         if (Convert.ToHexString(SHA256.HashData(currentHierarchy)) != hierarchy.SourceSha256
@@ -218,6 +223,7 @@ public sealed class CuiWidgetAuthoring
     private sealed class Writer(ReadOnlyMemory<byte> source)
     {
         private byte[] bytes = source.ToArray();
+        /** Grows the array at descriptor by extra rows, copying old rows; returns the offset where the new rows start. */
         public int AppendRows(int descriptor, uint type, int stride, int extra, int[] pointers)
         {
             var old = new TagReader(bytes).Array(descriptor, type, stride);
@@ -225,6 +231,7 @@ public sealed class CuiWidgetAuthoring
             for (int i = 0; i < old.Count; i++) Copy(old.Data + i * stride, data + i * stride, stride, pointers);
             return data + old.Count * stride;
         }
+        /** Points the array descriptor at a fresh block of count rows (new header appended to the buffer) and returns its data offset; 0 when count is 0. */
         public int ReplaceRows(int descriptor, uint type, int stride, int count)
         {
             if (count == 0) { Q(descriptor, 0); Q(descriptor + 8, 0); return 0; }
@@ -232,6 +239,7 @@ public sealed class CuiWidgetAuthoring
             Array.Resize(ref bytes, checked(data + count * stride)); U(header - 4, 0x80809FBD); Q(header, count); Q(header + 8, type);
             Q(descriptor, count); Q(descriptor + 8, header - descriptor - 8); return data;
         }
+        /** Copies a block inside the buffer and rewrites the relative pointers at the given offsets so they still reach their targets. */
         public void Copy(int sourceOffset, int destination, int length, int[] pointers)
         {
             var reader = new TagReader(bytes); bytes.AsSpan(sourceOffset, length).CopyTo(bytes.AsSpan(destination));
@@ -241,9 +249,13 @@ public sealed class CuiWidgetAuthoring
                 Q(destination + pointer, target < 0 ? 0 : target - destination - pointer);
             }
         }
+        /** Writes a little-endian 64-bit value. */
         public void Q(int at, long value) => BinaryPrimitives.WriteInt64LittleEndian(bytes.AsSpan(at), value);
+        /** Writes a little-endian 32-bit value. */
         public void U(int at, uint value) => BinaryPrimitives.WriteUInt32LittleEndian(bytes.AsSpan(at), value);
+        /** Writes a little-endian 16-bit value. */
         public void S(int at, ushort value) => BinaryPrimitives.WriteUInt16LittleEndian(bytes.AsSpan(at), value);
+        /** Stores the total length at offset 0 and returns the buffer. */
         public byte[] Finish() { Q(0, bytes.Length); return bytes; }
     }
 }

@@ -4,6 +4,7 @@ using SunriseStudio.Animation;
 
 namespace SunriseStudio.Interchange;
 
+/** Writes the bundle's glTF scene (meshes, skeletons and animation). Exports meshes, rigs and clips into glTF files. */
 internal static class BundleSceneWriter
 {
     /**
@@ -143,6 +144,7 @@ internal static class BundleSceneWriter
         File.WriteAllBytes(path, JsonSerializer.SerializeToUtf8Bytes(document));
     }
 
+    /** Sampled times and per-frame bone transforms of a clip. */
     internal sealed record SampledClip(float[] Times, BoneTransform[][] Frames);
     /** glTF permits one nonzero weight per joint; native lane order remains in the bundle geometry. */
     internal static (uint[] Joints, float[] Weights) GltfInfluences(int[][] sourceJoints, float[][] sourceWeights, int bones)
@@ -170,6 +172,7 @@ internal static class BundleSceneWriter
         }
         return (joints, weights);
     }
+    /** Flattens a matrix to 16 floats in row order. */
     internal static float[] MatrixValues(Matrix4x4 m) => [m.M11, m.M12, m.M13, m.M14, m.M21, m.M22, m.M23, m.M24,
         m.M31, m.M32, m.M33, m.M34, m.M41, m.M42, m.M43, m.M44];
     private static float[] Values(BoneTransform value, string property) => property switch

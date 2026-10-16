@@ -2,6 +2,7 @@ using System.Numerics;
 
 namespace SunriseStudio.Formats;
 
+/** Per-tile edit work. */
 public static partial class TomeEditor
 {
     /** One leaf tile's part of the edit: voxel labels, opened and closed voxels, and the cells a closed box splits. */
@@ -36,12 +37,19 @@ public static partial class TomeEditor
         internal Dictionary<int, (Vector3 Min, Vector3 Max)> SplitBounds { get; } = [];
         internal List<(TomeVoxelBox Box, int Label)> Centers { get; } = [];
 
+        /** True when the voxel is inside this tile's box. */
         internal bool Contains(int x, int y, int z) => Box.Contains(x, y, z);
+        /** Linear index of a voxel inside the tile's box. */
         internal int Index(int x, int y, int z) => ((z - Box.MinZ) * Box.SizeY + (y - Box.MinY)) * Box.SizeX + (x - Box.MinX);
+        /** Original cell of a voxel, looked up through the context outside this box. */
         internal int Original(int x, int y, int z) => Contains(x, y, z) ? original[Index(x, y, z)] : context.OriginalCell(Slot, x, y, z);
+        /** Current label of a voxel (original cell outside this box). */
         internal int Label(int x, int y, int z) => Contains(x, y, z) ? label[Index(x, y, z)] : context.OriginalCell(Slot, x, y, z);
+        /** True when the voxel was opened by the edit. */
         internal bool Opened(int x, int y, int z) => Contains(x, y, z) && opened[Index(x, y, z)];
+        /** True when the voxel was closed by the edit. */
         internal bool Closed(int x, int y, int z) => Contains(x, y, z) && closed[Index(x, y, z)];
+        /** True when the voxel is inside the closed box. */
         internal bool InCenter(int x, int y, int z) => !ClosedBox.IsEmpty && ClosedBox.Contains(x, y, z);
 
         /** The closed voxels as a grid over the region, for cutting portals. */
@@ -59,6 +67,7 @@ public static partial class TomeEditor
             }
         }
         private TomeVoxelGrid? closedGrid;
+        /** Label of a voxel in the closed center region, or Solid outside it. */
         internal int CenterAt(int x, int y, int z) => InCenter(x, y, z) ? center[Index(x, y, z)] : Solid;
 
         /**
@@ -261,6 +270,7 @@ public static partial class TomeEditor
             return v < Plane(axis, low: true) ? 0 : v >= Plane(axis, low: false) ? 2 : 1;
         }
 
+        /** World coordinate of the closed box's low or high plane on an axis. */
         internal float Plane(int axis, bool low) =>
             TomeKdTree.Get(context.Grid.Origin, axis) + (low ? ClosedBox.Min(axis) : ClosedBox.Max(axis)) * context.Grid.Size;
 
@@ -337,6 +347,7 @@ public static partial class TomeEditor
             return cell >= 0 && Split.Contains(cell) ? SlabCell(cell, context.Grid.Center(x, y, z)) : cell;
         }
 
+        /** Converts a world-space box to a grid box in this tile. */
         internal TomeGridBox GridBox(Vector3 min, Vector3 max)
         {
             var g0 = ToGrid(Tile, min);

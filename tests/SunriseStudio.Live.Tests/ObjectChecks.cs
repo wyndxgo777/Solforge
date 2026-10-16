@@ -5,6 +5,7 @@ using SunriseStudio.Live;
 /** The object link answers one request once; Studio reads only the answer to its current request. */
 internal static class ObjectChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run()
     {
         var type = typeof(LiveConnection).Assembly.GetType("SunriseStudio.Live.LiveObjectConnection")!;

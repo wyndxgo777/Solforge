@@ -67,22 +67,32 @@ internal static class Fixture
         return (container, data);
     }
 
+    /** Writes an array header for a field, with the marker and type. */
     public static void Array(byte[] bytes, int field, int header, long count, uint type)
     {
         Q(bytes, field, count); Q(bytes, field + 8, header - field - 8);
         U(bytes, header - 4, ArrayMarker); Q(bytes, header, count); U(bytes, header + 8, type);
     }
 
+    /** Rounds up to a multiple of 16. */
     public static int Align(int value) => (value + 15) & ~15;
+    /** Writes a little-endian 32-bit value. */
     public static void U(byte[] bytes, int offset, uint value) => BinaryPrimitives.WriteUInt32LittleEndian(bytes.AsSpan(offset), value);
+    /** Writes a little-endian 16-bit value. */
     public static void S(byte[] bytes, int offset, ushort value) => BinaryPrimitives.WriteUInt16LittleEndian(bytes.AsSpan(offset), value);
+    /** Writes a little-endian 64-bit value. */
     public static void Q(byte[] bytes, int offset, long value) => BinaryPrimitives.WriteInt64LittleEndian(bytes.AsSpan(offset), value);
+    /** Reads a little-endian 32-bit value. */
     public static uint U32(byte[] bytes, int offset) => BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(offset));
+    /** Reads a little-endian 16-bit value. */
     public static ushort U16(byte[] bytes, int offset) => BinaryPrimitives.ReadUInt16LittleEndian(bytes.AsSpan(offset));
+    /** Reads a little-endian signed 64-bit value. */
     public static long I64(byte[] bytes, int offset) => BinaryPrimitives.ReadInt64LittleEndian(bytes.AsSpan(offset));
 
+    /** Throws when the condition is false. */
     public static void Check(bool condition, string message) { if (!condition) throw new InvalidDataException(message); }
 
+    /** Requires the action to throw the given exception type. */
     public static void Reject<TException>(Action action, string message) where TException : Exception
     {
         try { action(); }

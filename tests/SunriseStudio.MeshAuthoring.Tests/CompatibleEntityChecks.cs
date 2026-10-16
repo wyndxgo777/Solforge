@@ -7,6 +7,7 @@ using SunriseStudio.Packages;
 using SunriseStudio.Projects;
 using SunriseStudio.Scene;
 
+/** Checks cloning an entity with compatible meshes: review keeps entries and component sources, and rejected or wrong-project reviews publish nothing. */
 internal static class CompatibleEntityChecks
 {
     private const uint Entity = 0x80B82FE3, Model = 0x80C4424F, Config = 0x80C443F8;

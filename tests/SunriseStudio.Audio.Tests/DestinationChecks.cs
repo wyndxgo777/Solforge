@@ -2,6 +2,7 @@ using System.Buffers.Binary;
 using SunriseStudio.Audio;
 using SunriseStudio.Packages;
 
+/** Checks music transition destinations (entry cue, matching source, custom cue, same-time scheduling) so the chosen start position matches native behavior. */
 internal static class DestinationChecks
 {
     /** One rule on switch 100 from segment 10 into segment 20, which sits in playlist 200 as leaf item 999. */
@@ -20,6 +21,7 @@ internal static class DestinationChecks
             .Build();
     }
 
+    /** Runs the checks that use generated fixtures instead of installed game content. */
     public static void Synthetic(string directory)
     {
         var analysis = Fixture(); var segment = analysis.Segments[20];
@@ -62,6 +64,7 @@ internal static class DestinationChecks
         Console.WriteLine("audio_destination synthetic=pass same_time=wrapped named_cues=matched leaf_jump=checked lead_in=after_request pcm=exact");
     }
 
+    /** Runs the same kind of checks against the real packages of the owned installation. */
     public static async Task Owned(PackageCatalog catalog, string directory, string? output)
     {
         using var session = new AudioSession(catalog, 0x80BBEE11, cacheDirectory: Path.Combine(directory, "destination-cache"));

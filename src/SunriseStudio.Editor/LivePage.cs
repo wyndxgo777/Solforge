@@ -55,6 +55,7 @@ public sealed partial class LivePage : IDisposable
 
     /** The live row paired with an authored mesh or marker, if the game has spawned it. */
     public LivePlacement? Observed(object source) => MatchesWorld() ? binding?.RowFor(source) : null;
+    /** The live row with this handle, or null. */
     public LivePlacement? RowByHandle(uint handle) => byHandle.GetValueOrDefault(handle);
     /** The game's answer for the selected object; Pending until it arrives. */
     public LiveObjectSnapshot? InspectedObject => inspected is null ? null : connection?.ObjectSnapshot;
@@ -86,6 +87,7 @@ public sealed partial class LivePage : IDisposable
         return false;
     }
 
+    /** Name for a live row: the authored match if any, else its class or object-list entry. */
     public string DisplayName(StudioWorkspace workspace, LivePlacement row) => binding?.Find(row)?.Name
         ?? (row.ClassTag is not (0 or uint.MaxValue) ? workspace.DisplayName(row.ClassTag) : $"{workspace.DisplayName(row.ObjectListTag)} / {row.EntryIndex}");
 
@@ -538,7 +540,9 @@ public sealed partial class LivePage : IDisposable
         DrawAnimation();
     }
 
+    /** Cancels pending dynamic and pose preparation. */
     public void CancelPreparation() { dynamic.CancelPreparation(); poseCancellation?.Cancel(); }
+    /** Disconnects from the game and releases dynamic and pose resources. */
     public void Dispose()
     {
         Disconnect(); dynamic.Dispose();

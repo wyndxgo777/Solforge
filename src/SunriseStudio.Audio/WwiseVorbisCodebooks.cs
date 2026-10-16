@@ -81,6 +81,7 @@ internal static class WwiseVorbisCodebooks
         if (input.BitPosition / 8 + 1 != book.Length) throw new InvalidDataException($"Codebook {id} size is wrong.");
     }
 
+    /** Number of bits needed to hold value (Vorbis ilog). */
     public static int ILog(uint value) => value == 0 ? 0 : 32 - System.Numerics.BitOperations.LeadingZeroCount(value);
 
     /** Largest v with v^dimensions <= entries (Tremor's _book_maptype1_quantvals). */

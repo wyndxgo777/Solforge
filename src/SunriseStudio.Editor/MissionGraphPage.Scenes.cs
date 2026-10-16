@@ -3,6 +3,7 @@ using SunriseStudio.Missions;
 
 namespace SunriseStudio.Editor;
 
+/** MissionGraphPage part: scene start and scene output editors for campaign steps. */
 public sealed partial class MissionGraphPage
 {
     /** A campaign step's scene starts with the step; its inputs are sent right after. */

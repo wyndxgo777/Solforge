@@ -6,6 +6,7 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Editor;
 
+/** StudioForm part: the compatible skin import dialog and its preparation state. */
 public sealed partial class StudioForm
 {
     private bool skinImportDialog, skinReviewPending, skinCreateAsset;

@@ -54,6 +54,7 @@ public sealed class PackageBlockAllocator
         this.sourceEntries = sourceEntries;
     }
 
+    /** Opens a source package to patch. */
     public static PackageBlockAllocator Open(string sourcePackagePath)
     {
         var file = new PackageFile(Path.GetFullPath(sourcePackagePath));
@@ -80,6 +81,7 @@ public sealed class PackageBlockAllocator
             throw new InvalidDataException($"Package id 0x{packageId:X4} is outside {PackageWriter.NewPackageIdRange}.");
     }
 
+    /** Replaces one entry's data; the entry must already exist in the source. */
     public void Replace(int entryIndex, byte[] data)
     {
         ArgumentNullException.ThrowIfNull(data);
@@ -189,6 +191,7 @@ public sealed class PackageDelta
         Redirects = redirects; Blocks = blocks;
     }
 
+    /** Writes the delta header and tables into the buffer. */
     internal void WriteTables(Span<byte> bytes)
     {
         BinaryPrimitives.WriteUInt32LittleEndian(bytes, Magic);

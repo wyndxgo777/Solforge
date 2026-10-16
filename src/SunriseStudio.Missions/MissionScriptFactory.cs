@@ -1,8 +1,12 @@
+/** File: Creates new mission scripts from templates for an existing SDK activity. */
 namespace SunriseStudio.Missions;
 
+/** An SDK activity key and its Lua module. */
 public sealed record MissionSdkActivity(string Key, string Module);
+/** A new script's entry and its parsed graph. */
 public sealed record MissionScriptDraft(MissionScriptEntry Entry, MissionGraphDocument Graph);
 
+/** Partial: script lookup and creation helpers. */
 public sealed partial class MissionScriptCatalog
 {
     /** The key and module rows of an SDK index such as missions.lua; a missing or unreadable index gives none. */
@@ -47,6 +51,7 @@ public sealed partial class MissionScriptCatalog
     public MissionScriptEntry DescribeSource(string activity, string relativePath, MissionGraphDocument document) =>
         new(activity, relativePath, "", ModuleForKey(new MissionScriptBindings(document.Script).MissionKey));
 
+    /** The mission key for a module; throws when the module is not in the index. */
     internal string MissionKeyForModule(string module) => missionModules.First(value => value.Module == module).Key;
 
     /** The runtime folds names into lowercase ASCII stems and collapses separator runs. */
@@ -67,6 +72,7 @@ public sealed partial class MissionScriptCatalog
     }
 }
 
+/** Builds new script drafts. */
 public static class MissionScriptFactory
 {
     /** Why a new flow script cannot run here; empty when the installed scripts have lib/flow.lua. */
@@ -157,6 +163,7 @@ public static class MissionScriptFactory
             : $"{missionKey} matches several missions: {string.Join(", ", near.Select(value => value.Key))}.");
     }
 
+    /** Builds a template script for a mission key; the name must not be blank. */
     public static MissionScriptDraft CreateTemplate(MissionScriptCatalog catalog, MissionActivityType type, string missionKey, string name)
     {
         var row = FindMission(catalog, missionKey);

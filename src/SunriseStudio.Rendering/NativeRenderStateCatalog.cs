@@ -6,8 +6,14 @@ using Vortice.Direct3D11;
 
 namespace SunriseStudio.Rendering;
 
+/**
+ * Which of the two depth-stencil tables a state selection indexes. This file also loads the native
+ * render-state catalog.
+ */
 public enum NativeDepthTable { Primary, Alternate }
+/** Indices into the native blend, depth-stencil, rasterizer and bias tables. */
 public readonly record struct NativeStateSelection(byte Blend, byte DepthStencil, byte Rasterizer, byte Bias);
+/** D3D11 state descriptions resolved from a NativeStateSelection. */
 public sealed record NativeRenderStateDescriptions(NativeStateSelection Selection,
     BlendDescription Blend, DepthStencilDescription DepthStencil, RasterizerDescription Rasterizer,
     Vector4 BlendFactor);

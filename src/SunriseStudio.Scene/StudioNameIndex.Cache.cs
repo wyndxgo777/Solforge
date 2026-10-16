@@ -3,6 +3,7 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Scene;
 
+/** Cache part of StudioNameIndex: saves and restores the built name tables. */
 public sealed partial class StudioNameIndex
 {
     private sealed record CachedNames(Dictionary<uint, StudioNameCandidate[]> Tags,

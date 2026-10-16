@@ -2,10 +2,12 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Scene;
 
+/** A map and the bubbles it contains. This file also lists maps and activities. */
 public sealed record MapEntry(uint Tag, string Name, IReadOnlyList<uint> BubbleHashes)
 {
     public uint DefinitionTag { get; init; }
 }
+/** An activity, its bubbles and whether they matched exactly. */
 public sealed record MapActivity(uint Tag, string Name, IReadOnlyList<uint> BubbleHashes, bool ExactMatch);
 
 /** Maps and the scenarios that place content on them, matched by authored bubble name hashes. */
@@ -45,6 +47,7 @@ public sealed class MapCatalog
         Maps = maps.OrderBy(m => m.Name, StringComparer.OrdinalIgnoreCase).ToArray();
     }
 
+    /** Scans the catalog for maps and activities. */
     public static MapCatalog Build(PackageCatalog catalog, Func<uint, string> name, CancellationToken token = default) =>
         new(catalog, name, token);
 

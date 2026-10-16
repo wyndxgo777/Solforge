@@ -28,6 +28,7 @@ internal static class ConfigReferenceCacheChecks
             "Owned cache process did not take the expected cold or warm path.");
     }
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run()
     {
         string parent = Path.Combine(Path.GetTempPath(), "sunrise-config-reference-" + Guid.NewGuid().ToString("N"));

@@ -6,8 +6,10 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Viewport;
 
+/** Material shown in the asset surface: tag, name, parsed info, execution data and any load error. */
 public sealed record MaterialSurface(uint TagHash, string Name, GameMaterialInfo Material,
     MaterialExecutionData? Execution, string? Error);
+/** Shader shown in the asset surface: tag, name, parsed info, bytecode and its SHA-256. */
 public sealed record ShaderSurface(uint TagHash, string Name, GameShaderInfo Shader,
     byte[] Bytecode, string Sha256)
 {

@@ -5,9 +5,14 @@ using Vortice.DXGI;
 
 namespace SunriseStudio.Rendering;
 
+/** One mip and array slice of data for a texture upload, with row and slice pitch. */
 public sealed record TextureSubresourceUpload(int MipLevel, int ArraySlice,
     byte[] Data, int RowPitch, int SlicePitch);
 
+/**
+ * Texture-resource part of Dx11Renderer: creates 2D, array, cube and volume textures from decoded
+ * subresources.
+ */
 public sealed unsafe partial class Dx11Renderer
 {
     /** Each subresource carries explicit mip and array indices; no package ordering is assumed. */

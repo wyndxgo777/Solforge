@@ -2,6 +2,7 @@ using System.Buffers.Binary;
 
 namespace SunriseStudio.Formats;
 
+/** Node specs for conditions and effects that use label values. */
 public static partial class NativePerkBehavior
 {
     // A label value packs its bit index above the 32-bit label hash.

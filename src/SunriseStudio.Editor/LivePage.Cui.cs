@@ -5,6 +5,7 @@ using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
+/** LivePage part: lists the game's open screens and opens a screen's hierarchy in the CUI page. */
 public sealed partial class LivePage
 {
     // Package class of a CUI hierarchy; only these open in the CUI page.
@@ -25,6 +26,7 @@ public sealed partial class LivePage
     private bool CuiInUse => syncCui || screensShown;
 
     /** The hierarchy tag to open in the CUI page, once. */
+    /** Returns and clears the hierarchy tag the CUI page should open, if any. */
     public uint? TakeCuiOpen()
     {
         var tag = pendingCuiOpen;

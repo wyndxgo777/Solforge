@@ -4,8 +4,10 @@ using SunriseStudio.Packages;
 using SunriseStudio.Projects;
 using SunriseStudio.Rendering;
 
+/** Checks the wide-hash modal UI: it is drawn with its aliases and edits stay in a draft until saved. */
 internal static class WideHashUiChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string root, string capture)
     {
         string install = Path.Combine(root, "alias-modal-install");

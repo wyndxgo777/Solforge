@@ -7,6 +7,7 @@ using SunriseStudio.Scene;
 using SunriseStudio.Scene.Collision;
 using static Checks;
 
+/** Checks the shared-shape reverse links: which owners reference a collision shape, and that retargeting or unchanged queries do not rescan or leave stale links. */
 internal static class SharedShapeChecks
 {
     /** Owner replacements, removals and package changes must not leave stale reverse links. */

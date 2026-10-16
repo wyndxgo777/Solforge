@@ -2,6 +2,7 @@ using System.Numerics;
 
 namespace SunriseStudio.Scene;
 
+/** Terrain part of AssetSceneLoader: decodes terrain meshes. */
 public sealed partial class AssetSceneLoader
 {
     /** Terrain stores XY in 1/64 units and a signed two-word height in 1/8192 units. */

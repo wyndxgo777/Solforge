@@ -4,6 +4,7 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Viewport;
 
+/** Picking half of AssetViewport: ray picks, click selection and hover. */
 public sealed partial class AssetViewport
 {
     private readonly List<int> pickCandidates = [];
@@ -115,6 +116,7 @@ public sealed partial class AssetViewport
         if (focus && SelectedObject is not null) FocusSelection();
     }
 
+    /** Updates and returns the hovered item under a viewport pixel; resolved to its whole object in object mode. */
     public object? HoverAt(Vector2 viewportPixel, Vector2 size)
     {
         var item = Pick(viewportPixel, size);

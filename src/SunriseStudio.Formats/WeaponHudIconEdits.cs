@@ -11,6 +11,7 @@ public static class WeaponHudIconEdits
     public const int Width = 137, Height = 76;
     private const int VariantIndex = 20, LibraryStride = 112, VariantStride = 448, GlyphOffset = 224;
 
+    /** Name hashes of the glyphs in the icon library. */
     public static IReadOnlyList<uint> GlyphHashes(ReadOnlyMemory<byte> library)
     {
         var reader = new TagReader(library);
@@ -50,6 +51,7 @@ public static class WeaponHudIconEdits
         return null;
     }
 
+    /** Reads the HUD glyph name hash of the selected weapon variant. */
     public static uint ReadGlyph(ReadOnlyMemory<byte> config) => new TagReader(config).U32(VariantGlyphOffset(config));
 
     /** Only the selected weapon variant receives the new HUD glyph name. */

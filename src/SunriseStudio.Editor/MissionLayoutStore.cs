@@ -10,6 +10,7 @@ internal sealed class MissionLayoutStore(string directory)
 {
     private sealed record Layout(string Script, Dictionary<string, float[]> Positions);
 
+    /** Reads saved node positions for the script; an unreadable file yields none. */
     public Dictionary<string, Vector2> Load(string scriptPath)
     {
         string file = FileFor(scriptPath);
@@ -25,6 +26,7 @@ internal sealed class MissionLayoutStore(string directory)
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException) { return []; }
     }
 
+    /** Writes node positions for the script. */
     public void Save(string scriptPath, IEnumerable<KeyValuePair<string, Vector2>> positions)
     {
         Directory.CreateDirectory(directory);

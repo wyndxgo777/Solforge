@@ -3,13 +3,16 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Formats;
 
+/** Catalog of items, vendors, stats and perks read from the investment index tags, used by the item and vendor editors. Broad item category. */
 public enum InvestmentCategory { Weapons, Armor, Items, Currencies }
+/** Tag hashes of the index tables the catalog reads (items, displays, string banks, vendors, icons and so on). */
 public sealed record InvestmentSources(uint Items = InvestmentTags.ItemIndex, uint Displays = InvestmentTags.ItemDisplayIndex,
     uint StringBanks = 0x81A27211, uint StatNames = 0x81613D07, uint Vendors = InvestmentTags.VendorIndex,
     uint VendorDisplays = InvestmentTags.VendorDisplayIndex, uint PlugSets = 0x81319349, uint Icons = 0x81A291C2,
     uint Perks = 0x81613D28, uint StatGroups = 0x81613D08, uint Collectibles = 0x81327CDE,
     uint CollectibleDisplays = 0x81327D67, uint PresentationNodes = 0x8131933F, uint PresentationNodeDisplays = 0x81613CF8,
     uint ItemArt = InvestmentItemArt.TableTag);
+/** One item definition from the item index, with its resolved display name and stack/tier data. */
 public sealed record InvestmentItem(int Index, uint Hash, uint Tag, uint DisplayTag, string Name,
     string TypeName, string Description, byte Bucket, byte Tier, int MaximumStack, bool Instanced)
 {
@@ -18,29 +21,39 @@ public sealed record InvestmentItem(int Index, uint Hash, uint Tag, uint Display
             ? InvestmentCategory.Currencies : InvestmentCategory.Items;
     public string Rarity => InvestmentItemKinds.TierName(Tier);
 }
+/** One vendor from the vendor index; LabelSource says where its name came from. */
 public sealed record InvestmentVendor(int Index, uint Hash, uint Tag, uint DisplayTag, string Name,
     string LabelSource = "Package name or index");
+/** A stat row of an item: the stat, its value and the editable field; Conditional/Computed mark values that depend on context. */
 public sealed record InvestmentStat(byte Index, string Name, int Value, AssetProperty Field,
     bool Conditional = false, bool Computed = false);
+/** A stat known to the installation, by index and display name. */
 public sealed record InvestmentStatDefinition(byte Index, string Name);
+/** A socket of an item: type, initial plug and the plugs it allows. */
 public sealed record InvestmentSocket(int Index, ushort Type, ushort InitialPlug, string PlugName,
     AssetProperty TypeField, AssetProperty PlugField, IReadOnlyList<ushort> AllowedPlugs);
+/** A perk row of an item with its editable field. */
 public sealed record InvestmentPerk(ushort Index, string Name, AssetProperty Field, bool Conditional = false);
+/** A sandbox perk definition: hash, text and icon index. */
 public sealed record InvestmentPerkDefinition(int Index, uint Hash, string Name, string Description, ushort IconIndex);
+/** Everything shown for one item: stats, sockets, perks, raw fields and diagnostics. */
 public sealed record InvestmentItemDetail(InvestmentItem Item, IReadOnlyList<InvestmentStat> Stats,
     IReadOnlyList<InvestmentSocket> Sockets, IReadOnlyList<InvestmentPerk> Perks,
     IReadOnlyList<AssetProperty> Fields, IReadOnlyList<string> Diagnostics)
 {
     public IReadOnlyDictionary<byte, InvestmentStatCurve> DisplayCurves { get; init; } = new Dictionary<byte, InvestmentStatCurve>();
 }
+/** One cost of a vendor sale: item, quantity and their editable fields. */
 public sealed record InvestmentCost(ushort ItemIndex, string Name, uint Quantity, AssetProperty ItemField,
     AssetProperty QuantityField, bool Conditional);
+/** One vendor sale (item and category) with its costs. */
 public sealed record InvestmentSale(int Index, ushort ItemIndex, string Name, int Category,
     AssetProperty ItemField, AssetProperty CategoryField, IReadOnlyList<InvestmentCost> Costs)
 {
     public uint OwnerTag { get; init; }
     public string SourceSha256 { get; init; } = "";
 }
+/** Everything shown for one vendor: sales, reset interval/phase and diagnostics. */
 public sealed record InvestmentVendorDetail(InvestmentVendor Vendor, IReadOnlyList<InvestmentSale> Sales,
     uint ResetIntervalRaw, uint ResetPhaseRaw, IReadOnlyList<string> Diagnostics);
 
@@ -80,10 +93,14 @@ public sealed partial class InvestmentCatalog
         foreach (var vendor in vendors) { vendorsByTag.TryAdd(vendor.Tag, vendor); if (vendor.DisplayTag != 0) vendorsByTag.TryAdd(vendor.DisplayTag, vendor); }
     }
 
+    /** Item for a tag, or null. */
     public InvestmentItem? FindItem(uint tag) => byTag.GetValueOrDefault(tag);
+    /** Vendor for a tag, or null. */
     public InvestmentVendor? FindVendor(uint tag) => vendorsByTag.GetValueOrDefault(tag);
+    /** Item name for an index; "None" for the empty index and a placeholder when out of range. */
     public string ItemName(int index) => index == ushort.MaxValue ? "None" : index >= 0 && index < Items.Count
         ? Items[index].Name : $"Item {index}";
+    /** Stat name for an index, or a placeholder. */
     public string StatName(byte index) => statNames.GetValueOrDefault(index, $"Stat {index}");
     /** Resolves a {bank index, string hash} pair through the bank index. */
     public string Text(uint bank, uint hash) => bank < banks.Length ? strings.Get(banks[bank], hash)?.Trim() ?? "" : "";

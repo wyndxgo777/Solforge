@@ -7,6 +7,7 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Creation.Tests;
 
+/** Checks the weapon HUD icon workflow: owned HUD config selection, glyph resolution to the supplied PNG, and undo. */
 internal static class WeaponHudIconWorkflowChecks
 {
     /** A HUD edit changes its owned config and glyph library as one undoable transaction. */

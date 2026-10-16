@@ -5,6 +5,7 @@ using static Checks;
 /** Phase 10: axis views, the corner axis gizmo and the statistics overlay. */
 internal static class CameraChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(List<string> checks)
     {
         Views();

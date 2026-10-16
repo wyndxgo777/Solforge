@@ -31,6 +31,7 @@ public static class CollisionJoin
     private static bool Near(Vector3 a, Vector3 b) => MathF.Abs(a.X - b.X) < TranslationTolerance
         && MathF.Abs(a.Y - b.Y) < TranslationTolerance && MathF.Abs(a.Z - b.Z) < TranslationTolerance;
 
+    /** True when the matrix is the identity within tolerance. */
     internal static bool Identity(Matrix4x4 value)
     {
         for (int row = 0; row < 4; row++)

@@ -2,6 +2,7 @@ using System.Numerics;
 
 namespace SunriseStudio.Scene;
 
+/** Placed-model part of AssetSceneLoader: queues and loads models of placed classes. */
 public sealed partial class AssetSceneLoader
 {
     private readonly List<(SceneMarker Marker, Matrix4x4 Transform)> placedModels = [];

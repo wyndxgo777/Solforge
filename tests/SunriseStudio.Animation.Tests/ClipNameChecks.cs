@@ -3,11 +3,13 @@ using System.Text;
 using SunriseStudio.Animation;
 using SunriseStudio.Packages;
 
+/** Checks that animation clip names and event paths are resolved from the right string bank owner, never from an unrelated clip or directory; guards the clip-browser labels. */
 internal static class ClipNameChecks
 {
     private const uint ClipA = 0x81000001, ClipB = 0x81000002, Audio = 0x81000003;
     private const string Prefix = "content\\audio\\wwise_events\\test\\";
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run()
     {
         Require(AnimationClipNames.Hash("idle") == 0x6FB760FF, "FNV-1 changed.");
@@ -81,6 +83,7 @@ internal static class ClipNameChecks
         Console.WriteLine("animation_names synthetic=pass typed_paths=1 collisions=refused unrelated=refused");
     }
 
+    /** Runs the same kind of checks against the real packages of the owned installation. */
     public static void Owned(PackageCatalog catalog)
     {
         var reader = new EntityAnimationCatalog(catalog);

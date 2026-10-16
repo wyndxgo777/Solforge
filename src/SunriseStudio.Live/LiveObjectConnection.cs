@@ -70,5 +70,6 @@ internal sealed class LiveObjectConnection : IDisposable
         }
     }
 
+    /** Zeroes the heartbeat and releases the mapping. */
     public void Dispose() { view.Write(LiveObjectProtocol.HeartbeatOffset, 0L); view.Dispose(); mapping.Dispose(); }
 }

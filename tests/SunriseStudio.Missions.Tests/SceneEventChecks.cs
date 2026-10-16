@@ -77,6 +77,7 @@ internal static class SceneEventChecks
         }
         """;
 
+    /** Runs the checks that use generated fixtures instead of installed game content. */
     public static void Synthetic(string root)
     {
         string game = Path.Combine(root, "scene-game"), sunrise = Path.Combine(game, "bin", "x64", "Sunrise");

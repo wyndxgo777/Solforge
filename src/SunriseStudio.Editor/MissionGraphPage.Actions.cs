@@ -3,6 +3,7 @@ using SunriseStudio.Missions;
 
 namespace SunriseStudio.Editor;
 
+/** MissionGraphPage part: editors for flow action nodes and the Add mission node template popup. */
 public sealed partial class MissionGraphPage
 {
     private MissionFlowAction? actionDraft;

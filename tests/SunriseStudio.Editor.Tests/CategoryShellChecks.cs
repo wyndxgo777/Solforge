@@ -12,6 +12,7 @@ internal static class CategoryShellChecks
     private const uint Leftover = 0x80A00000, Member = Leftover + 1;
     private const string Name = "Shell check";
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(string root)
     {
         string[] names = [.. StudioCategories.All.Select(category => category.Name)];

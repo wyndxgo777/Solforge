@@ -80,6 +80,7 @@ internal sealed class LiveWorldConnection : IDisposable
         return false;
     }
 
+    /** Zeroes the heartbeat and releases the mapping. */
     public void Dispose()
     { view.Write(16, 0L); view.Dispose(); mapping.Dispose(); }
 }

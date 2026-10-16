@@ -7,6 +7,7 @@ using System.Numerics;
 
 namespace SunriseStudio.Editor;
 
+/** CuiPage part: edits a widget's visual properties (text, colours, images) and adds overrides. */
 public sealed partial class CuiPage
 {
     private CuiComponent? contentComponent;

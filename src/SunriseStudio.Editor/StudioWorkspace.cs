@@ -7,6 +7,7 @@ using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
+/** One row of the asset browser: a package entry with its kind, display name and search text. */
 public sealed record BrowserAsset(PackageEntry Entry, string Kind, StudioNameIndex Names)
 {
     public string Name => Names.Describe(Entry);
@@ -31,6 +32,7 @@ internal static class ProjectTags
     // New-package tags start at 0x80800000; the package id sits above a 13-bit entry index.
     public static uint Tag(ushort package, int entry) => checked(0x80800000U + ((uint)package << 13) + (uint)entry);
 
+    /** The tag hash an added native asset occupies in its package. */
     public static uint Tag(this NativeAssetMetadata native) =>
         Tag(native.PackageId, native.EntryIndex ?? throw new InvalidDataException("A project asset needs an entry index."));
 }
@@ -41,6 +43,7 @@ internal static class AssetNames
     // Longer names are cut to this many characters.
     private const int MaximumLength = 96;
 
+    /** Turns a name into a safe file name, bounded in length. */
     public static string FileName(string name)
     {
         var invalid = Path.GetInvalidFileNameChars();
@@ -49,6 +52,7 @@ internal static class AssetNames
     }
 }
 
+/** The open asset: bytes, inspection, scene or texture and the contexts the pages need. */
 public sealed record StudioDocument(PackageEntry Entry, string Name, byte[] Bytes,
     AssetInspection Inspection, SceneDocument? Scene, TextureData? Texture, string PreviewError,
     AssetAnimationSource? Animation = null, string? AddedAssetId = null,
@@ -105,6 +109,7 @@ public sealed partial class StudioWorkspace : IDisposable
     }
     /** The result of the last background command, shown until dismissed. */
     public WorkNotice? Notice { get; private set; }
+    /** Clears the current notice. */
     public void DismissNotice() => Notice = null;
     public bool CanEdit => Project is not null && Catalog is not null && !IsBusy;
     public bool CanUndo => CanEdit && undo.Count > 0;
@@ -203,6 +208,7 @@ public sealed partial class StudioWorkspace : IDisposable
         ReportProgress(progress.Stage, progress.Completed, progress.Total);
     });
 
+    /** The browser kind string of an entry. */
     public static string AssetKind(PackageEntry entry) => AssetInspectionService.Classify(entry);
 
     private static string FriendlyKind(PackageEntry entry)
@@ -515,12 +521,14 @@ public sealed partial class StudioWorkspace : IDisposable
         return new(entry, asset.Name, bytes, inspection, scene, texture, error, AddedAssetId: asset.Id, OpenContext: context);
     }
 
+    /** Creates a project in the folder and makes it current. */
     public void CreateProject(string folder, string name)
     {
         RequireIdle();
         AdoptProject(StudioProject.Create(folder, name));
     }
 
+    /** Opens the project manifest and makes it current. */
     public void OpenProject(string path)
     {
         RequireIdle();
@@ -546,6 +554,7 @@ public sealed partial class StudioWorkspace : IDisposable
         Changed?.Invoke();
     }
 
+    /** Closes the current project. */
     public void CloseProject()
     {
         RequireIdle();
@@ -605,6 +614,7 @@ public sealed partial class StudioWorkspace : IDisposable
         Changed?.Invoke();
     }
 
+    /** Reapplies the last undone edit. */
     public void Redo()
     {
         if (!CanRedo) return;
@@ -617,6 +627,7 @@ public sealed partial class StudioWorkspace : IDisposable
         Changed?.Invoke();
     }
 
+    /** Drops the project's edit of this tag, restoring the installed asset. */
     public void Revert(uint tag)
     {
         RequireEditable();
@@ -824,6 +835,7 @@ public sealed partial class StudioWorkspace : IDisposable
         else if (frame.Selection != 0) Select(frame.Selection, context: frame.Context);
     }
 
+    /** Removes an added asset from the project. */
     public void RemoveAdded(string id)
     {
         RequireEditable();
@@ -837,6 +849,7 @@ public sealed partial class StudioWorkspace : IDisposable
         Changed?.Invoke();
     }
 
+    /** Builds the project into the output folder, or the default output. */
     public void Build(string? output = null)
     {
         RequireEditable();
@@ -858,12 +871,14 @@ public sealed partial class StudioWorkspace : IDisposable
 
     public ProjectBuildResult? LastBuild { get; private set; }
 
+    /** Runs an operation as a named background job. */
     public void Execute(string description, Action operation) => BeginWork(description, () =>
     {
         operation();
         return () => { Status = "Done"; };
     });
 
+    /** Decodes imported files on the worker and applies the changed assets as one edit. */
     public void ImportEdits(Func<IReadOnlyDictionary<uint, byte[]>> decode)
     {
         RequireEditable();
@@ -874,6 +889,7 @@ public sealed partial class StudioWorkspace : IDisposable
         });
     }
 
+    /** Prepares the native scene renderer for the open (or given preview) scene. */
     public void PrepareNative(SceneDocument? previewScene = null)
     {
         if (Catalog is not { } catalog || ActiveScene is not { } scene || IsBusy) return;
@@ -891,6 +907,7 @@ public sealed partial class StudioWorkspace : IDisposable
     public bool LowMemoryMode { get; set; }
     /** The world texture budget Low memory mode uses (Settings > Rendering); applies to the next map or shader load. */
     public long LowMemoryTextureBudget { get; set; } = 256L * 1024 * 1024;
+    /** Drops the decoded world textures. */
     public void TrimTextureCache() { worldTextures.Clear(); }
     /**
      * Cap on the decoded world-texture cache outside Low memory mode. Upstream kept every decoded texture (a second copy
@@ -964,6 +981,7 @@ public sealed partial class StudioWorkspace : IDisposable
         Catalog?.TrimReadCache(BlocksKeptAfterLoad);
     }
 
+    /** Runs the action and stores any exception message in Error instead of throwing. */
     public void Run(Action action)
     {
         try { Error = ""; action(); }
@@ -1034,6 +1052,7 @@ public sealed partial class StudioWorkspace : IDisposable
         }
     }
 
+    /** Cancels work and releases the catalog and caches; safe to call twice. */
     public void Dispose()
     {
         if (disposed) return;

@@ -1,5 +1,6 @@
 namespace SunriseStudio.Formats;
 
+/** Node kind tables of the native perk behavior graph (always/timer and other class ids). */
 public static partial class NativePerkBehavior
 {
     private const uint AlwaysClass = 0x80803E03, TimerClass = 0x80803DCD;

@@ -80,6 +80,7 @@ internal sealed class PackageIndex
     internal PackageFile Open(string path) =>
         records.TryGetValue(Path.GetFileName(path), out var record) ? new PackageFile(path, record.Header) : new PackageFile(path);
 
+    /** Loads a package's entry and block tables from the index; false when the index lacks them. */
     internal bool LoadTables(PackageFile package)
     {
         if (!records.TryGetValue(Path.GetFileName(package.Path), out var record)

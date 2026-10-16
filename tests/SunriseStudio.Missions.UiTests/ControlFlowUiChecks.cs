@@ -5,6 +5,7 @@ using SunriseStudio.Missions;
 using SunriseStudio.Projects;
 using static MissionUi;
 
+/** UI check of the control-flow editor: edits to Lua branches and loops keep comments and apply to the script. */
 internal static class ControlFlowUiChecks
 {
     private const string Source = "-- Keep controller comment\nreturn {on_start = function(context, state)\n"
@@ -13,6 +14,7 @@ internal static class ControlFlowUiChecks
         + "    local holder = {}\n    holder[state.key] = count -- complex target stays Lua\n"
         + "    return count\nend}\n";
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static int Run(string game, string? capture)
     {
         string file = "", temporary = "";

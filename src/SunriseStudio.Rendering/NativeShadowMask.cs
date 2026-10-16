@@ -302,6 +302,7 @@ public sealed class NativeShadowMask : IDisposable
         return fades;
     }
 
+    /** Releases the GPU resources this pass owns. */
     public void Dispose()
     {
         if (disposed) return;

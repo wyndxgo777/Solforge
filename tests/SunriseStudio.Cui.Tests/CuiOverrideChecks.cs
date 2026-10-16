@@ -4,6 +4,7 @@ using SunriseStudio.Formats;
 using SunriseStudio.Packages;
 using SunriseStudio.Projects;
 
+/** Checks CUI property overrides: constructor dimensions become overrides, no-ops write nothing, and float pool insertion is selective. */
 internal static class CuiOverrideChecks
 {
     private const uint Tag = 0x80A00000;
@@ -11,6 +12,7 @@ internal static class CuiOverrideChecks
     private enum Slots { Missing, Empty, Nested }
     private enum Shared { None, Components, Properties }
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run()
     {
         byte[] defaults = Fixture(false, Slots.Missing, Shared.None);
@@ -72,6 +74,7 @@ internal static class CuiOverrideChecks
         Console.WriteLine("cui overrides=pass defaults=selective absent_pools=created shared_arrays=isolated nested_slots=preserved project_reopen=pass");
     }
 
+    /** Runs the checks that need an installed game; takes the installed data under test. */
     public static void Installed(PackageCatalog catalog, CuiTypeRegistry types)
     {
         const uint tag = 0x80BC7154;

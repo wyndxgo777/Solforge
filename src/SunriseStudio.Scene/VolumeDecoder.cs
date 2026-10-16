@@ -2,6 +2,7 @@ using System.Numerics;
 
 namespace SunriseStudio.Scene;
 
+/** Volume part of AssetSceneLoader: builds trigger and class volumes as scene geometry. */
 public sealed partial class AssetSceneLoader
 {
     private readonly HashSet<(uint Tag, uint Bubble)> volumeConfigs = [];

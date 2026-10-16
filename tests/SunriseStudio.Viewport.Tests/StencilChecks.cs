@@ -7,6 +7,7 @@ using SunriseStudio.Viewport;
 /** Environment-view stencil: stage 0 state 8 with reference 4 and the per-draw object bits. */
 internal static class StencilChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string install)
     {
         Resolution();

@@ -80,6 +80,7 @@ public static class NativeOcean
     // The renderer builds its frame inputs from a plan's parameter snapshot, so the settings are keyed by it.
     private static readonly ConditionalWeakTable<TfxParameterLookup, NativeOceanSettings> Settings = new();
 
+    /** Binds the wave and detail noise textures and the ocean floats into the inputs. */
     public static void Apply(TfxInputs inputs, NativeOceanSettings settings)
     {
         inputs.Resources[new(Extern, 0)] = WaveNoise;

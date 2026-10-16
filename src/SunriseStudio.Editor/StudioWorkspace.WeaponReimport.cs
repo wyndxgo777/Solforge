@@ -4,6 +4,7 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Editor;
 
+/** StudioWorkspace part: queued weapon asset reimport and arms export requests. */
 public sealed partial class StudioWorkspace
 {
     private uint? pendingWeaponReimport;
@@ -12,6 +13,7 @@ public sealed partial class StudioWorkspace
     private string? weaponReimportPath;
     public PreparedWeaponAssetReimport? LastWeaponAssetReimport { get; private set; }
 
+    /** Queues a reimport of the weapon's art for the form to pick up. */
     public void RequestWeaponAssetReimport(uint weaponTag)
     {
         RequireEditable();
@@ -23,6 +25,7 @@ public sealed partial class StudioWorkspace
     /** The form asks where to save, then exports the arms rig from these clips. */
     public void RequestWeaponArmsExport(uint fireClip, uint reloadClip) => pendingArmsExport = (fireClip, reloadClip);
 
+    /** Returns and clears the queued arms export (fire and reload clip), if any. */
     internal (uint Fire, uint Reload)? TakeWeaponArmsExportRequest()
     {
         var result = pendingArmsExport;
@@ -30,6 +33,7 @@ public sealed partial class StudioWorkspace
         return result;
     }
 
+    /** Returns and clears the queued weapon reimport, if any. */
     internal uint? TakeWeaponAssetReimportRequest()
     {
         uint? result = pendingWeaponReimport;

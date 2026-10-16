@@ -1,8 +1,10 @@
 using System.Buffers.Binary;
 using SunriseStudio.Formats;
 
+/** Checks CUI binding edits: unchanged bindings write no bytes, refused edits keep source identity, stale identities and bad indices are rejected. */
 internal static class CuiBindingMutationChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run()
     {
         byte[] bytes = Fixture();

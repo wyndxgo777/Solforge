@@ -10,6 +10,7 @@ using SunriseStudio.Viewport;
 /** Published editor snapshots must already contain their complete preparation outcome. */
 internal static class ReadinessChecks
 {
+    /** Requires that the workspace has published its catalog and dependent state. */
     internal static void AssertPublished(StudioWorkspace workspace)
     {
         if (workspace.Catalog is null)
@@ -31,6 +32,7 @@ internal static class ReadinessChecks
                 "Asset scene was published before native preparation finished.");
     }
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(string root)
     {
         string install = Path.Combine(root, "ready-install");
@@ -274,7 +276,9 @@ internal static class ReadinessChecks
         public string Title => "Readiness";
         public int DrawCount { get; private set; }
         public MeshInstance? SelectedMesh { get; private set; }
+        /** Offers the page for any document that has a texture or a scene. */
         public bool CanOpen(StudioDocument document) => document.Texture is not null || document.Scene is not null;
+        /** Counts draws and records the selected mesh for the readiness checks. */
         public void Draw(StudioPageContext context)
         {
             Require(ready(), "An asset page drew while the editor was still preparing.");

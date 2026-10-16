@@ -1,3 +1,4 @@
+/** File: Serialisable project data: manifest, changes, added assets, mod details and config bindings. */
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -5,6 +6,7 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Projects;
 
+/** Package, reference and type info of a native asset, with its name and entry index when allocated. */
 public sealed record NativeAssetMetadata(ushort PackageId, uint Reference, uint TypeInfo,
     string? Name = null, int? EntryIndex = null)
 {
@@ -12,16 +14,20 @@ public sealed record NativeAssetMetadata(ushort PackageId, uint Reference, uint 
     public WideHashAliases? WideHashes { get; init; }
 }
 
+/** One edited installed asset: tag, package, original and edited sizes and hashes, and its delta file. */
 public sealed record ProjectAssetChange(uint TagHash, string PackageName, string OriginalSha256,
     int OriginalSize, int EditedSize, string DeltaPath, string ResultSha256);
 
+/** An asset the project adds: id, file, hashes, and the native identity it was given. */
 public sealed record AddedProjectAsset(string Id, string Name, string Path, string Sha256,
     long Size, NativeAssetMetadata? Native, uint? BaseTagHash = null,
     string? OriginalSha256 = null, int? OriginalSize = null);
 
+/** A request to add an asset: its name, bytes and optional native identity. */
 public sealed record ProjectAssetAddition(string Name, byte[] Data,
     NativeAssetMetadata? Native = null, uint? BaseTagHash = null);
 
+/** Asset bytes a coupled edit replaces or adds, by tag or by added-asset id. */
 public sealed record ProjectAssetEdits(IReadOnlyDictionary<uint, byte[]> Assets,
     IReadOnlyDictionary<string, byte[]>? AddedAssets = null);
 
@@ -136,6 +142,10 @@ public sealed record ProjectObjectName(string Key, string Name)
 {
     public const int MaximumKeyLength = 512, MaximumNameLength = 200;
 
+    /**
+     * Throws unless the key and name are non-blank, within length limits, free of control characters, and
+     * the name is one trimmed line.
+     */
     public void Validate()
     {
         if (string.IsNullOrWhiteSpace(Key) || Key.Length > MaximumKeyLength || Key.Any(char.IsControl))
@@ -145,8 +155,10 @@ public sealed record ProjectObjectName(string Key, string Name)
     }
 }
 
+/** A mod this one needs, with its minimum and optional maximum version. */
 public sealed record ModDependency(string Id, string MinVersion, string? MaxVersion = null);
 
+/** Value type of a config setting. */
 public enum ModConfigType { Int, Float, Bool }
 
 /** Default is invariant text: an int32, a finite float, or `true` or `false`. */
@@ -159,7 +171,9 @@ public sealed record ModMetadata(string Id, string Version, string Name, string?
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Cheat = false,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] IReadOnlyList<ModConfigEntry>? Config = null);
 
+/** A built added asset and the package file that holds it. */
 public sealed record BuiltProjectAsset(string Id, uint TagHash, string PackageFile);
+/** What a build produced: output folder, package files, added assets, receipt and compiled object edits. */
 public sealed record ProjectBuildResult(string OutputDirectory, IReadOnlyList<string> PackageFiles,
     IReadOnlyList<BuiltProjectAsset> AddedAssets, string ReceiptPath,
     IReadOnlyList<CompiledObjectEdit>? ObjectEdits = null)
@@ -169,6 +183,7 @@ public sealed record ProjectBuildResult(string OutputDirectory, IReadOnlyList<st
     public IReadOnlyList<string> Notes { get; init; } = [];
 }
 
+/** Shared JSON serialiser options for project files. */
 internal static class ProjectJson
 {
     internal static readonly JsonSerializerOptions Options = new()

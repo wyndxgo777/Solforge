@@ -9,6 +9,7 @@ internal static class EffectActivationChecks
 {
     private const uint Alive = 0x270E8F60;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string gameRoot)
     {
         using var catalog = PackageCatalog.Open(gameRoot);

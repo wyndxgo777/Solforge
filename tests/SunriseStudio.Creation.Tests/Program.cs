@@ -1,3 +1,4 @@
+// Console test runner for the creation workflows: wires up the install, key source and fixtures and runs each check class.
 using SunriseStudio.Creation.Tests;
 
 string root = Path.Combine(Path.GetTempPath(), "sunrise-creation-" + Guid.NewGuid().ToString("N"));

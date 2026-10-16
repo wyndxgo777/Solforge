@@ -59,8 +59,10 @@ public static class ShortcutInput
     /** True on the frame a key binding of the action fired. Text input and capture suppress it. */
     public static bool Pressed(string id) => Enabled && !ImGui.GetIO().WantTextInput && Fired.Contains(id);
 
+    /** Display text of an action's bindings. */
     public static string Text(string id) => Map.Text(id);
 
+    /** Modifier keys held this frame. */
     public static ShortcutModifiers Held()
     {
         var io = ImGui.GetIO();

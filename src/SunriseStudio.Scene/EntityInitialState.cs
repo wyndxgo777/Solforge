@@ -36,7 +36,9 @@ public sealed record EntityInitialState(bool[]? EnabledParts, string? Unresolved
     public uint SelectedVariant { get; init; }
     /** Set when no variant has positive weight; marks the parts that every variant row disables. */
     public bool[]? DisabledByEveryVariant { get; init; }
+    /** Whether the part starts enabled; null when unknown. */
     public bool? Enabled(int part) => EnabledParts is { } parts && (uint)part < parts.Length ? parts[part] : null;
+    /** True when every variant disables the part. */
     public bool EveryVariantDisables(int part) =>
         DisabledByEveryVariant is { } parts && (uint)part < parts.Length && parts[part];
 }

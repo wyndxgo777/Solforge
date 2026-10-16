@@ -5,6 +5,7 @@ using SunriseStudio.Scene;
 using SunriseStudio.Viewport;
 using SunriseStudio.Animation;
 
+/** Checks weapon animation palettes: non-identity inverse binds, first-person skin suffix handling. */
 internal static class WeaponAnimationChecks
 {
     /** Nonidentity weapon binds must not inherit the parent's first-person inverse bind. */

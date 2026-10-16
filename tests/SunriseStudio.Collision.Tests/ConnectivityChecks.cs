@@ -10,6 +10,7 @@ internal static class ConnectivityChecks
 {
     private const uint SabreMap = 0x80FAA003, LeafMesh = 0x80B91745, HitboxEntity = 0x80FCC03B;
 
+    /** Runs the checks that use generated fixtures instead of installed game content. */
     internal static void Synthetic()
     {
         var box = CollisionShapes.BoxShape(new(.5f));

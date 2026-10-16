@@ -1,9 +1,15 @@
+/**
+ * File: Ring buffer of what the user hovered, selected, focused, pinned or opened, used to resolve "this"
+ * and "that one".
+ */
 using System.Text.Json.Nodes;
 
 namespace Solforge.Mcp;
 
+/** Kind of user interaction an attention event records. */
 public enum AttentionKind { Hover, Select, Focus, Pin, Open }
 
+/** One interaction with an object: when, what kind, its id and display label. */
 public sealed record AttentionEvent(DateTimeOffset Time, AttentionKind Kind, string Id, string Label);
 
 /**
@@ -17,6 +23,7 @@ public sealed class AttentionLog(int capacity = 256)
     public Func<DateTimeOffset> Clock { get; init; } = () => DateTimeOffset.UtcNow;
     public long Revision { get; private set; }
 
+    /** Appends an event, folding a repeat of the newest one, and drops the oldest past capacity. */
     public void Record(AttentionKind kind, string id, string label)
     {
         lock (gate)
@@ -49,6 +56,7 @@ public sealed class AttentionLog(int capacity = 256)
         return weights;
     }
 
+    /** The newest n events (newest last) as JSON with their age. */
     public JsonArray ToJson(int n)
     {
         var now = Clock();

@@ -6,6 +6,7 @@ using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
+/** StudioForm part: the runtime object tree and inspector fed by the Live link. */
 public sealed partial class StudioForm
 {
     private readonly LiveInspectionIndex liveInspection = new();

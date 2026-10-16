@@ -3,10 +3,13 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Editor;
 
+/** Assets an import prepared, and which of them to open afterwards. */
 public sealed record PreparedAssetImport(IReadOnlyList<ProjectAssetAddition> Assets, int SelectedIndex = 0);
 
+/** StudioWorkspace part: adds imported assets to the project on the worker. */
 public sealed partial class StudioWorkspace
 {
+    /** Prepares the import on the worker with the project and catalog, then adds it as one edit. */
     public void ImportAsset(Func<StudioProject, PackageCatalog, PreparedAssetImport> prepare) =>
         ImportAsset((project, catalog, _) => prepare(project, catalog));
 
@@ -55,6 +58,7 @@ public sealed partial class StudioWorkspace
         });
     }
 
+    /** The next free entry index in a package, counting the project's added assets. */
     public int NextImportEntry(ushort packageId) => Project!.AddedAssets
         .Where(asset => asset.Native?.PackageId == packageId)
         .Select(asset => asset.Native!.EntryIndex ?? -1).DefaultIfEmpty(-1).Max() + 1;

@@ -53,6 +53,30 @@ user-visible strings are rebranded (Phase 03).
 | Editor | net9.0-windows (WinForms) | 9 projects above | - | 155 / 27.7k | `StudioForm` partials, pages, creation dialogs (`Creation/`: items, exotic weapons, perks, vendors, materials, textures, static props) |
 | App | net9.0-windows WinExe | Editor | - | 1 / 74 | Entry point and command line |
 | Solforge.Weapons | net9.0 | Formats, Authoring | - | 9 / 0.9k | Phase 20: `.weapon.json` recipe schema and validation, C# rewrite of Parhelion's weapon domain (GPL-3.0-only, see `THIRD_PARTY.md`, `docs/PARHELION_AUDIT.md`); not referenced by Editor yet. Check: `tests/Solforge.Weapons.Tests` |
+| Solforge.Graphs | net9.0 | - | - | - | Mission/behaviour graph editor core: `GraphDocument` (saved model, JSON), `GraphEditor` and `GraphCommands` (edit operations, undo), node libraries, validation, `GraphCompilers` (graph to Lua/tag output), `GraphEvaluator` |
+
+## Test projects
+
+Every `tests/*` project is a console program of assertions (see Tests in the toolchain table). Most build a
+synthetic package fixture in a temp folder, so they run without a game install. `tests/Fixtures` holds shared
+fixture source, not a project.
+
+| Project | Checks |
+|---|---|
+| Solforge.Content.Tests, Solforge.Graphs.Tests, Solforge.Weapons.Tests | Content store, graph editor/compiler, and weapon recipe code of the matching `Solforge.*` project |
+| SunriseStudio.Packages.Tests, PackageAudit.Tests, PackageReplacement.Tests, Overlay.Tests, RootManifest.Tests | Package reading, audit of installed packages, replacing entries, the overlay package, the root manifest |
+| SunriseStudio.Projects.Tests, ProjectSystem.Tests | Project file, dependency table, merge sidecars, mod install, integrity checks |
+| SunriseStudio.Formats.Tests, Investment.Tests, Names.Tests, Cui.Tests, Cui.Gpu.Tests | Tag readers/editors: behavior expressions, glTF, investment items and collections, name caches, CUI binding/override/visual (Gpu variant renders) |
+| SunriseStudio.Authoring.Tests, MeshAuthoring.Tests, MaterialInterchange.Tests, Creation.Tests, Sandbox.Tests, AssetSurface.Tests, OriginalAsset.Tests | Importers, compatible mesh/skin authoring, material round trips, the creation dialogs' workflows, perk kinds, asset surface and original-asset normals |
+| SunriseStudio.Animation.Tests, AnimationAuthoring.Tests, Audio.Tests | Skeleton/clip/IK/cloth, native clip authoring; Wwise decode, cues, composer |
+| SunriseStudio.World.Tests, Collision.Tests, CollisionView.Tests, Selection.Tests | World loading and placement updates, collision parts and their authoring audit, view and selection behavior |
+| SunriseStudio.Viewport.Tests, ViewportPipeline.Tests, Shading.Tests, Shortcuts.Tests, WeaponParticleBinding.Tests, WeaponPresentation.Tests | Camera/geometry/probe pipeline, decorators, effects, shader overrides, shortcut input, weapon tracer and presentation |
+| SunriseStudio.Live.Tests, LiveBinding.Tests, LivePose.Tests | Link to a running game: capture, dynamic bindings, owned pose |
+| SunriseStudio.Missions.Tests, Missions.UiTests | Mission graph nodes, flow creation, legacy and Lua round trips; the mission UI |
+| SunriseStudio.Interchange.Tests | Blender bundle assembly, mesh codec, skin and effect export |
+| SunriseStudio.Editor.Tests | Browser, navigation and other editor-level checks |
+| SunriseStudio.Architecture.Tests | Dependency direction between projects |
+| SunriseStudio.Mcp.Tests, LocalServer.Tests | MCP shim round trips and tools; the local server tab |
 
 ## Phase 03 notes (shell)
 

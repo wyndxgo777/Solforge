@@ -7,10 +7,12 @@ using SunriseStudio.Packages;
 using SunriseStudio.Projects;
 using SunriseStudio.Scene;
 
+/** Checks the wide-hash workflow: draft snapshots are immutable and undo/redo restore identity, aliases and context without rewriting derived deltas. */
 internal static class WideHashWorkflowChecks
 {
     private const ulong Key = 0xFEDCBA9876543210, Reserved = 0x1234567890ABCDEF;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string parent)
     {
         string install = Path.Combine(parent, "wide-ui-install");

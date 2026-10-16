@@ -5,6 +5,7 @@ namespace SunriseStudio.Viewport;
 /** The entity placement an effect belongs to; channels and sequence plays are per placement. */
 public readonly record struct EffectPlacementKey(uint SourceTag, int SourceOffset, ulong Identity)
 {
+    /** Key for a marker's placement. */
     public static EffectPlacementKey Of(SceneMarker marker) => new(marker.SourceTag, marker.SourceOffset, marker.PlacementIdentity);
 }
 
@@ -22,6 +23,7 @@ public sealed class EffectControls
     public float Channel(EffectPlacementKey key, uint channel) =>
         channels.TryGetValue(key, out var values) ? values.GetValueOrDefault(channel) : 0;
 
+    /** Sets one channel value for a placement. */
     public void SetChannel(EffectPlacementKey key, uint channel, float value)
     {
         if (!channels.TryGetValue(key, out var values)) channels[key] = values = [];
@@ -36,6 +38,7 @@ public sealed class EffectControls
     public void Play(EffectPlacementKey key, uint sequence, bool autoStart) =>
         plays[(key, sequence)] = (true, Sequence(key, sequence, autoStart).Generation + 1);
 
+    /** Records a stop for a sequence; autoStart is the sequence's default start state. */
     public void Stop(EffectPlacementKey key, uint sequence, bool autoStart) =>
         plays[(key, sequence)] = (false, Sequence(key, sequence, autoStart).Generation);
 
@@ -43,6 +46,7 @@ public sealed class EffectControls
     public bool Forced(SceneMarker marker) => marker.Effect is { } effect
         && forced.Contains((EffectPlacementKey.Of(marker), effect.SourceTag, effect.SourceOffset));
 
+    /** Forces a marker's effect on or off. */
     public void SetForced(SceneMarker marker, bool value)
     {
         if (marker.Effect is not { } effect) return;

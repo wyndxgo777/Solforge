@@ -13,6 +13,7 @@ internal sealed class CollisionReferenceIndex
     private Dictionary<uint, StaticCollisionOwner> owners = [];
     private Dictionary<uint, HashSet<uint>> reverse = [];
 
+    /** Revalidates the catalog's cached reference index, if one was built, against overlay changes. */
     internal static void Check(PackageCatalog catalog)
     {
         if (!Cache.TryGetValue(catalog, out var index)) return;

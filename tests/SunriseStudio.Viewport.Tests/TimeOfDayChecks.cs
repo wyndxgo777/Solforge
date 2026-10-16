@@ -10,6 +10,7 @@ internal static class TimeOfDayChecks
     // EDZ's main list starts at 0.5; its forge bubble's list starts at 0.
     private const uint EdzMainList = 0x80C582C7, EdzForgeList = 0x80F2AE16;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string install)
     {
         Synthetic();

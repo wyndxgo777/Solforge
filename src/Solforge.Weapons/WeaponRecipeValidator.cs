@@ -15,12 +15,14 @@ public static class WeaponRecipeValidator
 {
     public const int MaxPatchBytes = 4096, MaxProgramInstructions = 256, MaxTextCharacters = ushort.MaxValue;
 
+    /** Throws one WeaponRecipeException listing every issue Validate finds. */
     public static void ThrowIfInvalid(WeaponRecipe recipe)
     {
         var issues = Validate(recipe);
         if (issues.Count > 0) throw new WeaponRecipeException(string.Join(Environment.NewLine, issues));
     }
 
+    /** Checks the whole recipe and returns every problem found, empty when it is valid. */
     public static IReadOnlyList<WeaponRecipeIssue> Validate(WeaponRecipe recipe)
     {
         var issues = new List<WeaponRecipeIssue>();

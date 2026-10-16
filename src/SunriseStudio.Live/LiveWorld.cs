@@ -4,7 +4,9 @@ using System.Text;
 
 namespace SunriseStudio.Live;
 
+/** One loaded map slice: bubble hash, index and residency state. */
 public sealed record LiveSlice(uint BubbleHash, ushort Index, byte Residency);
+/** Map, scenario and activity the game currently has loaded, with its slice list. */
 public sealed record LiveWorld(ulong Time, bool Available, bool Present, uint MapDefinitionTag,
     uint MapNameHash, uint ScenarioTag, uint MapRootTag, int? CurrentSlice, string Activity, IReadOnlyList<LiveSlice> Slices);
 /**
@@ -47,8 +49,10 @@ public static class LiveWorldProtocol
     public const int PlacementsOffset = ControlBytes + WorldBytes;
     public const int MappingBytes = PlacementsOffset + PlacementsBytes;
     public const ulong StaleAfterMilliseconds = 5000;
+    /** Per-process shared-memory name for the world channel. */
     public static string MappingName(int processId) => $@"Local\SunriseStudio.World.{processId}";
 
+    /** True while an observed time is recent enough to trust. */
     public static bool Fresh(ulong observed, ulong now) => observed != 0 && observed <= now
         && now - observed <= StaleAfterMilliseconds;
 

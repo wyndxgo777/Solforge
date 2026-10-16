@@ -3,6 +3,7 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Editor;
 
+/** StudioForm part: disk cache settings and the cache statistics dialog. */
 public sealed partial class StudioForm
 {
     private bool cacheDialog;

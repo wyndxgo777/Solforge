@@ -307,6 +307,7 @@ sealed class FakeShell : IWslShell
     public List<string> Scripts { get; } = [];
     public Func<string, ShellResult> Reply { get; set; } = _ => new ShellResult(0, "", "", false);
 
+    /** Records the script and answers with the configured reply instead of running a shell. */
     public Task<ShellResult> RunAsync(string script, TimeSpan timeout, CancellationToken cancel)
     {
         Scripts.Add(script);

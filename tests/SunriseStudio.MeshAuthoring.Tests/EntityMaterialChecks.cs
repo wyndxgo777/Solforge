@@ -4,6 +4,7 @@ using SunriseStudio.Packages;
 using SunriseStudio.Scene;
 using SunriseStudio.Scene.Collision;
 
+/** Checks entity material profiles: initial-state bit conditions, group counts and fallback candidates. */
 internal static class EntityMaterialChecks
 {
     /** Warm reads measure the extra initial-filter work separately from material table selection. */

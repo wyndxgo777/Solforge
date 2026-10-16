@@ -29,7 +29,9 @@ public sealed class AudioSession : IDisposable
     public AudioCompositionOptions? CompositionOptions { get; private set; }
     public AudioTimelinePlan? Timeline { get; private set; }
     public AudioTimelineRender? TimelineRender { get; private set; }
+    /** Plays recorded for a playlist in this session's history. */
     public int PlaylistPlayCount(uint playlist) => Volatile.Read(ref playlistHistory).PlayCount(playlist);
+    /** Clears the playlist history. */
     public void ResetPlaylistHistory() => Volatile.Write(ref playlistHistory, new());
 
     /** Copies the selection's media into a new locked cache folder and loads its banks. */
@@ -73,6 +75,7 @@ public sealed class AudioSession : IDisposable
         }
     }
 
+    /** Path of a media file in the session cache; throws for media outside the selection. */
     public string MediaPath(uint mediaId) => mediaPaths.TryGetValue(mediaId, out var path) ? path
         : throw new InvalidDataException($"Media {mediaId} is not part of this audio selection.");
 
@@ -97,6 +100,7 @@ public sealed class AudioSession : IDisposable
         return new(48000, 2, (long)Math.Round(timeline.DurationSeconds * 48000, MidpointRounding.AwayFromZero), "Composition");
     }
 
+    /** Composes every event of the selection once. */
     public async Task GenerateCompositions(CancellationToken token = default)
     {
         if (Compositions.Count > 0) return;
@@ -104,6 +108,7 @@ public sealed class AudioSession : IDisposable
         Compositions = result.Items; CompositionLog = result.Log;
     }
 
+    /** Analyses the loaded banks' music routing once. */
     public async Task Analyze(CancellationToken token = default)
     {
         if (Analysis is not null) return;
@@ -176,6 +181,7 @@ public sealed class AudioSession : IDisposable
         return target;
     }
 
+    /** Decodes the composition at index to a cached WAV and returns its path. */
     public async Task<string> DecodeComposition(int index, CancellationToken token = default)
     {
         var composition = Composition(index);
@@ -239,6 +245,7 @@ public sealed class AudioSession : IDisposable
         return rendered;
     }
 
+    /** Renders one transition of a container between two segments. */
     public async Task<AudioTimelineRender> RenderTransition(uint container, uint source, uint destination,
         double requestSeconds, CancellationToken token = default, int destinationVariation = 0)
     {
@@ -276,9 +283,11 @@ public sealed class AudioSession : IDisposable
         finally { if (File.Exists(temporary)) File.Delete(temporary); }
     }
 
+    /** Copies a media file out of the cache; the target must be outside the game and any project. */
     public void ExportMedia(uint mediaId, string target, string gameRoot)
     { AudioPaths.Check(target, gameRoot); File.Copy(MediaPath(mediaId), target, true); }
 
+    /** Copies a WAV out; the target must be outside the game and any project. */
     public static void ExportWave(string wave, string target, string gameRoot)
     { AudioPaths.Check(target, gameRoot); File.Copy(wave, target, true); }
 
@@ -317,6 +326,7 @@ public sealed class AudioSession : IDisposable
         File.WriteAllText(list, routing.ToString());
     }
 
+    /** Releases the lock and deletes the session folder. */
     public void Dispose()
     {
         lockStream?.Dispose();
@@ -344,6 +354,7 @@ public sealed class AudioSession : IDisposable
     }
 }
 
+/** Path guards for audio export and cache folders. */
 internal static class AudioPaths
 {
     /** Cleanup accepts only checked descendants of the operation's own working root. */
@@ -364,6 +375,7 @@ internal static class AudioPaths
         Directory.Delete(full, true);
     }
 
+    /** Throws when the target is inside the game install or a delta project, or crosses a link. */
     public static void Check(string path, string gameRoot)
     {
         string full = Path.GetFullPath(path), game = Path.TrimEndingDirectorySeparator(Path.GetFullPath(gameRoot));
@@ -375,6 +387,7 @@ internal static class AudioPaths
                 throw new InvalidOperationException("Extracted audio must stay outside delta projects.");
     }
 
+    /** Throws when any part of the path is a symbolic link or junction. */
     public static void RejectLinks(string path)
     {
         for (string? current = Path.GetFullPath(path); current is not null; current = Path.GetDirectoryName(current))

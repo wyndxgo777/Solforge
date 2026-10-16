@@ -3,6 +3,7 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Editor;
 
+/** StudioForm part: the open asset's header line and its related-asset navigation. */
 public sealed partial class StudioForm
 {
     /** Related assets retain their animation owner; Back and Forward live on the toolbar. */

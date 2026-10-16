@@ -5,6 +5,7 @@ namespace SunriseStudio.Scene.Collision;
 /** The inline shape's axis can keep its rotation fixed in world space. */
 public sealed record InlineTriggerShape(CollisionShape Shape, bool WorldAligned)
 {
+    /** World transform of the shape: the owner's, or only its translation when the shape is world-aligned. */
     public Matrix4x4 WorldTransform(Matrix4x4 owner) => WorldAligned
         ? Matrix4x4.CreateTranslation(owner.Translation) : owner;
 

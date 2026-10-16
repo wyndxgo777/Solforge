@@ -7,6 +7,7 @@ internal static class SpawnPreviewChecks
 {
     private const uint Centurion = 0x80C19B1F, Model = 0x80FEE1D0;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(string gameRoot)
     {
         using var workspace = new StudioWorkspace { CacheOptions = new() { Enabled = false } };

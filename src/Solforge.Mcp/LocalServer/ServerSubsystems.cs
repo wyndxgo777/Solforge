@@ -5,6 +5,7 @@ namespace Solforge.Mcp.LocalServer;
 /** What one part of the sol-server does, which original service it replaces, and how to see it is up. */
 public sealed record ServerSubsystem(string Name, string Replaces, string Role, string Endpoint, string Check, string Source)
 {
+    /** JSON form, with whether the subsystem is up when a status is known. */
     public JsonObject ToJson(LocalServerStatus? status) => new()
     {
         ["name"] = Name, ["replaces"] = Replaces, ["role"] = Role, ["endpoint"] = Endpoint, ["check"] = Check, ["source"] = Source,
@@ -51,6 +52,7 @@ public static class ServerSubsystems
             "HTTP 127.0.0.1:8099", "admin", "master.md §10.1"),
     ];
 
+    /** Whether the subsystem is answering; null when the check cannot be judged from the status. */
     public static bool? IsUp(ServerSubsystem subsystem, LocalServerStatus status) => !status.Running ? false : subsystem.Check switch
     {
         "web" => status.Web,
@@ -61,6 +63,7 @@ public static class ServerSubsystems
         _ => null,
     };
 
+    /** All subsystems as a JSON array. */
     public static JsonArray ToJson(LocalServerStatus? status)
     {
         var array = new JsonArray();

@@ -8,6 +8,7 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Interchange;
 
+/** Geometry part of world scene export: builds the shared geometry of one mesh part. */
 public static partial class WorldSceneExport
 {
     private static WorldGeometry Geometry(PackageCatalog catalog, MeshData mesh, int id, WorldBinaryWriter writer,

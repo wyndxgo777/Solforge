@@ -5,6 +5,7 @@ using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
+/** MissionGraphPage part: builds the canvas nodes and edges for the open group and their inspectors. */
 public sealed partial class MissionGraphPage
 {
     // A body group shows the statements of one top-level function or callback.

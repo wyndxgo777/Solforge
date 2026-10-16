@@ -7,6 +7,7 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Authoring;
 
+/** Compiled presentation assets and clips for a weapon. */
 public sealed record PreparedWeaponPresentation(IReadOnlyList<ProjectAssetAddition> Assets,
     uint GameplayEntityTag, uint PresentationEntityTag, uint AnimationDefinitionTag,
     IReadOnlyDictionary<uint, string> SourceHashes)
@@ -15,6 +16,7 @@ public sealed record PreparedWeaponPresentation(IReadOnlyList<ProjectAssetAdditi
     public IReadOnlyDictionary<string, uint> AddedNameHashes { get; init; } = new Dictionary<string, uint>();
 }
 
+/** One presentation clip: name, tag and frame count. */
 public sealed record WeaponPresentationClip(string Name, uint ClipTag, int FrameCount);
 
 /** Weapon animation edits own their presentation branch and leave installed weapon graphs unchanged. */

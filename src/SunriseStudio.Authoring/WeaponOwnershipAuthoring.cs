@@ -6,6 +6,7 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Authoring;
 
+/** Compiled ownership assets of a new weapon. */
 public sealed record PreparedWeaponOwnership(IReadOnlyList<ProjectAssetAddition> Assets,
     IReadOnlyDictionary<uint, byte[]> Changes, IReadOnlyList<string> Summary);
 

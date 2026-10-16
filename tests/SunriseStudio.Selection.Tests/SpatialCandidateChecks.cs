@@ -4,6 +4,7 @@ using SunriseStudio.Rendering;
 using SunriseStudio.Scene;
 using SunriseStudio.Viewport;
 
+/** Checks the spatial candidate grid: reuse keeps membership and order, invalidation keys, and borrowed arrays are not mutated. */
 internal static partial class Program
 {
     /** Cached queries preserve exact traversal and invoke mutable predicates on every candidate. */

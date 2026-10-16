@@ -4,6 +4,7 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Editor;
 
+/** StudioWorkspace part: the investment (item and vendor) catalog and its row edits. */
 public sealed partial class StudioWorkspace
 {
     private PackageCatalog? investmentSource;
@@ -122,19 +123,28 @@ public sealed partial class StudioWorkspace
         ApplyBytes(edited, "Investment delta saved");
     }
 
+    /** Adds a stat row with the given index and value to the selected item. */
     public void AddInvestmentStat(byte index, int value) => ApplyInvestmentRows((data, tag, bytes) => data.AddStat(tag, bytes, index, value));
+    /** Removes a stat row of the selected item. */
     public void RemoveInvestmentStat(InvestmentStat stat) => ApplyInvestmentRows((data, tag, bytes) => data.RemoveStat(tag, bytes, stat));
+    /** Adds a perk row to the selected item. */
     public void AddInvestmentPerk(ushort index) => ApplyInvestmentRows((data, tag, bytes) => data.AddPerk(tag, bytes, index));
+    /** Removes a perk row of the selected item. */
     public void RemoveInvestmentPerk(InvestmentPerk perk) => ApplyInvestmentRows((data, tag, bytes) => data.RemovePerk(tag, bytes, perk));
+    /** Duplicates a cost and its paired display row on a sale. */
     public void DuplicateInvestmentCost(InvestmentSale sale, InvestmentCost cost) =>
         ApplyInvestmentSale((data, tag, bytes, display, displayBytes) => data.DuplicateCostPair(tag, bytes, display, displayBytes, sale, cost));
+    /** Removes a cost and its paired display row from a sale. */
     public void RemoveInvestmentCost(InvestmentSale sale, InvestmentCost cost) =>
         ApplyInvestmentSale((data, tag, bytes, display, displayBytes) => data.RemoveCostPair(tag, bytes, display, displayBytes, sale, cost));
+    /** Changes the item and quantity of a cost. */
     public void EditInvestmentCost(InvestmentSale sale, InvestmentCost cost, ushort item, uint quantity) =>
         ApplyInvestmentRows((data, tag, bytes) => data.EditCost(tag, bytes, sale, cost, item, quantity));
 
+    /** Duplicates a sale with its display row. */
     public void DuplicateInvestmentSale(InvestmentSale sale) =>
         ApplyInvestmentSale((data, tag, bytes, display, displayBytes) => data.DuplicateSale(tag, bytes, display, displayBytes, sale));
+    /** Removes a sale with its display row. */
     public void RemoveInvestmentSale(InvestmentSale sale) =>
         ApplyInvestmentSale((data, tag, bytes, display, displayBytes) => data.RemoveSale(tag, bytes, display, displayBytes, sale));
 

@@ -5,6 +5,7 @@ using static MissionUi;
 /** A temp install with no mission_api.json, no lib/flow.lua and a damaged module: the page says why and keeps working. */
 internal static class SdkProblemUiChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static int Run(string game, string? capture)
     {
         string empty = "", broken = "", script = "", source = "";

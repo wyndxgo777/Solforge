@@ -3,6 +3,7 @@ using SunriseStudio.Formats;
 using SunriseStudio.Packages;
 using SunriseStudio.Projects;
 
+/** Checks vendor sale rows: duplication, removal shifting, and delta reopen. */
 internal static class InvestmentSaleChecks
 {
     private static readonly int[] GameplayArrays = [8, 32, 80, 120, 136, 160], DisplayArrays = [0, 16, 32, 48, 64];

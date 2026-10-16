@@ -56,6 +56,7 @@ public sealed class PerkLabelTable
                 .Select(row => (data.U32(row), bytes.Span.Slice(row + 4, MaskBytes).ToArray()))]);
     }
 
+    /** True when the label or group hash is in the table. */
     public bool Contains(uint hash) => masks.ContainsKey(hash);
 
     /** ORs a label's or group's mask into the 40-byte set; false for a hash the table lacks. */
@@ -66,5 +67,6 @@ public sealed class PerkLabelTable
         return true;
     }
 
+    /** Display name of a label hash, or a marked unknown hex value. */
     public string NameOf(uint hash) => Entries.FirstOrDefault(entry => entry.Hash == hash)?.Name ?? $"0x{hash:X8} (unknown)";
 }

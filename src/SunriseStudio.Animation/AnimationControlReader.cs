@@ -193,42 +193,55 @@ public sealed class AnimationControlReader(PackageCatalog catalog)
                 throw new InvalidDataException("Animation control range exceeds its clip.");
             return bytes.AsSpan(offset, count);
         }
+        /** Reads a little-endian u16 at offset, range-checked. */
         public ushort U16(int offset) => BinaryPrimitives.ReadUInt16LittleEndian(Slice(offset, 2));
+        /** Reads a u8 at offset, range-checked. */
         public byte U8(int offset) => Slice(offset, 1)[0];
+        /** Reads an i16 at offset. */
         public short I16(int offset) => unchecked((short)U16(offset));
+        /** Reads a little-endian u32 at offset, range-checked. */
         public uint U32(int offset) => BinaryPrimitives.ReadUInt32LittleEndian(Slice(offset, 4));
+        /** Reads a little-endian i64 at offset, range-checked. */
         public long I64(int offset) => BinaryPrimitives.ReadInt64LittleEndian(Slice(offset, 8));
+        /** Reads an f32 at offset; non-finite values are rejected. */
         public float F32(int offset)
         {
             float value = BinaryPrimitives.ReadSingleLittleEndian(Slice(offset, 4));
             return float.IsFinite(value) ? value : throw new InvalidDataException("Animation quantizer is not finite.");
         }
+        /** Resolves a self-relative pointer field to an absolute offset. */
         public int Pointer(int field) => checked((int)(field + I64(field)));
+        /** Row offsets of a typed array field whose element class must match. */
         public int[] Rows(int field, uint expectedClass, int stride)
         {
             var (count, start) = Array(field, expectedClass, stride);
             return Enumerable.Range(0, count).Select(i => start + i * stride).ToArray();
         }
+        /** Reads a u16 array field. */
         public ushort[] Words(int field)
         {
             var (count, start) = Array(field, 0x8080000A, 2);
             return Enumerable.Range(0, count).Select(i => U16(start + i * 2)).ToArray();
         }
+        /** Reads an i16 array field. */
         public short[] SignedWords(int field)
         {
             var (count, start) = Array(field, 0x80800006, 2);
             return Enumerable.Range(0, count).Select(i => unchecked((short)U16(start + i * 2))).ToArray();
         }
+        /** Reads a byte array field. */
         public byte[] Bytes(int field)
         {
             var (count, start) = Array(field, 0x80800009, 1);
             return Slice(start, count).ToArray();
         }
+        /** Reads an f32 array field. */
         public float[] Floats(int field)
         {
             var (count, start) = Array(field, 0x8080000F, 4);
             return Enumerable.Range(0, count).Select(i => F32(start + i * 4)).ToArray();
         }
+        /** Reads a control index map; it must be strictly increasing and stay below limit. */
         public int[] Map(int field, int limit)
         {
             ushort[] values = Words(field);

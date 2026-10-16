@@ -14,9 +14,11 @@ public sealed record ComponentSection(uint Config, uint Primary, string Role, st
 /** Which config fields the Components page can write. */
 internal static class ComponentFields
 {
+    /** True when the Components page can write this field. */
     public static bool IsEditable(AssetProperty property) => property is
         { Editable: true, Offset: >= 0, CuiOwner: null } && property.Encoding != ScalarEncoding.None;
 
+    /** True when the node or any descendant has an editable field. */
     public static bool HasEditable(AssetNode node) =>
         node.Properties.Any(IsEditable) || (node.Children?.Any(HasEditable) ?? false);
 }
@@ -24,6 +26,7 @@ internal static class ComponentFields
 /** The Components page's configs for one open document and overlay. */
 public sealed record EntityComponentsState(StudioDocument Document, long Overlay, IReadOnlyList<ComponentSection> Sections);
 
+/** StudioWorkspace part: reads an entity's configs into Components page sections and applies edits to them. */
 public sealed partial class StudioWorkspace
 {
     /** Name of the field that holds the combatant config's class-0x8080815F tag: display name and action table. */

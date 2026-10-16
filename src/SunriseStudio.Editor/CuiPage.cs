@@ -29,6 +29,7 @@ public sealed partial class CuiPage : IPreparedStudioPage
     private bool revealSelection;
     public string Id => "sunrise.cui";
     public string Title => "CUI";
+    /** Accepts native UI documents. */
     public bool CanOpen(StudioDocument asset) => CuiDocument.Supports(asset.Entry.Reference);
 
     /** Preparation runs between frames, before ImGui can reference the uploaded textures. */
@@ -74,6 +75,7 @@ public sealed partial class CuiPage : IPreparedStudioPage
         PrepareFonts(renderer);
     }
 
+    /** Releases the font atlases and preview textures. */
     public void Dispose()
     {
         DisposeFonts();

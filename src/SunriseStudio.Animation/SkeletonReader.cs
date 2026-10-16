@@ -139,6 +139,7 @@ public sealed class SkeletonReader(PackageCatalog catalog)
             throw new InvalidDataException("Skeleton parent omits a child from its chain.");
     }
 
+    /** Throws when a transform's rotation is not unit length or its values are not finite. */
     internal static void CheckTransform(BoneTransform value)
     {
         float length = value.Rotation.LengthSquared();

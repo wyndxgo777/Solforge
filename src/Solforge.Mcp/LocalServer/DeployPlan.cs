@@ -8,8 +8,12 @@ namespace Solforge.Mcp.LocalServer;
 /** One file to copy: a Windows source and a path relative to the run directory's Sunrise folder. */
 public sealed record DeployFile(string Source, string Target);
 
+/**
+ * The files a deploy would copy to the local server, the build it picked, and notes about anything missing.
+ */
 public sealed record DeployPlan(string ProjectRoot, string? BuildDirectory, IReadOnlyList<DeployFile> Files, IReadOnlyList<string> Notes)
 {
+    /** Plan summary with files grouped by top folder and at most sample names per group. */
     public JsonObject ToJson(int sample = 20)
     {
         var groups = new JsonObject();
@@ -39,6 +43,10 @@ public static class DeployPlanner
 {
     private static readonly Regex SafeRelative = new(@"^[A-Za-z0-9 _.+()\[\]@#,=-]+(/[A-Za-z0-9 _.+()\[\]@#,=-]+)*$", RegexOptions.CultureInvariant);
 
+    /**
+     * Collects the project's scripts/ and sdk/ files plus a server build into a plan, skipping hidden and
+     * .bak files.
+     */
     public static DeployPlan Plan(string projectRoot, string? buildDirectory = null)
     {
         projectRoot = Path.GetFullPath(projectRoot);
@@ -80,9 +88,11 @@ public static class DeployPlanner
             : null;
     }
 
+    /** Timestamp id for a new backup. */
     public static string NewBackupId(DateTime utcNow) => utcNow.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
 
     private static readonly Regex BackupIdPattern = new(@"^\d{8}-\d{6}(-[0-9a-f]{1,8})?$", RegexOptions.CultureInvariant);
+    /** True when id has the shape NewBackupId produces; guards ids that reach shell scripts. */
     public static bool IsBackupId(string? id) => id is not null && BackupIdPattern.IsMatch(id);
 
     /**
@@ -155,4 +165,5 @@ public static class DeployPlanner
         """.ReplaceLineEndings("\n") + "\n";
 }
 
+/** One backup: id, file count, whether it has been rolled back and the project it came from. */
 public sealed record BackupEntry(string Id, int Files, bool RolledBack, string Project);

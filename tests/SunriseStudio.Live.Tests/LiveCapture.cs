@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using SunriseStudio.Live;
 
+/** Tool that attaches to one running game process and records live world frames to an output folder for later analysis. */
 internal static class LiveCapture
 {
     /** Captures read-only diagnostics without starting or changing the game. */

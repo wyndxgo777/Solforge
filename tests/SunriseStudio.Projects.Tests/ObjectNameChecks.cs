@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using SunriseStudio.Projects;
 
+/** Checks custom object names in the project manifest: version, trimming and reopen. */
 internal static class ObjectNameChecks
 {
     /** Names need version 5, survive a reopen, refuse bad text, and their removal returns the old version. */

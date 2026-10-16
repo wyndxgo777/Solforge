@@ -7,6 +7,7 @@ namespace SunriseStudio.Viewport;
  */
 public sealed record ShortcutAction(string Id, string Name, ShortcutSection Section, IReadOnlyList<ShortcutKind> Accepts)
 {
+    /** True when the action accepts bindings of this kind. */
     public bool Allows(ShortcutKind kind) => Accepts.Contains(kind);
 }
 
@@ -122,6 +123,7 @@ public static class ShortcutActions
 
     private static readonly Dictionary<string, ShortcutAction> ById = All.ToDictionary(action => action.Id, StringComparer.Ordinal);
 
+    /** The action with an id, or null. */
     public static ShortcutAction? Find(string? id) => id is null ? null : ById.GetValueOrDefault(id);
 }
 
@@ -136,6 +138,7 @@ public sealed class ShortcutPreset
 
     public string Name { get; }
     public IReadOnlyDictionary<string, IReadOnlyList<ShortcutBinding>> Bindings { get; }
+    /** Bindings the preset gives an action; empty when unbound. */
     public IReadOnlyList<ShortcutBinding> For(string id) => Bindings.GetValueOrDefault(id) ?? [];
 }
 
@@ -162,6 +165,7 @@ public static class ShortcutPresets
     public static IReadOnlyList<ShortcutPreset> All { get; } = Tables.Select(table => Build(table.Name, table.Rows, null)).ToArray();
     public static ShortcutPreset Default => All[0];
 
+    /** The preset with a name, or null. */
     public static ShortcutPreset? Find(string? name) => All.FirstOrDefault(preset => preset.Name == name);
 
     /** Lists table mistakes: a missing, repeated or unknown action, or a binding the action refuses. */

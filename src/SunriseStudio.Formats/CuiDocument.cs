@@ -4,20 +4,27 @@ using System.Security.Cryptography;
 
 namespace SunriseStudio.Formats;
 
+/** Imported resource: tag, first node ID and node count it contributes. */
 public sealed record CuiImport(uint TagHash, ushort FirstNode, ushort NodeCount, int Offset);
+/** One property of a CUI component with its record and value offsets, value class and decoded fields. */
 public sealed record CuiProperty(ulong Selector, int RecordOffset, int ValueOffset, uint ValueClass, int PoolDescriptor,
     bool Direct, IReadOnlyList<AssetProperty> Fields)
 {
     public IReadOnlyList<uint> Path { get; init; } = [];
 }
+/** A component of a CUI object, keyed by its component key. */
 public sealed record CuiComponent(ulong Key, int Offset, IReadOnlyList<CuiProperty> Properties);
+/** A CUI object and its components; IsDefaultProfile marks the default-profile variant. */
 public sealed record CuiObject(int Index, int Offset, IReadOnlyList<CuiComponent> Components)
 {
     public bool IsDefaultProfile { get; init; }
 }
+/** A CUI node with ID, hashed and resolved names, and node type hashes. */
 public sealed record CuiNode(ushort Id, uint NameHash, uint TypeHash, uint AuxiliaryTypeHash,
     string Name, int Offset);
+/** Parent link of one hierarchy node. */
 public sealed record CuiHierarchyNode(ushort Id, ushort Parent, int Offset);
+/** Hierarchy rules shared by CUI readers and editors. */
 public static class CuiHierarchy
 {
     /** Native linking removes non-root nodes whose parent is unreachable. */
@@ -35,6 +42,7 @@ public static class CuiHierarchy
         return active;
     }
 }
+/** Descriptor and data location of a typed value pool in a CUI tag. */
 public sealed record CuiValuePool(int DescriptorOffset, int DataOffset, int Count, int Stride,
     uint ClassHash, string Name);
 
@@ -55,6 +63,7 @@ public sealed class CuiDocument
     public IEnumerable<CuiComponent> Components => Objects.SelectMany(value => value.Components);
     public IEnumerable<CuiProperty> Properties => Components.SelectMany(value => value.Properties);
 
+    /** True for the CUI widget (0x80804825) and hierarchy (0x8080496A) classes. */
     public static bool Supports(uint classHash) => classHash is 0x80804825 or 0x8080496A;
 
     /** Hierarchy IDs are stored values; their array positions are unrelated. */
@@ -169,12 +178,14 @@ public sealed class CuiDocument
         (328, 0x80804688, 16, "Records")
     ];
 
+    /** Class and element stride of a value pool, from its descriptor offset; throws for unknown pools. */
     internal static (uint Class, int Stride) PoolSchema(int descriptor)
     {
         var schema = PoolSchemas.FirstOrDefault(value => value.Offset == descriptor);
         return schema.Class == 0 ? throw new InvalidDataException("Unknown CUI value pool.") : (schema.Class, schema.Stride);
     }
 
+    /** Display name for a property selector; layout selectors 0x206-0x209 read as X, Y, Width, Height. */
     public static string PropertyName(ulong selector, bool layout = false) => layout ? selector switch
     {
         0x206 => "X", 0x207 => "Y", 0x208 => "Width", 0x209 => "Height",
@@ -197,6 +208,7 @@ public sealed class CuiDocument
     }
 }
 
+/** A layout node's rectangle (X, Y, width, height) and the properties that store it. */
 public sealed record CuiLayoutRectangle(CuiNode Node, CuiComponent Component, Vector4 Rectangle,
     IReadOnlyList<CuiProperty> Properties);
 
@@ -205,6 +217,7 @@ public static class CuiLayout
 {
     public const float ReferenceHeight = 1080;
 
+    /** Collects the layout rectangle of every node that has the four layout properties. */
     public static IReadOnlyList<CuiLayoutRectangle> Read(CuiDocument document)
     {
         List<CuiLayoutRectangle> result = [];

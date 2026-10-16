@@ -5,6 +5,7 @@ using SunriseStudio.Missions;
 
 namespace SunriseStudio.Editor;
 
+/** MissionGraphPage part: syntax-coloured Lua source view. */
 public sealed partial class MissionGraphPage
 {
     private sealed record SyntaxSnapshot(string Source, IReadOnlyList<LuaToken> Tokens, int[] Lines)
@@ -26,6 +27,7 @@ public sealed partial class MissionGraphPage
             return width;
         }
 
+        /** Start and end offsets of a source line, excluding the line break. */
         internal (int Start, int End) Line(int index)
         {
             int start = Lines[index], end = index + 1 < Lines.Length ? Lines[index + 1] - 1 : Source.Length;

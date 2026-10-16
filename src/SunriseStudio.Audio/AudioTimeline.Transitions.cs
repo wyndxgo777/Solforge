@@ -1,7 +1,10 @@
+/** File: Partial AudioTimeline: planning and rendering of transitions between music segments. */
 namespace SunriseStudio.Audio;
 
+/** A fade window: start, duration, curve and direction. */
 public sealed record AudioEnvelope(double StartSeconds, double DurationSeconds, int Curve, bool FadeIn)
 {
+    /** Gain at a time: 0 or 1 outside the window, the curve inside. */
     public double At(double time)
     {
         if (DurationSeconds <= 0 || !double.IsFinite(DurationSeconds) || !double.IsFinite(StartSeconds))
@@ -13,6 +16,7 @@ public sealed record AudioEnvelope(double StartSeconds, double DurationSeconds, 
     }
 }
 
+/** Builds timelines (segment layout, clips, fades) from a playlist or a transition. */
 public static partial class AudioTimeline
 {
     private sealed class Scheduled(AudioSegment segment, double origin)
@@ -120,9 +124,11 @@ public static partial class AudioTimeline
         return MakePlan(analysis, container, scheduled, notices) with { Synchronization = point, Destination = destinationPoint };
     }
 
+    /** Segments that sit under a transition container. */
     public static IReadOnlyList<AudioSegment> TransitionSegments(AudioAnalysis analysis, uint container) =>
         analysis.Segments.Values.Where(segment => Ancestors(analysis, segment.Id).Contains(container)).ToArray();
 
+    /** Playlists that sit under a transition container. */
     public static IReadOnlyList<AudioPlaylist> TransitionPlaylists(AudioAnalysis analysis, uint container) =>
         analysis.Playlists.Values.Where(playlist => Ancestors(analysis, playlist.Id).Contains(container)).ToArray();
 

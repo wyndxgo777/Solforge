@@ -3,6 +3,10 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Scene;
 
+/**
+ * Alias part of AssetSceneLoader: tracks replaced static instances so the original editable row stays
+ * while the renderer reads compact native bytes.
+ */
 public sealed partial class AssetSceneLoader
 {
     private PackagePlacementOrigin? staticPlacement;

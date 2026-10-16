@@ -10,13 +10,16 @@ namespace Solforge.Weapons;
 [JsonConverter(typeof(HexHashConverter))]
 public readonly record struct HexHash(string Text)
 {
+    /** Formats a number as the canonical 0xXXXXXXXX string. */
     public static HexHash From(uint value) => new($"0x{value:X8}");
+    /** Non-throwing parse; false when the text is not canonical. */
     public bool TryParse(out uint value) => TryParseCanonical(Text, out value);
     /** Parses the hash or throws naming the recipe field, mirroring Parhelion's parse_recipe_hash. */
     public uint Parse(string field) => TryParse(out uint value) ? value
         : throw new WeaponRecipeException($"{field} must be a canonical hash of the form 0xXXXXXXXX, not {Text ?? "null"}");
     public override string ToString() => Text ?? "";
 
+    /** Accepts only 0x followed by exactly eight upper-case hex digits. */
     public static bool TryParseCanonical(string? text, out uint value)
     {
         value = 0;
@@ -29,6 +32,7 @@ public readonly record struct HexHash(string Text)
     }
 }
 
+/** JSON converter that reads and writes a HexHash as a plain string, rejecting non-strings. */
 public sealed class HexHashConverter : JsonConverter<HexHash>
 {
     public override HexHash Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>

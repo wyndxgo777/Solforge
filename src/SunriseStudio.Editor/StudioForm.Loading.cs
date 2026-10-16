@@ -4,6 +4,7 @@ using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
+/** StudioForm part: loading backdrop, load progress card and cancel rules. */
 public sealed partial class StudioForm
 {
     private LoadingBackdrop? backdrop;

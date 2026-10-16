@@ -14,6 +14,7 @@ internal static class DecoratorChecks
     // 80F101F3 holds ground payload 80B50087 at +0xD8; its one type is 80F101F1.
     private const uint GroundSceneTag = 0x80F101F3, GroundTypeTag = 0x80F101F1;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string install)
     {
         using var catalog = PackageCatalog.Open(install, cacheOptions: new() { Enabled = false });

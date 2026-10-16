@@ -1,7 +1,9 @@
+/** File: Partial MissionGraphDocument: checks node fields against the flow library contract. */
 using System.Text;
 
 namespace SunriseStudio.Missions;
 
+/** Partial: validation rules. */
 public sealed partial class MissionGraphDocument
 {
     /** The runtime stores flow state under keys of at most 63 UTF-8 bytes. */

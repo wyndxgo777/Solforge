@@ -1,13 +1,16 @@
+/** File: Splits root-bone motion out of a pose delta according to the clip's extraction mode. */
 using System.Numerics;
 
 namespace SunriseStudio.Animation;
 
+/** Frame the extracted root translation is expressed in. */
 public enum RootMotionTranslationSpace { None, ClipMotion, SampledStart }
 
 /** Rotation is an axis multiplied by radians, with magnitude no greater than pi. */
 public readonly record struct ExtractedRootMotionDelta(Vector3 Translation,
     Vector3 RotationVectorRadians, RootMotionTranslationSpace TranslationSpace);
 
+/** Static helpers for root-motion extraction. */
 internal static class RootMotionExtraction
 {
     /** Mode one receives a clip-space difference; other modes receive a start-relative SRT. */

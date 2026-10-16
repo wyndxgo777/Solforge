@@ -2,6 +2,7 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Editor;
 
+/** StudioForm part: the map and mission lists with cached names and filtering. */
 public sealed partial class StudioForm
 {
     private sealed record MapBrowserRow(MapEntry Map, string Name);

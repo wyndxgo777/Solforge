@@ -6,11 +6,13 @@ using SunriseStudio.Packages;
 using SunriseStudio.Scene;
 using SunriseStudio.Viewport;
 
+/** Checks dynamic live instances: unavailable registry rows are skipped, signed scale is kept, and a failed read keeps the last fresh scale. */
 internal static class DynamicBindingChecks
 {
     private const ulong Now = 10000;
     private const uint First = 0x80A00000;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static int Run(AssetViewport viewport)
     {
         string folder = Path.Combine(Path.GetTempPath(), "sunrise-dynamic-binding-" + Guid.NewGuid().ToString("N"));

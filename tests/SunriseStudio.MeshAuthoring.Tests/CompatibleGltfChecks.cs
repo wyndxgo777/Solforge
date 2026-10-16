@@ -4,6 +4,7 @@ using SunriseStudio.Authoring;
 using SunriseStudio.Formats;
 using SunriseStudio.Packages;
 
+/** Checks preparing a compatible glTF: native bone identity, parents and skin profile are preserved in package order. */
 internal static class CompatibleGltfChecks
 {
     /** A file round trip must retain the installed rig before any native replacement is prepared. */

@@ -4,6 +4,7 @@ using System.Runtime.Intrinsics.X86;
 
 namespace SunriseStudio.Rendering;
 
+/** Matrix helpers that reproduce the native SSE operation order so results match bit for bit. */
 internal static class NativeMatrixMath
 {
     /** Native products add XY and ZW pairs before the final sum, without fused arithmetic. */

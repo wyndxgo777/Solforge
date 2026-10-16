@@ -5,6 +5,7 @@ using SunriseStudio.Interchange;
 using SunriseStudio.Packages;
 using SunriseStudio.Scene;
 
+/** Checks the native-basis world oracle: linked-object shader semantics must be retained for material-normal parts. */
 internal static class WorldBasisChecks
 {
     /** The same owned part supplies both the established asset importer and shared world importer. */

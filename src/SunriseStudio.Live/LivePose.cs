@@ -3,6 +3,7 @@ using System.Numerics;
 
 namespace SunriseStudio.Live;
 
+/** Layout of one bone's palette entry in shared memory: dual quaternion, 3x4 or 4x4 matrix. */
 public enum LivePaletteKind : uint { DualQuaternion = 1, Matrix3x4 = 2, Matrix4x4 = 3 }
 
 /** One skinned draw's world-space palette; rows are copies and never alias shared memory. */
@@ -79,6 +80,7 @@ public sealed record LivePoseOwner(uint Handle, uint Generation);
 public sealed record LiveDraws(ulong Time, IReadOnlyList<LiveDraw> Draws, int Dropped, int Rejected,
     LivePoseOwner? Player = null);
 
+/** Wire layout and limits of the skinned-pose shared frame (header, per-draw table, vector pool). */
 public static class LivePoseProtocol
 {
     public const uint Magic = 0x504C5353, Version = 5;
@@ -91,10 +93,13 @@ public static class LivePoseProtocol
     public const int SnapshotBytes = PaletteOffset + VectorCapacity * 16;
     public const int MappingBytes = ControlBytes + SnapshotBytes;
     public const ulong StaleAfterMilliseconds = 500;
+    /** Per-process shared-memory name for the pose channel. */
     public static string MappingName(int processId) => $@"Local\SunriseStudio.Pose.{processId}";
+    /** Number of Vector4 rows each bone occupies for a palette form. */
     public static int VectorsPerBone(LivePaletteKind kind) => kind switch
     { LivePaletteKind.DualQuaternion => 2, LivePaletteKind.Matrix3x4 => 3, LivePaletteKind.Matrix4x4 => 4,
         _ => throw new InvalidDataException("Live palette form is unsupported.") };
+    /** True while a capture time is recent enough to trust. */
     public static bool Fresh(ulong time, ulong now) => time != 0 && time <= now && now - time <= StaleAfterMilliseconds;
 
     /** Header fields: valid flag, capture time and the draw and vector counts. */

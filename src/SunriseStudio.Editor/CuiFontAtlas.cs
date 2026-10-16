@@ -77,6 +77,7 @@ public sealed class CuiFontAtlas : IDisposable
         catch { Dispose(); throw; }
     }
 
+    /** Width of the text on one unwrapped line. */
     public float Measure(CuiTextAppearance appearance, string text) => Layout(appearance, text, float.MaxValue).Size.X;
 
     /** Layout stays in reference pixels and is shared by drawing and automatic dimensions. */
@@ -155,6 +156,7 @@ public sealed class CuiFontAtlas : IDisposable
         }
     }
 
+    /** Releases the atlas texture, the font faces and the DirectWrite writer. */
     public void Dispose()
     {
         texture?.Dispose(); texture = null; glyphs.Clear(); layouts.Clear(); kernings.Clear();

@@ -11,6 +11,7 @@ internal static class PhysicsChecks
     // The physics packfile whose bone-0 capsules run from z 0.85 to 1.65 with radius 0.55.
     private const uint StandInPackfile = 0x80C1B1B0;
 
+    /** Runs the checks that use generated fixtures instead of installed game content. */
     internal static void Synthetic()
     {
         var a = new Vector3(0, 0, .85f); var b = new Vector3(0, 0, 1.65f);
@@ -31,6 +32,7 @@ internal static class PhysicsChecks
             + $"surface-error={capsuleError:0.#######}] sphere=[triangles={sphere.TriangleCount} closed=yes surface-error={sphereError:0.#######}] box=closed");
     }
 
+    /** Runs the same kind of checks against the real packages of the owned installation. */
     internal static void Owned(PackageCatalog catalog)
     {
         Entity(catalog);

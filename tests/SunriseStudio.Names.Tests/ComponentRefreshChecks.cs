@@ -2,6 +2,7 @@ using System.Buffers.Binary;
 using System.Diagnostics;
 using SunriseStudio.Packages;
 
+/** Checks that installed component and category refreshes keep previous snapshots and scan only relevant payloads. */
 internal static class ComponentRefreshChecks
 {
     /** Times a full component load, the cost a refresh avoids. */

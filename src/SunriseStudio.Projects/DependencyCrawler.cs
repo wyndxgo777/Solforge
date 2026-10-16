@@ -1,9 +1,11 @@
+/** File: Walks everything a project build would ship and reports missing or invalid child references. */
 using System.Buffers.Binary;
 using System.Text.Json;
 using SunriseStudio.Packages;
 
 namespace SunriseStudio.Projects;
 
+/** Why a dependency is a problem: missing reference, invalid native link, or missing project file. */
 public enum DependencyIssueKind { MissingReference, InvalidNativeReference, MissingProjectFile }
 
 /**
@@ -24,6 +26,7 @@ public sealed record DependencyManifest(string Project, IReadOnlyList<Dependency
 
     private static readonly JsonSerializerOptions Json = new(ProjectJson.Options) { UnmappedMemberHandling = default };
 
+    /** Serialises the manifest as JSON bytes. */
     public byte[] ToJson() => JsonSerializer.SerializeToUtf8Bytes(this, Json);
 
     /** Writes build/dependencies.json (gitignored) and returns its path. */
@@ -47,6 +50,7 @@ public static class DependencyCrawler
     private const uint TagBase = 0x80800000u;
     private const uint TagSpan = 0x2000u << 13;
 
+    /** Builds the dependency manifest from the same tags and bytes ProjectBuilder.Build would ship. */
     public static DependencyManifest Crawl(StudioProject project, PackageCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(project);
@@ -151,5 +155,6 @@ public static class DependencyCrawler
             (int)Math.Min(size, int.MaxValue), $"w64_sunrise_{native.PackageId:x4}_0", native.PackageId, index)
         { TypeInfo = native.TypeInfo };
 
+    /** Tag hash of an added native entry from its package id and entry index. */
     public static uint TagOf(ushort packageId, int entryIndex) => checked(TagBase + ((uint)packageId << 13) + (uint)entryIndex);
 }

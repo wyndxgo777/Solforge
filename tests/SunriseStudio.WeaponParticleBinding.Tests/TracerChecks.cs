@@ -11,6 +11,7 @@ internal static class TracerChecks
     private const int First = 200;
     private const string Fixture = "w64_tracer_fixture_0b1c_0.pkg";
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(PackageCatalog catalog)
     {
         Check(WeaponTracerAuthoring.Refusal(catalog, WeaponTracerAuthoring.StockProjectile) is null, "Tommy's projectile was refused.");

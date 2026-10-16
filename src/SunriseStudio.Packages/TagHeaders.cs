@@ -14,6 +14,7 @@ public static class TagHeaders
     /** Entry indices are 13 bits (PackageDependencyTable.MaximumEntry). */
     public const int MaximumEntryIndex = PackageDependencyTable.MaximumEntry;
 
+    /** Tag hash for a package id and entry index. */
     public static uint Compose(ushort packageId, int entryIndex)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(entryIndex);
@@ -74,6 +75,7 @@ public static class TagHeaders
     }
 }
 
+/** Locator half of PackageCatalog: package id and entry index of an installed tag. */
 public sealed partial class PackageCatalog
 {
     /** Solforge Phase 07: the package id and entry index an installed tag hash names (§5.4). */

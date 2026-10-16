@@ -14,6 +14,7 @@ internal static class OriginalAssetMaterials
     private const string TemplateHash = "A4EEF505308E1FC7191EB85B17B71BADA8E619E6F2E3D7F0B68493455EDB6D70";
     private const string PixelHash = "9E97A5ACE9FCD8D9C743E287D1C0682C94F0B9E0EB037EA32593DDF53DCE5E13";
     private const string VertexHash = "D67606C0E9766D10759890F5A32A555662887C25533D81A2951E2D4DEACD0D66";
+    /** Compiled material tag with its assets and the sources skipped. */
     internal sealed record Prepared(uint MaterialTag, IReadOnlyList<ProjectAssetAddition> Assets, IReadOnlyList<string> Skipped);
 
     /**

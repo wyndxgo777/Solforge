@@ -10,16 +10,22 @@ public readonly record struct TomeVoxelBox(int MinX, int MinY, int MinZ, int Max
     public int SizeY => MaxY - MinY;
     public int SizeZ => MaxZ - MinZ;
     public long Count => IsEmpty ? 0 : (long)SizeX * SizeY * SizeZ;
+    /** Lower bound of the box on an axis. */
     public int Min(int axis) => axis == 0 ? MinX : axis == 1 ? MinY : MinZ;
+    /** Upper bound (exclusive) of the box on an axis. */
     public int Max(int axis) => axis == 0 ? MaxX : axis == 1 ? MaxY : MaxZ;
 
+    /** Overlap of two boxes. */
     public TomeVoxelBox Intersect(TomeVoxelBox other) => new(Math.Max(MinX, other.MinX), Math.Max(MinY, other.MinY),
         Math.Max(MinZ, other.MinZ), Math.Min(MaxX, other.MaxX), Math.Min(MaxY, other.MaxY), Math.Min(MaxZ, other.MaxZ));
 
+    /** Smallest box covering both; an empty box is ignored. */
     public TomeVoxelBox Union(TomeVoxelBox other) => IsEmpty ? other : other.IsEmpty ? this : new(Math.Min(MinX, other.MinX),
         Math.Min(MinY, other.MinY), Math.Min(MinZ, other.MinZ), Math.Max(MaxX, other.MaxX), Math.Max(MaxY, other.MaxY), Math.Max(MaxZ, other.MaxZ));
 
+    /** The box grown by the given amount on every side. */
     public TomeVoxelBox Grow(int by) => new(MinX - by, MinY - by, MinZ - by, MaxX + by, MaxY + by, MaxZ + by);
+    /** True when the voxel is inside the box (maximum exclusive). */
     public bool Contains(int x, int y, int z) => x >= MinX && x < MaxX && y >= MinY && y < MaxY && z >= MinZ && z < MaxZ;
 }
 

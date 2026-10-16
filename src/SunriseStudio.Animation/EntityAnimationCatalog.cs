@@ -1,8 +1,10 @@
+/** File: Lists the animation clips an entity config references through its animation definitions. */
 using System.Buffers.Binary;
 using SunriseStudio.Packages;
 
 namespace SunriseStudio.Animation;
 
+/** One clip reference from an entity config: definition tag, index, clip tag and recovered name. */
 public sealed record EntityAnimationReference(uint ConfigTag, uint DefinitionTag, int Index, uint ClipTag)
 {
     public string? Name { get; init; }

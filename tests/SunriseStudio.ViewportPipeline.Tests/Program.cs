@@ -28,18 +28,23 @@ catch (Exception error)
     return 1;
 }
 
+/** Assertion helpers for the viewport pipeline checks. */
 internal static class Checks
 {
+    /** Throws when the condition is false. */
     public static void Require(bool condition, string message)
     {
         if (!condition) throw new InvalidOperationException(message);
     }
 
+    /** True when the values differ by at most the tolerance. */
     public static bool Near(float a, float b, float tolerance = 1e-3f) => MathF.Abs(a - b) <= tolerance;
 
+    /** True when the values differ by at most the tolerance. */
     public static bool Near(System.Numerics.Vector3 a, System.Numerics.Vector3 b, float tolerance = 1e-3f) =>
         System.Numerics.Vector3.Distance(a, b) <= tolerance;
 
+    /** True when the values differ by at most the tolerance. */
     public static bool Near(System.Numerics.Vector2 a, System.Numerics.Vector2 b, float tolerance = 1e-3f) =>
         System.Numerics.Vector2.Distance(a, b) <= tolerance;
 }

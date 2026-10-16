@@ -70,6 +70,7 @@ public static class NativeGearPlating
     /** Dyes for one part; they win over the scene's. */
     public static void SetDyes(MeshInstance instance, NativeGearDyes dyes) => InstanceDyes.AddOrUpdate(instance, dyes);
 
+    /** Dyes registered for a scene, or Undyed. */
     public static NativeGearDyes DyesFor(SceneDocument scene) => SceneDyes.TryGetValue(scene, out var dyes) ? dyes : Undyed;
 
     /** The instance's dyes, else the scene's, else Undyed. */
@@ -308,6 +309,7 @@ public static class NativeGearPlating
         }
     }
 
+    /** Reads a tag, throwing unless it has the expected class. */
     internal static byte[] Require(PackageCatalog catalog, uint tag, uint type)
     {
         if (!catalog.TryGetEntry(tag, out var entry) || entry.Reference != type)
@@ -315,6 +317,7 @@ public static class NativeGearPlating
         return catalog.Read(tag);
     }
 
+    /** Reads a little-endian uint. */
     internal static uint U32(byte[] data, int offset) => BinaryPrimitives.ReadUInt32LittleEndian(data.AsSpan(offset, 4));
 
     private static int Relative(byte[] data, int offset)

@@ -23,8 +23,10 @@ internal sealed class MissionSdkIndex
         }
     }
 
+    /** Index for a reference list, built once per list. */
     public static MissionSdkIndex For(IReadOnlyList<MissionSdkReference> list) => Cache.GetValue(list, value => new(value));
 
+    /** First reference with this expression, or null. */
     public MissionSdkReference? First(string expression) => byExpression.TryGetValue(expression, out var indexes) ? list[indexes[0]] : null;
 
     /** The first entry with this expression or this identity, in list order; a null identity matches nothing. */
@@ -35,6 +37,7 @@ internal sealed class MissionSdkIndex
         return found == int.MaxValue ? null : list[found];
     }
 
+    /** True when this reference is in the list. */
     public bool Contains(MissionSdkReference value) =>
         byExpression.TryGetValue(value.Expression, out var indexes) && indexes.Any(index => list[index].Equals(value));
 }

@@ -1,5 +1,6 @@
 namespace SunriseStudio.Rendering;
 
+/** Frame-texture part of GameMaterialReader: resolves the render-global texture table. */
 public sealed partial class GameMaterialReader
 {
     /** Frame extern resource 24 comes from the render-global texture table's field 0x14. */

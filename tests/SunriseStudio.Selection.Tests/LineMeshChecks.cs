@@ -3,6 +3,7 @@ using SunriseStudio.Rendering;
 using SunriseStudio.Scene;
 using SunriseStudio.Viewport;
 
+/** Checks line mesh drawing: edits, persistent buffers, camera-only motion and resize must not change pixels or re-upload unchanged lines. */
 internal static partial class Program
 {
     /** Only equal byte sequences reuse an upload; empty streams suppress the prior draw. */

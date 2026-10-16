@@ -5,24 +5,31 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Scene;
 
+/** How reliable a name is. This file holds the name records and the index that answers name queries. */
 public enum StudioNameConfidence { Authored, Contextual, Candidate, Fallback }
+/** Where a name came from. */
 public enum StudioNameSource { PackageName, PackageHistory, Localization, PackageSource, Renderer,
     InstalledSdk, HashCandidate, Component, Owner, PackageContext }
+/** One candidate name with its source, confidence and priority. */
 public sealed record StudioNameCandidate(string Text, StudioNameSource Source,
     StudioNameConfidence Confidence, string Detail, int Priority, uint SourceTag = 0, int SourceOffset = -1);
+/** The best name for a tag, with its source and confidence. */
 public sealed record StudioNameInfo(uint TagHash, string DisplayName, string RawName,
     StudioNameSource Source, StudioNameConfidence Confidence, string Detail,
     bool IsAmbiguous, IReadOnlyList<StudioNameCandidate> Candidates)
 {
     public string Identifier => $"{TagHash:X8}";
 }
+/** Progress of an index build. */
 public sealed record StudioNameProgress(string Stage, int Completed, int Total)
 {
     public TimeSpan Elapsed { get; init; }
     public TimeSpan PhaseElapsed { get; init; }
 }
+/** Time and read counters of one build phase. */
 public sealed record StudioNamePhaseTiming(string Stage, TimeSpan Elapsed, long EntryReads,
     long BlocksRead, long CacheHits, long FileOpens, TimeSpan ReadTime, TimeSpan DecodeTime);
+/** How much of the catalog the index named. */
 public sealed record StudioNameCoverage(int NamedTags, int NamedHashes, int AmbiguousTags,
     int ContextualTags, int SdkFiles, int ReadErrors, bool Complete, string Stage);
 
@@ -94,8 +101,10 @@ public sealed partial class StudioNameIndex
         Publish("Package names", false);
     }
 
+    /** Creates an index without loading any names; Build also loads them. */
     public static StudioNameIndex Create(PackageCatalog catalog) => new(catalog);
 
+    /** Creates an index and loads every name source. */
     public static StudioNameIndex Build(PackageCatalog catalog, CancellationToken token = default,
         Action<string>? progress = null)
     {
@@ -166,8 +175,11 @@ public sealed partial class StudioNameIndex
 
     private partial void LoadEnrichment(CancellationToken token, Action<string>? progress);
 
+    /** Display name of a tag. */
     public string Describe(uint tag) => Lookup(tag).DisplayName;
+    /** Display name of a package entry. */
     public string Describe(PackageEntry entry) => Lookup(entry).DisplayName;
+    /** The best name for a tag; a fallback name when the tag is missing. */
     public StudioNameInfo Lookup(uint tag) => catalog.TryGetEntry(tag, out var entry) ? Lookup(entry)
         : new(tag, "Missing asset", "", StudioNameSource.PackageContext, StudioNameConfidence.Fallback,
             "No catalog entry", false, []);
@@ -238,9 +250,12 @@ public sealed partial class StudioNameIndex
         return best[0].Text + (best[0].Confidence == StudioNameConfidence.Candidate ? " (candidate)" : "");
     }
 
+    /** Candidate names for a FNV-1 hash. */
     public IReadOnlyList<StudioNameCandidate> HashCandidates(uint hash) =>
         hashNames.TryGetValue(hash, out var values) ? Array.AsReadOnly(values) : [];
+    /** Name of the item with this index, or null. */
     public string? ItemName(uint index) => itemNames.GetValueOrDefault(index);
+    /** Name of the perk with this index, or null. */
     public string? PerkName(uint index) => perkNames.GetValueOrDefault(index);
 
     /** Existing authored names win; contextual fallbacks gain bubble, owner and part labels. */
@@ -413,6 +428,7 @@ public sealed partial class StudioNameIndex
         Interlocked.Increment(ref revision);
     }
 
+    /** FNV-1 hash of a name, as used by the string banks. */
     public static uint Fnv1(string value) => StringBankWriter.Hash(value);
 
     private static string Kind(PackageEntry entry) => entry.Reference switch

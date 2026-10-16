@@ -14,5 +14,6 @@ public static class ObjectTypeNames
     ];
 
     public static int Count => Names.Length;
+    /** Name of an object type number, or null when unknown. */
     public static string? Name(int type) => (uint)type < (uint)Names.Length ? Names[type] : null;
 }

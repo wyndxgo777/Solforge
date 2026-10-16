@@ -16,11 +16,13 @@ public static class MaterialPreviewAnalyzer
     // Extern 86 vector 0 holds the part's gear-dye bit; the material reads it to pick its dye pair.
     public static readonly TfxExternKey GearDyeBit = new(86, 0);
     private static readonly Lazy<NativeRenderStateCatalog> States = new(() => new());
+    /** A texture input of a shader: slot, tag and format. */
     public sealed record TextureInput(uint Slot, uint Tag, int Format);
     private sealed record Source(uint Slot, char Channel, bool DirectUv);
     private sealed record Value(HashSet<Source> Sources, string? Input = null, float? Constant = null)
     {
         internal static Value Unknown => new([]);
+        /** A constant value, or an unknown one when the number is not finite. */
         internal static Value Number(float value) => new([], Constant: float.IsFinite(value) ? value : null);
     }
 
@@ -44,6 +46,7 @@ public static class MaterialPreviewAnalyzer
             : rasterizer.CullMode == Vortice.Direct3D11.CullMode.Front && !counterClockwise;
     }
 
+    /** Analyses the material's pixel shader into a preview, with optional inspection inputs and render stages. */
     public static BundleMaterialPreview Read(PackageCatalog catalog, uint materialTag, TfxInputs? inspectionInputs = null,
         IReadOnlyCollection<int>? renderStages = null) => Read(catalog, materialTag, inspectionInputs, renderStages, null);
 

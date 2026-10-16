@@ -117,6 +117,7 @@ public static class TomeReader
         return tome;
     }
 
+    /** Every portal of the tome: cluster portals and those of each tile's cells. */
     internal static IEnumerable<TomePortal> AllPortals(Tome tome) =>
         tome.Clusters.SelectMany(cluster => cluster.Portals)
             .Concat(tome.Tiles.Where(tile => tile is not null).SelectMany(tile => tile!.Cells.SelectMany(cell => cell.Portals)));
@@ -217,17 +218,26 @@ public static class TomeReader
     /** Bounds-checked little-endian reads; any read outside the tome is invalid data. */
     private sealed class Reader(ReadOnlyMemory<byte> memory)
     {
+        /** Bytes at offset; throws if the range leaves the data. */
         internal ReadOnlySpan<byte> Slice(int offset, int length) =>
             offset >= 0 && length >= 0 && offset <= memory.Length - length
                 ? memory.Span.Slice(offset, length) : throw new InvalidDataException($"Tome read at 0x{offset:X} leaves the data.");
+        /** Reads a 32-bit unsigned value. */
         internal uint U32(int offset) => BinaryPrimitives.ReadUInt32LittleEndian(Slice(offset, 4));
+        /** Reads a 32-bit signed value. */
         internal int I32(int offset) => BinaryPrimitives.ReadInt32LittleEndian(Slice(offset, 4));
+        /** Reads a 32-bit float. */
         internal float F32(int offset) => BinaryPrimitives.ReadSingleLittleEndian(Slice(offset, 4));
+        /** Reads three floats as a vector. */
         internal Vector3 V3(int offset) => new(F32(offset), F32(offset + 4), F32(offset + 8));
+        /** Reads a four-word portal record. */
         internal TomePortal Portal(int offset) => new(U32(offset), U32(offset + 4), U32(offset + 8), U32(offset + 12));
+        /** Offset of element index at stride from a pointer; throws on a null pointer. */
         internal int At(uint pointer, int index, int stride) => At(checked((int)pointer), index, stride);
+        /** Offset of element index at stride from a pointer; throws on a null pointer. */
         internal int At(int pointer, int index, int stride) =>
             pointer == 0 ? throw new InvalidDataException("A tome block has no pointer.") : checked(pointer + index * stride);
+        /** Validates a count against the data size. */
         internal int Count(uint value) => value <= memory.Length ? (int)value : throw new InvalidDataException("A tome count exceeds its data.");
     }
 }

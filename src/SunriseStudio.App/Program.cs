@@ -3,6 +3,10 @@ using SunriseStudio.Editor;
 
 namespace SunriseStudio.App;
 
+/**
+ * Entry point of the Solforge studio executable: parses command-line options, runs StudioForm and returns
+ * the exit code (1 on failure).
+ */
 internal static class Program
 {
     [STAThread]

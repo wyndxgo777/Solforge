@@ -8,6 +8,7 @@ public sealed partial class StudioWorkspace
 {
     public const int KeptInstallSnapshots = 5;
 
+    /** Folder where the project keeps install snapshots. */
     public static string SnapshotRoot(StudioProject project) => Path.Combine(project.DirectoryPath, ".solforge", "snapshots");
 
     /** Runs on the install worker; a failed copy is reported and never blocks the install. */
@@ -58,6 +59,7 @@ public sealed partial class StudioWorkspace
         Notice = new($"Restored the install from {stamp}. Restart the game to load it.", false, null, null);
     }
 
+    /** Snapshots of the project's mod, as listed by the snapshot store. */
     public IReadOnlyList<InstallSnapshot> ListInstallSnapshots() =>
         Project is { Mod: { } mod } project ? new InstallSnapshots(SnapshotRoot(project)).List(mod.Id) : [];
 }

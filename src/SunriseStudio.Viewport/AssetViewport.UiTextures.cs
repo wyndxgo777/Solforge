@@ -4,6 +4,7 @@ using Vortice.DXGI;
 
 namespace SunriseStudio.Viewport;
 
+/** UI texture half of AssetViewport: preview textures for the editor panels. */
 public sealed partial class AssetViewport
 {
     /** The caller owns the result and must keep it alive until ImGui finishes the frame. */

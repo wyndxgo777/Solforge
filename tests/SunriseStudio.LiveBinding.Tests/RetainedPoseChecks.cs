@@ -5,6 +5,7 @@ using SunriseStudio.Rendering;
 using SunriseStudio.Scene;
 using SunriseStudio.Viewport;
 
+/** Checks retained poses: a transient read failure keeps the last fresh pose for drawing and picking instead of snapping to authored placement. */
 internal static partial class Program
 {
     /** Transient reads retain one lifetime's last sample, with no prediction or extension of its TTL. */

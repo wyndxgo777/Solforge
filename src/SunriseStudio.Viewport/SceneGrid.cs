@@ -322,6 +322,7 @@ public sealed class SceneGrid
         return true;
     }
 
+    /** Where a box lies against the frustum. */
     internal enum Containment : byte { Outside, Partial, Inside }
 
     /** Planes use Ax + By + Cz + D >= 0 for the inside. */
@@ -344,6 +345,7 @@ public sealed class SceneGrid
         return planes;
     }
 
+    /** True when a sphere touches the frustum. */
     public static bool SphereInFrustum(Vector3 c, float r, Vector4[] planes)
     {
         foreach (var p in planes)

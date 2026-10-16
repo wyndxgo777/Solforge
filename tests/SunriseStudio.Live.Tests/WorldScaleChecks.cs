@@ -2,8 +2,10 @@ using System.Buffers.Binary;
 using System.IO.MemoryMappedFiles;
 using SunriseStudio.Live;
 
+/** Checks signed world scale reading from live rows: sign is kept, hidden or unplaced rows lose their model, and missing scale is never invented. */
 internal static class WorldScaleChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run()
     {
         ulong now = (ulong)Environment.TickCount64;

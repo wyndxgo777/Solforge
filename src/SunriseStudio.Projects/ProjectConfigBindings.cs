@@ -1,7 +1,9 @@
+/** File: Partial StudioProject: saving and compiling the project's mod config bindings. */
 using SunriseStudio.Packages;
 
 namespace SunriseStudio.Projects;
 
+/** Partial: config binding operations. */
 public sealed partial class StudioProject
 {
     private bool configCompilationActive;
@@ -111,6 +113,7 @@ public sealed partial class StudioProject
         });
     }
 
+    /** Tag hash of a native asset from its package id and entry index. */
     internal static uint NativeTag(NativeAssetMetadata native) =>
         checked(0x80800000U + ((uint)native.PackageId << 13) + (uint)native.EntryIndex!.Value);
 

@@ -11,6 +11,7 @@ using Vortice.DXGI;
 
 namespace SunriseStudio.Viewport;
 
+/** Milliseconds spent on each stage of the last frame. */
 public readonly record struct ViewportFrameTimings(double VisibilityMilliseconds, double NativeMilliseconds,
     double DisplayMilliseconds, double FallbackMilliseconds, double OverlayMilliseconds,
     double BackdropMilliseconds, double CullMilliseconds, double VisibleListMilliseconds,
@@ -494,8 +495,10 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
         SelectionChanged?.Invoke(SelectedObject);
     }
 
+    /** True when the visibility filters show the item. */
     public bool IsVisible(object item) => Visibility.IsVisible(item);
 
+    /** Adds a pickable point proxy and marks the scene grid dirty. */
     public void AddPointProxy(ScenePointProxy point)
     {
         selection.AddProxy(point);
@@ -1631,6 +1634,7 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
             (index & 4) == 0 ? -extent.Z : extent.Z), transform);
     }
 
+    /** Releases effects, scene uploads and GPU resources; safe to call twice. */
     public void Dispose()
     {
         if (disposed) return;

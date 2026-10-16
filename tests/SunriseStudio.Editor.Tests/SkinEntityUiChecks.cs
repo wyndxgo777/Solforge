@@ -4,6 +4,7 @@ using SunriseStudio.Editor;
 using SunriseStudio.Projects;
 using SunriseStudio.Rendering;
 
+/** Checks the skin entity creation UI: template offering, review expiry and per-project review identity while the worker runs. */
 internal static class SkinEntityUiChecks
 {
     /** The create review expires with project identity and one undo restores every allocated identity. */

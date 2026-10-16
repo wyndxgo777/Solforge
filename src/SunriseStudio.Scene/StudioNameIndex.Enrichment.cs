@@ -4,6 +4,7 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Scene;
 
+/** Enrichment part of StudioNameIndex: item and perk names and item facts. */
 public sealed partial class StudioNameIndex
 {
     private static readonly UTF8Encoding StrictText = new(false, true);
@@ -38,6 +39,7 @@ public sealed partial class StudioNameIndex
     // Replaced whole, never changed in place.
     private uint[] investmentBanks = [];
 
+    /** Looks up the facts of an item definition tag. */
     public bool TryGetItem(uint definitionTag, out InvestmentItemFacts facts) => itemFacts.TryGetValue(definitionTag, out facts);
 
     /** Bank indices resolve within their named string container, never through a global hash guess. */

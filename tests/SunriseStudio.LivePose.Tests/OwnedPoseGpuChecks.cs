@@ -9,12 +9,14 @@ using SunriseStudio.Scene;
 using SunriseStudio.Viewport;
 using Vortice.DXGI;
 
+/** GPU check of posed original models: admitted parts, captured lighting, and exclusion of unsupported native parts. */
 internal static class OwnedPoseGpuChecks
 {
     private const int Width = 192, Height = 160;
     private static readonly (int X, int Y)[] Pixels = Enumerable.Range(0, Height)
         .SelectMany(y => Enumerable.Range(0, Width).Select(x => (x, y))).ToArray();
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(PackageCatalog catalog)
     {
         foreach (var fixture in new[] { (Entity: 0x80C0FA98u, Model: 0x80FEE881u, Kind: LivePaletteKind.DualQuaternion),

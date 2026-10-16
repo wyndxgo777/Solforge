@@ -2,6 +2,7 @@ using System.Numerics;
 
 namespace SunriseStudio.Scene;
 
+/** Builder part of SceneHierarchy: assembles the ownership tree from a scene. */
 public sealed partial class SceneHierarchy
 {
     private readonly record struct PlacementKey(object? Identity, uint Tag, int Row, int Kind,

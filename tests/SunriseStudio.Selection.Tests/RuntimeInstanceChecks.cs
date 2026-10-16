@@ -5,6 +5,7 @@ using SunriseStudio.Rendering;
 using SunriseStudio.Scene;
 using SunriseStudio.Viewport;
 
+/** Checks runtime slot instances: creation, visibility, selectable outline and despawn cleanup. */
 internal static partial class Program
 {
     /** Runtime generations reuse slots while authored geometry, selection and the static index stay intact. */

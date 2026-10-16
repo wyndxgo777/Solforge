@@ -1,12 +1,15 @@
+/** File: In-memory PCM WAV with reading and writing. */
 using System.Buffers.Binary;
 
 namespace SunriseStudio.Audio;
 
+/** Interleaved PCM samples with their format. */
 public sealed record PcmWave(int SampleRate, ushort Channels, ushort BitsPerSample, byte[] Samples)
 {
     public int BlockAlign => Channels * BitsPerSample / 8;
     public double DurationSeconds => (double)Samples.Length / (SampleRate * BlockAlign);
 
+    /** Writes a 16-bit WAV after checking rate, channel count and size limits. */
     public static void Write(string path, int rate, ushort channels, byte[] samples)
     {
         if (rate is < 8000 or > 192000 || channels is < 1 or > 2 || samples.Length % (channels * 2) != 0
@@ -18,6 +21,7 @@ public sealed record PcmWave(int SampleRate, ushort Channels, ushort BitsPerSamp
         writer.Write("data"u8); writer.Write(samples.Length); writer.Write(samples);
     }
 
+    /** Reads a WAV file. */
     public static PcmWave Read(string path)
     {
         using var stream = File.OpenRead(path);
@@ -26,6 +30,7 @@ public sealed record PcmWave(int SampleRate, ushort Channels, ushort BitsPerSamp
         return new(format.Rate, format.Channels, 16, samples);
     }
 
+    /** Reads only the stream facts from a WAV file. */
     public static AudioStreamInfo ReadInfo(string path)
     {
         using var stream = File.OpenRead(path); var format = ReadFormat(stream);

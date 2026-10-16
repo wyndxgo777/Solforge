@@ -5,6 +5,7 @@ public sealed class InvestmentInspector : IAssetInspector
 {
     public string Id => "sunrise.investment";
     public string DisplayName => "Investment";
+    /** True for the item, display, vendor and related investment classes (0x80807BEA, 0x80805CE1, 0x8080306D, 0x80807D84). */
     public bool CanInspect(AssetInspectionContext context) =>
         context.ClassHash is 0x80807BEA or 0x80805CE1 or 0x8080306D or 0x80807D84;
 

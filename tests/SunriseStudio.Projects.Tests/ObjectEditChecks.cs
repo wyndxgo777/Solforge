@@ -3,6 +3,7 @@ using System.Text.Json.Nodes;
 using SunriseStudio.Packages;
 using SunriseStudio.Projects;
 
+/** Checks project object edit persistence: manifest version, saving and a single validated compile per publish. */
 internal static class ObjectEditChecks
 {
     /** Manifest storage, merge, versioning and base checks, with a stand-in for the Authoring compiler. */
@@ -124,6 +125,7 @@ internal static class ObjectEditChecks
     private sealed class ScaleCompiler(float multiplier = 1) : IObjectEditCompiler
     {
         public int Calls { get; private set; }
+        /** Writes each edit Scale (times the multiplier) as a float at its target offset and counts calls. */
         public ObjectEditCompilation Compile(IReadOnlyList<ObjectEdit> edits, Func<uint, byte[]> readRaw, PackageCatalog catalog)
         {
             Calls++;
@@ -139,6 +141,7 @@ internal static class ObjectEditChecks
             return new(assets, compiled);
         }
 
+        /** Drops edits that carry no values. */
         public ObjectEdit? Normalize(ObjectEdit edit, Func<uint, byte[]> readRaw, PackageCatalog catalog) =>
             edit.HasValues ? edit : null;
     }
@@ -215,6 +218,7 @@ internal static class ObjectEditChecks
     private sealed class CallbackCompiler(Action? before = null, Action? after = null) : IObjectEditCompiler
     {
         private readonly ScaleCompiler inner = new();
+        /** Runs the before callback, compiles with a ScaleCompiler, then runs the after callback. */
         public ObjectEditCompilation Compile(IReadOnlyList<ObjectEdit> edits, Func<uint, byte[]> readRaw, PackageCatalog catalog)
         {
             before?.Invoke();
@@ -222,6 +226,7 @@ internal static class ObjectEditChecks
             after?.Invoke();
             return result;
         }
+        /** Forwards to the inner ScaleCompiler. */
         public ObjectEdit? Normalize(ObjectEdit edit, Func<uint, byte[]> readRaw, PackageCatalog catalog) =>
             inner.Normalize(edit, readRaw, catalog);
     }
@@ -282,6 +287,7 @@ internal static class ObjectEditChecks
     private sealed class VectorCompiler(Action? after = null) : IObjectEditCompiler
     {
         public int Calls { get; private set; }
+        /** Writes the single edit first position component as a float at its target offset, runs the after callback, and counts calls. */
         public ObjectEditCompilation Compile(IReadOnlyList<ObjectEdit> edits, Func<uint, byte[]> readRaw, PackageCatalog catalog)
         {
             Calls++;
@@ -291,6 +297,7 @@ internal static class ObjectEditChecks
             after?.Invoke();
             return new(new Dictionary<uint, byte[]> { [edit.Target.SourceTag] = data }, [new(edit, [edit.Target.SourceTag])]);
         }
+        /** Keeps every edit unchanged. */
         public ObjectEdit? Normalize(ObjectEdit edit, Func<uint, byte[]> readRaw, PackageCatalog catalog) => edit;
     }
 }

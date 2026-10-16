@@ -6,6 +6,7 @@ namespace SunriseStudio.Editor;
 /** Solforge Phase 47B: what get_live_state reports about the in-game Live link (Studio.md §3.7). */
 public sealed partial class LivePage
 {
+    /** Summary of the Live link for get_live_state: attachment, snapshot, world and a note when detached. */
     public JsonObject AiState()
     {
         var state = new JsonObject { ["attached"] = connection is not null, ["snapshot"] = snapshot is not null };

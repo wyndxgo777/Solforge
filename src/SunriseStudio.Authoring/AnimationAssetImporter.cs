@@ -5,6 +5,7 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Authoring;
 
+/** Outcome of a control import: the new clip bytes, channels changed, frame count and the largest sampling error. */
 public sealed record AnimationImportResult(uint ClipTag, byte[] Data, int ChangedChannels,
     int FrameCount, float MaximumError);
 
@@ -187,6 +188,7 @@ public static class AnimationAssetImporter
         private readonly Dictionary<int, AnimationControlSample[]> frames = [];
         private readonly Dictionary<int, int> positions = Positions(clip.Sample(0));
 
+        /** Control sample for a native control index at a 30 fps frame; samples are cached per frame. */
         public AnimationControlSample At(int frame, int index)
         {
             if (!positions.TryGetValue(index, out int position))

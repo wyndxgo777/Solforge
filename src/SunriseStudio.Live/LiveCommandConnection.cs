@@ -130,6 +130,7 @@ public sealed class LiveCommandConnection : IDisposable
         mapping = null;
     }
 
+    /** Writes zero to the heartbeat so the game sees Studio gone, then releases the mapping. */
     public void Dispose()
     {
         lock (gate)

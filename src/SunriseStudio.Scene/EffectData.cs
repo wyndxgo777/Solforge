@@ -2,6 +2,7 @@ using System.Numerics;
 
 namespace SunriseStudio.Scene;
 
+/** Kind of effect node. This file holds the decoded effect (particle system and lens flare) data. */
 public enum EffectKind { ParticleSystem, LensFlare }
 
 /** One named emitter channel: its storage kind and slot from the emitter's 55-entry map. */
@@ -153,6 +154,7 @@ public sealed record EffectLocation(int Index, uint Name, byte Count, byte Flags
 /** A channel range a node needs: open while Min <= value < Max. */
 public sealed record EffectGate(uint Channel, float Min, float Max)
 {
+    /** True while Min <= value < Max. */
     public bool Open(float value) => value >= Min && value < Max;
 }
 
@@ -246,11 +248,13 @@ public sealed class EffectDescription
     /** The world frame in the bind pose: Local * BoneTransform * Placement. */
     public Matrix4x4 Transform => Local * BoneTransform * placement;
 
+    /** Sets the effect's world placement. */
     internal void Place(Matrix4x4 value) => placement = value;
 
     /** The location that feeds a transform slot of a system, or null when none does. */
     public EffectLocation? SlotLocation(int system, int slot) => SlotLocation(Systems, Locations, system, slot);
 
+    /** Location feeding a system's transform slot, or null. */
     internal static EffectLocation? SlotLocation(IReadOnlyList<EffectSystem> systems,
         IReadOnlyList<IReadOnlyList<EffectLocation>> locations, int system, int slot)
     {
@@ -262,6 +266,7 @@ public sealed class EffectDescription
     /** True when the spawn slot names a point the entity lacks; the game emits nothing. */
     public bool SpawnMissing(int system) => SpawnMissing(Systems, Locations, system);
 
+    /** True when the system's spawn slot names a point the entity lacks. */
     internal static bool SpawnMissing(IReadOnlyList<EffectSystem> systems,
         IReadOnlyList<IReadOnlyList<EffectLocation>> locations, int system) =>
         systems[system].Emitter is { } emitter

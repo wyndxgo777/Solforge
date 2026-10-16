@@ -7,11 +7,14 @@ public sealed record AudioTimelineClip(uint Segment, uint Track, uint Media, dou
     double SourceSeconds, double DurationSeconds, float GainDb, AudioEnvelope? FadeIn = null,
     AudioEnvelope? FadeOut = null, double LoopSeconds = 0,
     IReadOnlyList<AudioClipAutomation>? Automation = null, double AutomationOffsetSeconds = 0, float? Pan = null);
+/** Where one segment starts, enters, exits and ends on the timeline, in seconds. */
 public sealed record AudioTimelineSegment(uint Id, string Name, double StartSeconds,
     double EntrySeconds, double ExitSeconds, double EndSeconds);
+/** A planned render: segments, clips, duration and notices. */
 public sealed record AudioTimelinePlan(uint Playlist, IReadOnlyList<AudioTimelineSegment> Segments,
     IReadOnlyList<AudioTimelineClip> Clips, double DurationSeconds, IReadOnlyList<string> Notices,
     AudioSyncPoint? Synchronization = null, AudioDestinationPoint? Destination = null, AudioPlaylistPath? PlaylistPath = null);
+/** Result of a render: the WAV path, clipped sample count, peak and overlap frames. */
 public sealed record AudioTimelineRender(string Path, long ClippedSamples, double Peak, int OverlapFrames);
 
 /** Segment entry and exit cues align clips while their authored lead-ins and tails overlap. */

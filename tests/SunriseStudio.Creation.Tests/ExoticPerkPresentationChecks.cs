@@ -6,6 +6,7 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Creation.Tests;
 
+/** Checks that creating an exotic authors one exotic and two normal perk presentations without touching behavior programs or rarity. */
 internal static class ExoticPerkPresentationChecks
 {
     /** Presentation must preserve plug roles and fresh behavior programs. */

@@ -4,6 +4,7 @@ using ImGuiNET;
 
 namespace SunriseStudio.Editor;
 
+/** StudioForm part: the third-party license notices dialog. */
 public sealed partial class StudioForm
 {
     private static readonly (string Title, string Resource, bool Markdown)[] NoticeTabs =

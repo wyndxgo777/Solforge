@@ -2,14 +2,19 @@ using System.Buffers.Binary;
 
 namespace SunriseStudio.Formats;
 
+/** Kind of value transform a binding applies between its endpoints. */
 public enum CuiBindingTransformKind { None = -1, Not = 0, CompareInteger = 1, CompareFloat = 2, CompareHash = 3 }
+/** Comparison operator used by the compare transforms. */
 public enum CuiComparison { Equal, NotEqual, Less, LessOrEqual, GreaterOrEqual, Greater }
+/** One end of a binding: node IDs (runtime and authored) and the property path under that node. */
 public sealed record CuiBindingEndpoint(ushort Node, ushort AuthoredNode, IReadOnlyList<uint> Path)
 {
     public string PathKey => string.Join('/', Path.Select(value => value.ToString("X")));
 }
+/** The transform step of a binding (negate or compare against Operand) with where it is stored. */
 public sealed record CuiBindingTransform(CuiBindingTransformKind Kind, CuiComparison Comparison = CuiComparison.Equal,
     uint Operand = 0, int Offset = -1, uint ClassHash = 0);
+/** A parsed CUI binding row: source endpoint, transform and target endpoint, or Error if it could not be decoded. */
 public sealed record CuiBinding(int Index, int Offset, CuiBindingEndpoint Source, CuiBindingEndpoint Target,
     CuiBindingTransform Transform, string Error);
 
@@ -20,6 +25,7 @@ public static class CuiBindings
     public const int MaximumPathLength = 16;
     public const int BindingStride = 56;
 
+    /** Reads every binding row of a CUI tag. */
     public static IReadOnlyList<CuiBinding> Read(ReadOnlyMemory<byte> bytes)
     {
         var r = new TagReader(bytes); var rows = r.Array(88, 0x808046D8, BindingStride);
@@ -111,6 +117,7 @@ public static class CuiBindings
 /** Local is the resource's own row; Composed carries the screen's node IDs. */
 public sealed record CuiComposedBinding(CuiResourceInstance Instance, CuiBinding Local, CuiBinding Composed);
 
+/** Maps bindings of composed CUI resources onto the composed hierarchy. */
 public static class CuiComposedBindings
 {
     /**
@@ -141,10 +148,12 @@ public static class CuiComposedBindings
     }
 }
 
+/** Type tag for a preview value. */
 public enum CuiValueKind { Bool, Integer, Float, Hash }
 /** Bool bits are 0 or 1; integer, float and hash bits are the native 32-bit value. */
 public readonly record struct CuiPreviewValue(CuiValueKind Kind, uint Bits)
 {
+    /** Wraps a bool as a preview value. */
     public static CuiPreviewValue FromBool(bool value) => new(CuiValueKind.Bool, value ? 1u : 0u);
     public bool AsBool => Bits != 0;
 }
@@ -193,6 +202,7 @@ public static class CuiBindingPreview
         _ => IsVisibility(binding.Target) ? CuiValueKind.Bool : null
     };
 
+    /** True when the endpoint addresses a node's visibility. */
     public static bool IsVisibility(CuiBindingEndpoint endpoint) => endpoint.Path is [VisibilitySelector];
 
     private static CuiPreviewValue? Apply(CuiBindingTransform transform, CuiPreviewValue value) => transform.Kind switch

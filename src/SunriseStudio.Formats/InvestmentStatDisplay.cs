@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 
 namespace SunriseStudio.Formats;
 
+/** One point of a display curve: raw input and displayed output. */
 public readonly record struct InvestmentStatPoint(int Input, int Output);
 
 /** Display curves transform authored base values without changing the values stored in item definitions. */
@@ -53,6 +54,7 @@ public sealed class InvestmentStatCurve
     }
 }
 
+/** Stat display reading. */
 public sealed partial class InvestmentCatalog
 {
     /** Missing context-dependent values stay raw instead of being labelled final gameplay stats. */

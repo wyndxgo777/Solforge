@@ -7,6 +7,7 @@ namespace SunriseStudio.Rendering;
 /** CB11 palette forms of entity vertex shaders. */
 public enum NativeEntityPalette { None, Matrix, DualQuaternion }
 
+/** Text helpers for DXBC disassembly. */
 public static class DxbcText
 {
     /** Splits a DXBC operand list on commas outside brackets and literals. */
@@ -25,6 +26,10 @@ public static class DxbcText
     }
 }
 
+/**
+ * Checks that a shader image only reads data the studio can supply, so unsupported shaders are
+ * rejected instead of drawn wrongly.
+ */
 public static class NativeShaderContracts
 {
     /** The image must read CB11 as four rows per instance and read packed word 15 only through bits 0..25. */
@@ -99,6 +104,7 @@ public static class NativeShaderContracts
             (lanes.Length == 1 ? lanes[0] : lanes.ElementAtOrDefault("xyzw".IndexOf(lane, StringComparison.Ordinal))) == value);
     }
 
+    /** True when every word the shader reads from the frame constant buffer (CB13) is known. */
     public static bool CanUseFrameConstants(ReadOnlySpan<byte> bytecode, GameShaderStage stage,
         NativeFrameScopeConstants constants) =>
         MissingWords(bytecode, new(stage, 13), constants.KnownWordMasks) is null;

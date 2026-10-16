@@ -32,6 +32,7 @@ public sealed class GpuFrameTimer : IDisposable
         }
     }
 
+    /** Clears the accumulated totals and frame count. */
     public void Reset() { Array.Clear(Totals); Frames = 0; }
 
     /** Starts a frame; the first stamp opens section 0. */
@@ -52,6 +53,7 @@ public sealed class GpuFrameTimer : IDisposable
         used[slot] = Math.Max(used[slot], section + 2);
     }
 
+    /** Ends the frame; when record is true its timings are collected later, otherwise they are discarded. */
     public void End(bool record)
     {
         if (slot < 0) return;
@@ -72,6 +74,7 @@ public sealed class GpuFrameTimer : IDisposable
         Frames++;
     }
 
+    /** Releases the timestamp queries. */
     public void Dispose()
     {
         foreach (var query in disjoint) query.Dispose();

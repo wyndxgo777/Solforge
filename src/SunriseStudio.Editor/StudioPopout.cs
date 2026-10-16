@@ -16,6 +16,7 @@ internal sealed class StudioPopout : Form
     /** Set when the user closes the window; the main frame then docks the editor again. */
     public bool PopInRequested { get; private set; }
 
+    /** Marks that the user wants the editor docked back into the main window. */
     public void RequestPopIn() => PopInRequested = true;
 
     /** The themed frame; its close button docks the editor again. */

@@ -105,13 +105,18 @@ public sealed partial class GameNames
     public int ScenarioCount => scenarios.Count;
     public int MapCount => mapDevNames.Count;
 
+    /** Localized text for a string hash, if any. */
     public string? Localized(uint hash) => Strings.Get(hash);
 
+    /** Known class name for a class hash. */
     public string? ClassName(uint reference) => ClassNames.Get(reference);
 
+    /** Names of a scenario tag, if known. */
     public ScenarioNames? Scenario(uint scenarioTag) => scenarios.GetValueOrDefault(scenarioTag);
 
+    /** Developer name of a map root tag, if known. */
     public string? MapDevName(uint mapRootTag) => mapDevNames.GetValueOrDefault(mapRootTag);
+    /** Name hash of the bubble below a parent tag, if any. */
     public uint? BubbleNameHash(uint parentTag) => bubbleParents.TryGetValue(parentTag, out var hash) ? hash : null;
 
     /** Destination text shared by the map's scenarios, then the map's dev name. */

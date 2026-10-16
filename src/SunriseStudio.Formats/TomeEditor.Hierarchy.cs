@@ -2,6 +2,7 @@ using System.Numerics;
 
 namespace SunriseStudio.Formats;
 
+/** Rebuilds the tile hierarchy after leaf tiles change. */
 public static partial class TomeEditor
 {
     /**

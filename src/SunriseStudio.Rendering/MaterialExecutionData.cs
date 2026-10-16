@@ -4,15 +4,19 @@ using Vortice.Direct3D11;
 
 namespace SunriseStudio.Rendering;
 
+/** A sampler state a material selects, with the header and payload tags it was read from. */
 public sealed record MaterialSampler(uint HeaderTag, uint PayloadTag, SamplerDescription Description);
 
+/** Per-stage data a material needs to run: shader, TFX bytecode, its constants and the constant template. */
 public sealed record MaterialStageData(GameShaderStage Stage, GameShaderInfo? Shader,
     byte[] TfxBytecode, Vector4[] TfxConstants, Vector4[] ConstantTemplate,
     uint ConstantSourceTag, IReadOnlyList<MaterialSampler> Samplers);
 
+/** Everything needed to execute a material: the material plus its vertex, pixel and compute stage data. */
 public sealed record MaterialExecutionData(GameMaterialInfo Material,
     MaterialStageData Vertex, MaterialStageData Pixel, MaterialStageData Compute);
 
+/** Material-execution part of GameMaterialReader: assembles stage data from the material's shaders. */
 public sealed partial class GameMaterialReader
 {
     /** Authored data stays separate from runtime externs and GPU binding slots. */
@@ -26,6 +30,7 @@ public sealed partial class GameMaterialReader
             ReadStageData(bytes, GameShaderStage.Compute, material.ComputeShader, 0x368));
     }
 
+    /** Reads the raw DXBC bytecode of a shader from the package catalog. */
     public byte[] ReadShaderBytecode(GameShaderInfo shader) => catalog.Read(shader.BytecodeTag);
 
     /** An external constant-buffer entry takes precedence over inline vectors. */

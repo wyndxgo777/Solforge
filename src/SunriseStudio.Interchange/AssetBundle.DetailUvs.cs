@@ -5,6 +5,7 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Interchange;
 
+/** Detail-UV derivation of AssetBundle: reads the TEXCOORD2 stream of entity parts to rebuild the detail UV map. */
 public static partial class AssetBundle
 {
     /**

@@ -6,8 +6,10 @@ using SunriseStudio.Editor;
 using SunriseStudio.Formats;
 using SunriseStudio.Projects;
 
+/** GPU-backed UI check of CUI authoring: structural edits must isolate the root atomically and a failed publish must leave no clone or undo step. */
 internal static class CuiAuthoringUiChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string install, string capture)
     {
         string temporary = Path.Combine(Path.GetTempPath(), "sunrise-cui-authoring-" + Guid.NewGuid().ToString("N"));

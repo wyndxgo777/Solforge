@@ -11,6 +11,7 @@ internal static class CollisionPartWorkflowChecks
     // The Leviathan static compound; its meshes are per-mesh packfiles.
     private const uint Compound = 0x80EDC2D0;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(string gameRoot, string root)
     {
         using var workspace = new StudioWorkspace { CacheOptions = new() { Enabled = false } };

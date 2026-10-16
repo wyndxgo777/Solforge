@@ -5,6 +5,7 @@ using SunriseStudio.Rendering;
 using SunriseStudio.Scene;
 using SunriseStudio.Viewport;
 
+/** Checks scene selection through the UI: whole-placement selection, detail level, siblings, tree reveal and multi-object union. */
 internal static class SceneSelectionUiChecks
 {
     private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;

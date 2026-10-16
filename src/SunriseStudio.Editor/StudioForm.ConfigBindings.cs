@@ -25,6 +25,7 @@ public sealed class ConfigBindingDraft
         sourceHash = BinaryDelta.Hash(document.Bytes);
     }
 
+    /** Binds a config site to a settings key in the draft. */
     public void Bind(StudioWorkspace workspace, ConfigBindingCandidate site, string key)
     {
         RequireCurrent(workspace);
@@ -32,8 +33,10 @@ public sealed class ConfigBindingDraft
         values.RemoveAll(value => value.Identity == binding.Identity); values.Add(binding);
     }
 
+    /** Removes the binding with this identity. */
     public void Unbind(string identity) => values.RemoveAll(value => value.Identity == identity);
 
+    /** Writes the bindings to the project; refuses when the project, settings or target changed meanwhile. */
     public void Save(StudioWorkspace workspace)
     {
         RequireCurrent(workspace);
@@ -50,6 +53,7 @@ public sealed class ConfigBindingDraft
     }
 }
 
+/** StudioForm part: the config binding editor and its draft. */
 public sealed partial class StudioForm
 {
     private ConfigBindingDraft? configBindingDraft;

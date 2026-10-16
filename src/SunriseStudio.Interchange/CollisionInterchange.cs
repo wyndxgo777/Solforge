@@ -433,8 +433,10 @@ public static class CollisionInterchange
         return true;
     }
 
+    /** Formats a hash as 8 hex digits. */
     public static string Hex(uint value) => value.ToString("X8", CultureInfo.InvariantCulture);
 
+    /** Parses a hex hash with or without a 0x prefix. */
     public static uint ParseHex(string value) => uint.Parse(value.StartsWith("0x", StringComparison.OrdinalIgnoreCase) ? value[2..] : value,
         NumberStyles.HexNumber, CultureInfo.InvariantCulture);
 }

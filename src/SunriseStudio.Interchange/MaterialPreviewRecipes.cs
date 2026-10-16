@@ -63,6 +63,7 @@ internal static class MaterialPreviewRecipes
         };
     }
 
+    /** Applies the recipe for a known shader (by hash) to a preview; other shaders are returned unchanged. */
     internal static BundleMaterialPreview Apply(BundleMaterialPreview preview)
     {
         var recipe = preview.ShaderSha256 switch

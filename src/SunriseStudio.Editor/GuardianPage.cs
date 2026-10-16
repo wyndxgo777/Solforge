@@ -36,8 +36,10 @@ public sealed class GuardianPage : IStudioPage
 
     public string Id => StudioCategories.GuardianPageId;
     public string Title => "Guardian";
+    /** Accepts documents opened from a guardian context. */
     public bool CanOpen(StudioDocument document) => document.OpenContext?.Guardian is not null;
 
+    /** Draws the toolbar, body, head, colour and gear sections for the current loadout. */
     public void Draw(StudioPageContext context)
     {
         var workspace = context.Workspace;
@@ -346,8 +348,10 @@ public sealed class GuardianPage : IStudioPage
         private string searched = "\0";
         private BrowserAsset[]? source;
 
+        /** Drops the cached labels so the next Refresh rebuilds them. */
         public void Invalidate() => source = null;
 
+        /** Rebuilds labels, tags and ids when the row array changes. */
         public void Refresh(BrowserAsset[] rows)
         {
             if (!ReferenceEquals(rows, source))

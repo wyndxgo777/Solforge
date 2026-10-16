@@ -4,15 +4,18 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Formats;
 
+/** The role a related asset plays for the asset being viewed. */
 public enum AssetRelationshipKind
 {
     Component, Model, Material, Texture, Shader, Buffer, Data, Skeleton,
     AnimationDefinition, AnimationClip, Owner, Attachment, Source, Reference
 }
 
+/** A package asset linked from another, with where the link was found (source tag and offset); IsCandidate marks hash matches that may be coincidence. */
 public sealed record RelatedAsset(uint TagHash, string Name, AssetRelationshipKind Kind, string Role,
     uint SourceTag, int SourceOffset, AssetOpenContext? Context = null, bool IsCandidate = false);
 
+/** Resolved links of one asset: related assets, the preview and animation entity to use, and any diagnostics. */
 public sealed record AssetConnections(uint AssetTag, uint PreviewTag, uint AnimationEntityTag,
     uint SelectedClipTag, IReadOnlyList<RelatedAsset> Related, IReadOnlyList<uint> EntityCandidates,
     IReadOnlyList<string> Diagnostics);

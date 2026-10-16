@@ -4,10 +4,12 @@ using SunriseStudio.Formats;
 using SunriseStudio.Packages;
 using SunriseStudio.Projects;
 
+/** Checks CUI widget creation, duplication and name-table mutation: native identity, parent-local layout and typed properties must be preserved without altering the source. */
 internal static class CuiWidgetChecks
 {
     private const uint RootTag = 0x80A00000, ProgramTag = RootTag + 1;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run()
     {
         byte[] resource = Resource(), program = Hierarchy();
@@ -74,6 +76,7 @@ internal static class CuiWidgetChecks
         Console.WriteLine("cui_widgets create=pass duplicate=isolated reparent=pass cycle=rejected removal=stable_ids bindings=removed animation_dependency=rejected delta=pass");
     }
 
+    /** Runs the checks that need an installed game; takes the installed data under test. */
     public static void Installed(PackageCatalog catalog, CuiTypeRegistry types)
     {
         const uint tag = 0x80BC6F5A;

@@ -137,6 +137,7 @@ public sealed class NativeDepthDownsample : IDisposable
         finally { renderer.RestoreMainTarget(); }
     }
 
+    /** Releases the GPU resources this pass owns. */
     public void Dispose()
     {
         if (disposed) return;

@@ -1,11 +1,15 @@
 namespace SunriseStudio.Rendering;
 
+/** One decoded TFX instruction: offset, opcode and operand bytes. This file also disassembles TFX programs. */
 public sealed record TfxProgramInstruction(int Offset, byte Opcode, byte[] Operands);
+/** An extern read at a given instruction offset. */
 public sealed record TfxProgramDependency(int Offset, string Kind, byte Extern, byte Element);
+/** Decoded view of a TFX program: instructions, extern dependencies and parameter indices. */
 public sealed record TfxProgramSummary(IReadOnlyList<TfxProgramInstruction> Instructions,
     IReadOnlyList<TfxProgramDependency> Dependencies, IReadOnlyList<byte> ParameterIndices,
     bool FullyDecoded, int? UnverifiedOffset, byte? UnverifiedOpcode);
 
+/** Disassembles TFX bytecode into instructions and dependencies without running it. */
 public static class TfxProgramInspection
 {
     /** Unknown operand lengths stop inspection before later bytes can be misread as instructions. */

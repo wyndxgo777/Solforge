@@ -1,5 +1,7 @@
+/** File: Watches a project folder for changes made outside Studio. */
 namespace SunriseStudio.Projects;
 
+/** How a file differs from the last scan. */
 public enum ProjectFileChangeKind { Added, Modified, Removed }
 
 /** One file of the project folder that differs from the last scan; the path is project-relative with '/' separators. */
@@ -157,6 +159,7 @@ public sealed class ProjectWatcher : IDisposable
         if (Interlocked.Exchange(ref pending, 1) == 0) Changed?.Invoke();
     }
 
+    /** Stops watching and releases the file system watcher. */
     public void Dispose()
     {
         if (disposed) return;

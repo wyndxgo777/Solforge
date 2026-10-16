@@ -3,6 +3,7 @@ using SunriseStudio.Rendering;
 
 namespace SunriseStudio.Viewport;
 
+/** Overlay line half of AssetViewport: cached line streams for grid, markers, points, cursor and player. */
 public sealed partial class AssetViewport
 {
     private enum LineStream { Grid, Markers, SelectedMarkers, Points, SelectedPoints, Cursor, Player }

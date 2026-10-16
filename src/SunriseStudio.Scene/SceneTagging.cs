@@ -3,6 +3,10 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Scene;
 
+/**
+ * Tagging part of AssetSceneLoader: names and tags the loaded instances and markers with state, link
+ * and kind information.
+ */
 public sealed partial class AssetSceneLoader
 {
     private readonly record struct StateRange(uint Scenario, uint Bubble, int Ordinal, uint EntryIndex,

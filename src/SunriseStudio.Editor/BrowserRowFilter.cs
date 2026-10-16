@@ -6,6 +6,7 @@ public static class BrowserRowFilter
     /** Arrays this short with no search words filter on the calling thread; the rest run on a worker. */
     public const int InlineRows = 50_000;
 
+    /** Splits a search box string into words; empty entries are dropped. */
     public static string[] Words(string search) =>
         search.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 

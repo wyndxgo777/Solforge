@@ -6,6 +6,7 @@ namespace SunriseStudio.Scene;
 /** Inspection preserves decoded facts and references instead of reducing selection to one asset tag. */
 internal static class WorldInspection
 {
+    /** Creates the world objects for a scene. */
     internal static IReadOnlyList<WorldObject> CreateObjects(SceneDocument scene,
         IReadOnlyDictionary<uint, uint> aliases, Func<uint, string> name,
         IReadOnlyDictionary<uint, IReadOnlyList<WorldStateKey>> authoredOwners)

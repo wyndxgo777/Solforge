@@ -12,6 +12,7 @@ internal sealed class InstanceBoundsRule : IObjectEditRule
 {
     public ObjectEditLayout Layout => ObjectEditLayout.StaticInstance;
 
+    /** Moves each edited instance's installed box to its edited row and grows the table aggregate. */
     public void Apply(ObjectEditContext context, IReadOnlyList<ObjectEdit> edits)
     {
         foreach (var group in edits.GroupBy(edit => edit.Target.SourceTag).OrderBy(group => group.Key))

@@ -4,6 +4,7 @@ using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
+/** StudioForm part: particle effect channel and sequence controls shared by both viewports. */
 public sealed partial class StudioForm
 {
     // Both viewports share one set so a choice made in the inspector holds in either view.

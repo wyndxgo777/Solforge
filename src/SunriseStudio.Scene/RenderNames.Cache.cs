@@ -3,6 +3,7 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Scene;
 
+/** Cache part of RenderNames: reads and writes the name cache. */
 public sealed partial class RenderNames
 {
     private RenderNames(NameCacheReader reader)
@@ -18,8 +19,10 @@ public sealed partial class RenderNames
         Names = new ReadOnlyDictionary<uint, string>(names);
     }
 
+    /** Rebuilds from a cache reader. */
     internal static RenderNames ReadCache(NameCacheReader reader) => new(reader);
 
+    /** Writes the names to a cache writer. */
     internal void WriteCache(NameCacheWriter writer)
     {
         writer.Map(names, writer.Text);

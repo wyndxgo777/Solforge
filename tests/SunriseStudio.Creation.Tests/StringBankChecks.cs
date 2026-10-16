@@ -9,6 +9,7 @@ internal static class StringBankChecks
     private const uint TemplateContainer = 0x80A00000, TemplateData = 0x80A00001;
     private const uint NewContainer = 0x80A02000, NewData = 0x80A02001;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string root)
     {
         Check(StringBankWriter.Hash("") == EmptyHash && StringBankWriter.Hash("a") == 0x050C5D7E, "String hash is not FNV-1.");

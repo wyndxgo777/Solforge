@@ -82,6 +82,7 @@ internal sealed unsafe class OodleDecoder : IDisposable
         lock (available) if (available.Count < PooledBuffers) available.Push(buffer);
     }
 
+    /** Frees the native Oodle library. */
     public void Dispose()
     {
         if (library != 0)

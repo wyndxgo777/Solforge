@@ -1,8 +1,13 @@
+/**
+ * File: Recovers clip names from an animation definition's name rows and from audio event paths, keeping the
+ * evidence.
+ */
 using System.Buffers.Binary;
 using System.Text;
 
 namespace SunriseStudio.Animation;
 
+/** One piece of naming evidence: where a name hash and audio path were found. */
 public sealed record AnimationClipNameEvidence(uint NameHash, int DefinitionRow, int ClipListIndex,
     uint AudioEventTag, int EventOffset, string Name, string AudioPath);
 
@@ -30,7 +35,9 @@ public static class AnimationNameRows
 /** Only a clip's typed audio-event paths may supply spellings for its owner's name hashes. */
 internal static class AnimationClipNames
 {
+    /** An audio event path with the tag and offset it was read from. */
     internal sealed record EventPath(uint Tag, int Offset, string Path);
+    /** A resolved clip name (null when ambiguous) with the evidence behind it. */
     internal sealed record Label(string? Name, IReadOnlyList<AnimationClipNameEvidence> Evidence);
     private const int MaximumRows = 65_536, MaximumPath = 4096, MaximumTokens = 64;
 
@@ -133,6 +140,7 @@ internal static class AnimationClipNames
         return result;
     }
 
+    /** The single distinct non-blank name, or null when there are none or several. */
     internal static string? Unique(IEnumerable<string?> names)
     {
         string[] values = names.Where(value => !string.IsNullOrWhiteSpace(value)).Select(value => value!)

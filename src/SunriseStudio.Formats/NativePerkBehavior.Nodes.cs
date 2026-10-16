@@ -3,6 +3,7 @@ using System.Text;
 
 namespace SunriseStudio.Formats;
 
+/** Native node decoding and encoding. */
 public static partial class NativePerkBehavior
 {
     /** Reads one payload; a payload the decoders refuse stays a preserved native node. */

@@ -1,7 +1,9 @@
+/** File: Partial ModInstaller: in-place update of an installed mod's scripts with rollback on failure. */
 using System.Text.Json;
 
 namespace SunriseStudio.Projects;
 
+/** Partial: script update helpers. */
 public static partial class ModInstaller
 {
     private sealed record ScriptUpdateFile(string RelativePath, byte[]? Before, byte[]? After);

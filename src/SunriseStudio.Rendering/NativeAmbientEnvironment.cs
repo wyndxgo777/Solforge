@@ -60,6 +60,7 @@ public sealed record NativeAmbientEnvironment(Vector4 Vector5, Vector4 Vector7, 
         return value;
     }
 
+    /** Writes the ambient vectors and floats into the TFX inputs (extern 41). */
     public void Apply(TfxInputs inputs)
     {
         ArgumentNullException.ThrowIfNull(inputs);

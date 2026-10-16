@@ -1,5 +1,6 @@
 namespace SunriseStudio.Live;
 
+/** Partial: the UI (Cui) channel; retries creating its mapping and tracks the watched screen target. */
 public sealed partial class LiveConnection
 {
     // One CreateNew attempt per second while a fast re-attach still holds the old name.

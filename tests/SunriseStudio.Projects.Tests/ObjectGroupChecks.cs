@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using SunriseStudio.Projects;
 
+/** Checks object groups in the project manifest: version, member targets, trimmed names and reopen. */
 internal static class ObjectGroupChecks
 {
     private static readonly string Hash = new('a', 64);

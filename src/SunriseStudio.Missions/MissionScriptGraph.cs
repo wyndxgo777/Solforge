@@ -1,14 +1,21 @@
+/**
+ * File: Script graph: every statement of a mission script as a node, with edges, scopes and source-
+ * preserving edits.
+ */
 using System.Text;
 
 namespace SunriseStudio.Missions;
 
+/** What kind of statement or entry a script node is. */
 public enum MissionScriptNodeKind
 {
     Module, Function, Flow, Value, Code, Callback, Setting,
     If, ElseIf, Else, While, For, Repeat, Until, Scope, Call, Assignment, Return, Break, ApiCall
 }
 
+/** A node input, named, with the span of its expression. */
 public sealed record MissionScriptInput(string Name, LuaSpan Span);
+/** A body of statements owned by a node. */
 public sealed record MissionScriptScope(string Key, string Title, string Owner, LuaBlock Body);
 
 /**
@@ -43,6 +50,7 @@ public sealed record MissionScriptNode(string Key, MissionScriptNodeKind Kind, s
     internal object? SourceIdentity { get; init; }
 }
 
+/** A link between two script nodes with a label. */
 public sealed record MissionScriptEdge(string Source, string Target, string Label);
 
 /** The whole script as a graph: statements are nodes and a name's definition links to each use. */
@@ -93,6 +101,7 @@ public sealed partial class MissionScriptGraph
     public static MissionScriptGraph Parse(string source, IReadOnlyList<MissionGraphGroup>? flows = null, MissionApiContext? api = null) =>
         new(source, flows ?? [], api);
 
+    /** Node by key; throws when missing. */
     public MissionScriptNode Node(string key) => FindNode(key)
         ?? throw new InvalidDataException("Script node does not exist.");
 
@@ -108,6 +117,10 @@ public sealed partial class MissionScriptGraph
 
     private string Lines(string code) => LuaText.Lines(Source, code);
 
+    /**
+     * Removes the node from the source; branch and structural nodes follow special rules. Returns the new
+     * source.
+     */
     public string Remove(MissionScriptNode node)
     {
         node = CurrentNode(node);

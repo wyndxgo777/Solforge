@@ -2,6 +2,10 @@ using System.Numerics;
 
 namespace SunriseStudio.Scene;
 
+/**
+ * Point part of AssetSceneLoader: reads authored slots and points from config tags, and the device and
+ * volume links between them.
+ */
 public sealed partial class AssetSceneLoader
 {
     private readonly List<(ulong Placement, AuthoredSlotIdentity Slot)> deviceLinks = [];

@@ -76,6 +76,7 @@ internal static class CollisionAdditions
         return nearest.CompoundTag;
     }
 
+    /** Squared distance from a point to a box; zero when inside. */
     internal static float BoxDistance(Vector3 min, Vector3 max, Vector3 point) =>
         Vector3.DistanceSquared(point, Vector3.Clamp(point, min, max));
 
@@ -157,6 +158,7 @@ internal static class CollisionAdditions
             return StaticCollisionRule.MovedBox(min, max, transform);
         }
 
+        /** Re-places one compound instance and refreshes its leaf box. */
         internal void Move(int instance, QsTransform transform)
         {
             rows[instance].SetTransform(transform, (rows[instance].Flags & StaticCompoundShape.ConvexFlag) != 0);
@@ -335,6 +337,7 @@ internal static class CollisionAdditions
             placements = baseline.Placements.Where(p => p.CompoundTag == compound && p.Instance >= 0 && p.Instance < rows.Count).ToArray();
         }
 
+        /** Material and filter of the placed piece nearest the point. */
         internal (uint Material, uint Filter) Nearest(Vector3 point, string name)
         {
             float best = float.PositiveInfinity;

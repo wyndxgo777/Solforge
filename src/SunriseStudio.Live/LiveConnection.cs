@@ -3,6 +3,7 @@ using System.IO.MemoryMappedFiles;
 
 namespace SunriseStudio.Live;
 
+/** Game process Studio attaches to: pid and executable name. */
 public sealed record LiveProcess(int Id, string Executable);
 
 /** Studio owns the mapping; the game publishes snapshots only while its heartbeat is fresh. */
@@ -121,6 +122,9 @@ public sealed partial class LiveConnection : IDisposable
         return null;
     }
 
+    /**
+     * Clears the heartbeat so the game stops publishing, then disposes every channel and the main mapping.
+     */
     public void Dispose()
     {
         if (disposed) return;

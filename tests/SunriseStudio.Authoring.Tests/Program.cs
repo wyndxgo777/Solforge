@@ -1,3 +1,4 @@
+// Console test runner for authoring: texture header deltas and native entry metadata must be preserved when authored content is written.
 using System.Buffers.Binary;
 using SunriseStudio.Authoring;
 using SunriseStudio.Formats;

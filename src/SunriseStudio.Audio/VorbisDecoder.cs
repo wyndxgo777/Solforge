@@ -262,6 +262,7 @@ internal ref struct VorbisPacketReader(ReadOnlySpan<byte> data)
         return (uint)((window >> shift) & ((1UL << bits) - 1));
     }
 
+    /** Advances the read position by bits. */
     public void Skip(int bits) => position += bits;
 
     /** Marks the packet as ended; every later read fails. */
@@ -902,6 +903,7 @@ internal sealed class VorbisMapping
     public int[] SubmapResidue { get; private init; } = [];
     public (int Magnitude, int Angle)[] Coupling { get; private init; } = [];
 
+    /** Floor index used by a channel through its submap. */
     public int Floor(int channel) => SubmapFloor[Mux[channel]];
 
     /** libvorbis mapping0_unpack. */

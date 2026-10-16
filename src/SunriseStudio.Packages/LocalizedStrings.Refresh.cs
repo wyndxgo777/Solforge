@@ -1,5 +1,6 @@
 namespace SunriseStudio.Packages;
 
+/** Refresh half of LocalizedStrings: updates only what changed in edited containers. */
 public sealed partial class LocalizedStrings
 {
     /** Unchanged bank maps remain shared; only edited containers and English data are decoded. */

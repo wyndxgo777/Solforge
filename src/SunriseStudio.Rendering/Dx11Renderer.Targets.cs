@@ -3,6 +3,7 @@ using Vortice.Mathematics;
 
 namespace SunriseStudio.Rendering;
 
+/** Offscreen render-target part of Dx11Renderer: binds a native target set and clears it. */
 public sealed unsafe partial class Dx11Renderer
 {
     /** RestoreMainTarget must follow offscreen draws before rendering the host's ImGui frame. */

@@ -27,6 +27,7 @@ internal sealed class CollisionView
 /** How the last project change reached the collision layer: in place or by reload, why, and how long. */
 public sealed record CollisionRefresh(bool InPlace, string Reason, double Milliseconds, int MovedPlacements, int ChangedShapes);
 
+/** Collision layer half of AssetViewport: background load, in-place refresh, draw options and status text. */
 public sealed partial class AssetViewport
 {
     // Placements smaller than this on screen are not drawn.

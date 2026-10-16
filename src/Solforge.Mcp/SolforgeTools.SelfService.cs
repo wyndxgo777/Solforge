@@ -7,6 +7,7 @@ using System.Text.Json.Nodes;
 
 namespace Solforge.Mcp;
 
+/** Partial: self-service tools for settings, mod details and project setup. */
 public static partial class SolforgeTools
 {
     /** set_settings keys: name, JSON type, what it is. get_settings returns the same names. */

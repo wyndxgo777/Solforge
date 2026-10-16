@@ -7,6 +7,7 @@ public sealed class MissionApiContext(MissionApiSchema schema, IReadOnlyList<Mis
     public MissionApiSchema Schema { get; } = schema;
     public IReadOnlyList<MissionSdkReference> References { get; } = references;
 
+    /** The generated SDK reference for an expression, or null. */
     public MissionSdkReference? Find(string expression) => MissionSdkIndex.For(References).First(expression);
 
     /** Entries of a generated table such as mission.Slot, nested entries included. */
@@ -28,6 +29,7 @@ public sealed record MissionApiType(string Receiver)
     public bool EnumTable { get; init; }
     public int? SlotType => Identity?.SlotType;
 
+    /** Short text naming what the call resolved to. */
     public string Describe() => this switch
     {
         { Receiver: EventReceiver, Events: [var only] } => only.Name.ToLowerInvariant() + " event",
@@ -37,6 +39,7 @@ public sealed record MissionApiType(string Receiver)
     };
 }
 
+/** How a Lua call resolved: typed API call, unknown receiver or member, not an API call, or dynamic. */
 public enum MissionApiOutcome { Typed, UnknownReceiver, UnknownMember, NotApi, Dynamic }
 
 /**
@@ -70,6 +73,7 @@ public sealed class MissionApiAnalysis
     private MissionApiAnalysis(MissionApiContext api, MissionScriptBindings bindings, string source)
     { Api = api; Bindings = bindings; Source = source; }
 
+    /** Walks the script, tracking local bindings, and resolves every call against the schema. */
     public static MissionApiAnalysis Analyze(LuaScript script, MissionApiContext api)
     {
         var analysis = new MissionApiAnalysis(api, new MissionScriptBindings(script), script.Text);
@@ -77,6 +81,7 @@ public sealed class MissionApiAnalysis
         return analysis;
     }
 
+    /** The analysis of a call, or null when it was not analysed. */
     public MissionApiCall? Find(LuaCall call) => calls.GetValueOrDefault(call);
 
     /** The typed call whose receiver this call returns, such as set_directive for its context:slot lookup; null when none. */
@@ -112,8 +117,10 @@ public sealed class MissionApiAnalysis
     {
         private readonly Scope? parent = outer;
         private readonly Dictionary<string, Binding> names = new(StringComparer.Ordinal);
+        /** Binds a local name in the current scope. */
         public void Define(string name, Binding value) => names[name] = value;
 
+        /** Finds a name in the current or an enclosing scope. */
         public Binding? Lookup(string name)
         {
             for (var scope = this; scope is not null; scope = scope.parent)
@@ -132,6 +139,7 @@ public sealed class MissionApiAnalysis
                 }
         }
 
+        /** The bindings with a known API type. */
         public Dictionary<string, MissionApiType> Typed()
         {
             var result = new Dictionary<string, MissionApiType>(StringComparer.Ordinal);
@@ -149,6 +157,7 @@ public sealed class MissionApiAnalysis
         private readonly MissionApiSchema schema = owner.Api.Schema;
         private int depth;
 
+        /** Analyses the script's statements in order. */
         public void Run(LuaScript script)
         {
             FindCallbacks(script);

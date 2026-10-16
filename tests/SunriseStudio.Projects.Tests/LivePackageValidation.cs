@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using SunriseStudio.Packages;
 using SunriseStudio.Projects;
 
+/** Validates that owned package patches round-trip, inherited assets are unchanged and the original package is never modified. */
 internal static class LivePackageValidation
 {
     /** Real package output stays in a temporary directory and is removed after verification. */

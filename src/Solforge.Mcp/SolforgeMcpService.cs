@@ -20,6 +20,7 @@ public sealed class SolforgeMcpService : IAsyncDisposable
     public string? DiscoveryPath { get; private set; }
     public IReadOnlyList<McpClientConfigs.Written> Configs { get; private set; } = [];
 
+    /** Starts the HTTP server, registers the tools and writes the discovery file. */
     public static SolforgeMcpService Start(ISolforgeHost host, string version)
     {
         // Local server tools (LocalServer/LocalServerTools.cs) sit beside the editor tools; they never reach the VPS.
@@ -60,6 +61,7 @@ public sealed class SolforgeMcpService : IAsyncDisposable
         return null;
     }
 
+    /** Removes the discovery file and stops the server. */
     public async ValueTask DisposeAsync()
     {
         McpDiscovery.Remove(Environment.ProcessId);
@@ -67,5 +69,6 @@ public sealed class SolforgeMcpService : IAsyncDisposable
         await server.DisposeAsync().ConfigureAwait(false);
     }
 
+    /** Debug-output trace line. */
     internal static void Trace(string text) => Debug.WriteLine("[solforge-mcp] " + text);
 }

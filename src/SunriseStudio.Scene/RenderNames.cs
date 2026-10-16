@@ -4,11 +4,14 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Scene;
 
+/** Kind of renderer name. This file holds the renderer-name records and lookup. */
 public enum RendererNameKind { Scope, Technique }
 
+/** A scope or technique name with the tag and row it was read from. */
 public sealed record RendererNameEntry(uint TagHash, uint ClassHash, string Name,
     RendererNameKind Kind, uint RootTag, int Ordinal, int RowOffset, int NameOffset);
 
+/** A tag that more than one name claims. */
 public sealed record RendererNameConflict(uint TagHash, IReadOnlyList<string> Names,
     string? PackageName);
 
@@ -34,9 +37,11 @@ public sealed partial class RenderNames
         "world_forces"
     });
 
+    /** Name of a render stage; null when out of range. */
     public static string? GetStageName(int stage) =>
         (uint)stage < StageNames.Count ? StageNames[stage] : null;
 
+    /** Name of the tag; null when unknown. */
     public string? GetTagName(uint tag) => names.GetValueOrDefault(tag);
 
     /** Each accepted row must target the live class required by its native table. */

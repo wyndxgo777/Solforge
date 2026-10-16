@@ -108,6 +108,7 @@ public sealed class NativePlateAtlases
         return true;
     }
 
+    /** True when the tag is a composed atlas. */
     public bool IsAtlas(uint tag) => byTag.ContainsKey(tag);
 
     /** Bytes of the composed atlas; the format comes from the first row's texture header. */

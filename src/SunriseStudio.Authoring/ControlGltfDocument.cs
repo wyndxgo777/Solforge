@@ -4,6 +4,7 @@ using System.Text.Json;
 
 namespace SunriseStudio.Authoring;
 
+/** One animation channel read back from a controls glTF: key times, values and interpolation mode. */
 internal sealed record ImportedControlChannel(int Index, string Path, float[] Times, float[][] Values,
     string Interpolation)
 {

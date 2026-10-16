@@ -8,6 +8,7 @@ internal static class PackageReadStressChecks
     // Every 40th entry spans about 500 packages and far more blocks than the 1024-block cache holds.
     private const int Step = 40, Threads = 32;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string install, int rounds = 2)
     {
         var options = new StudioCacheOptions { Enabled = false };

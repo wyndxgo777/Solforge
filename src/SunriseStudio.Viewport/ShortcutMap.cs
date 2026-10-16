@@ -29,9 +29,11 @@ public sealed class ShortcutMap
         Changed();
     }
 
+    /** Active bindings of an action: the user's override, else the preset's. */
     public IReadOnlyList<ShortcutBinding> Bindings(string id) =>
         overrides.TryGetValue(id, out var own) ? own : Preset.For(id);
 
+    /** True when the user changed the action from the preset. */
     public bool IsOverridden(string id) => overrides.ContainsKey(id);
 
     /**
@@ -49,6 +51,7 @@ public sealed class ShortcutMap
         return true;
     }
 
+    /** Removes one binding slot; ignores an unknown action or empty slot. */
     public void Clear(string id, int slot)
     {
         var next = Bindings(id).ToList();
@@ -63,6 +66,7 @@ public sealed class ShortcutMap
         if (overrides.Remove(id)) Changed();
     }
 
+    /** Display text of an action's bindings, cached. */
     public string Text(string id)
     {
         if (!texts.TryGetValue(id, out string? text)) texts[id] = text = string.Join(Separator, Bindings(id));
@@ -140,6 +144,7 @@ public sealed class ShortcutMap
         Best(action => action.Section == ShortcutSection.Menus,
             binding => binding.Kind == ShortcutKind.Click && binding.Button == button, held);
 
+    /** Actions of a section that a wheel event with the held modifiers should trigger. */
     public IReadOnlyList<string> ResolveWheel(ShortcutSection view, ShortcutModifiers held) =>
         Best(action => action.Section == view, binding => binding.Kind == ShortcutKind.Wheel, held);
 
@@ -189,6 +194,7 @@ public sealed class ShortcutMap
         return document.RootElement.Clone();
     }
 
+    /** Serialises the user's overrides for preferences. */
     public string ToJson()
     {
         var stored = new JsonObject();

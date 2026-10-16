@@ -55,6 +55,7 @@ public static class GuardianArt
     // The public wrappers share one table set per catalog.
     private static GuardianArtTables TablesFor(PackageCatalog catalog) => SharedTables.GetValue(catalog, value => new(value));
 
+    /** Resolves the gameplay entity named by a gear item definition; 0 when it has no gear row. */
     internal static uint GameplayEntity(GuardianArtTables tables, byte[] itemDefinition)
     {
         if (GearRow(tables, itemDefinition) is not { } row) return 0;
@@ -120,6 +121,7 @@ public static class GuardianArt
         return result;
     }
 
+    /** True for the zero hash and the empty-art hash. */
     internal static bool IsEmpty(uint hash) => hash is 0 or EmptyHash;
 
     // -1 when the item has no art block.
@@ -175,6 +177,7 @@ internal sealed class GuardianArtTables
         return true;
     }
 
+    /** Throws unless the tag is of the given class. */
     public void RequireClass(uint tag, uint type)
     {
         if (!IsClass(tag, type)) throw new InvalidDataException($"Tag 0x{tag:X8} is not class 0x{type:X8}.");

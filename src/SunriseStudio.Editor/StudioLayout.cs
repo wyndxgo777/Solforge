@@ -9,8 +9,10 @@ namespace SunriseStudio.Editor;
  * callers that name them get Graph (Canonical); new layouts store Graph. Values only ever append.
  */
 public enum StudioPanelKind { Empty, Workspace, Browser, Inspector, Changes, ObjectTree, MissionGraph, AI, NodeGraph, LocalServer, Graph }
+/** Direction a split panel divides its children. */
 public enum StudioSplitAxis { Columns, Rows }
 
+/** One node of the panel layout tree: a leaf holding a panel kind, or a split with two children. */
 public sealed class StudioLayoutNode
 {
     public int Id { get; set; }
@@ -28,6 +30,7 @@ public sealed class StudioLayoutNode
         or StudioPanelKind.MissionGraph or StudioPanelKind.NodeGraph or StudioPanelKind.Changes or StudioPanelKind.ObjectTree or StudioPanelKind.Inspector;
 }
 
+/** The dockable panel layout: a bounded tree of panels that persists as JSON and splits, closes and shows panels. */
 public sealed partial class StudioLayout
 {
     public const int MaximumPanels = 16;
@@ -40,6 +43,7 @@ public sealed partial class StudioLayout
     private StudioLayout(StudioLayoutNode root)
     { Root = root; nextId = Nodes(root).Max(node => node.Id) + 1; }
 
+    /** The built-in layout, with column widths taken from the pixel sizes given. */
     public static StudioLayout Default(float browser = 300, float inspector = 300, float changes = 190)
     {
         float left = Math.Clamp(float.IsFinite(browser) ? browser / 1540 : .195f, .1f, .3f);
@@ -63,6 +67,7 @@ public sealed partial class StudioLayout
         });
     }
 
+    /** Reads a saved layout; falls back to the default when the JSON is missing or invalid. */
     public static StudioLayout Restore(JsonElement? value, float browser = 300, float inspector = 300, float changes = 190)
     {
         try
@@ -77,8 +82,11 @@ public sealed partial class StudioLayout
         return Default(browser, inspector, changes);
     }
 
+    /** Serializes the layout tree. */
     public JsonElement Save() => JsonSerializer.SerializeToElement(Root, Json);
+    /** The node with this id, or null. */
     public StudioLayoutNode? Find(int id) => Nodes(Root).FirstOrDefault(node => node.Id == id);
+    /** The leaf showing this panel kind (old graph ids map to Graph), or null. */
     public StudioLayoutNode? Find(StudioPanelKind kind) { kind = Canonical(kind); return Panels.FirstOrDefault(node => node.Panel == kind); }
 
     /** The panel an id opens: the old Mission Graph and Node Graph ids open the unified Graph panel. */
@@ -113,6 +121,7 @@ public sealed partial class StudioLayout
         node.Panel = kind;
     }
 
+    /** Splits a leaf in two copies of its panel; null when it is not a leaf or the panel limit is reached. */
     public StudioLayoutNode? Split(int id, StudioSplitAxis axis)
     {
         if (!Enum.IsDefined(axis)) throw new ArgumentOutOfRangeException(nameof(axis));
@@ -125,6 +134,7 @@ public sealed partial class StudioLayout
         return node.Second;
     }
 
+    /** Closes a leaf and lets its sibling take the space; false for the root or a non-leaf. */
     public bool Close(int id)
     {
         if (Find(id) is not { IsLeaf: true } node || node == Root) return false;
@@ -140,6 +150,7 @@ public sealed partial class StudioLayout
         return true;
     }
 
+    /** Returns the panel's leaf, creating it by splitting if it is not shown yet. */
     public StudioLayoutNode Show(StudioPanelKind kind)
     {
         kind = Canonical(kind);
@@ -160,6 +171,7 @@ public sealed partial class StudioLayout
         return first.Area >= second.Area ? first : second;
     }
 
+    /** Smallest size the node's subtree needs, scaled for DPI. */
     public static Vector2 MinimumSize(StudioLayoutNode node, float scale = 1)
     {
         if (node.IsLeaf) return new(140 * scale, 110 * scale);

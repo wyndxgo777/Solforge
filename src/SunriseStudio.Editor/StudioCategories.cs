@@ -56,8 +56,10 @@ public static partial class StudioCategories
         all = sorted;
     }
 
+    /** The category with this name, or null. */
     public static StudioCategory? Find(string name) => byName.GetValueOrDefault(name);
 
+    /** The category a kind string belongs to, or null before categories are loaded. */
     public static StudioCategory? ForKind(string kind) =>
         byName.Count == 0 ? null : Find(AssetCategories.SplitKind(kind).Category);
 
@@ -89,9 +91,11 @@ public static partial class StudioCategories
     private sealed class Removal(Action remove) : IDisposable
     {
         private Action? pending = remove;
+        /** Runs the removal callback once. */
         public void Dispose() { pending?.Invoke(); pending = null; }
     }
 
+    /** The open context the kind's category defines for this tag, if any. */
     public static AssetOpenContext? DefaultContext(string kind, uint tag) => ForKind(kind)?.OpenContext?.Invoke(tag);
 
     /** Sort key in a category list: rows its viewer shows first, then rows with no real name. Worker only. */

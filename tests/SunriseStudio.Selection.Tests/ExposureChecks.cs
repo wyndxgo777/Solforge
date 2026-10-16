@@ -5,6 +5,7 @@ using SunriseStudio.Rendering;
 using Vortice.Direct3D11;
 using Vortice.DXGI;
 
+/** Checks auto-exposure metering: reset, first-frame synchronous read and handling of black frames. */
 internal static partial class Program
 {
     /** Exposure sampling preserves coverage and FIFO ownership without waiting during steady polling. */

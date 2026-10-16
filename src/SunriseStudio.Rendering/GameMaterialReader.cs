@@ -7,15 +7,26 @@ using Vortice.DXGI;
 
 namespace SunriseStudio.Rendering;
 
+/**
+ * Shader stage of a game shader. This file holds the decoded material and shader records returned by
+ * GameMaterialReader.
+ */
 public enum GameShaderStage { Pixel = 0, Vertex = 1, Geometry = 2, Hull = 3, Domain = 4, Compute = 5 }
 
+/** A texture register a shader declares, with its resource dimension (texture2d, texturecube, ...). */
 public sealed record ShaderTextureSlot(uint Slot, string Dimension);
+/** A secondary shader header referenced from a material at FieldOffset. */
 public sealed record AdditionalShaderHeader(int FieldOffset, uint Tag, int PackageSubtype);
 
+/** One decoded shader: its header and bytecode tags, stage, disassembly and declared texture slots. */
 public sealed record GameShaderInfo(uint HeaderTag, uint BytecodeTag, GameShaderStage Stage,
     string Profile, string Disassembly, IReadOnlyList<ShaderTextureSlot> TextureSlots,
     IReadOnlyList<string> Declarations);
 
+/**
+ * A texture bound to a shader slot, with the source texture's size and whether the shader declares the
+ * slot.
+ */
 public sealed record MaterialTextureBinding(GameShaderStage Stage, uint Slot, uint TextureTag,
     bool DeclaredByShader, string? ShaderDimension, int Width, int Height, int Depth,
     int ArraySize, Format Format)
@@ -27,6 +38,7 @@ public sealed record MaterialTextureBinding(GameShaderStage Stage, uint Slot, ui
         && ShaderDimension == "texture2d" && Depth <= 1 && ArraySize <= 1;
 }
 
+/** A decoded material: its tag and the vertex, pixel and compute shaders it selects. */
 public sealed record GameMaterialInfo(uint Tag, GameShaderInfo? VertexShader,
     GameShaderInfo? PixelShader, GameShaderInfo? ComputeShader,
     IReadOnlyList<MaterialTextureBinding> Textures, IReadOnlyList<string> Diagnostics)

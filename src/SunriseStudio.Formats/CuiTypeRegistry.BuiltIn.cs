@@ -1,5 +1,6 @@
 namespace SunriseStudio.Formats;
 
+/** Built-in widget type table for the registry. */
 public sealed partial class CuiTypeRegistry
 {
     /** Size of a widget with the standard constructor defaults, in 1920x1080 reference units. */

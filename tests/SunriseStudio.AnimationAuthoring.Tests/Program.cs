@@ -1,3 +1,4 @@
+// Console test runner for animation authoring: control edits, dense control import and delta reopen must preserve or minimally change native clip bytes.
 using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Text;

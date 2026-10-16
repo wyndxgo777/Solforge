@@ -3,6 +3,7 @@ using SunriseStudio.Live;
 using SunriseStudio.Packages;
 using SunriseStudio.Rendering;
 
+/** Console test runner for live pose: wire offsets, shared publication buffers and capture expiry. */
 internal static partial class Program
 {
     [STAThread]

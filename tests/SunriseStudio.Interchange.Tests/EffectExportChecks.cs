@@ -15,6 +15,7 @@ internal static class EffectExportChecks
 {
     private static readonly Vector3 Origin = new(5, 6, 7);
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(string parent, string? keep = null)
     {
         string root = Path.Combine(parent, "effect-export-checks"), game = Path.Combine(root, "game");

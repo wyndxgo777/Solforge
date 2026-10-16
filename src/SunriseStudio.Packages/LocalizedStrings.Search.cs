@@ -1,7 +1,9 @@
 namespace SunriseStudio.Packages;
 
+/** One search hit: string hash, text and the container it came from, if local. */
 public sealed record LocalizedStringMatch(uint Hash, string Text, uint? ContainerTag = null);
 
+/** Search half of LocalizedStrings: text search globally or within one container. */
 public sealed partial class LocalizedStrings
 {
     /**

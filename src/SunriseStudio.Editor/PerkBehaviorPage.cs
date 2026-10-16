@@ -19,6 +19,7 @@ public sealed class PerkBehaviorPage : IStudioPage
     private string bytesHash = "";
     public string Id => "sunrise.perk-behavior";
     public string Title => "Perk behavior";
+    /** Accepts gameplay-class perk tags of type 8 or 16. */
     public bool CanOpen(StudioDocument document) => document.Entry.Reference == InvestmentSandboxPerkAuthoring.GameplayClass
         && document.Entry.Type is 8 or 16;
 

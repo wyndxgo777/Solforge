@@ -7,8 +7,10 @@ namespace SunriseStudio.Authoring;
 /** Compact replacements preserve source AO offsets, range flags and every admitted header lane. */
 internal static class InstanceIsolationWriter
 {
+    /** Compacted placement table bytes plus the origin of each kept row. */
     internal sealed record Table(byte[] Bytes, IReadOnlyDictionary<int, PackageInstanceOrigin> Origins);
 
+    /** Rewrites a placement table to keep only the selected indices, with matching bounds boxes. */
     internal static Table Compact(uint sourceTag, byte[] source, byte[] bounds, int[] indices, uint boundsTag)
     {
         var data = new NativeRows(source);
@@ -67,6 +69,7 @@ internal static class InstanceIsolationWriter
         byte[] result = new byte[24]; I64(result, 0, result.Length); return result;
     }
 
+    /** Copy of a static owner record pointed at a new table. */
     internal static byte[] Owner(byte[] source, uint table)
     {
         if (source.Length != 40) throw new InvalidDataException("The static owner size is unsupported.");
@@ -112,8 +115,11 @@ internal static class InstanceIsolationWriter
         I64(result, 0, result.Length); return result;
     }
 
+    /** Little-endian bytes of a tag. */
     internal static byte[] Tag(uint value) { byte[] bytes = new byte[4]; U32(bytes, 0, value); return bytes; }
+    /** Writes a little-endian uint at an offset. */
     internal static void U32(byte[] bytes, int at, uint value) => BinaryPrimitives.WriteUInt32LittleEndian(bytes.AsSpan(at), value);
+    /** Writes a little-endian long at an offset. */
     internal static void I64(byte[] bytes, int at, long value) => BinaryPrimitives.WriteInt64LittleEndian(bytes.AsSpan(at), value);
     private static void U16(byte[] bytes, int at, ushort value) => BinaryPrimitives.WriteUInt16LittleEndian(bytes.AsSpan(at), value);
     private static int Align(int value, int alignment) => checked((value + alignment - 1) & ~(alignment - 1));

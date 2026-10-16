@@ -21,6 +21,7 @@ public sealed class CollisionParts
     private CollisionParts(int[] partOfTriangle, IReadOnlyList<int[]> triangles) =>
         (PartOfTriangle, Triangles) = (partOfTriangle, triangles);
 
+    /** Splits the shape's triangles by part, cached per shape. */
     public static CollisionParts Of(CollisionShape shape) => cache.GetValue(shape, Build);
 
     /** True when every triangle of the part is a custom primitive hull triangle. */

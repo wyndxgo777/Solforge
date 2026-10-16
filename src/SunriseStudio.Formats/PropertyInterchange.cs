@@ -3,8 +3,10 @@ using System.Text.Json.Serialization;
 
 namespace SunriseStudio.Formats;
 
+/** Exports an asset's editable scalar fields as JSON and applies them back. The JSON document: version, tag, class and the editable values. */
 public sealed record PropertyDocument(int Version, uint TagHash, uint ClassHash,
     IReadOnlyList<PropertyValue> Properties);
+/** One editable value, located by its name, offset and encoding. */
 public sealed record PropertyValue(string Name, int Offset, ScalarEncoding Encoding, string Value);
 
 /** Property JSON carries editable scalars only; it contains no original asset byte payload. */
@@ -16,6 +18,7 @@ public static class PropertyInterchange
         Converters = { new JsonStringEnumConverter() }
     };
 
+    /** Writes the inspection's editable fields to a JSON file. */
     public static void Write(string path, AssetInspectionContext context, AssetInspection inspection)
     {
         var properties = Fields(inspection.Sections).Where(x => x.Editable)

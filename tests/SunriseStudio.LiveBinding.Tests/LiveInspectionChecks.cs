@@ -5,8 +5,10 @@ using SunriseStudio.Live;
 using SunriseStudio.Scene;
 using SunriseStudio.Viewport;
 
+/** Checks runtime inspection: hierarchy, mesh reverse lookup, observed vs authored position, and pose updates without rebuilding the tree. */
 internal static class LiveInspectionChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static int Run(AssetViewport viewport)
     {
         const uint list = 0x80A01000, tag = 0x80A00001;

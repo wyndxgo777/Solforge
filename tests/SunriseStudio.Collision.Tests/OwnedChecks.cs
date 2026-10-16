@@ -15,6 +15,7 @@ internal static class OwnedChecks
     private const uint SabreTable = 0x80FAA28E;
     private const int SabreRow = 4544;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(PackageCatalog catalog)
     {
         Decoder(catalog);

@@ -4,6 +4,7 @@ using static SunriseStudio.Editor.StudioUi;
 
 namespace SunriseStudio.Editor;
 
+/** MissionGraphPage part: creates new flow scripts and template scripts for an activity. */
 public sealed partial class MissionGraphPage
 {
     private bool showNewScript;

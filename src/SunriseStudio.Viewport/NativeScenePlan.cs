@@ -12,6 +12,7 @@ namespace SunriseStudio.Viewport;
 /** The atmosphere a scene's sky starts with, the time-of-day placement beside it, and the time of day at start. */
 public sealed record NativeSkySource(PlacedAtmosphere? Atmosphere, PlacedTimeOfDay? Time, float StartTime);
 
+/** Material of a native scene group: execution data, render states, stages read and targets. */
 public sealed record NativeSceneMaterial(MaterialExecutionData Execution,
     NativeRenderStateDescriptions States, bool PixelViewKnown, IReadOnlySet<GameShaderStage> FrameStages, int TargetCount,
     NativeMeshKind Kind, NativeEntityPalette Palette = NativeEntityPalette.None)
@@ -43,6 +44,7 @@ public sealed record NativeSceneMaterial(MaterialExecutionData Execution,
     /** ObjectChannels as text, so equal tables share a group; empty when it is null. */
     public string ObjectChannelKey { get; init; } = "";
 }
+/** Whether a native binding comes from authored data or an isolated preview. */
 public enum NativeBindingSource { Authored, IsolatedPreview }
 /** Constants are the part's CB11 rows; Scalars is the VS t0 AO buffer, absent for entities. */
 public sealed record NativeScenePart(MeshInstance Instance, Vector4[] Constants, NativeVertexStream? Scalars,
@@ -59,6 +61,7 @@ public sealed record NativeScenePart(MeshInstance Instance, Vector4[] Constants,
     /** Decorator record, mesh and LOD level; null for other parts. */
     public NativeDecoratorPart? Decorator { get; init; }
 }
+/** A set of parts drawn with one mesh and material; carries stage, sky flag and parts. */
 public sealed record NativeSceneGroup(string GeometryKey, string PipelineKey, NativeMeshData Mesh,
     NativeSceneMaterial Material, uint ScalarDataTag, int RenderStage, bool Sky, IReadOnlyList<NativeScenePart> Parts)
 {
@@ -1288,6 +1291,7 @@ public sealed class NativeScenePlan
     }
 
     private static bool Finite(Vector3 value) => float.IsFinite(value.X) && float.IsFinite(value.Y) && float.IsFinite(value.Z);
+    /** True for bad or unsupported content errors, which callers catch and report instead of crashing. */
     internal static bool Recoverable(Exception error) => error is InvalidDataException or NotSupportedException
         or ArgumentException or IOException or KeyNotFoundException or OverflowException;
     private static string Reason(Exception error)

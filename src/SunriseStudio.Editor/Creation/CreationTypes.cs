@@ -91,6 +91,7 @@ public static partial class CreationTypes
     /** What Edit in workflow does for a document. */
     public enum EditRoute { None, Item, Vendor, Material, Texture, CuiPage, PerkPage }
 
+    /** Which editor page edits this document, or None. */
     public static EditRoute RouteFor(StudioDocument document) => document.Entry.Reference switch
     {
         InvestmentCatalog.ItemClass or InvestmentCatalog.DisplayClass when document.Entry.Type is 8 or 16

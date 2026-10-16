@@ -11,6 +11,7 @@ namespace SunriseStudio.Creation.Tests;
 /** Clearing an existing description writes the native empty marker without adding a string bank. */
 internal static class ItemWorkflowChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string parent)
     {
         const uint first = 0x80A00000;

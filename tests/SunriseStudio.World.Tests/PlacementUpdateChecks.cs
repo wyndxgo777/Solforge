@@ -136,6 +136,7 @@ internal static class PlacementUpdateChecks
             World = Load();
         }
 
+        /** Reloads the whole world and records how long that took. */
         public WorldDocument Full()
         {
             var watch = Stopwatch.StartNew();
@@ -144,11 +145,13 @@ internal static class PlacementUpdateChecks
             return world;
         }
 
+        /** Applies an object edit and throws if the update path refuses it. */
         public void Edit(string label, ObjectEdit edit)
         {
             if (!TryEdit(label, edit, out string reason)) throw new InvalidDataException($"{label}: the update was refused: {reason}");
         }
 
+        /** Reverts the object edit with the given key. */
         public void Revert(string key)
         {
             if (!Mutate("revert " + key, () => Project.RevertObjectEdit(key), out string reason))

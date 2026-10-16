@@ -2,6 +2,10 @@ using System.Numerics;
 
 namespace SunriseStudio.Rendering;
 
+/**
+ * The two depth source scalars and the flag that swaps them, as read from the native frame state. This
+ * file also builds the frame scope constants.
+ */
 public sealed record NativeFrameDepthInputs(float Source100, float Source104, bool SourceFlag623);
 
 /** Missing runtime sources stay unknown; field offsets do not imply unverified purposes. */
@@ -21,8 +25,10 @@ public sealed record NativeFrameScopeInputs
     public NativeFrameDepthInputs? Depth { get; init; }
 }
 
+/** The 13 frame-scope vectors plus a mask of which 32-bit words are actually known. */
 public sealed record NativeFrameScopeConstants(Vector4[] Vectors, IReadOnlyDictionary<uint, uint> KnownWordMasks);
 
+/** Fills the frame-scope constant buffer from NativeFrameScopeInputs. */
 public static class NativeFrameScope
 {
     /** The native writer fills thirteen vectors and shares that allocation between VS and PS. */

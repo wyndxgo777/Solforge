@@ -2,6 +2,7 @@ using System.Text;
 using SunriseStudio.Packages;
 using SunriseStudio.Projects;
 
+/** Checks that mod script updates are all-or-nothing: a failed write or deletion leaves earlier scripts at their old version. */
 internal static class ModUpdateSafetyChecks
 {
     /** Failed updates and linked paths must preserve every preexisting script. */

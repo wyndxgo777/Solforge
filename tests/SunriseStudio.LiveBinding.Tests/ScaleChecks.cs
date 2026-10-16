@@ -5,6 +5,7 @@ using SunriseStudio.Rendering;
 using SunriseStudio.Scene;
 using SunriseStudio.Viewport;
 
+/** Checks observed scale handling: observed scale replaces (not multiplies) authored scale and reaches markers, bounds, geometry and picking. */
 internal static partial class Program
 {
     /** World scale replaces authored scale while child offsets and source fields stay intact. */

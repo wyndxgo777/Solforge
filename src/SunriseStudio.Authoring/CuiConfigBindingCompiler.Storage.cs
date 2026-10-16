@@ -4,6 +4,7 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Authoring;
 
+/** Storage half of CuiConfigBindingCompiler: clones shared arrays so each bound value gets private rows. */
 public sealed partial class CuiConfigBindingCompiler
 {
     /** Private reference rows prevent a config value from changing another owner of shared storage. */

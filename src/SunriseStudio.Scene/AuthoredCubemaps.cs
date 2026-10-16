@@ -21,11 +21,17 @@ public sealed record AuthoredCubemap(ReadOnlyMemory<byte> ResourceData)
     public uint Texture2Tag => UnsignedAt(0x190);
     public ulong VisibilityBinding => BinaryPrimitives.ReadUInt64LittleEndian(ResourceData.Span[0x1B0..]);
 
+    /** Reads a little-endian float at the byte offset of SourceData. */
     public float FloatAt(int offset) => BitConverter.UInt32BitsToSingle(UnsignedAt(offset));
+    /** Reads a little-endian int32 at the byte offset of SourceData. */
     public int IntegerAt(int offset) => BinaryPrimitives.ReadInt32LittleEndian(SourceData.Span[offset..]);
+    /** Reads a little-endian uint32 at the byte offset of SourceData. */
     public uint UnsignedAt(int offset) => BinaryPrimitives.ReadUInt32LittleEndian(SourceData.Span[offset..]);
+    /** Reads three consecutive floats at the byte offset. */
     public Vector3 Vector3At(int offset) => new(FloatAt(offset), FloatAt(offset + 4), FloatAt(offset + 8));
+    /** Reads a Vector3 plus a fourth float at the byte offset. */
     public Vector4 VectorAt(int offset) => new(Vector3At(offset), FloatAt(offset + 12));
+    /** Reads sixteen consecutive floats as a matrix. */
     public Matrix4x4 MatrixAt(int offset) => new(
         FloatAt(offset), FloatAt(offset + 4), FloatAt(offset + 8), FloatAt(offset + 12),
         FloatAt(offset + 16), FloatAt(offset + 20), FloatAt(offset + 24), FloatAt(offset + 28),
@@ -46,6 +52,7 @@ public sealed record PlacedCubemap(
     public IReadOnlyList<MapContainerInfo> MapContainers => OwnerMarker.MapContainers;
 }
 
+/** Cubemap part of AssetSceneLoader: reads authored cubemap placements. */
 public sealed partial class AssetSceneLoader
 {
     /** Resource class and payload bounds must be checked before any field reaches a renderer. */

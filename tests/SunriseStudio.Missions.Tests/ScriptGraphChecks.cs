@@ -1,10 +1,12 @@
 using SunriseStudio.Missions;
 
+/** Checks the Lua script to graph reader and writer: helpers, headers and comments round-trip. */
 internal static class ScriptGraphChecks
 {
     public static int Nodes { get; private set; }
     public static int Bodies { get; private set; }
 
+    /** Runs the checks that use generated fixtures instead of installed game content. */
     public static void Synthetic()
     {
         const string source = "-- header\nlocal flow = require(\"lib.flow\")\nlocal x = 1.5e-3 .. \"a\" -- tail\n\n"

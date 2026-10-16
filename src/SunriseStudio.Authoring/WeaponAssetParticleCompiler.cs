@@ -5,6 +5,7 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Authoring;
 
+/** Compiled weapon particle system and emitter. */
 public sealed record PreparedWeaponParticle(uint SystemTag, uint EmitterTag,
     IReadOnlyList<ProjectAssetAddition> Assets);
 

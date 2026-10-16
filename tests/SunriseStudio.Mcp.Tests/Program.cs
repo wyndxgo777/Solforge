@@ -1306,6 +1306,7 @@ void ReferenceCheck()
 /** A small EDZ-like mission and the Lua folders that name its slots. */
 static class MissionFixtures
 {
+    /** Builds a small EDZ-like mission snapshot. */
     public static MissionSnapshot Snapshot(string map = "EDZ") => new(map, 0x80B2F00A, "edz_freeroam",
     [
         new MissionSlot(MissionSlots.SlotId(0x80BE5D9B, 4, 20), "pf_event_multipoint.pf_placement[0].o_generator", 0x80BE5D9B, 4, 20, 0x80BE5DA0)
@@ -1319,6 +1320,7 @@ static class MissionFixtures
         new MissionSlot(MissionSlots.SlotId(0x80BE0B1A, 71, 6), "m_public_event_sensor", 0x80BE0B1A, 71, 6, 0x80BE0B20),
     ]);
 
+    /** Returns the SDK and server Lua roots for the fixture folder. */
     public static IReadOnlyList<CodeRoot> CodeRoots(string folder)
     {
         string sdk = Path.Combine(folder, "missions"), server = Path.Combine(folder, "mission-scripts", "edz_freeroam");
@@ -1338,6 +1340,7 @@ static class MissionFixtures
         return [new CodeRoot("sdk-missions", sdk, true), new CodeRoot("server-scripts", Path.Combine(folder, "mission-scripts"))];
     }
 
+    /** Writes a small reference library under the folder and returns its path. */
     public static string Reference(string folder)
     {
         Directory.CreateDirectory(Path.Combine(folder, "unreal"));
@@ -1354,8 +1357,10 @@ static class MissionFixtures
 
 static class NativeArgs
 {
+    /** Windows API that splits a command line into arguments; free the result with LocalFree. */
     [DllImport("shell32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     public static extern IntPtr CommandLineToArgvW(string commandLine, out int count);
+    /** Windows API that frees the argument block from CommandLineToArgvW. */
     [DllImport("kernel32.dll")]
     public static extern IntPtr LocalFree(IntPtr memory);
 }
@@ -1397,7 +1402,9 @@ sealed class FixtureHost(string project) : ISolforgeHost
         feed.Offer(new byte[ViewportFeed.GridWidth * ViewportFeed.GridHeight], 1, () => (Jpeg, 64, 36));
         return feed;
     }
+    /** Fake host member: returns canned or recorded data so the MCP tools run without Solforge. */
     public Task<IReadOnlyList<UiControl>> UiControlsAsync(CancellationToken cancel) => Task.FromResult<IReadOnlyList<UiControl>>(Controls);
+    /** Fake host member: returns canned or recorded data so the MCP tools run without Solforge. */
     public Task<(bool Ok, string Message)> UiCommandAsync(UiCommand command, CancellationToken cancel)
     {
         lock (Commands) Commands.Add(command);
@@ -1409,37 +1416,49 @@ sealed class FixtureHost(string project) : ISolforgeHost
     public AttentionLog Attention { get; } = new();
     public string ContextJson => Context;
     public IReadOnlyList<VisibleObject> Visible => [];
+    /** Fake host member: returns canned or recorded data so the MCP tools run without Solforge. */
     public Task<IReadOnlyList<ObjectEntry>> ObjectsAsync(string query, CancellationToken cancel) =>
         Task.FromResult<IReadOnlyList<ObjectEntry>>(
         [
             new("w:1", "Botza District / Static mesh 7489 - Last city crater [182]", "Mesh", ObjectScope.Viewport, "Botza District"),
             new("w:3", "Botza District / Static mesh 74890 - Crater rim [183]", "Mesh", ObjectScope.Tree, "Botza District")
         ]);
+    /** Fake host member: returns canned or recorded data so the MCP tools run without Solforge. */
     public Task<JsonObject?> GetObjectAsync(string id, CancellationToken cancel) => Task.FromResult<JsonObject?>(null);
+    /** Fake host member: returns canned or recorded data so the MCP tools run without Solforge. */
     public Task<JsonObject> GetOpenDocumentsAsync(CancellationToken cancel) => Task.FromResult(new JsonObject
     {
         ["asset"] = new JsonObject { ["tag"] = "0x80A1B2C3", ["type"] = 8, ["package"] = "w64_cosmodrome_0123", ["name"] = "crater" },
         ["script"] = new JsonObject { ["path"] = "scripts/freeroam.lua", ["unsaved"] = false },
         ["changes"] = new JsonObject { ["count"] = 3, ["rows"] = new JsonArray() }
     });
+    /** Fake host member: returns canned or recorded data so the MCP tools run without Solforge. */
     public Task<byte[]?> ScreenshotAsync(string? objectId, bool labels, CancellationToken cancel) => Task.FromResult<byte[]?>(null);
+    /** Fake host member: returns canned or recorded data so the MCP tools run without Solforge. */
     public Task<JsonObject?> GetTagAsync(uint hash, CancellationToken cancel) => Task.FromResult<JsonObject?>(null);
+    /** Fake host member: returns canned or recorded data so the MCP tools run without Solforge. */
     public Task<JsonObject?> GetPackageEntryAsync(string id, CancellationToken cancel) => Task.FromResult<JsonObject?>(null);
+    /** Fake host member: returns canned or recorded data so the MCP tools run without Solforge. */
     public JsonObject LiveState() => new() { ["attached"] = false };
     public IReadOnlyList<CodeRoot> CodeRoots { get; set; } = [];
     public string? ReferenceFolder { get; set; }
     public string? Panels;
+    /** Fake host member: returns canned or recorded data so the MCP tools run without Solforge. */
     public Task<MissionSnapshot?> MissionAsync(CancellationToken cancel) => Task.FromResult<MissionSnapshot?>(MissionFixtures.Snapshot(CurrentMap!));
+    /** Fake host member: returns canned or recorded data so the MCP tools run without Solforge. */
     public Task<JsonObject> ReadPanelAsync(string panel, PanelQuery query, CancellationToken cancel)
     {
         Panels = panel;
         return Task.FromResult(new JsonObject { ["total"] = 0, ["rows"] = new JsonArray() });
     }
+    /** Fake host member: returns canned or recorded data so the MCP tools run without Solforge. */
     public Task<bool> ApproveAsync(string tool, string summary, CancellationToken cancel) =>
         new ApprovalGate(() => AutoApprove, (t, s) => AutoLog.Add(t + ": " + s)).AskAsync(tool, summary, () => { LastSummary = summary; Interlocked.Increment(ref Approvals); return Task.FromResult(ApproveAll); });
+    /** Fake host member: returns canned or recorded data so the MCP tools run without Solforge. */
     public Task<string> RunActionAsync(string tool, JsonObject args, CancellationToken cancel) => Task.FromResult("ran");
     public readonly List<string> Queries = [];
     public string? LastSummary;
+    /** Fake host member: returns canned or recorded data so the MCP tools run without Solforge. */
     public Task<JsonObject> QueryAsync(string tool, JsonObject args, CancellationToken cancel)
     {
         lock (Queries) Queries.Add(tool);

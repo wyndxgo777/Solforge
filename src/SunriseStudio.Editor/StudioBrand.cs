@@ -6,6 +6,7 @@ namespace SunriseStudio.Editor;
 /** Window and loading artwork are embedded separately. */
 public static class StudioBrand
 {
+    /** Loads the embedded Studio window icon. */
     public static Icon CreateIcon()
     {
         using var stream = Open("SunriseStudio.Icon");

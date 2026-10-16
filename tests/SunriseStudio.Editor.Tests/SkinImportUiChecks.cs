@@ -4,6 +4,7 @@ using SunriseStudio.Editor;
 using SunriseStudio.Projects;
 using SunriseStudio.Rendering;
 
+/** Checks the skin import UI: template discovery must not edit the project, and replacement is one undoable transaction. */
 internal static class SkinImportUiChecks
 {
     /** The real modal reviews an owned file, then one editor action can undo and redo the entire replacement. */

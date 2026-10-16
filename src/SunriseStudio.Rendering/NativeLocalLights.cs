@@ -326,6 +326,7 @@ public sealed class NativeLocalLights : IDisposable
         return false;
     }
 
+    /** Releases the GPU resources this pass owns. */
     public void Dispose()
     {
         if (disposed) return;

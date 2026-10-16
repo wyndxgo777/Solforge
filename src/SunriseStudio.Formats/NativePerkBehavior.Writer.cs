@@ -2,6 +2,7 @@ using System.Buffers.Binary;
 
 namespace SunriseStudio.Formats;
 
+/** Binary writer that builds a native behavior tag. */
 public static partial class NativePerkBehavior
 {
     /** Arrays and payload markers are appended so existing relative pointers keep their targets. */
@@ -12,6 +13,7 @@ public static partial class NativePerkBehavior
         /** The program's own tag, stored by damage-resist self references; 0 leaves them unchanged. */
         public uint ProgramTag { get; init; }
 
+        /** Appends a 16-byte-aligned block of the given size, stamps its type just before it and returns its offset. */
         public int Node(uint type, int size)
         {
             int start = checked((bytes.Length + 19) & ~15);
@@ -20,6 +22,7 @@ public static partial class NativePerkBehavior
             return start;
         }
 
+        /** Appends a typed array of count rows at stride and points the descriptor at field to it; returns the row data offset, or 0 when empty. */
         public int Array(int field, uint type, int count, int stride)
         {
             if (count == 0) { U64(field, 0); I64(field + 8, 0); return 0; }
@@ -44,13 +47,21 @@ public static partial class NativePerkBehavior
         // One copy of each string per compile; label rows and sets all point at it.
         private readonly Dictionary<string, int> strings = new(StringComparer.Ordinal);
 
+        /** Stores the total length at offset 0 and returns the buffer. */
         public byte[] Finish() { U64(0, (ulong)bytes.Length); return bytes; }
+        /** Reads a little-endian 64-bit value from the buffer. */
         public ulong Read64(int at) => BinaryPrimitives.ReadUInt64LittleEndian(bytes.AsSpan(at));
+        /** Copies bytes into the buffer at an offset. */
         public void Copy(int at, byte[] data) => data.CopyTo(bytes, at);
+        /** Writes one byte. */
         public void U8(int at, byte value) => bytes[at] = value;
+        /** Writes a little-endian 32-bit value. */
         public void U32(int at, uint value) => BinaryPrimitives.WriteUInt32LittleEndian(bytes.AsSpan(at), value);
+        /** Writes a little-endian unsigned 64-bit value. */
         public void U64(int at, ulong value) => BinaryPrimitives.WriteUInt64LittleEndian(bytes.AsSpan(at), value);
+        /** Writes a little-endian signed 64-bit value. */
         public void I64(int at, long value) => BinaryPrimitives.WriteInt64LittleEndian(bytes.AsSpan(at), value);
+        /** Writes a little-endian 32-bit float. */
         public void F32(int at, float value) => BinaryPrimitives.WriteSingleLittleEndian(bytes.AsSpan(at), value);
     }
 }

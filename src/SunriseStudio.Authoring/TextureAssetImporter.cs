@@ -5,14 +5,17 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Authoring;
 
+/** Result of a texture import: header and payload assets, tags and size. */
 public sealed record TextureImportResult(AddedProjectAsset HeaderAsset, AddedProjectAsset PayloadAsset,
     uint HeaderTag, uint PayloadTag, uint TemplateTag, int Width, int Height);
+/** Compiled texture header and payload ready to add to a project. */
 public sealed record PreparedTexture(uint HeaderTag, uint PayloadTag, uint TemplateTag,
     int Width, int Height, IReadOnlyList<ProjectAssetAddition> Assets);
 
 /** New textures keep only a header delta and user-owned pixel bytes in the project. */
 public static class TextureAssetImporter
 {
+    /** Imports a PNG file as a texture asset pair. */
     public static TextureImportResult ImportPng(StudioProject project, PackageCatalog catalog,
         string path, string name, ushort packageId, uint? templateTag = null) =>
         ImportRgba(project, catalog, PngInterchange.Read(path), name, packageId, templateTag);

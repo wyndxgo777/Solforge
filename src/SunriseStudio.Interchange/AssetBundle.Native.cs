@@ -3,6 +3,7 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Interchange;
 
+/** Native-asset export of AssetBundle: package assets reached from the seed tags and their references. */
 public static partial class AssetBundle
 {
     /** Candidate references remain labelled metadata; only typed edges expand the dependency group. */

@@ -12,6 +12,7 @@ using static Checks;
  */
 internal static class HavokCoverageChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run()
     {
         ListShape();

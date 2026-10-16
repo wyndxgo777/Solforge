@@ -1,7 +1,9 @@
 namespace SunriseStudio.Packages;
 
+/** Cache half of LocalizedStrings: serialises its maps. */
 public sealed partial class LocalizedStrings
 {
+    /** Writes the string maps to the names cache. */
     internal void WriteCache(NameCacheWriter writer)
     {
         writer.Map(unique, writer.Text);
@@ -13,6 +15,7 @@ public sealed partial class LocalizedStrings
         writer.Array(Diagnostics, writer.Text);
     }
 
+    /** Reads the string maps back from the names cache. */
     internal static LocalizedStrings ReadCache(NameCacheReader reader)
     {
         var result = new LocalizedStrings();
@@ -27,6 +30,7 @@ public sealed partial class LocalizedStrings
     }
 }
 
+/** Cache half of ComponentIndex: serialises its lookup maps and facts. */
 public sealed partial class ComponentIndex
 {
     /** Writes every lookup map, the config facts, the entity links and the slot catalog. */
@@ -79,6 +83,7 @@ public sealed partial class ComponentIndex
     }
 }
 
+/** Cache half of GameNames: serialises its name maps. */
 public sealed partial class GameNames
 {
     private GameNames(PackageCatalog catalog, Func<uint, string?>? fallback, LocalizedStrings strings,

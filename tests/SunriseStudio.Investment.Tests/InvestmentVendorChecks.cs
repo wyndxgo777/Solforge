@@ -3,6 +3,7 @@ using SunriseStudio.Formats;
 using SunriseStudio.Packages;
 using SunriseStudio.Projects;
 
+/** Checks vendor cost expressions: no-op edits keep bytes, scoped edits do not leak through aliased arrays, and relocation keeps shared targets. */
 internal static class InvestmentVendorChecks
 {
     /** Aliased costs and their expression streams stay unchanged outside the selected sale. */

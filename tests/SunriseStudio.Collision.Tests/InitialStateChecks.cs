@@ -3,6 +3,7 @@ using SunriseStudio.Scene;
 using SunriseStudio.Scene.Collision;
 using static Checks;
 
+/** Checks that collision initial-state masks (guards, hobs, stored variants) resolve from installed data, including dependencies on interfaces and spawn sources. */
 internal static class InitialStateChecks
 {
     /** Native label matching independently pins the initial masks of both owned rigs. */

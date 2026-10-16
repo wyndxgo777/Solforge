@@ -2,6 +2,7 @@ using System.Buffers.Binary;
 using SunriseStudio.Packages;
 using SunriseStudio.Scene;
 
+/** Checks item kind and category names and that installed items map to a listed category. */
 internal static class ItemCategoryChecks
 {
     /** The item-kind rule maps a facts table to its expected categories and types. */

@@ -5,8 +5,10 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Formats;
 
+/** PNG reading and writing for RGBA images. An RGBA image, 8 bits per channel. */
 public sealed record RgbaImage(int Width, int Height, byte[] Pixels)
 {
+    /** Throws unless the size is 1-16384 per side and the pixel buffer matches it. */
     public void Validate()
     {
         if (Width is < 1 or > 16384 || Height is < 1 or > 16384
@@ -20,7 +22,9 @@ public static class PngInterchange
 {
     private static readonly byte[] Signature = [137, 80, 78, 71, 13, 10, 26, 10];
 
+    /** Writes an image to a PNG file. */
     public static void Write(string path, RgbaImage image) => File.WriteAllBytes(path, Write(image));
+    /** Reads a PNG file. */
     public static RgbaImage Read(string path) => Read(File.ReadAllBytes(path));
 
     /** PNG uses network byte order and a checksum for each chunk. */
@@ -148,6 +152,7 @@ public static class PngInterchange
         return new(width, height, pixels);
     }
 
+    /** Converts an image to texture data. */
     public static TextureData ToTexture(RgbaImage image)
     {
         image.Validate();

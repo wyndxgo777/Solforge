@@ -60,6 +60,7 @@ internal sealed class NodeCanvas
     /** Set when a node was dragged; the owner clears it after saving the layout. */
     public bool Moved { get; set; }
 
+    /** Fits the named view to its nodes on the next draw. */
     public void Frame(string view) => ViewFor(view).Fit = true;
 
     /** Forgets every node position and every group's pan, zoom and selected link, as when another document opens. */

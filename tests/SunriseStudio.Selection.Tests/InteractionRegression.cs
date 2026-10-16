@@ -3,6 +3,7 @@ using SunriseStudio.Rendering;
 using SunriseStudio.Scene;
 using SunriseStudio.Viewport;
 
+/** Rendering regression checks for interaction: opaque replay and cached draws must match reference pixels. */
 internal static partial class Program
 {
     /** Draw reuse must keep live shader buffers and obey visibility, stage, and pose changes. */

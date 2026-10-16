@@ -11,6 +11,7 @@ public sealed record GltfImage(int Index, string Name, string MimeType, byte[] B
 /** glTF geometry uses Y-up coordinates; native shader assignments remain outside the mesh format. */
 public static partial class GltfInterchange
 {
+    /** Writes one mesh to glTF. */
     public static void Write(string path, MeshData mesh, string name = "Mesh") =>
         Write(path, [ObjInterchange.FromMesh(mesh, name)]);
 

@@ -1,5 +1,6 @@
 namespace SunriseStudio.Packages;
 
+/** Snapshot half of PackageCatalog: copies of the overlay metadata. */
 public sealed partial class PackageCatalog
 {
     /** Returns one metadata snapshot; arbitrary read overrides may change tags absent from it. */

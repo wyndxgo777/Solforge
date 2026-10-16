@@ -1,7 +1,9 @@
+/** File: Partial StudioProject: validation and editing of wide-hash aliases on added assets. */
 using SunriseStudio.Packages;
 
 namespace SunriseStudio.Projects;
 
+/** Partial: wide-hash alias operations. */
 public sealed partial class StudioProject
 {
     /** Metadata-only edits keep immutable payload paths and derived deltas unchanged. */

@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Runtime.ExceptionServices;
 using SunriseStudio.Live;
 
+/** Checks the live pose connection: mapping identity, capture gating and player requests reaching the publisher. */
 internal static class ConnectionChecks
 {
     /** The publisher opens only this test process's mapping and never attaches to a game. */
@@ -99,9 +100,13 @@ internal static class ConnectionChecks
         public Connection(int process) => instance = Invoke(() => Activator.CreateInstance(Type, process))!;
         public LiveDraws? Draws => (LiveDraws?)Type.GetProperty("Draws")!.GetValue(instance);
         public string Diagnostic => (string)Type.GetProperty("Diagnostic")!.GetValue(instance)!;
+        /** Forwards to the connection Enable method. */
         public void Enable(bool value) => Invoke(() => Type.GetMethod("Enable")!.Invoke(instance, [value]));
+        /** Forwards to the connection SetPlayer method. */
         public void SetPlayer(uint? value) => Invoke(() => Type.GetMethod("SetPlayer")!.Invoke(instance, [value]));
+        /** Forwards to the connection Poll method with the given time. */
         public void Poll(ulong now) => Invoke(() => Type.GetMethod("Poll")!.Invoke(instance, [now]));
+        /** Disposes the underlying connection. */
         public void Dispose() => ((IDisposable)instance).Dispose();
         private static object? Invoke(Func<object?> action)
         {

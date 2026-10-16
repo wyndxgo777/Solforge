@@ -30,6 +30,7 @@ public sealed class NativeWindSettings
     /** Handle at +0x6C of the class-0x80806D36 resource whose +0x08 is the noise texture. */
     public uint NoiseResource { get; }
 
+    /** Reads the wind settings tag; throws if it is shorter than 0xA4 bytes. */
     public static NativeWindSettings Parse(ReadOnlySpan<byte> tag)
     {
         if (tag.Length < 0xA4) throw new InvalidDataException("Wind settings tag is truncated.");

@@ -4,6 +4,7 @@ using SunriseStudio.Scene;
 /** Every decoded value a placement update may touch, as exact text, so two loads compare line by line. */
 internal static class WorldFingerprint
 {
+    /** Summarizes a world as comparable text lines. */
     internal static List<string> Of(WorldDocument world)
     {
         var lines = new List<string>();

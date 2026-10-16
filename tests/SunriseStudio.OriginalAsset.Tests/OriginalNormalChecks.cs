@@ -5,6 +5,7 @@ using SunriseStudio.Formats;
 using SunriseStudio.Packages;
 using SunriseStudio.Projects;
 
+/** Checks importing original-asset normals: nonunit or scaled normals are normalized and negative-Z normals are refused without changing the project. */
 internal static class OriginalNormalChecks
 {
     /** glTF scales XY before normalizing XYZ; the native map stores normalized XY with reversed Y. */

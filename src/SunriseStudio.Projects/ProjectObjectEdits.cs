@@ -1,9 +1,11 @@
+/** File: Partial StudioProject: recording, finding and compiling the project's object edits. */
 using System.Text.Json;
 using System.Collections.Frozen;
 using SunriseStudio.Packages;
 
 namespace SunriseStudio.Projects;
 
+/** Partial: object edit operations. */
 public sealed partial class StudioProject
 {
     private sealed record ObjectEditCache(ProjectManifest Manifest, PackageCatalog Catalog, long ReadGeneration,
@@ -15,6 +17,7 @@ public sealed partial class StudioProject
 
     public IReadOnlyList<ObjectEdit> ObjectEdits => manifest.ObjectEdits ?? [];
 
+    /** The object edit with this key, or null. */
     public ObjectEdit? FindObjectEdit(string key) => ObjectEdits.FirstOrDefault(edit => edit.Key == key);
 
     /**
@@ -27,6 +30,7 @@ public sealed partial class StudioProject
     public byte[] ReadCompiled(uint tagHash, PackageCatalog catalog) =>
         CompileObjectEdits(catalog).Assets.TryGetValue(tagHash, out var bytes) ? bytes.ToArray() : ReadAsset(tagHash, catalog);
 
+    /** Records one object edit; true when the project changed. */
     public bool RecordObjectEdit(ObjectEdit edit, PackageCatalog catalog) => RecordObjectEdits([edit], catalog);
 
     /**

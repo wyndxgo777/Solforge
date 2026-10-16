@@ -6,6 +6,7 @@ namespace SunriseStudio.Editor;
 /** What the editor showed of a visited place: its page tab and its selected object, both editor ids. */
 public sealed record StudioView(string? Page, string? Selection);
 
+/** StudioWorkspace part: bounded back/forward history of opened places. */
 public sealed partial class StudioWorkspace
 {
     /** One place in the history: the open world, the open asset and the editor's view of it. */
@@ -20,8 +21,11 @@ public sealed partial class StudioWorkspace
     public bool CanNavigateBack => !IsBusy && navigationTarget is null && FindVisit(-1) >= 0;
     public bool CanNavigateForward => !IsBusy && navigationTarget is null && FindVisit(1) >= 0;
 
+    /** Goes back one visited place. */
     public void NavigateBack() => Navigate(-1);
+    /** Goes forward one visited place. */
     public void NavigateForward() => Navigate(1);
+    /** Opens a related asset, keeping its open context. */
     public void SelectRelated(RelatedAsset asset) => Select(asset.TagHash, context: asset.Context);
 
     /** The view of the place navigation arrived at; the editor applies it once, then records views again. */

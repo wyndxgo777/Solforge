@@ -5,6 +5,7 @@ using SunriseStudio.Rendering;
 using SunriseStudio.Scene;
 using SunriseStudio.Viewport;
 
+/** Timing and image comparison of placement edits, reporting phase times and renderer noise. */
 internal static partial class Program
 {
     /**

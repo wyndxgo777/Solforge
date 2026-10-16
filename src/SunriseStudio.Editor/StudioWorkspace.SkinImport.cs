@@ -2,6 +2,7 @@ using SunriseStudio.Authoring;
 
 namespace SunriseStudio.Editor;
 
+/** StudioWorkspace part: compatible skin template discovery and import. */
 public sealed partial class StudioWorkspace
 {
     /** Template discovery reads installed bytes without publishing a project edit. */

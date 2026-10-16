@@ -2,6 +2,7 @@ using System.Buffers.Binary;
 using SunriseStudio.Formats;
 using SunriseStudio.Packages;
 
+/** Checks vendor display name lookup (64-bit bank index, localized pairs) so a vendor never shows another entry name or a truncated one. */
 internal static class InvestmentVendorNameChecks
 {
     /** Vendor labels use only their paired display's native name field and 16-bit bank index. */

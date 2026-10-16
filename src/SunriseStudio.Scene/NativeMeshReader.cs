@@ -3,6 +3,7 @@ using System.Text;
 
 namespace SunriseStudio.Scene;
 
+/** Native-mesh part of AssetSceneLoader: reads vertex streams and matches them to the shader's input layout. */
 public sealed partial class AssetSceneLoader
 {
     private sealed record ShaderInputs(uint Header, uint Data, NativeShaderInput[] Inputs, string Status,

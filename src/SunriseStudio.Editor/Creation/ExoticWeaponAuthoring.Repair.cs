@@ -5,9 +5,11 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Editor.Creation;
 
+/** The edits (and the source hashes they were made from) that repair an exotic weapon's perks. */
 public sealed record PreparedExoticPerkRepair(IReadOnlyDictionary<uint, byte[]> Changes,
     IReadOnlyDictionary<uint, string> SourceHashes);
 
+/** ExoticWeaponAuthoring part: repairs the private sockets and displays of existing exotic perks. */
 public static partial class ExoticWeaponAuthoring
 {
     // TODO: call from a Repair action in the editor; nothing in Studio calls this yet.

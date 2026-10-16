@@ -11,6 +11,7 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Interchange;
 
+/** Asset bundle export: writes a manifest plus mesh, material, texture, shader and animation files for an asset (the Export step of AssetBundle). */
 public static partial class AssetBundle
 {
     public const string Format = "sunrise-asset-bundle";
@@ -413,6 +414,7 @@ public static partial class AssetBundle
     // JSON has no infinity; an open effect range bound, such as a gate maximum, is written as the largest float.
     private static readonly JsonSerializerOptions ParticleJson = new(BundlePaths.Json) { Converters = { new FiniteSingleConverter() } };
 
+    /** Writes the particle document as JSON. */
     internal static void WriteParticles(string path, BundleParticles particles)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);

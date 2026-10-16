@@ -28,6 +28,7 @@ public sealed partial class InvestmentPage : IPreparedStudioPage
     private InvestmentCatalog? requestedDetailCatalog;
     public string Id => "sunrise.investment";
     public string Title => "Investment";
+    /** Drops any detail textures; the window reloads them through PrepareDetail. */
     public void Prepare(StudioDocument? document, Dx11Renderer renderer) => Dispose();
 
     /** The window adopts detail textures between frames, before ImGui borrows their views. */
@@ -46,6 +47,7 @@ public sealed partial class InvestmentPage : IPreparedStudioPage
             catch (Exception error) when (error is not OutOfMemoryException) { iconError += $"Perk {perk}: {error.Message}\n"; }
     }
 
+    /** Releases the item icon texture. */
     public void Dispose()
     {
         icon?.Dispose(); icon = null; preparedIcon = null; iconError = "";

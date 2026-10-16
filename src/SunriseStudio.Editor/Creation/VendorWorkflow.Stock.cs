@@ -4,6 +4,7 @@ using SunriseStudio.Formats;
 
 namespace SunriseStudio.Editor.Creation;
 
+/** VendorWorkflow part: the stock (sale and cost) editor and its drafts. */
 public sealed partial class VendorWorkflow
 {
     private sealed class CostDraft(InvestmentCost cost, int index)

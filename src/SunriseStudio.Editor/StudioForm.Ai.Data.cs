@@ -21,14 +21,17 @@ public sealed partial class StudioForm
 
         public string? DataUnavailable => DataCatalog is null ? "No game installation is open in Solforge yet." : null;
 
+        /** Name, class, package and size of a tag, or null when it does not exist. */
         public TagSummary? Tag(uint hash)
         {
             if (DataCatalog is not { } catalog || !catalog.TryGetEntry(hash, out var entry)) return null;
             return new TagSummary(hash, catalog.GetName(hash), entry.Reference, ClassNames.Describe(entry.Reference), entry.PackageName, entry.Size);
         }
 
+        /** Whether the open installation has this tag. */
         public bool TagExists(uint hash) => DataCatalog?.ContainsTag(hash) == true;
 
+        /** Raw tag bytes, from the original packages when original is set; null when unreadable. */
         public byte[]? ReadTag(uint hash, bool original)
         {
             if (DataCatalog is not { } catalog || !catalog.ContainsTag(hash)) return null;
@@ -36,6 +39,7 @@ public sealed partial class StudioForm
             catch (Exception exception) when (exception is IOException or InvalidDataException or KeyNotFoundException or InvalidOperationException) { return null; }
         }
 
+        /** Every tag of the class. */
         public IEnumerable<TagSummary> TagsOfClass(uint classHash)
         {
             if (DataCatalog is not { } catalog) yield break;
@@ -46,6 +50,7 @@ public sealed partial class StudioForm
 
         public IReadOnlyDictionary<uint, string> ClassLabels => ClassNames.All;
 
+        /** Tag count per class over the open installation. */
         public IReadOnlyDictionary<uint, int> ClassCounts()
         {
             var catalog = DataCatalog;
@@ -74,18 +79,21 @@ public sealed partial class StudioForm
             }
         }
 
+        /** The localized texts of a string hash, loading the string bank on first use. */
         public async Task<IReadOnlyList<string>> StringsAsync(uint hash, CancellationToken cancel)
         {
             var strings = await Strings(cancel).WaitAsync(cancel).ConfigureAwait(false);
             return strings.Get(hash) is { } text ? [text] : strings.Candidates(hash);
         }
 
+        /** Text search over the localized strings, up to limit hits. */
         public async Task<IReadOnlyList<(uint Hash, string Text, uint? Container)>> SearchStringsAsync(string query, int limit, CancellationToken cancel)
         {
             var strings = await Strings(cancel).WaitAsync(cancel).ConfigureAwait(false);
             return [.. strings.Search(query, limit).Select(match => (Hash: match.Hash, Text: match.Text, Container: match.ContainerTag))];
         }
 
+        /** The text of a string hash if the bank is already loaded; never triggers a load. */
         public string? StringIfLoaded(uint hash)
         {
             Task<LocalizedStrings>? task;

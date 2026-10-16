@@ -15,8 +15,10 @@ public static class InvestmentSocketTypes
     // Gameplay rows own arrays at these offsets.
     private static readonly int[] RowArrays = [16, 40, 56, 80];
 
+    /** Number of socket type rows. */
     public static int Count(ReadOnlyMemory<byte> gameplay) => new TagReader(gameplay).Array(RowsField, stride: GameplayStride).Count;
 
+    /** Plug category hashes a socket type accepts. */
     public static IReadOnlyList<uint> Whitelist(ReadOnlyMemory<byte> gameplay, int index)
     {
         var reader = new TagReader(gameplay);
@@ -30,6 +32,7 @@ public static class InvestmentSocketTypes
     public static IReadOnlySet<uint> Categories(ReadOnlyMemory<byte> gameplay) =>
         Enumerable.Range(0, Count(gameplay)).SelectMany(index => Whitelist(gameplay, index)).ToHashSet();
 
+    /** Hashes of every socket type. */
     public static IReadOnlySet<uint> Hashes(ReadOnlyMemory<byte> gameplay)
     {
         var reader = new TagReader(gameplay);

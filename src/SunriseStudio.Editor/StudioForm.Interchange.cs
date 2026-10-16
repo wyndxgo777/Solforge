@@ -5,6 +5,7 @@ using SunriseStudio.Authoring;
 
 namespace SunriseStudio.Editor;
 
+/** StudioForm part: export of the selected asset to external formats and import of their edits. */
 public sealed partial class StudioForm
 {
     /** Converted files are working copies; only their imported differences enter a project. */

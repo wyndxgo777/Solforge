@@ -4,6 +4,7 @@ using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
+/** StudioForm part: panel layout drawing, maximizing and reset. */
 public sealed partial class StudioForm
 {
     private StudioLayout layout;

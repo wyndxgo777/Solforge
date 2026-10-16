@@ -6,8 +6,10 @@ using SunriseStudio.Packages;
 using SunriseStudio.Projects;
 using SunriseStudio.Scene;
 
+/** Checks compatible skin weight handling: byte apportionment, invalid indices on unused influences and the matrix palette limit. */
 internal static class CompatibleSkinChecks
 {
+    /** Checks influence encoding to byte weights. */
     public static void Weights()
     {
         var bytes = CompatibleSkinnedMesh.EncodeInfluences([new(0, 1, 2, 3, new(.25f))], 4);

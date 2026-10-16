@@ -2,6 +2,7 @@ using System.Numerics;
 
 namespace SunriseStudio.Scene.Collision;
 
+/** Inline part of CollisionSceneLoader: reads trigger shapes embedded in entity configs. */
 public sealed partial class CollisionSceneLoader
 {
     private sealed record InlineTrigger(uint Tag, TagData Data, int Variant, Vector3 Offset, uint Attachment);

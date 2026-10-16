@@ -8,6 +8,7 @@ using SunriseStudio.Packages;
 using SunriseStudio.Projects;
 using SunriseStudio.Scene;
 
+/** Checks bundle assembly and export, including view-only guardian exports and refusal of assemblies without a guardian context. */
 internal static class BundleAssemblyChecks
 {
     private const string ViewOnly = "Guardian exports are view only.";

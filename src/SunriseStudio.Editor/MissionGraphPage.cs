@@ -75,6 +75,7 @@ public sealed partial class MissionGraphPage
         pendingSwitch = null; showSwitch = false; IsDirty = false;
     }
 
+    /** Saves the open script into the workspace's project. */
     public void SaveCurrent(StudioWorkspace workspace)
     {
         workspaceOwner = workspace;
@@ -140,6 +141,7 @@ public sealed partial class MissionGraphPage
         });
     }
 
+    /** Redoes the last undone graph edit. */
     public void Redo()
     {
         if (graph is null) return;

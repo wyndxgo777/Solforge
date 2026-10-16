@@ -7,8 +7,10 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Authoring;
 
+/** One attachment point: name and the bone it follows. */
 public sealed record WeaponAttachmentInput(string Name, int BoneIndex,
     Quaternion Rotation, Vector3 Translation, float Scale = 1);
+/** Compiled attachment asset and gameplay root. */
 public sealed record PreparedWeaponAttachments(ProjectAssetAddition Asset, byte[] GameplayRoot,
     IReadOnlyDictionary<string, uint> NameHashes);
 

@@ -2,6 +2,7 @@ using System.Numerics;
 
 namespace SunriseStudio.Formats;
 
+/** Closing voxels: adding solid geometry. */
 public static partial class TomeEditor
 {
     private const float Nudge = 0.25f;

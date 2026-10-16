@@ -11,6 +11,7 @@ internal static class OceanChecks
     private const uint DefaultSettings = 0x80B35E34, TitanSettings = 0x80BF74EF;
     private const uint OceanMaterial = 0x8158BC49, OceanVertexOnly = 0x80F987DA;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string install)
     {
         Absolute();

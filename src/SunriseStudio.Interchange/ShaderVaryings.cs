@@ -363,12 +363,15 @@ public sealed class ShaderVaryings
      */
     private static class EntityProbe
     {
+        /** What a varying carries: a source stream and channel, a constant, or a kind with sign. */
         internal sealed record Meaning(string? Stream = null, int Channel = 0, float? Constant = null, int Kind = -1, float Sign = 1);
         private sealed record Instruction(string Opcode, bool Saturate, string[] Args);
         private readonly record struct Cell(uint Bits, bool Known)
         {
             internal float Float => BitConverter.UInt32BitsToSingle(Bits);
+            /** A known float cell. */
             internal static Cell Of(float value) => new(BitConverter.SingleToUInt32Bits(value), true);
+            /** A known integer cell. */
             internal static Cell Int(int value) => new((uint)value, true);
         }
         private static readonly Cell Unknown = new(0, false);

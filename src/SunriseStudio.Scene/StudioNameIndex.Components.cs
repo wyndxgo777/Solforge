@@ -2,6 +2,7 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Scene;
 
+/** Component part of StudioNameIndex: names tags from their component data. */
 public sealed partial class StudioNameIndex
 {
     /**

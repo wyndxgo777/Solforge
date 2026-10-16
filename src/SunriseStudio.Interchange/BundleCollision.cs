@@ -24,7 +24,9 @@ public sealed record BundleCollision(string Format, int Version, uint RootTag, I
     public IReadOnlyDictionary<string, string[]>? Materials { get; init; }
 }
 
+/** Edit of a collision piece's placement transform. */
 public sealed record BundleCollisionPlacementEdit(string Id, float[] Transform);
+/** Edit of a collision piece's triangle mesh. */
 public sealed record BundleCollisionShapeEdit(string Piece, float[][] Positions, int[] Indices);
 
 /**

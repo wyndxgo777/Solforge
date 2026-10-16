@@ -3,13 +3,16 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Editor;
 
+/** StudioWorkspace part: looks up config bindings (property to mod setting) of the project. */
 public sealed partial class StudioWorkspace
 {
+    /** The binding at a config site, or null. */
     public ProjectConfigBinding? ConfigBindingAt(uint tag, string profile, int row, int? owner = null, int? component = null) =>
         Project?.ConfigBindings.FirstOrDefault(binding => binding.TagHash == tag
             && binding.Site.Profile == profile && binding.Site.RowOffset == row
             && (owner is null || binding.Site.OwnerIndex == owner) && (component is null || binding.Site.ComponentIndex == component));
 
+    /** The binding behind a CUI property, or null when it is not bound. */
     public ProjectConfigBinding? ConfigBindingForProperty(AssetProperty property) => property.CuiOwner is { } owner && Document is { } document
         ? ConfigBindingAt(document.Entry.TagHash, ConfigBindingLimits.PropertyProfile, owner.PropertyOffset,
             owner.ObjectIndex, owner.ComponentIndex) : null;
@@ -36,6 +39,7 @@ public sealed partial class StudioWorkspace
             encoded.AsMemory(selected.ValueOffset, pool.Stride)), "Saved CUI property");
     }
 
+    /** The mod config entry the binding refers to, or null. */
     public ModConfigEntry? ConfigSetting(ProjectConfigBinding binding) =>
         Project?.Mod?.Config?.FirstOrDefault(setting => setting.Key == binding.Key && setting.Type == binding.Type);
 

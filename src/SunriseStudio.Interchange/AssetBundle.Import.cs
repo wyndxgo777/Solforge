@@ -7,6 +7,7 @@ using SunriseStudio.Scene.Collision;
 
 namespace SunriseStudio.Interchange;
 
+/** Asset bundle import: reads an edited bundle back into project assets (the Import step of AssetBundle). */
 public static partial class AssetBundle
 {
     /** All source identities and edits are checked before any project file is written. */

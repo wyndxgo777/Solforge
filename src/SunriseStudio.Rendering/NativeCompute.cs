@@ -17,6 +17,7 @@ public sealed class NativeUnorderedTexture : IDisposable
         Texture = texture; View = view;
     }
 
+    /** Releases the texture and its unordered-access view. */
     public void Dispose()
     {
         View.Dispose();
@@ -60,6 +61,7 @@ public sealed class NativeComputePipeline : IDisposable
         Constants = constants; Resources = resources; UnorderedViews = views;
     }
 
+    /** Releases the compute shader. */
     public void Dispose() => Shader.Dispose();
 }
 
@@ -71,8 +73,10 @@ public sealed class NativeComputeBindings
     public Dictionary<uint, NativeUnorderedTexture> UnorderedViews { get; } = [];
 }
 
+/** Compute-pipeline part of Dx11Renderer. */
 public sealed partial class Dx11Renderer
 {
+    /** Builds a compute pipeline from a compute-only material. */
     public NativeComputePipeline CreateNativeComputePipeline(GameMaterialReader reader, GameMaterialInfo material) =>
         new(Device, reader, material);
 

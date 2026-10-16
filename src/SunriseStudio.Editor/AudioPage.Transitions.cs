@@ -3,6 +3,7 @@ using SunriseStudio.Audio;
 
 namespace SunriseStudio.Editor;
 
+/** AudioPage part: previews a transition between two segments or into a playlist and prepares it for playback. */
 public sealed partial class AudioPage
 {
     private uint transitionContainer, transitionSource, transitionDestination;

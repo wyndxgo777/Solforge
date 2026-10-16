@@ -2,6 +2,7 @@ using System.Numerics;
 
 namespace SunriseStudio.Formats;
 
+/** Shared edit context: voxel cell classification and lookup (Solid, Pending, Outside markers). */
 public static partial class TomeEditor
 {
     private const int Solid = -1, Pending = -2, Outside = -3;

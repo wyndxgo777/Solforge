@@ -9,6 +9,10 @@ using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
+/**
+ * What a pose produces for one model: per-mesh palettes and the posed vertices, plus counts of skipped parts by
+ * reason.
+ */
 public sealed record LivePoseDraw(IReadOnlyDictionary<MeshInstance, NativeLivePalette> Palettes,
     IReadOnlyDictionary<MeshInstance, RenderVertex[]> Geometry)
 {

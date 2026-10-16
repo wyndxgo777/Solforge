@@ -13,17 +13,21 @@ public sealed class TfxParameterLookup
     public int Count => values.Length;
     private TfxParameterLookup(Vector4[] values, bool nativeNull) { this.values = values; IsNativeNull = nativeNull; }
     public static TfxParameterLookup NativeNullTable { get; } = new([], true);
+    /** Copies the values into an available table. */
     public static TfxParameterLookup FromValues(ReadOnlySpan<Vector4> values) => new(values.ToArray(), false);
+    /** Returns the vector at index; throws when it is outside the table, and zero for the native null table. */
     public Vector4 Read(byte index) => IsNativeNull ? Vector4.Zero
         : index < values.Length ? values[index]
         : throw new InvalidDataException($"TFX parameter index {index} leaves its {values.Length}-vector table.");
 }
 
+/** One authored default of the parameter table: slot, lookup key, value and whether xyz is normalised. */
 public sealed record TfxParameterDefault(int Index, uint LookupKey, Vector4 Value, bool NormalizeXyz);
 
 /** This snapshot represents authored defaults and explicit overrides, not current world lighting. */
 public sealed record TfxParameterDefaults(uint RenderGlobalsTag, uint TableTag, IReadOnlyList<TfxParameterDefault> Entries)
 {
+    /** Builds the lookup table from the authored defaults, replacing entries whose key is in overrides. */
     public TfxParameterLookup CreateSnapshot(IReadOnlyDictionary<uint, Vector4>? overrides = null)
     {
         if (overrides is not null && overrides.Keys.Any(key => Entries.All(entry => entry.LookupKey != key)))
@@ -39,6 +43,7 @@ public sealed record TfxParameterDefaults(uint RenderGlobalsTag, uint TableTag, 
     }
 }
 
+/** Parameter-table part of GameMaterialReader: reads the authored defaults of the render globals. */
 public sealed partial class GameMaterialReader
 {
     /** The native render-global loader selects this table through field 0x34. */
@@ -65,6 +70,7 @@ public sealed partial class GameMaterialReader
     }
 }
 
+/** Vector maths the TFX parameter table applies to its entries. */
 internal static class TfxParameterMath
 {
     /** Native flagged vectors discard W and use +Z when their length is at most 0.0001. */

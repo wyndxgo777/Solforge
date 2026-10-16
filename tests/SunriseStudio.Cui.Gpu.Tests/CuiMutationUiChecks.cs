@@ -2,8 +2,10 @@ using System.Reflection;
 using SunriseStudio.Editor;
 using SunriseStudio.Formats;
 
+/** Checks that binding operands edited through the UI text round-trip bit-exactly when unchanged. */
 internal static class CuiMutationUiChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run()
     {
         const BindingFlags access = BindingFlags.Static | BindingFlags.NonPublic;

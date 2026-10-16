@@ -6,6 +6,10 @@ using Vortice.DXGI;
 
 namespace SunriseStudio.Rendering;
 
+/**
+ * One cubemap draw: its binding plus the cubemap texture it samples. This file also holds the
+ * cubemap-lighting pass.
+ */
 public sealed record NativeCubemapDraw(NativeCubemapBinding Binding, GpuTexture Texture);
 
 /** Native volume shaders replace sky lighting only inside their authored boxes and fades. */
@@ -170,6 +174,7 @@ public sealed class NativeCubemapLighting : IDisposable
         context.DrawIndexed(36, 0, 0); renderer.CountDraws(1);
     }
 
+    /** Releases the GPU resources this pass owns. */
     public void Dispose()
     {
         if (disposed) return;

@@ -95,8 +95,10 @@ public static class ClassNames
 
     public static IReadOnlyDictionary<uint, string> All => Names;
 
+    /** Name of a class hash: the known name, else a label derived from the component role; null when neither exists. */
     public static string? Get(uint reference) => Names.GetValueOrDefault(reference)
         ?? (ComponentRoles.Label(reference) is { } role ? $"s_{role.Replace(' ', '_')}_component" : null);
 
+    /** Name of a class hash, falling back to class_XXXXXXXX. */
     public static string Describe(uint reference) => Get(reference) ?? $"class_{reference:X8}";
 }

@@ -18,9 +18,11 @@ public sealed partial class MissionVisualAuthoring
     /** @return The key a scene has in mission.Scene, mission.Slot, mission.SceneInput and mission.SceneOutput. */
     public static string SceneKey(MissionSdkReference scene) => scene.Expression[(scene.Expression.LastIndexOf('.') + 1)..];
 
+    /** The authored scene for a key, or null. */
     public MissionSdkReference? AuthoredScene(string key) =>
         Choices(MissionReferenceKind.AuthoredScene).FirstOrDefault(value => SceneKey(value) == key);
 
+    /** The scene slot for a key, or null. */
     public MissionSdkReference? SceneSlot(string key) => Choices(MissionReferenceKind.Scene).FirstOrDefault(value => SceneKey(value) == key);
 
     /** @param scene A mission.Scene or a scene slot reference; null gives no inputs. */
@@ -45,6 +47,7 @@ public sealed partial class MissionVisualAuthoring
         return Choices(MissionReferenceKind.Scene).Where(value => keys.Contains(SceneKey(value))).ToArray();
     }
 
+    /** Scene inputs a step lists in its inputs field, and whether the list is plain enough to edit. */
     public MissionStepInputs StepInputs(string node)
     {
         if (graph.Field(node, "inputs") is not { } field) return new([], true);

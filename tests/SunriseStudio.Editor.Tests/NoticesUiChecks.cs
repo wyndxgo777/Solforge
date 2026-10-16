@@ -4,6 +4,7 @@ using SunriseStudio.Editor;
 using SunriseStudio.Packages;
 using SunriseStudio.Rendering;
 
+/** Checks that the third-party notices dialog draws and that every notice is parsed into its tabs and tables. */
 internal static class NoticesUiChecks
 {
     /** Opens Help > Third-party notices and checks every embedded notice parsed and drew. */

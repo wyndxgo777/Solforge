@@ -4,12 +4,14 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Authoring;
 
+/** Compiled sandbox perk icon: icon index, container and the assets to add. */
 public sealed record PreparedSandboxPerkIcon(ushort IconIndex, uint ContainerTag,
     IReadOnlyList<ProjectAssetAddition> Assets, IReadOnlyDictionary<uint, byte[]> Changes);
 
 /** A sandbox perk can own artwork separately from its catalyst or plug item. */
 public static class SandboxPerkIconAuthoring
 {
+    /** Builds a perk icon from an image using the template item's icon profile. */
     public static PreparedSandboxPerkIcon Prepare(StudioProject project, PackageCatalog catalog,
         int perkIndex, InvestmentItem templateItem, RgbaImage image, string name, ushort packageId,
         int firstEntry, IReadOnlyList<ProjectAssetAddition>? plannedAssets = null,

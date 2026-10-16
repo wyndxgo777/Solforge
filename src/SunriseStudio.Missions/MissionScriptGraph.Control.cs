@@ -1,10 +1,13 @@
+/** File: Partial MissionScriptGraph: opening, scoping and editing control-flow bodies of script nodes. */
 namespace SunriseStudio.Missions;
 
+/** Partial: control-flow operations. */
 public sealed partial class MissionScriptGraph
 {
     private readonly Dictionary<string, (IReadOnlyList<MissionScriptNode> Nodes, IReadOnlyList<MissionScriptEdge> Edges)> bodies = [];
     private readonly Dictionary<string, MissionScriptScope> scopes = [];
 
+    /** True when the node has a function or control body to open. */
     public bool CanOpen(MissionScriptNode node) => node.Function is not null || node.Control is not null;
 
     /** Nested nodes are found by source-derived keys, never by retained offsets from another parse. */
@@ -28,6 +31,7 @@ public sealed partial class MissionScriptGraph
         }
     }
 
+    /** The scopes (bodies) a node owns, in source order. */
     public IReadOnlyList<MissionScriptScope> Scopes(MissionScriptNode owner)
     {
         _ = Body(owner);
@@ -50,6 +54,7 @@ public sealed partial class MissionScriptGraph
         return Checked(Edit(input.Span, replacement));
     }
 
+    /** Inserts a statement into a scope and returns the new source; break needs an enclosing loop. */
     public string AddToScope(string key, string code)
     {
         var scope = FindScope(key) ?? throw new InvalidOperationException("The script scope changed; open it again.");

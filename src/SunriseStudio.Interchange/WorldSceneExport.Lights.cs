@@ -692,6 +692,7 @@ public static partial class WorldSceneExport
         private readonly Dictionary<uint, WorldLightShader> shaders = [];
         private readonly Dictionary<uint, LightTexture> textures = [];
 
+        /** Reads a light material (its pixel shader and inputs) once and caches it by tag. */
         public LightMaterial Prepare(uint tag)
         {
             if (materials.TryGetValue(tag, out var ready)) return ready;
@@ -719,6 +720,7 @@ public static partial class WorldSceneExport
     /** A decoded texture sampled bilinearly with clamped coordinates, linear colour. */
     private sealed class LightTexture(int width, int height, int depth, Vector4[] texels)
     {
+        /** Reads a texture used by a light material. */
         public static LightTexture Read(PackageCatalog catalog, MaterialTextureBinding binding)
         {
             var data = new TextureDataReader(catalog).Read(binding.TextureTag);
@@ -743,8 +745,10 @@ public static partial class WorldSceneExport
         private static float SrgbToLinear(float value) =>
             value <= 0.04045f ? value / 12.92f : MathF.Pow((value + 0.055f) / 1.055f, 2.4f);
 
+        /** Texel at integer coordinates, clamped to the texture. */
         public Vector4 Load(int x, int y) => texels[Math.Clamp(y, 0, height - 1) * width + Math.Clamp(x, 0, width - 1)];
 
+        /** Samples the texture at normalized coordinates. */
         public Vector4 Sample(float s, float t, float r)
         {
             float z = Math.Clamp(r * depth - 0.5f, 0, depth - 1);

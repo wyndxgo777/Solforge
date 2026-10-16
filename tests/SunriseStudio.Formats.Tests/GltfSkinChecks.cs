@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using SunriseStudio.Formats;
 
+/** Checks glTF skin reading: joint order, hierarchy, bind shape, local skin indices and Sunrise bone properties. */
 internal static class GltfSkinChecks
 {
     /** Joint order and bind shape determine skin coordinates; the mesh node transform is ignored. */

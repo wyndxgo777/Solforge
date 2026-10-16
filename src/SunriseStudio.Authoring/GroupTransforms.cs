@@ -5,6 +5,7 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Authoring;
 
+/** One selected object with the handle frame it transforms in. */
 public sealed record GroupMember(object Source, string Name, TransformHandleFrame Frame);
 
 /** Pivot is the centre of the box around the member pivots. */

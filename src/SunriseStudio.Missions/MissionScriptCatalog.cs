@@ -1,8 +1,14 @@
+/**
+ * File: Catalog of mission scripts and the generated SDK entries (slots, scenes, directives) they can
+ * reference.
+ */
 using System.Text;
 
 namespace SunriseStudio.Missions;
 
+/** A mission script file: name, relative and full path, and the SDK module it targets. */
 public sealed record MissionScriptEntry(string Name, string RelativePath, string FullPath, string? SdkModule);
+/** A generated SDK entry a script can reference. */
 public sealed record MissionSdkReference(string Expression, string Category, string Name, string? Identity)
 {
     public int? SlotType { get; init; }
@@ -337,8 +343,10 @@ public sealed partial class MissionScriptCatalog
     // Scripts are hand-written. Generated SDK modules reach 12 MiB, so they use the Lua reader's cap.
     private const long ScriptLimit = 8L * 1024 * 1024;
 
+    /** Reads a script file under the script size limit. */
     public static string ReadSource(string path) => ReadSource(path, ScriptLimit);
 
+    /** Reads an SDK source file under the Lua size limit. */
     internal static string ReadSdkSource(string path) => ReadSource(path, LuaScript.MaxLength);
 
     /** The table whose brace is the first in the file; a generated module returns or binds it. */

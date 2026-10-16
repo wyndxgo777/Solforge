@@ -4,8 +4,10 @@ using SunriseStudio.Packages;
 using SunriseStudio.Projects;
 using SunriseStudio.Rendering;
 
+/** Checks the typed config binding review UI: drafts are not published before save and an old draft does not leak into another project. */
 internal static class ConfigBindingUiChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string root, string capture)
     {
         string install = Path.Combine(root, "config-modal-install"), packages = Path.Combine(install, "packages");

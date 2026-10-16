@@ -3,6 +3,7 @@ using SunriseStudio.Formats;
 using SunriseStudio.Packages;
 using SunriseStudio.Projects;
 
+/** Checks investment array edits (stats, perks, expressions): relocation keeps shared expressions and conditions, and removals do not disturb perks. */
 internal static class InvestmentArrayChecks
 {
     /** Relocated rows must still evaluate the original shared instruction streams. */

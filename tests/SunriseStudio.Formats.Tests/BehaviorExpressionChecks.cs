@@ -4,8 +4,10 @@ using System.Text.Json;
 using SunriseStudio.Formats;
 using SunriseStudio.Packages;
 
+/** Checks behavior expression decoding: constants, inputs and order must match the native data, including the owned corpus. */
 internal static class BehaviorExpressionChecks
 {
+    /** Runs the same kind of checks against the real packages of the owned installation. */
     internal static void Owned(string game, string corpus)
     {
         using var catalog = PackageCatalog.Open(game, cacheOptions: new() { Enabled = false });
@@ -57,6 +59,7 @@ internal static class BehaviorExpressionChecks
         Console.WriteLine($"behavior_owned roots={roots} expressions={expressions} constants={constants} inputs={inputs} graph=complete_for_corpus");
     }
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run()
     {
         byte[] bytes = new byte[256];

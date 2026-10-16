@@ -5,6 +5,7 @@ using SunriseStudio.Animation;
 
 namespace SunriseStudio.Authoring;
 
+/** One animation read from a weapon glTF. */
 public sealed record WeaponSourceAnimation(string Name, float SourceDuration, int FrameCount,
     IReadOnlyDictionary<int, IReadOnlyList<BoneTransform>> Controls);
 
@@ -249,6 +250,7 @@ public static class WeaponGltfAnimationReader
             binary = bytes.AsSpan(28 + length, count).ToArray();
         }
 
+        /** Reads a float accessor as rows of the given width; throws on layouts it does not support. */
         public float[][] Values(int index, int width)
         {
             var accessor = Root.GetProperty("accessors")[index];
@@ -304,6 +306,7 @@ public static class WeaponGltfAnimationReader
         }
 
         private static int Optional(JsonElement value, string name) => value.TryGetProperty(name, out var found) ? found.GetInt32() : 0;
+        /** Releases the parsed JSON. */
         public void Dispose() => json.Dispose();
     }
 }

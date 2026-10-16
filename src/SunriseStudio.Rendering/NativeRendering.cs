@@ -12,10 +12,18 @@ using Vortice.Mathematics;
 
 namespace SunriseStudio.Rendering;
 
+/**
+ * Identifies a shader binding slot by stage and register. This file holds the native-pipeline GPU
+ * resource types.
+ */
 public readonly record struct NativeBindingKey(GameShaderStage Stage, uint Slot);
+/** Vertex stream bytes with their stride, ready for upload. */
 public sealed record NativeVertexStreamUpload(byte[] Data, uint Stride);
+/** Typeless resource format plus the render-target and shader-view formats used with it. */
 public readonly record struct NativeColorTargetFormat(Format Resource, Format RenderTarget, Format ShaderResource);
+/** A constant buffer slot a shader reads and how many 16-byte vectors it needs. */
 internal readonly record struct NativeConstantRequirement(NativeBindingKey Key, uint Vectors);
+/** A shader resource slot and the view dimension the shader expects. */
 internal readonly record struct NativeResourceRequirement(NativeBindingKey Key, string Dimension);
 
 /** Every shader dependency is supplied explicitly; missing resources have no zero fallback. */
@@ -68,6 +76,7 @@ public sealed class NativeConstantBuffer : IDisposable
         KnownWordMasks = new ReadOnlyDictionary<uint, uint>(knownWordMasks is null
             ? new Dictionary<uint, uint>() : new Dictionary<uint, uint>(knownWordMasks));
     }
+    /** Releases the buffer. */
     public void Dispose() => Buffer.Dispose();
 }
 
@@ -78,6 +87,7 @@ public sealed class NativeBufferResource : IDisposable
     public ID3D11ShaderResourceView View { get; }
     internal NativeBufferResource(ID3D11Buffer buffer, ID3D11ShaderResourceView view)
     { Buffer = buffer; View = view; }
+    /** Releases the view and the buffer. */
     public void Dispose() { View.Dispose(); Buffer.Dispose(); }
 }
 
@@ -101,6 +111,7 @@ public sealed class NativeGpuGeometry : IDisposable
         IndexCount = (uint)sourceIndices.Length / (indexFormat == Format.R16_UInt ? 2u : 4u);
     }
 
+    /** Releases the vertex streams and index buffer. */
     public void Dispose()
     {
         if (IsDisposed) return;
@@ -131,6 +142,7 @@ public sealed class NativeGpuMesh : IDisposable
         FirstIndex = firstIndex; IndexCount = indexCount; Topology = topology;
     }
 
+    /** Releases the geometry if this mesh owns it. */
     public void Dispose()
     {
         if (IsDisposed) return;
@@ -168,6 +180,7 @@ public sealed class NativeRenderTargets : IDisposable
         OwnsDepth = ownsDepth;
     }
 
+    /** Releases the colour textures and views, and the depth resources when owned. */
     public void Dispose()
     {
         DepthShaderView?.Dispose(); DepthView.Dispose();
@@ -346,6 +359,7 @@ public sealed class NativeMaterialPipeline : IDisposable
         return missing;
     }
 
+    /** Releases the shaders and pipeline state. */
     public void Dispose()
     {
         Blend.Dispose(); Depth.Dispose(); Rasterizer.Dispose(); Layout?.Dispose();
@@ -353,6 +367,7 @@ public sealed class NativeMaterialPipeline : IDisposable
     }
 }
 
+/** Native-pipeline part of Dx11Renderer: geometry, constant buffers, pipelines, draws and pixel readback. */
 public sealed unsafe partial class Dx11Renderer
 {
     /** The standalone overload owns its geometry; shared ranges use CreateNativeGeometry instead. */
@@ -400,6 +415,7 @@ public sealed unsafe partial class Dx11Renderer
         catch { foreach (var buffer in buffers) buffer.Dispose(); throw; }
     }
 
+    /** Creates a draw range over shared geometry. */
     public NativeGpuMesh CreateNativeMesh(NativeGpuGeometry geometry, uint firstIndex,
         uint indexCount, PrimitiveTopology topology)
     {
@@ -603,6 +619,7 @@ public sealed unsafe partial class Dx11Renderer
         Context.UpdateSubresource(bytes, geometry.Streams[slot]);
     }
 
+    /** Overwrites a constant buffer's contents. */
     public void UpdateNativeConstantBuffer(NativeConstantBuffer buffer, ReadOnlySpan<byte> bytes)
     {
         if (bytes.Length != buffer.Size) throw new ArgumentException("Native constant update size changed.");
@@ -652,6 +669,7 @@ public sealed unsafe partial class Dx11Renderer
         return ReadPixels((ID3D11Texture2D)source.Resource, source.View.Description.Format, source.Width, source.Height, points);
     }
 
+    /** Reads several depth values with one staging copy. */
     public Vector4[] ReadNativeDepthPixels(NativeRenderTargets targets, IReadOnlyList<(int X, int Y)> points) =>
         ReadPixels(targets.Depth, Format.Unknown, targets.Width, targets.Height, points);
 

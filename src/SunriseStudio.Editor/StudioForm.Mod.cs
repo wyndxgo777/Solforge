@@ -4,6 +4,7 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Editor;
 
+/** StudioForm part: the mod details dialog (id, version, dependencies, config rows). */
 public sealed partial class StudioForm
 {
     private bool modDialog, modCheat;

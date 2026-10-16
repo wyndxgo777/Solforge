@@ -1,9 +1,11 @@
 namespace SunriseStudio.Viewport;
 
+/** Milliseconds spent on each overlay phase in the last frame. */
 public readonly record struct ViewportOverlayTimings(double MaskMilliseconds, double CompositeMilliseconds,
     double CollisionMilliseconds, double GridMilliseconds, double VolumeMilliseconds,
     double MarkerMilliseconds, double PointMilliseconds, double CursorMilliseconds);
 
+/** Overlay profiling half of AssetViewport: phase timings and GPU markers. */
 public sealed partial class AssetViewport
 {
     public ViewportOverlayTimings LastOverlayTimings { get; private set; }

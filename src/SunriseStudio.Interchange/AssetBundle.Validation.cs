@@ -4,6 +4,7 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Interchange;
 
+/** Manifest validation of AssetBundle: format, version and file paths. */
 public static partial class AssetBundle
 {
     /** Manifests may name only bounded, distinct files inside their own directory. */

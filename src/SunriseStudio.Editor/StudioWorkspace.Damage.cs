@@ -1,5 +1,6 @@
 namespace SunriseStudio.Editor;
 
+/** StudioWorkspace part: damage config edits. */
 public sealed partial class StudioWorkspace
 {
     /** Untested: writes one damage config edit as one undo step. */

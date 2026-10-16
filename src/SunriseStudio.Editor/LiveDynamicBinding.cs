@@ -46,6 +46,7 @@ internal sealed class LiveDynamicBinding(
     public int ObservedCount => actors.Count;
     public IReadOnlyCollection<LivePlacement> ObservedRows => actors.Values;
     public long Revision { get; private set; }
+    /** Stable key of a live row: handle plus generation, so a reused slot is a new object. */
     public static string Key(LivePlacement row) => $"{row.Handle:X8}:{row.Generation:X8}";
     /** A row the game reports as not placed in the world or hidden, keyed under its row. */
     public static string MarkerKey(LivePlacement row) => Key(row) + "/marker";
@@ -66,7 +67,9 @@ internal sealed class LiveDynamicBinding(
 
     /** Handle bits that pick the object's slot; a slot holds one live object at a time. */
     public const uint HandleIndexMask = 0x1FFF;
+    /** True when both handles name the same live slot; the invalid handle matches nothing. */
     public static bool SameObject(uint left, uint right) => left != uint.MaxValue && left == right;
+    /** Whether the handle is the player's. */
     public bool IsPlayer(uint handle) => player is { } value && SameObject(handle, value);
 
     /** Replaces the models the game draws per owner handle. Authored owners must be left out. */
@@ -99,6 +102,7 @@ internal sealed class LiveDynamicBinding(
         loading = ""; queueDirty = true;
     }
 
+    /** Cancels preparation and forgets all spawned actors. */
     public void Clear(AssetViewport viewport)
     {
         CancelPreparation(); actors.Clear(); actorKeys.Clear(); applied = null; dirty = false;
@@ -254,6 +258,7 @@ internal sealed class LiveDynamicBinding(
         finally { queueDirty = true; }
     }
 
+    /** Cancels preparation; safe to call twice. */
     public void Dispose()
     {
         if (disposed) return;

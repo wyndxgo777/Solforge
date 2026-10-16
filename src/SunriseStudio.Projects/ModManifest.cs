@@ -99,6 +99,7 @@ public static partial class ModManifest
     private static IEnumerable<string> Repeated(IEnumerable<string> ids) =>
         ids.GroupBy(id => id, StringComparer.Ordinal).Where(group => group.Count() > 1).Select(group => group.Key);
 
+    /** Throws one InvalidDataException listing every problem Validate finds. */
     public static void Require(ModMetadata metadata)
     {
         var problems = Validate(metadata);
@@ -181,6 +182,7 @@ public static partial class ModManifest
         json.WriteEndObject();
     }
 
+    /** Parses an int32 with an optional sign, culture-invariant. */
     public static bool TryParseInt(string? text, out int value) =>
         int.TryParse(text, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out value);
 
@@ -195,6 +197,7 @@ public static partial class ModManifest
         return true;
     }
 
+    /** Parses exactly "true" or "false"; anything else fails. */
     public static bool TryParseBool(string? text, out bool value)
     {
         value = text == "true";

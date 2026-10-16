@@ -2,8 +2,10 @@ using System.Collections.ObjectModel;
 
 namespace SunriseStudio.Packages;
 
+/** Generated-asset half of PackageCatalog: origin metadata of assets the overlay generates. */
 public sealed partial class PackageCatalog
 {
+    /** Source instance a generated instance row came from, if the overlay has it. */
     public bool TryGetInstanceOrigin(uint tag, int index, out PackageInstanceOrigin origin)
     {
         var state = Volatile.Read(ref overlayState);
@@ -11,6 +13,7 @@ public sealed partial class PackageCatalog
         origin = null!; return false;
     }
 
+    /** Source placement a generated placement came from, if the overlay has it. */
     public bool TryGetPlacementOrigin(uint tag, int offset, out PackagePlacementOrigin origin)
     {
         var state = Volatile.Read(ref overlayState);
@@ -18,6 +21,7 @@ public sealed partial class PackageCatalog
         origin = null!; return false;
     }
 
+    /** True when the overlay replaces an instance within a placement. */
     public bool IsReplacedInstance(uint tag, int index, uint placementTag, int placementOffset) =>
         Volatile.Read(ref overlayState).Replacements.Contains(new(tag, index, placementTag, placementOffset));
 

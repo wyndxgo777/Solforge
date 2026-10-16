@@ -5,11 +5,13 @@ using System.Text.Json.Nodes;
 using SunriseStudio.Packages;
 using SunriseStudio.Projects;
 
+/** Checks project wide-hash support: native layout, versions, persistence, collisions and atomic overlay writes. */
 internal static class WideHashChecks
 {
     private const ulong Installed = 0x1122334455667788, Authored = 0xFFEEDDCCBBAA9988;
     private const uint NativeClass = 0x80809994;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string parent)
     {
         string root = Path.Combine(parent, "wide-hashes");

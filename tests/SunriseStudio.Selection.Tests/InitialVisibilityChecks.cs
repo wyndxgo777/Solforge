@@ -4,6 +4,7 @@ using SunriseStudio.Scene;
 using SunriseStudio.Packages;
 using SunriseStudio.Viewport;
 
+/** Checks that inactive parts are hidden, unpickable and unmasked by default and restored by explicit inspection. */
 internal static partial class Program
 {
     /** Known inactive parts use one filter for pixels, picking and selection masks. */

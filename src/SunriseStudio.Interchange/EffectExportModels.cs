@@ -37,4 +37,5 @@ public sealed record EffectExportEmitter(int Id, string Name, uint EffectTag, ui
 public sealed record EffectExportSkip(string Name, uint EffectTag, uint SourceTag, int SourceOffset, string Kind, int System,
     string Reason);
 
+/** Counts and timing of an effect export. */
 public sealed record EffectExportStatistics(int Emitters, int Skipped, long Samples, long DataBytes, int Sprites, double Seconds);

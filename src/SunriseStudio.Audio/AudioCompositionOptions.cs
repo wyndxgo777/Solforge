@@ -1,11 +1,15 @@
+/** File: Choices (game syncs, states, variables, loop count) that steer how an audio event is composed. */
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace SunriseStudio.Audio;
 
+/** A switch or state value chosen for a group. */
 public sealed record AudioGameSync(bool Switch, uint Group, uint Value);
+/** A state value chosen for a state group. */
 public sealed record AudioStateValue(uint Group, uint Value);
+/** A game variable (RTPC) value. */
 public sealed record AudioGameVariable(uint Id, float Value);
 
 /** Preview choices are explicit inputs and never replace the native bank data. */
@@ -19,6 +23,7 @@ public sealed record AudioCompositionOptions
     public bool IncludeEffectVolumes { get; init; } = true;
     public bool AllRandomChoices { get; init; }
 
+    /** Throws unless the options are within limits, finite and unique per parameter. */
     public void Validate()
     {
         if (LoopCount is < 1 or > 16) throw new InvalidDataException("Choose 1 to 16 preview loops.");

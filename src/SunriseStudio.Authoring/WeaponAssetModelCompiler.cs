@@ -8,12 +8,15 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Authoring;
 
+/** One rigid primitive: mesh, material and bone palette index. */
 public sealed record WeaponRigidPrimitive(InterchangeMesh Mesh, uint MaterialTag, short PaletteIndex)
 {
     public IReadOnlyList<short>? PaletteIndices { get; init; }
 }
+/** Entity, model and source part offset a rigid weapon model replaces. */
 public sealed record WeaponRigidModelOptions(uint EntityTag, uint ModelTag, int SourcePartOffset,
     ushort PackageId, int FirstEntryIndex, string Name, uint SkeletonEntityTag = 0);
+/** Compiled rigid weapon model with its shaders and assets. */
 public sealed record PreparedWeaponRigidModel(uint ModelTag, uint VertexShaderTag,
     int VertexCount, int TriangleCount, IReadOnlyList<ProjectAssetAddition> Assets);
 

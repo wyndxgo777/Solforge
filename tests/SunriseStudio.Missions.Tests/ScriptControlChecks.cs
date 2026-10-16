@@ -1,5 +1,6 @@
 using SunriseStudio.Missions;
 
+/** Checks Lua control-flow parsing and rewriting: comments, branches and loops are kept verbatim. */
 internal static class ScriptControlChecks
 {
     private const string Fixture = "\uFEFF-- controller\r\nlocal function run(ctx, xs)\r\n"
@@ -13,6 +14,7 @@ internal static class ScriptControlChecks
         + "    do local hidden = total ctx:record(hidden) end\r\n"
         + "    return total\r\nend\r\nreturn {on_start = run}\r\n";
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string temporary)
     {
         var graph = MissionScriptGraph.Parse(Fixture);
@@ -153,6 +155,7 @@ internal static class ScriptControlChecks
         Console.WriteLine($"mission_script_control inputs=pass scopes=pass branches=pass loops=pass comments=exact fixtures={folder}");
     }
 
+    /** Runs the checks that need an installed game; takes the installed data under test. */
     public static void Installed(string name, MissionGraphDocument document, string output)
     {
         var graph = MissionScriptGraph.Parse(document.Source, document.Groups);

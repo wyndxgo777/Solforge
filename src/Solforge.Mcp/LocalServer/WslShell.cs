@@ -55,6 +55,7 @@ public sealed record LocalServerOptions
     }
 }
 
+/** Exit code and output of a WSL command, with whether it timed out. */
 public sealed record ShellResult(int ExitCode, string Output, string Error, bool TimedOut)
 {
     public bool Ok => ExitCode == 0 && !TimedOut;
@@ -69,6 +70,7 @@ public interface IWslShell
 /** wsl.exe -u root -e bash -l -s with the script on stdin, so nothing goes through Windows argument quoting. */
 public sealed class WslShell(string distro = "") : IWslShell
 {
+    /** Runs a bash script through wsl.exe, giving up after the timeout. */
     public async Task<ShellResult> RunAsync(string script, TimeSpan timeout, CancellationToken cancel)
     {
         var start = new ProcessStartInfo("wsl.exe")
@@ -103,6 +105,7 @@ public sealed class WslShell(string distro = "") : IWslShell
     }
 }
 
+/** Shell quoting helpers for building bash scripts. */
 public static class Shell
 {
     /** One bash single-quoted word. */

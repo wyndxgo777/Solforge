@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 
 namespace SunriseStudio.Formats;
 
+/** Item and vendor detail reading. */
 public sealed partial class InvestmentCatalog
 {
     /** Detail rows keep exact byte offsets so edits never resize native arrays. */

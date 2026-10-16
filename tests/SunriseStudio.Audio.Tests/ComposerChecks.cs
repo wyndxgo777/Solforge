@@ -15,6 +15,7 @@ internal static class ComposerChecks
     // Media IDs of the synthetic sources.
     private const uint MediaA = 5001, MediaB = 5002, MediaC = 5003, MediaMusic = 5004;
 
+    /** Runs the checks that use generated fixtures instead of installed game content. */
     public static void Synthetic(string temporary)
     {
         var hierarchy = WwiseHierarchy.Read([TestHirc.Bank(113, 900, Objects())]);

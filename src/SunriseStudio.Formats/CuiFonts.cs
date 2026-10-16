@@ -4,8 +4,11 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Formats;
 
+/** Resolves CUI text styles to font faces and glyph coverage for layout preview. A font face: its header and data tags and the parsed OpenType font. */
 public sealed record CuiFontFace(uint HeaderTag, uint DataTag, string Name, CuiOpenTypeFont Font);
+/** A font face and the characters it supplies, with its priority Order. */
 public sealed record CuiFontGlyphs(CuiFontFace Face, string Characters, int Order);
+/** Resolved text style: size, alignment, casing, colour and the fonts to use; Error is set when resolution failed. */
 public sealed record CuiTextAppearance(uint SourceTag, uint StyleHash, float Size, int Alignment, int Casing,
     Vector4 Color, IReadOnlyList<CuiFontGlyphs> Fonts, string Error)
 {
@@ -102,6 +105,7 @@ internal sealed class CuiFonts
         }
     }
 
+    /** Resolves a style hash, font size and text into a CuiTextAppearance; throws if the text exceeds the 16384-character preview budget. */
     public CuiTextAppearance Resolve(uint styleHash, ushort size, string text, IReadOnlyList<CuiAuthoredProperty> properties)
     {
         if (text.Length > 16384) throw new NotSupportedException("Text exceeds the layout preview budget.");

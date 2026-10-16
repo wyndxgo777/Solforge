@@ -9,6 +9,7 @@ namespace SunriseStudio.Creation.Tests;
 /** Field problems drive the disabled Create button; edit routes follow the document class. */
 internal static class CreationFieldChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run()
     {
         var package = new CreationField("Package ID", CreationFieldKind.Scalar, true, "package")

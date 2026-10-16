@@ -4,6 +4,7 @@ using SunriseStudio.Formats;
 
 namespace SunriseStudio.Creation.Tests;
 
+/** Checks that a newly created weapon opens a scene in bind pose with its full animation catalog and keeps geometry when an animation is selected. */
 internal static class WeaponSceneWorkflowChecks
 {
     /** Clip navigation keeps the weapon item, complete catalog and geometry together. */

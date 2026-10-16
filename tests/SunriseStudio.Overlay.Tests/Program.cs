@@ -1,3 +1,4 @@
+// Console test runner for the overlay: a new texture must decode before package build, keep its pixels and be found by lookup.
 using System.Buffers.Binary;
 using System.Security.Cryptography;
 using SunriseStudio.Packages;

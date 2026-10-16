@@ -15,6 +15,7 @@ public sealed class GraphPage : IStudioPage
     private string selected = "";
     public string Id => "sunrise.graph";
     public string Title => "Graph";
+    /** Accepts documents whose inspection produced a non-empty graph. */
     public bool CanOpen(StudioDocument document) => document.Inspection.Graph?.Nodes.Count > 0;
 
     /** Edges and nodes outside the canvas are skipped; a click on a node selects its property. */

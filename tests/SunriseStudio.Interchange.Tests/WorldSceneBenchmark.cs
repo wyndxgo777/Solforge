@@ -7,6 +7,7 @@ using SunriseStudio.Packages;
 using SunriseStudio.Rendering;
 using SunriseStudio.Scene;
 
+/** Benchmark, not a pass/fail test: exports a legacy map as a GLB scene and reports size and memory use, bailing out first if the machine lacks headroom. */
 internal static class WorldSceneBenchmark
 {
     [StructLayout(LayoutKind.Sequential)]

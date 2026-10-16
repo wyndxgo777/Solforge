@@ -1,3 +1,4 @@
+/** File: Reads per-vertex bone weights and skin palettes (skeleton or cloth) from model tags. */
 using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Numerics;
@@ -5,11 +6,14 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Animation;
 
+/** Up to four bone influences for one vertex with their weights. */
 public readonly record struct VertexSkinWeights(int Bone0, int Bone1, int Bone2, int Bone3,
     Vector4 Weights);
 
+/** Which bone set a skin palette indexes. */
 public enum SkinPaletteKind { Skeleton, ClothInput }
 
+/** Tags a cloth skin was derived from, with the palette size and worst inverse-bind error. */
 public sealed record ClothSkinProvenance(uint ConfigTag, uint AssetTag, uint HavokTag,
     uint DeclarationTag, int PaletteSize, float MaximumInverseBindError);
 

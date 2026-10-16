@@ -4,6 +4,7 @@ using SunriseStudio.Editor;
 using SunriseStudio.Packages;
 using SunriseStudio.Scene;
 
+/** Checks that navigating to a part or material uses the owning asset context, not an unrelated world owner context. */
 internal static class PartNavigationChecks
 {
     private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;

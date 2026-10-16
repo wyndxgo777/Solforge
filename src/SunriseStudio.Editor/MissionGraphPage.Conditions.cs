@@ -3,6 +3,7 @@ using SunriseStudio.Missions;
 
 namespace SunriseStudio.Editor;
 
+/** MissionGraphPage part: the All/Any condition tree editor for flow nodes. */
 public sealed partial class MissionGraphPage
 {
     /** All/Any groups preserve custom predicate leaves until an explicit replacement or removal. */

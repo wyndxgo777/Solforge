@@ -4,6 +4,7 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Viewport;
 
+/** How backdrop bubbles are shown: following the camera, fixed or all. */
 public enum SceneBackdropMode { FollowCamera, Fixed, All }
 
 /** One bubble supplies the sky; layer-based backdrop detection is a viewer heuristic. */
@@ -74,9 +75,12 @@ public sealed class SceneBackdrop
         ActiveBubbleHash = defaultBubble;
     }
 
+    /** Canonical hash for a bubble alias. */
     public uint CanonicalBubble(uint hash) => aliases.GetValueOrDefault(hash, hash);
+    /** True when the item is a backdrop mesh. */
     public bool IsBackdrop(object item) => item is MeshInstance mesh && backdrop.Contains(mesh);
 
+    /** False only for backdrop meshes of a bubble other than the active one. */
     public bool IsVisible(object item) => Mode == SceneBackdropMode.All || ActiveBubbleHash == 0 ||
         item is not MeshInstance mesh || !backdrop.Contains(mesh) || mesh.BubbleHash == 0 ||
         CanonicalBubble(mesh.BubbleHash) == ActiveBubbleHash;

@@ -8,7 +8,9 @@ using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
+/** The three phases of a perk's behaviour graph. */
 public enum PerkBehaviorPhase { Activation, Effects, Deactivation }
+/** Load state of the perk census used to name perks. */
 public enum PerkCensusState { Loading, Ready, Failed }
 
 /** Phase links show native array ownership. Only decoded node inputs can change. */
@@ -105,7 +107,9 @@ public sealed class PerkBehaviorEditor
         undo.Clear(); redo.Clear(); propertyDrafts.Clear(); canvas.Reset(); selected = status = "";
     }
 
+    /** Marks the current graph as the saved baseline. */
     public void MarkSaved() => saved = Snapshot();
+    /** Encodes the graph back to native perk behaviour bytes. */
     public byte[] Compile() => NativePerkBehavior.Compile(graph);
 
     /** A phase admits only its native condition or effect node kind. */
@@ -144,6 +148,7 @@ public sealed class PerkBehaviorEditor
         Change(() => list.Add(hash));
     }
 
+    /** Removes one label from a node's filter array. */
     public void RemoveLabel(string nodeId, string filterKey, int array, int index)
     {
         var list = EditableFilter(nodeId, filterKey, array).Arrays()[array];
@@ -161,6 +166,7 @@ public sealed class PerkBehaviorEditor
         return filter;
     }
 
+    /** Removes a node and detaches it from its parent list. */
     public void RemoveNode(string id)
     {
         var (list, node, parent) = Find(id);
@@ -215,12 +221,14 @@ public sealed class PerkBehaviorEditor
             throw new InvalidDataException("The inner condition belongs to its state test.");
     }
 
+    /** Restores the previous graph snapshot. */
     public void Undo()
     {
         if (!undo.TryPop(out string? previous)) return;
         redo.Push(Snapshot()); Restore(previous);
     }
 
+    /** Reapplies the last undone snapshot. */
     public void Redo()
     {
         if (!redo.TryPop(out string? next)) return;

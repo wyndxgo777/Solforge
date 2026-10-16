@@ -5,6 +5,7 @@ using SunriseStudio.Animation;
 /** CPU skinning of a cloth display stream: positions, unit normals and tangents, kept w lanes. */
 static class ClothDisplayChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run()
     {
         Vector4[] bind =

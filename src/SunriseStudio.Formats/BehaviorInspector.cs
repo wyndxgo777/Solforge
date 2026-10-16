@@ -12,6 +12,7 @@ public sealed class BehaviorInspector : IAssetInspector
     private const int MaximumSourceBytes = 1024 * 1024;
     public string Id => "sunrise.behavior";
     public string DisplayName => "Behavior";
+    /** True for the behavior tag class (0x8080941E). */
     public bool CanInspect(AssetInspectionContext context) => context.ClassHash == 0x8080941E;
 
     private sealed record NodeLayout(string Name, int Size, int[] Roots,

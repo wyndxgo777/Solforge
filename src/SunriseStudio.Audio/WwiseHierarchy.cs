@@ -18,9 +18,12 @@ public sealed record WwiseRangedProp(byte Id, uint MinimumRaw, uint MaximumRaw)
     /** The midpoint of a float property's range. */
     public double Midpoint => ((double)Minimum + Maximum) / 2;
 }
+/** A point of an RTPC or layer graph. */
 public sealed record WwiseGraphPoint(float From, float To, uint Curve);
+/** A game-parameter binding: property, curve and graph points. */
 public sealed record WwiseRtpc(uint Id, byte Type, byte Accumulation, byte Parameter, uint Curve, byte Scaling,
     IReadOnlyList<WwiseGraphPoint> Points);
+/** States a node switches between for a state group. */
 public sealed record WwiseStateGroup(uint Group, byte Sync, IReadOnlyList<(uint State, uint Instance)> States);
 /**
  * Shared node parameters.
@@ -30,8 +33,10 @@ public sealed record WwiseNodeBase(bool OverrideParentEffects, int EffectCount, 
     IReadOnlyList<WwiseProp> Props, IReadOnlyList<WwiseRangedProp> Ranged, IReadOnlyList<WwiseStateGroup> States,
     IReadOnlyList<WwiseRtpc> Rtpcs, IReadOnlyList<uint>? Effects = null, byte Positioning = 0)
 {
+    /** Property value by id, or fallback when unset. */
     public float Prop(byte id, float fallback = 0) => Props.FirstOrDefault(prop => prop.Id == id)?.Value ?? fallback;
 }
+/** Where a sound's audio comes from: plugin, stream type and media. */
 public sealed record WwiseSource(uint Plugin, byte StreamType, uint MediaId, uint MediaSize, byte Bits,
     byte[] Parameters)
 {
@@ -39,9 +44,13 @@ public sealed record WwiseSource(uint Plugin, byte StreamType, uint MediaId, uin
     public bool Codec => (Plugin & 0xF) == 1;
 }
 
+/** Base of every parsed Wwise object: type code and id. */
 public abstract record WwiseObject(byte Type, uint Id);
+/** A state object with its property overrides. */
 public sealed record WwiseState(uint Id, IReadOnlyList<WwiseProp> Props) : WwiseObject(1, Id);
+/** A sound object: source plus node properties. */
 public sealed record WwiseSound(uint Id, WwiseSource Source, WwiseNodeBase Node) : WwiseObject(2, Id);
+/** An event action (play, stop, set, ...) with its target and parameters. */
 public sealed record WwiseAction(uint Id, ushort ActionType, uint Target, bool TargetsBus, IReadOnlyList<WwiseProp> Props,
     IReadOnlyList<WwiseRangedProp> Ranged, byte[] Parameters) : WwiseObject(3, Id)
 {
@@ -52,8 +61,11 @@ public sealed record WwiseAction(uint Id, ushort ActionType, uint Target, bool T
         + Ranged.Where(range => range.Id == WwiseHierarchy.DelayProp)
             .Sum(range => ((double)(int)range.MinimumRaw + (int)range.MaximumRaw) / 2);
 }
+/** An event: the actions it runs. */
 public sealed record WwiseEvent(uint Id, IReadOnlyList<uint> Actions) : WwiseObject(4, Id);
+/** One child of a random or sequence container with its weight. */
 public sealed record WwisePlaylistEntry(uint Id, int Weight);
+/** A random or sequence container with its loop, transition and repeat settings. */
 public sealed record WwiseRandomSequence(uint Id, WwiseNodeBase Node, ushort LoopCount, ushort LoopMinimum,
     ushort LoopMaximum, float TransitionTime, float TransitionMinimum, float TransitionMaximum, ushort AvoidRepeat,
     byte TransitionMode, byte RandomMode, byte Mode, byte Flags, IReadOnlyList<uint> Children,
@@ -63,55 +75,81 @@ public sealed record WwiseRandomSequence(uint Id, WwiseNodeBase Node, ushort Loo
     public bool Continuous => (Flags & 8) != 0;
     public bool UsesWeights => (Flags & 1) != 0;
 }
+/** Fade and mode settings of a switch container. */
 public sealed record WwiseSwitchParameters(uint Node, byte Flags, byte Mode, int FadeOut, int FadeIn);
+/** A switch container: its group, default and per-switch child lists. */
 public sealed record WwiseSwitch(uint Id, WwiseNodeBase Node, byte GroupType, uint Group, uint DefaultSwitch,
     bool ContinuousValidation, IReadOnlyList<uint> Children, IReadOnlyList<(uint Switch, IReadOnlyList<uint> Nodes)> Groups,
     IReadOnlyList<WwiseSwitchParameters> Parameters) : WwiseObject(6, Id);
+/** An actor-mixer: a grouping node with children. */
 public sealed record WwiseActorMixer(uint Id, WwiseNodeBase Node, IReadOnlyList<uint> Children) : WwiseObject(7, Id);
+/** One ducking rule of a bus. */
 public sealed record WwiseDuck(uint Bus, float Volume, int FadeOut, int FadeIn, byte Curve, byte Property);
+/** A bus with its properties, ducks, parameters and states. */
 public sealed record WwiseBus(byte Kind, uint Id, uint OutputBus, IReadOnlyList<WwiseProp> Props, int EffectCount,
     IReadOnlyList<WwiseDuck> Ducks, IReadOnlyList<WwiseRtpc> Rtpcs, IReadOnlyList<WwiseStateGroup> States,
     IReadOnlyList<uint>? Effects = null)
     : WwiseObject(Kind, Id)
 {
+    /** Property value by id, or fallback when unset. */
     public float Prop(byte id, float fallback = 0) => Props.FirstOrDefault(prop => prop.Id == id)?.Value ?? fallback;
 }
+/** How a layer child is driven by the layer's parameter. */
 public sealed record WwiseLayerAssociation(uint Child, IReadOnlyList<WwiseGraphPoint> Points);
+/** A blend layer of a layer container. */
 public sealed record WwiseLayer(uint Id, IReadOnlyList<WwiseRtpc> Rtpcs, uint Rtpc, byte RtpcType,
     IReadOnlyList<WwiseLayerAssociation> Associations);
+/** A blend container: children grouped into layers. */
 public sealed record WwiseLayerContainer(uint Id, WwiseNodeBase Node, IReadOnlyList<uint> Children,
     IReadOnlyList<WwiseLayer> Layers) : WwiseObject(9, Id);
+/** Tempo and grid of a music node. */
 public sealed record WwiseMeter(double GridPeriod, double GridOffset, float Tempo, byte BeatsPerBar, byte BeatValue);
+/** Music-node data shared by segments, tracks and playlists. */
 public sealed record WwiseMusicNode(byte Flags, WwiseNodeBase Node, IReadOnlyList<uint> Children, WwiseMeter Meter,
     byte MeterFlag, int Stingers);
+/** A named position marker in a segment. */
 public sealed record WwiseMarker(uint Id, double Position, string? Name);
+/** A music segment: duration, markers and tracks. */
 public sealed record WwiseMusicSegment(uint Id, WwiseMusicNode Music, double Duration, IReadOnlyList<WwiseMarker> Markers)
     : WwiseObject(10, Id);
+/** One clip placed on a music track. */
 public sealed record WwiseClip(uint Track, uint Source, double PlayAt, double BeginTrim, double EndTrim, double SourceDuration);
+/** Automation curve attached to a clip. */
 public sealed record WwiseClipAutomation(uint Clip, uint Type, IReadOnlyList<WwiseGraphPoint> Points);
+/** A music track: its sources, clips and automation. */
 public sealed record WwiseMusicTrack(uint Id, byte Flags, IReadOnlyList<WwiseSource> Sources, IReadOnlyList<WwiseClip> Clips,
     uint SubTracks, IReadOnlyList<WwiseClipAutomation> Automation, WwiseNodeBase Node, byte TrackType, int LookAhead)
     : WwiseObject(11, Id);
+/** A fade: time, curve and offset. */
 public sealed record WwiseFade(int Time, uint Curve, int Offset);
+/** Source side of a transition rule: fade, sync point and cue filter. */
 public sealed record WwiseSourceRule(WwiseFade Fade, uint Sync, uint CueFilter, bool PostExit);
+/** Destination side of a transition rule: fade, entry and jump target. */
 public sealed record WwiseDestinationRule(WwiseFade Fade, uint CueFilter, uint JumpTo, ushort Entry, bool PreEntry,
     bool MatchSourceCue);
+/** A bridge segment with its fades. */
 public sealed record WwiseBridge(uint Segment, WwiseFade FadeIn, WwiseFade FadeOut, bool PreEntry, bool PostExit);
+/** A transition rule from source segments to destinations. */
 public sealed record WwiseTransitionRule(IReadOnlyList<uint> Sources, IReadOnlyList<uint> Destinations,
     WwiseSourceRule Source, WwiseDestinationRule Destination, WwiseBridge? Bridge);
+/** A node of a music switch decision tree. */
 public sealed record WwiseDecisionNode(uint Key, uint AudioNode, ushort Weight, ushort Probability,
     IReadOnlyList<WwiseDecisionNode> Children);
+/** A music switch container with its rules and decision arguments. */
 public sealed record WwiseMusicSwitch(uint Id, WwiseMusicNode Music, IReadOnlyList<WwiseTransitionRule> Rules,
     bool ContinuePlayback, IReadOnlyList<(uint Group, byte Type)> Arguments, byte Mode,
     IReadOnlyList<WwiseDecisionNode> Tree) : WwiseObject(12, Id);
+/** A node of a music playlist tree. */
 public sealed record WwiseMusicItem(uint Segment, uint Id, int Kind, short Loop, short LoopMinimum, short LoopMaximum,
     uint Weight, ushort AvoidRepeat, bool UsesWeights, bool Shuffle, IReadOnlyList<WwiseMusicItem> Children);
+/** A music playlist container: its rules and item tree. */
 public sealed record WwiseMusicPlaylist(uint Id, WwiseMusicNode Music, IReadOnlyList<WwiseTransitionRule> Rules,
     WwiseMusicItem? Root) : WwiseObject(13, Id);
 /** Attenuations, effects and modulators; effects also keep their plug-in ID and parameter block. */
 public sealed record WwiseOther(byte Kind, uint Id, IReadOnlyList<WwiseRtpc> Rtpcs, uint Plugin = 0, byte[]? Parameters = null)
     : WwiseObject(Kind, Id);
 
+/** All objects parsed from one bank. */
 public sealed record WwiseBankObjects(uint Bank, uint Version, IReadOnlyList<WwiseObject> Objects);
 
 /** Version-113 HIRC objects read field by field; an object that does not fill its record exactly is skipped. */
@@ -132,6 +170,7 @@ public sealed class WwiseHierarchy
 
     private enum Space { Node, Event, Action, State, Settings }
 
+    /** Object of the given type and id, or null. */
     public T? Get<T>(uint id) where T : WwiseObject =>
         Spaces.TryGetValue((SpaceOf(typeof(T)), id), out var item) ? item as T : null;
 
@@ -545,14 +584,23 @@ internal sealed class WwiseReader(byte[] data)
 {
     public int At { get; private set; }
     public int Remaining => data.Length - At;
+    /** Reads a u8, throwing at end of data. */
     public byte U8() { Need(1); return data[At++]; }
+    /** Reads a little-endian u16. */
     public ushort U16() { Need(2); var value = BinaryPrimitives.ReadUInt16LittleEndian(data.AsSpan(At)); At += 2; return value; }
+    /** Reads a little-endian i16. */
     public short S16() => unchecked((short)U16());
+    /** Reads a little-endian u32. */
     public uint U32() { Need(4); var value = BinaryPrimitives.ReadUInt32LittleEndian(data.AsSpan(At)); At += 4; return value; }
+    /** Reads a little-endian i32. */
     public int S32() => unchecked((int)U32());
+    /** Reads a little-endian f32. */
     public float F32() => BitConverter.UInt32BitsToSingle(U32());
+    /** Reads a little-endian f64. */
     public double F64() { Need(8); var value = BinaryPrimitives.ReadDoubleLittleEndian(data.AsSpan(At)); At += 8; return value; }
+    /** Reads count bytes. */
     public byte[] Bytes(int count) { Need(count); var value = data.AsSpan(At, count).ToArray(); At += count; return value; }
+    /** Advances count bytes. */
     public void Skip(int count) { Need(count); At += count; }
     private void Need(int count)
     {

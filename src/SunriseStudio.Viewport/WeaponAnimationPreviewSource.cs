@@ -253,6 +253,7 @@ public static partial class WeaponAnimationPreviewSource
     private static partial Regex Destination();
 }
 
+/** Weapon half of AssetAnimationSource: binds a weapon rig to the presentation rig. */
 public sealed partial class AssetAnimationSource
 {
     public WeaponAnimationBinding? WeaponBinding { get; }
@@ -269,6 +270,7 @@ public sealed partial class AssetAnimationSource
         RigidSkins = rigidSkins;
     }
 
+    /** Copy of a source that adds the weapon skins, weapon binding and rigid skins. */
     internal static AssetAnimationSource ForWeapon(AssetAnimationSource source, IReadOnlyList<ModelSkinBinding> skins,
         WeaponAnimationBinding binding, IReadOnlyDictionary<ModelSkinBinding, int> rigidSkins) =>
         new(source, skins, binding, rigidSkins);

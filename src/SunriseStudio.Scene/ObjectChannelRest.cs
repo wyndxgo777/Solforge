@@ -10,6 +10,7 @@ namespace SunriseStudio.Scene;
 public readonly record struct ObjectChannelRestValue(Vector4 Value, string? Unsettled, uint Changeable = 0)
 {
     public bool Settled => Unsettled is null;
+    /** A value that is not settled because of the run-time input named by the reason. */
     public static ObjectChannelRestValue Open(string reason) => new(new Vector4(SceneObjectChannel.ViewerDefault), reason);
 }
 
@@ -406,9 +407,11 @@ public sealed class ObjectChannelTables(PackageCatalog catalog)
     private sealed class TableComparer : IEqualityComparer<Vector4[]>
     {
         public static readonly TableComparer Instance = new();
+        /** Compares tables by their bytes. */
         public bool Equals(Vector4[]? a, Vector4[]? b) => ReferenceEquals(a, b) || a is not null && b is not null
             && System.Runtime.InteropServices.MemoryMarshal.AsBytes(a.AsSpan())
                 .SequenceEqual(System.Runtime.InteropServices.MemoryMarshal.AsBytes(b.AsSpan()));
+        /** Hashes the table's bytes. */
         public int GetHashCode(Vector4[] table)
         {
             var hash = new HashCode();

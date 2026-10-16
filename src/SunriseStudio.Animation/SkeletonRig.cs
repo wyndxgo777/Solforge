@@ -1,7 +1,9 @@
+/** File: Skeleton data model: bone transforms, bind pose, skinning and cloth references. */
 using System.Numerics;
 
 namespace SunriseStudio.Animation;
 
+/** Rotation, translation and uniform scale of one bone. */
 public readonly record struct BoneTransform(Quaternion Rotation, Vector3 Translation, float Scale)
 {
     public static BoneTransform Identity => new(Quaternion.Identity, Vector3.Zero, 1);
@@ -18,10 +20,12 @@ public readonly record struct BoneTransform(Quaternion Rotation, Vector3 Transla
     }
 }
 
+/** One skeleton bone: hierarchy links plus bind transforms in object and local space. */
 public sealed record SkeletonBone(int Index, uint NameHash, string Name, int ParentIndex,
     int FirstChildIndex, int NextSiblingIndex, BoneTransform BindObject,
     BoneTransform InverseBindObject, BoneTransform BindLocal);
 
+/** Cloth model and Havok asset tags tied to a config. */
 public sealed record ClothModelReference(uint ConfigTag, uint ModelTag, uint HavokAssetTag);
 
 /** Bones remain in package order because mesh influences use these indices. */
@@ -48,6 +52,7 @@ public sealed class SkeletonRig
         MaximumBindInverseError = inverseError;
     }
 
+    /** Creates a pose at the rig's bind transforms. */
     public SkeletonPose CreateBindPose() => new(this);
 }
 
@@ -181,6 +186,7 @@ public sealed class SkeletonPose
         return result / sum;
     }
 
+    /** Skins a bind-space position by up to four weighted bone matrices. */
     public Vector3 SkinPosition(Vector3 bindPosition, VertexSkinWeights influences)
     {
         Span<BoneWeight> weights = stackalloc BoneWeight[4]
@@ -214,4 +220,5 @@ public sealed class SkeletonPose
     }
 }
 
+/** One bone index and its weight. */
 public readonly record struct BoneWeight(int BoneIndex, float Weight);

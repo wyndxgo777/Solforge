@@ -136,12 +136,14 @@ public sealed record WeaponRecipeOverrides
     public IReadOnlyList<WeaponRawPayloadPatchRecipe> RawPayloadPatches { get; init; } = [];
 }
 
+/** Overrides one stat, by definition index, with a fixed value. */
 public sealed record WeaponStatOverride
 {
     public required ushort DefinitionIndex { get; init; }
     public required int Value { get; init; }
 }
 
+/** Collections node (ammo type and weapon family) the finished weapon is filed under. */
 public sealed record WeaponCollectionDestination
 {
     public required RecipeAmmoType Ammo { get; init; }
@@ -155,7 +157,9 @@ public sealed record WeaponTuningRecipe
     public float? DamagePerShot { get; init; }
     public int? Magazine { get; init; }
 
+    /** Converts to the tuning value used by the builder. */
     public WeaponTuning ToTuning() => new(RoundsPerMinute, DamagePerShot, Magazine);
+    /** Captures a tuning value as a recipe. */
     public static WeaponTuningRecipe From(WeaponTuning tuning) =>
         new() { RoundsPerMinute = tuning.RoundsPerMinute, DamagePerShot = tuning.DamagePerShot, Magazine = tuning.Magazine };
 }
@@ -174,6 +178,7 @@ public sealed record WeaponSocketColumnRecipe
     public IReadOnlyList<WeaponNumericInstruction> RandomizedSelectionProgram { get; init; } = [];
 }
 
+/** One instruction of a plug-condition or selection program: opcode plus operand. */
 public sealed record WeaponNumericInstruction
 {
     public required byte Opcode { get; init; }

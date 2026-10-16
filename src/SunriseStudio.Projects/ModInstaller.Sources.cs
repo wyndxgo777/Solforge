@@ -1,7 +1,11 @@
+/**
+ * File: Partial ModInstaller: collects a project's Lua controllers and source folders into mod script files.
+ */
 using System.Text.Json;
 
 namespace SunriseStudio.Projects;
 
+/** Partial: script source collection. */
 public static partial class ModInstaller
 {
     // The native controller reader owns a fixed 128 KiB source buffer.

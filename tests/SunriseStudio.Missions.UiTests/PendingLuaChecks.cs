@@ -5,6 +5,7 @@ using SunriseStudio.Missions;
 using SunriseStudio.Packages;
 using static MissionUi;
 
+/** UI check of pending Lua drafts (flow graphs, campaigns): they stay unapplied until accepted. */
 internal static class PendingLuaChecks
 {
     private const string Predicate = "function() return true end";
@@ -13,6 +14,7 @@ internal static class PendingLuaChecks
         + "local campaign=require('lib.campaign')\nlocal story=campaign.new{key='story',steps={"
         + "{id='a',lines={make_line(),make_line()}}},legs={},encounters={}}\nreturn {}\n";
 
+    /** Runs the pending-Lua behavior checks; returns the number of cases run. */
     internal static int BehaviorOnly()
     {
         string temporary = Path.Combine(Path.GetTempPath(), "sunrise-pending-lua-" + Guid.NewGuid().ToString("N"));
@@ -51,6 +53,7 @@ internal static class PendingLuaChecks
         Check(!workspace.IsBusy && workspace.Error.Length == 0, workspace.Error);
     }
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(StudioWorkspace workspace, string temporary)
     {
         var project = workspace.Project!;

@@ -3,8 +3,10 @@ using System.Security.Cryptography;
 
 namespace SunriseStudio.Formats;
 
+/** An added property override: selector, value pool and the encoded value bytes. */
 public sealed record CuiPropertyOverride(ulong Selector, int PoolDescriptor, ReadOnlyMemory<byte> Value);
 
+/** Override-adding part of property editing. */
 public static partial class CuiPropertyEdits
 {
     /** Added overrides join the same typed pools and selector paths as native stored properties. */

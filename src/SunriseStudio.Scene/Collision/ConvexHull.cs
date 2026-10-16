@@ -166,7 +166,9 @@ public static class ConvexHull
 
     private readonly record struct Face(int A, int B, int C, D3 Normal, double Offset, bool Alive)
     {
+        /** Signed distance from the face plane to the point. */
         public double Distance(D3 point) => D3.Dot(Normal, point) - Offset;
+        /** The face's three edges as vertex index pairs. */
         public (int, int)[] Edges() => [(A, B), (B, C), (C, A)];
     }
 
@@ -178,9 +180,13 @@ public static class ConvexHull
         public static D3 operator +(D3 a, D3 b) => new(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
         public static D3 operator -(D3 a) => new(-a.X, -a.Y, -a.Z);
         public static D3 operator *(D3 a, double s) => new(a.X * s, a.Y * s, a.Z * s);
+        /** Dot product. */
         public static double Dot(D3 a, D3 b) => a.X * b.X + a.Y * b.Y + a.Z * b.Z;
+        /** Cross product. */
         public static D3 Cross(D3 a, D3 b) => new(a.Y * b.Z - a.Z * b.Y, a.Z * b.X - a.X * b.Z, a.X * b.Y - a.Y * b.X);
+        /** Component-wise minimum. */
         public static D3 Min(D3 a, D3 b) => new(Math.Min(a.X, b.X), Math.Min(a.Y, b.Y), Math.Min(a.Z, b.Z));
+        /** Component-wise maximum. */
         public static D3 Max(D3 a, D3 b) => new(Math.Max(a.X, b.X), Math.Max(a.Y, b.Y), Math.Max(a.Z, b.Z));
     }
 }

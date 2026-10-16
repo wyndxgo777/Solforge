@@ -5,6 +5,7 @@ using Vortice.DXGI;
 
 namespace SunriseStudio.Viewport;
 
+/** Preload half of NativeSceneRenderer: background texture and geometry creation for a plan. */
 public sealed partial class NativeSceneRenderer
 {
     /**

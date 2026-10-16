@@ -12,6 +12,7 @@ internal static class CullChecks
 {
     private static readonly ObjectEditCompiler Compiler = new([new InstanceBoundsRule(), new InstanceCullRule()]);
 
+    /** Runs the checks that use generated fixtures instead of installed game content. */
     internal static void Synthetic()
     {
         string folder = Path.Combine(Path.GetTempPath(), "sunrise-cull-tests-" + Guid.NewGuid().ToString("N"));
@@ -226,6 +227,7 @@ internal static class CullChecks
         internal int Runs;
         public ObjectEditLayout Layout => ObjectEditLayout.StaticInstance;
         public bool BuildOnly => true;
+        /** Counts how often the rule ran and records a note. */
         public void Apply(ObjectEditContext context, IReadOnlyList<ObjectEdit> edits) { Runs++; context.Note("probe"); }
     }
 

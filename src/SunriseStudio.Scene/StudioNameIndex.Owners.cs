@@ -1,5 +1,6 @@
 namespace SunriseStudio.Scene;
 
+/** Owner part of StudioNameIndex: reverse links from tags to the assets that reference them. */
 public sealed partial class StudioNameIndex
 {
     /** Known owners may be partial; readers must revalidate them against the current catalog. */

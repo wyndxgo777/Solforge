@@ -380,6 +380,7 @@ public sealed class AssetAnimationPreview : IDisposable
                 ? Vector3.Normalize(vertices[i].Normal) : Vector3.UnitZ };
     }
 
+    /** Skin matrices for a mesh (attached bone, rigid, cloth input or display pose); null for meshes not in the preview. */
     public IReadOnlyList<Matrix4x4>? SkinFor(MeshInstance instance) =>
         !parts.TryGetValue(instance.Mesh, out var part) ? null
             : part.Attached is { } attached ? Enumerable.Repeat(Pose.ObjectTransforms[attached.Bone], attached.Entries).ToArray()
@@ -526,6 +527,7 @@ public sealed class AssetAnimationPreview : IDisposable
         if (changed) ApplySample();
     }
 
+    /** Cancels background work and releases the preview's GPU resources. */
     public void Dispose()
     {
         if (disposed) return;

@@ -11,6 +11,7 @@ internal static class MeshOwnedChecks
 {
     private const ushort LeviathanPackage = 0x36E, SabrePackage = 0x3D5;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(PackageCatalog catalog)
     {
         // Reference hashes over tag, section, primitive, kind, codec, vertices and radius.

@@ -3,6 +3,7 @@ using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
+/** StudioForm part: back/forward history, page ids and restoring a recorded view. */
 public sealed partial class StudioForm
 {
     // Page ids: "live", "asset:<page>", "world:scene", "world:mission", "world:report", "world:asset:<page>".

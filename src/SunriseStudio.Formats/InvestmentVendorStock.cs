@@ -2,10 +2,13 @@ using System.Buffers.Binary;
 
 namespace SunriseStudio.Formats;
 
+/** A cost to write into a new sale: source cost index, item and quantity. */
 public sealed record InvestmentVendorCostDraft(int SourceIndex, ushort Item, uint Quantity);
+/** A sale to write into a vendor: source sale index, item, category and its costs. */
 public sealed record InvestmentVendorSaleDraft(int SourceIndex, ushort Item, int Category,
     IReadOnlyList<InvestmentVendorCostDraft> Costs);
 
+/** Vendor stock editing. */
 public sealed partial class InvestmentCatalog
 {
     private const uint CostSelectorClass = 0x808028B2;
@@ -110,6 +113,7 @@ public sealed partial class InvestmentCatalog
         uint displayTag, ReadOnlyMemory<byte> display, InvestmentSale sale, InvestmentCost cost) =>
         ChangeCostPair(tag, current, displayTag, display, sale, cost, false);
 
+    /** Removes a cost together with its paired entry in the vendor display; returns the changed tags by tag hash. */
     public IReadOnlyDictionary<uint, byte[]> RemoveCostPair(uint tag, ReadOnlyMemory<byte> current,
         uint displayTag, ReadOnlyMemory<byte> display, InvestmentSale sale, InvestmentCost cost) =>
         ChangeCostPair(tag, current, displayTag, display, sale, cost, true);

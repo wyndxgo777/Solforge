@@ -2,8 +2,10 @@ using System.Buffers.Binary;
 using SunriseStudio.Formats;
 using SunriseStudio.Packages;
 
+/** Checks vendor authoring edits: derived vendors, text, interaction retargeting and cost duplication affect only their own fields. */
 internal static class VendorAuthoringChecks
 {
+    /** Builds a vendor interaction record for the tag and hash. */
     internal static byte[] Interaction(uint tag, uint hash)
     {
         byte[] bytes = new byte[1024];

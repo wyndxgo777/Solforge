@@ -3,20 +3,35 @@ using System.Numerics;
 
 namespace SunriseStudio.Scene;
 
+/**
+ * Bounds-checked little-endian reader over a tag's bytes. Offsets are byte offsets from the start of
+ * the tag.
+ */
 internal sealed class TagData(byte[] bytes)
 {
     public byte[] Bytes { get; } = bytes;
     public int Length => Bytes.Length;
+    /** Reads a byte. */
     public byte U8(int offset) => Bytes[offset];
+    /** Reads a uint16. */
     public ushort U16(int offset) => BinaryPrimitives.ReadUInt16LittleEndian(Bytes.AsSpan(offset, 2));
+    /** Reads an int16. */
     public short I16(int offset) => BinaryPrimitives.ReadInt16LittleEndian(Bytes.AsSpan(offset, 2));
+    /** Reads a uint32. */
     public uint U32(int offset) => BinaryPrimitives.ReadUInt32LittleEndian(Bytes.AsSpan(offset, 4));
+    /** Reads an int32. */
     public int I32(int offset) => BinaryPrimitives.ReadInt32LittleEndian(Bytes.AsSpan(offset, 4));
+    /** Reads a uint64. */
     public ulong U64(int offset) => BinaryPrimitives.ReadUInt64LittleEndian(Bytes.AsSpan(offset, 8));
+    /** Reads an int64. */
     public long I64(int offset) => BinaryPrimitives.ReadInt64LittleEndian(Bytes.AsSpan(offset, 8));
+    /** Reads a float. */
     public float F32(int offset) => BitConverter.UInt32BitsToSingle(U32(offset));
+    /** Reads three floats. */
     public Vector3 V3(int offset) => new(F32(offset), F32(offset + 4), F32(offset + 8));
+    /** Reads four floats as a quaternion. */
     public Quaternion Q4(int offset) => new(F32(offset), F32(offset + 4), F32(offset + 8), F32(offset + 12));
+    /** Follows the relative pointer stored at the offset (offset plus the int64 there). */
     public int Relative(int offset) => checked((int)(offset + I64(offset)));
 
     /** Tiger array links point to the repeated count, sixteen bytes before the rows. */
@@ -43,5 +58,6 @@ internal sealed class TagData(byte[] bytes)
         return Enumerable.Range(0, (int)count).Select(i => header + 16 + i * stride).ToArray();
     }
 
+    /** True when count bytes starting at offset lie inside the tag. */
     public bool Has(int offset, int count) => offset >= 0 && count >= 0 && offset <= Length - count;
 }

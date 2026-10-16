@@ -51,6 +51,7 @@ public sealed class StaticCollisionSet
     public int DecodedCustomPrimitives { get; internal set; }
     internal HashSet<(uint Tag, int Offset)> Counted { get; } = [];
 
+    /** Adds to the count of undecoded items of the kind. */
     internal void Count(string kind, int amount = 1)
     {
         if (amount > 0) Undecoded[kind] = Undecoded.GetValueOrDefault(kind) + amount;
@@ -85,6 +86,7 @@ public sealed class StaticCollisionReader(PackageCatalog catalog)
     /** Every collision entity in the object lists under the map's bubbles and containers. */
     public StaticCollisionSet ReadMap(uint mapTag) => ReadObjectLists(MapObjectLists(mapTag));
 
+    /** Reads every collision entity in the given object lists. */
     public StaticCollisionSet ReadObjectLists(IEnumerable<uint> objectLists, CancellationToken token = default)
     {
         var set = new StaticCollisionSet();
@@ -118,6 +120,7 @@ public sealed class StaticCollisionReader(PackageCatalog catalog)
         }
     }
 
+    /** Reads an owner tag's imports from its array at +0x48/+0x50. */
     public static StaticCollisionOwner ReadOwner(uint tag, byte[] owner)
     {
         var data = new TagData(owner);

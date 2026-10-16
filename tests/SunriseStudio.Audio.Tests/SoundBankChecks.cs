@@ -9,6 +9,7 @@ internal static class SoundBankChecks
     private const uint PlayLoop = 60, StopLoop = 61, PlayTail = 62, Start = 70, Stop = 71;
     private const uint RateOfFire = 0x6379397C, Pcm = 0x00010001;
 
+    /** Runs the checks that use generated fixtures instead of installed game content. */
     public static void Synthetic()
     {
         var template = AudioCatalog.ReadBank(1, Template());

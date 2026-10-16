@@ -5,6 +5,7 @@ using SunriseStudio.Projects;
 /** Publication succeeds independently of obsolete-file cleanup and preserves dependent edits. */
 internal static class PublicationAuditChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(string parent, PackageCatalog catalog, uint tag)
     {
         var failures = new List<string>();
@@ -119,6 +120,7 @@ internal static class PublicationAuditChecks
 
     private sealed class DependencyCompiler : IObjectEditCompiler
     {
+        /** Copies each edit source bytes after requiring the saved raw dependency. */
         public ObjectEditCompilation Compile(IReadOnlyList<ObjectEdit> edits, Func<uint, byte[]> readRaw, PackageCatalog catalog)
         {
             var result = new Dictionary<uint, byte[]>();
@@ -130,6 +132,7 @@ internal static class PublicationAuditChecks
             }
             return new(result, edits.Select(edit => new CompiledObjectEdit(edit, [edit.Target.SourceTag])).ToArray());
         }
+        /** Keeps every edit unchanged. */
         public ObjectEdit? Normalize(ObjectEdit edit, Func<uint, byte[]> readRaw, PackageCatalog catalog) => edit;
     }
 

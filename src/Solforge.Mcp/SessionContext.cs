@@ -16,6 +16,7 @@ public static class SessionContext
     public const string Begin = "<!-- solforge:begin (managed by Solforge; edits here are replaced) -->";
     public const string End = "<!-- solforge:end -->";
 
+    /** Markdown session file describing the editor state for the AI. */
     public static string Markdown(SessionFacts facts)
     {
         var text = new StringBuilder();

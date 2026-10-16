@@ -5,8 +5,10 @@ using SunriseStudio.Formats;
 using SunriseStudio.Packages;
 using SunriseStudio.Rendering;
 
+/** GPU check of wrapped CUI text: narrow widths wrap and grow automatic height, blank lines advance the baseline, lines stay within width. */
 internal static class CuiWrappedChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(PackageCatalog catalog, string output)
     {
         var strings = LocalizedStrings.LoadBanks(catalog, catalog.Entries.Where(entry => entry.Reference == 0x80809A88

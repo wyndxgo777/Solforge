@@ -2,6 +2,7 @@ using System.Numerics;
 
 namespace SunriseStudio.Rendering;
 
+/** Depth-coefficient maths shared by TFX extern 3 and the frame scope constants. */
 public static class NativeDepthReconstruction
 {
     /** Extern 3 vector 0 and frame row 12 share this native depth-coefficient calculation. */
@@ -15,6 +16,7 @@ public static class NativeDepthReconstruction
         return new(1 / first, (first - second) / (first * second), 0, 0);
     }
 
+    /** Stores the coefficients in extern 3 vector 0. */
     public static void Apply(TfxInputs inputs, NativeFrameDepthInputs source) =>
         inputs.Vectors[new(3, 0)] = Create(source);
 }

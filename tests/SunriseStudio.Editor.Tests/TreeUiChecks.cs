@@ -4,6 +4,7 @@ using SunriseStudio.Editor;
 using SunriseStudio.Projects;
 using SunriseStudio.Scene;
 
+/** Checks the object tree UI: publication of the tree, search, and scene selection tracking its node. */
 internal static class TreeUiChecks
 {
     /** Both tree panels must follow selection without consuming each other's scroll request. */

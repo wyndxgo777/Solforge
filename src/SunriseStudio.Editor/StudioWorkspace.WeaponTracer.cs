@@ -8,6 +8,7 @@ namespace SunriseStudio.Editor;
 /** Refusal is null only when the weapon's base projectile is Tommy's layout; Overlay is the revision it was read at. */
 public sealed record WeaponTracerState(uint Weapon, long Overlay, string? Refusal, Vector4 Start, Vector4 End, bool Custom);
 
+/** StudioWorkspace part: reads and edits a weapon's tracer colour. */
 public sealed partial class StudioWorkspace
 {
     /** The WIP tracer colour last read; reload when its weapon or overlay revision is stale. */

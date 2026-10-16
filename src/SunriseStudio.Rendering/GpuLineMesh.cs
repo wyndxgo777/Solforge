@@ -17,6 +17,7 @@ public sealed class GpuLineMesh : IDisposable
     public int Uploads { get; internal set; }
     internal GpuLineMesh(Dx11Renderer owner) => Owner = owner;
 
+    /** Releases the line vertex buffer. */
     public void Dispose()
     {
         if (Disposed) return;
@@ -26,8 +27,10 @@ public sealed class GpuLineMesh : IDisposable
     }
 }
 
+/** Line-mesh part of Dx11Renderer. */
 public sealed unsafe partial class Dx11Renderer
 {
+    /** Creates an empty line mesh owned by this renderer. */
     public GpuLineMesh CreateLineMesh() => new(this);
 
     /** Reuse requires equal vertex bytes and order; depth and camera state are bound on every draw. */

@@ -1,6 +1,8 @@
 namespace SunriseStudio.Scene;
 
+/** Materials chosen for an entity, or why they could not be resolved. This file also selects them. */
 public sealed record EntityMaterialSelection(uint[] Materials, string? Unresolved);
+/** A warning raised while selecting an entity's materials, with its source tag and offset. */
 public sealed record EntityMaterialWarning(uint EntityTag, uint ConfigTag, string Message,
     uint SourceTag = 0, int SourceOffset = -1);
 

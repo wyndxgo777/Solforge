@@ -2,8 +2,10 @@ using System.Text;
 using SunriseStudio.Packages;
 using SunriseStudio.Projects;
 
+/** Checks project mod source files: SDK modules are installed at their require path and source files never enter package deltas. */
 internal static class ModSourceChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string parent, PackageCatalog catalog)
     {
         var project = StudioProject.Create(Path.Combine(parent, "module-project"), "Module sources");

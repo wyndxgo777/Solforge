@@ -1,8 +1,10 @@
+/** File: Reads clip timing and payload-section metadata from an animation clip tag. */
 using System.Buffers.Binary;
 using SunriseStudio.Packages;
 
 namespace SunriseStudio.Animation;
 
+/** One payload section of a clip: its pointer field, data offset and class hash. */
 public sealed record AnimationPayloadSection(int PointerField, int DataOffset, uint ClassHash);
 
 /** Timing is decoded; payload classes do not imply supported pose decompression. */

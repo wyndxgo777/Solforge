@@ -152,5 +152,6 @@ internal sealed class LiveCuiConnection : IDisposable
         return id != 0 ? id : ++nextRequest;
     }
 
+    /** Zeroes the heartbeat and releases the mapping. */
     public void Dispose() { view.Write(LiveCuiProtocol.HeartbeatOffset, 0L); view.Dispose(); mapping.Dispose(); }
 }

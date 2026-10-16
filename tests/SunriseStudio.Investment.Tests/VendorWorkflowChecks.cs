@@ -7,6 +7,7 @@ using SunriseStudio.Formats;
 using SunriseStudio.Packages;
 using SunriseStudio.Projects;
 
+/** Checks the vendor workflow: unsupported edits are reported, and failed or changed saves publish no manifest, history frame or lost draft. */
 internal static class VendorWorkflowChecks
 {
     /** The actual workspace transaction creates, retries, reopens, edits and reverses a derived vendor. */

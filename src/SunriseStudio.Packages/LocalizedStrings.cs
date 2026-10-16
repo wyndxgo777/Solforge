@@ -42,6 +42,7 @@ public sealed partial class LocalizedStrings
     public IReadOnlyList<string> Candidates(uint hash) =>
         unique.TryGetValue(hash, out var one) ? [one] : ambiguous.GetValueOrDefault(hash) ?? [];
 
+    /** True when the tag is a localized string container. */
     public bool IsContainer(uint tag) => byContainer.ContainsKey(tag);
 
     /**

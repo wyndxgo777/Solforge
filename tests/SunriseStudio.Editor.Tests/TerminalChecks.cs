@@ -1,5 +1,6 @@
 using SunriseStudio.Editor.Ai;
 
+/** Checks the embedded terminal character width table against conhost behavior (wide CJK/emoji, combining marks, symbol glyphs). */
 internal static class TerminalChecks
 {
     /** Phase 47B: wide, emoji and combining characters keep the AI terminal's columns where ConPTY puts them. */

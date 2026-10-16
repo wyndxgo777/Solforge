@@ -9,6 +9,7 @@ using StudioIcon = SunriseStudio.Viewport.StudioIcon;
 
 namespace SunriseStudio.Editor;
 
+/** StudioForm part: the asset browser (categories, type filter, search and row list). */
 public sealed partial class StudioForm
 {
     private bool browserDirty = true;

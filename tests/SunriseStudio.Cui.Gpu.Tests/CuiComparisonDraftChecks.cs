@@ -5,6 +5,7 @@ using SunriseStudio.Editor;
 using SunriseStudio.Formats;
 using SunriseStudio.Packages;
 
+/** Checks the CUI comparison draft editor: a failed save must report failure and keep the edited operand and comparison. */
 internal static class CuiComparisonDraftChecks
 {
     private const BindingFlags Access = BindingFlags.Instance | BindingFlags.NonPublic;

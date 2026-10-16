@@ -6,6 +6,7 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Authoring;
 
+/** Compiled weapon art entity and its config. */
 public sealed record PreparedWeaponArtEntity(uint EntityTag, uint ConfigTag,
     IReadOnlyList<ProjectAssetAddition> Assets);
 
@@ -29,6 +30,7 @@ public static class WeaponAssetEntityCompiler
             "D16F832B7DE58082B4423259A74DBDE1A4E100C5ED5CA59464281EEFA22B90EB")
     };
 
+    /** True only for the four art selectors and entities the compiler is built for. */
     public static bool Supports(IReadOnlyList<WeaponArtVariant> variants)
     {
         var expected = new Dictionary<int, uint>

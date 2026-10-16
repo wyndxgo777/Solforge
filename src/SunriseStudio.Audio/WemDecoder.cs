@@ -63,6 +63,7 @@ public static class WemDecoder
         return result;
     }
 
+    /** Picks the codec for a WEM: PCM for raw data, Wwise Vorbis otherwise. */
     internal static IWemCodec Open(ReadOnlySpan<byte> wem)
     {
         var header = WemHeader.Parse(wem);
@@ -74,6 +75,7 @@ public static class WemDecoder
         return codec!;
     }
 
+    /** Allocates a 16-bit output buffer, rejecting sizes above the preview limit. */
     internal static byte[] AllocateOutput(long frames, int channels)
     {
         long bytes = frames * channels * 2;
@@ -150,6 +152,7 @@ internal sealed class PcmWemCodec : IWemCodec
         Info = new(sampleRate, channels, data.Length / (channels * 2), "PCM 16-bit");
     }
 
+    /** Decodes to 16-bit PCM, mixing down to maxChannels. */
     public PcmWave Decode(int maxChannels, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
@@ -177,6 +180,7 @@ internal sealed class PcmWemCodec : IWemCodec
         return new(sampleRate, (ushort)downmix.OutputChannels, 16, output);
     }
 
+    /** Decodes to float samples, mixing down to maxChannels. */
     public AudioSamples DecodeSamples(int maxChannels, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();

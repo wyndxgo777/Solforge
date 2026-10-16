@@ -4,6 +4,7 @@ using SunriseStudio.Editor;
 using SunriseStudio.Rendering;
 using SunriseStudio.Scene;
 
+/** Checks the weapon page UI: the created weapon reads, its model sits beside the tabs, and the scene starts in bind pose with native clips. */
 internal static class WeaponSceneUiChecks
 {
     /** The model pane must keep the item and visible geometry beside the Weapon tab during playback. */

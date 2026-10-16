@@ -95,6 +95,7 @@ public sealed class NativeOutputDisplay : IDisposable
         return Texture;
     }
 
+    /** Releases the GPU resources this pass owns. */
     public void Dispose()
     {
         if (disposed) return;

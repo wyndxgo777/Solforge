@@ -5,6 +5,7 @@ using SunriseStudio.Packages;
 /** Engine rules that the reference tools render differently. */
 internal static class ParityChecks
 {
+    /** Runs the checks that use generated fixtures instead of installed game content. */
     public static void Synthetic(string directory)
     {
         // A stereo ramp: source frame i holds 100 * i on both channels.

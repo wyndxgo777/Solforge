@@ -53,8 +53,10 @@ public static class WeaponTranslationEdits
     private static readonly byte?[] KeyStats =
         [14, 24, null, 32, 17, 22, 20, 16, 21, 27, 18, 15, null, 25, 26, 26, 26, 30, 31, null];
 
+    /** Stat for a key index, or null when the key has none. */
     public static byte? StatOf(int key) => key >= 0 && key < KeyStats.Length ? KeyStats[key] : null;
 
+    /** Number of groups in the weapon config. */
     public static int GroupCount(ReadOnlyMemory<byte> config) =>
         new TagReader(config).Array(GroupsField, GroupClass, GroupStride).Count;
 

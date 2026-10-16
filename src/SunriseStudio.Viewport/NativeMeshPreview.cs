@@ -9,6 +9,7 @@ using Vortice.DXGI;
 
 namespace SunriseStudio.Viewport;
 
+/** Everything the preview needs to draw one native mesh: material, mesh, instance, textures and render state. */
 public sealed record NativePreviewSource(GameMaterialReader Reader, MaterialExecutionData Execution,
     NativeMeshData Mesh, NativeStaticBinding Instance, IReadOnlyDictionary<uint, TextureData> Textures,
     GameScopeExecution ViewScope, NativeRenderStateDescriptions States, TfxParameterLookup Parameters)
@@ -151,9 +152,11 @@ public sealed class NativeMeshPreview : IDisposable
         finally { renderer.RestoreMainTarget(); }
     }
 
+    /** Renders one output channel to a displayable texture. */
     public GpuTexture Display(int output, int channel, bool srgb, float exposure) =>
         display.Render(Targets.Textures[output], channel, srgb, exposure);
 
+    /** Disposes owned GPU resources in reverse creation order. */
     public void Dispose()
     {
         for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();

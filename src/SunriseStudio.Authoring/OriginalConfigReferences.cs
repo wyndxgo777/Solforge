@@ -11,6 +11,7 @@ internal static partial class OriginalConfigReferences
     private const uint Magic = 0x33524353;
     private const int MaximumLinks = 2_000_000;
     internal static string Schema => $"static-isolation-references-v3/{typeof(OriginalConfigReferences).Module.ModuleVersionId}";
+    /** Original-install reference candidates, table bounds, nodes, failed tags and source count. */
     internal sealed record Snapshot(IReadOnlyDictionary<uint, uint[]> Candidates,
         IReadOnlyDictionary<uint, uint> TableBounds, IReadOnlyDictionary<uint, IsolationNode> Nodes,
         IReadOnlySet<uint> Failed, int SourceCount);
@@ -43,6 +44,7 @@ internal static partial class OriginalConfigReferences
         return snapshot is not null;
     }
 
+    /** Original isolation nodes for the catalog; false when no snapshot exists. */
     internal static bool TryNodes(PackageCatalog catalog, IReadOnlySet<uint> rawChanged,
         out IReadOnlyDictionary<uint, IsolationNode> nodes)
     {
@@ -51,6 +53,7 @@ internal static partial class OriginalConfigReferences
         return snapshot is not null;
     }
 
+    /** Original reference snapshot for the catalog, or null when it cannot be built. */
     internal static Snapshot? Open(PackageCatalog catalog, IReadOnlySet<uint> rawChanged) => Load(catalog, rawChanged);
 
     /** Complete snapshots survive raw-layer changes; failed originals retry after invalidation. */

@@ -241,22 +241,30 @@ internal static class AuthoringAuditChecks
     private sealed class Bytes(int initial)
     {
         private readonly List<byte> bytes = new(new byte[initial]);
+        /** Returns the finished bytes. */
         internal byte[] ToArray() { I64(0, bytes.Count); return bytes.ToArray(); }
+        /** Appends a zeroed block aligned to 16 bytes and returns its offset. */
         internal int Allocate(int count)
         {
             while (bytes.Count % 16 != 0) bytes.Add(0);
             int at = bytes.Count; bytes.AddRange(new byte[count]); return at;
         }
+        /** Writes an array header (count, relative offset, marker, type) at the field and returns the offset of its data. */
         internal int Array(int field, uint type, int stride, int count)
         {
             int header = Allocate(32 + stride * count);
             U32(header + 12, 0x80809FBD); I64(header + 16, count); U32(header + 24, type);
             I64(field, count); I64(field + 8, header + 16 - field - 8); return header + 32;
         }
+        /** Writes a unit-rotation position and scale record at the offset. */
         internal void Qts(int at) { F32(at + 12, 1); F32(at + 28, 1); }
+        /** Writes three floats at the offset. */
         internal void V3(int at, Vector3 value) { F32(at, value.X); F32(at + 4, value.Y); F32(at + 8, value.Z); }
+        /** Writes a little-endian float at the offset. */
         internal void F32(int at, float value) => Put(at, BitConverter.GetBytes(value));
+        /** Writes a little-endian 32-bit value at the offset. */
         internal void U32(int at, uint value) => Put(at, BitConverter.GetBytes(value));
+        /** Writes a little-endian signed 64-bit value at the offset. */
         internal void I64(int at, long value) => Put(at, BitConverter.GetBytes(value));
         private void Put(int at, byte[] data) { for (int i = 0; i < data.Length; i++) bytes[at + i] = data[i]; }
     }

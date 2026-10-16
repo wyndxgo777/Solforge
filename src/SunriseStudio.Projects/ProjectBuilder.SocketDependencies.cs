@@ -1,8 +1,10 @@
+/** File: Partial ProjectBuilder: plans the socket (plug) dependencies the Collections constructor reads. */
 using System.Buffers.Binary;
 using SunriseStudio.Packages;
 
 namespace SunriseStudio.Projects;
 
+/** Partial: socket dependency planning. */
 public static partial class ProjectBuilder
 {
     private const uint SocketDependencyManifest = 0x81A2926F;

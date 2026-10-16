@@ -6,11 +6,13 @@ public enum MissionReferenceKind
     Directive, Navpoint, Volume, Trigger, Monitor, GhostLink, Object, Scene, State, Dialogue, DirectiveSensor, DialogueSensor,
     AuthoredScene, SceneInput, SceneOutput
 }
+/** Node recipes that visual authoring can add to a graph. */
 public enum MissionNodeTemplate
 {
     ActionStep, ReachTrigger, GhostScan, Interact, FlowObjective, FlowDialogue, FlowState, FlowArmTrigger, FlowCompleteMission, TriggerFact,
     FlowStartScene, FlowSceneInput, SceneOutputFact
 }
+/** One dialogue line of a node with its cue and filter. */
 public sealed record MissionDialogueLine(LuaField Entry, MissionSdkReference? Cue, MissionSdkReference? Filter, bool Editable);
 
 /** Typed operations emit installed helper contracts and preserve unrelated Lua source spans. */
@@ -20,11 +22,13 @@ public sealed partial class MissionVisualAuthoring(MissionGraphDocument graph, I
     private enum SlotKind { Object = 4, Monitor = 30, Trigger = 31, Scene = 43, Navpoint = 47, Dialogue = 53, Volume = 60, GhostLink = 65, Directive = 68 }
     private readonly Dictionary<MissionReferenceKind, IReadOnlyList<MissionSdkReference>> choices = [];
     public MissionScriptBindings Bindings { get; } = new(graph.Script);
+    /** SDK references the user can pick for a kind of field. */
     public IReadOnlyList<MissionSdkReference> Choices(MissionReferenceKind kind)
     {
         if (!choices.TryGetValue(kind, out var result)) choices.Add(kind, result = references.Where(value => Accepts(value, kind)).ToArray());
         return result;
     }
+    /** Resolves an expression to its SDK reference, expanding local bindings. */
     public MissionSdkReference? Resolve(string expression) => Index.Resolve(Bindings.Expand(expression), LuaScript.DecodeString(expression));
     private MissionSdkIndex Index => MissionSdkIndex.For(references);
 
@@ -64,6 +68,7 @@ public sealed partial class MissionVisualAuthoring(MissionGraphDocument graph, I
         Require(value, kind); return graph.SetField(node, path, Bindings.Reference(value));
     }
 
+    /** Adds a dialogue line to a node. */
     public MissionGraphDocument AddDialogue(string node, MissionSdkReference cue, MissionSdkReference? filter = null)
     {
         Require(cue, MissionReferenceKind.Dialogue);
@@ -85,6 +90,7 @@ public sealed partial class MissionVisualAuthoring(MissionGraphDocument graph, I
         return armed ? next : next.AppendValue(leg.Key, "arm", Bindings.Reference(trigger));
     }
 
+    /** Replaces one dialogue line of a node. */
     public MissionGraphDocument SetDialogue(string node, int index, MissionSdkReference cue, MissionSdkReference? filter)
     {
         Require(cue, MissionReferenceKind.Dialogue); if (filter is not null) Require(filter, MissionReferenceKind.Volume);
@@ -163,6 +169,7 @@ public sealed partial class MissionVisualAuthoring(MissionGraphDocument graph, I
         next.RequireValid(); return next;
     }
 
+    /** Sets or clears the fact condition in a node field. */
     public MissionGraphDocument SetFactCondition(string node, string field, string? fact)
         => SetCondition(node, field, fact is null ? null : new MissionFactCondition(fact));
 

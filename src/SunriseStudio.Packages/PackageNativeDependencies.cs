@@ -16,6 +16,7 @@ public sealed record NativeDependencyFailure(uint Tag, uint Target, string Role,
         return error;
     }
 
+    /** The failure carried by an exception from ToException, or null for any other exception. */
     public static NativeDependencyFailure? From(Exception error) => error.Data[Key] as NativeDependencyFailure;
 }
 

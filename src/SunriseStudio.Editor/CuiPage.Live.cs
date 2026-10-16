@@ -7,6 +7,7 @@ using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
+/** CuiPage part: overlays the running game's widget tree on the canvas and inspects a live widget. */
 public sealed partial class CuiPage
 {
     private static readonly Vector4 LiveWarning = new(1, .6f, .35f, 1), LiveGood = new(.45f, .85f, .5f, 1);

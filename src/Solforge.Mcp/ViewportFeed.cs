@@ -5,6 +5,7 @@ namespace Solforge.Mcp;
 /** One captured viewport frame: a JPEG plus what changed since the frame before it. */
 public sealed record ViewportFrame(long Id, DateTimeOffset Time, int Width, int Height, byte[] Jpeg, long RenderFrame, string Change)
 {
+    /** JSON metadata for the frame, including its age. */
     public JsonObject Describe(DateTimeOffset now) => new()
     {
         ["frame"] = Id, ["time"] = Time.ToString("O"), ["ageMs"] = Math.Max(0, (long)(now - Time).TotalMilliseconds),
@@ -52,7 +53,9 @@ public sealed class ViewportFeed(int capacity = 32)
     public bool Wanted => Volatile.Read(ref streams) > 0 || Relay is { Running: true }
         || Environment.TickCount64 - Interlocked.Read(ref lastWant) < (long)IdleTimeout.TotalMilliseconds;
 
+    /** Registers a streaming consumer and wakes the capture. */
     public void BeginStream() { Interlocked.Increment(ref streams); Want(); }
+    /** Unregisters a streaming consumer. */
     public void EndStream() => Interlocked.Decrement(ref streams);
 
     public ViewportFrame? Latest { get { lock (gate) return frames.Last?.Value; } }
@@ -110,6 +113,7 @@ public sealed class ViewportFeed(int capacity = 32)
         }
     }
 
+    /** Drops all stored frames. */
     public void Clear()
     {
         lock (gate) { frames.Clear(); lastGrid = null; }

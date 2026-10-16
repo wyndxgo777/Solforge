@@ -13,6 +13,7 @@ public sealed record DecoratorQuantization(Vector4 Half, Vector4 Middle,
 {
     public const int Size = 0x60;
 
+    /** Reads a quantization record; throws if it is shorter than Size. */
     public static DecoratorQuantization Read(ReadOnlySpan<byte> record)
     {
         if (record.Length < Size) throw new InvalidDataException("Decorator quantization record is truncated.");
@@ -73,6 +74,7 @@ public readonly record struct DecoratorInstance(Vector3 Position, float Scale, V
         }
     }
 
+    /** Builds an instance from a pose; its axes come from the rotation. */
     public static DecoratorInstance Create(Vector3 position, Quaternion rotation, float scale) =>
         new(position, scale, Vector3.Transform(Vector3.UnitX, rotation), Vector3.Transform(Vector3.UnitZ, rotation));
 }
@@ -122,6 +124,7 @@ public static class DecoratorRecords
             quant.XOffset + Unorm(record, 8) * quant.XScale, quant.ZOffset + Unorm(record, 12) * quant.ZScale);
     }
 
+    /** Signed-normalised 16-bit value at the offset, clamped to -1..1. */
     internal static float Snorm(ReadOnlySpan<byte> record, int offset) =>
         Math.Max(BinaryPrimitives.ReadInt16LittleEndian(record[offset..]) / 32767f, -1f);
 

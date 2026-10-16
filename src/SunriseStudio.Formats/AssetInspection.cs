@@ -5,34 +5,45 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Formats;
 
+/** Binary encoding of an editable scalar field. */
 public enum ScalarEncoding { None, UInt8, Int16, UInt16, Int32, UInt32, Int64, UInt64, Float32 }
 
+/** One displayed field of an inspected asset; Offset and Encoding locate it in the tag bytes when it is editable. */
 public sealed record AssetProperty(string Name, string Value, int Offset = -1,
     ScalarEncoding Encoding = ScalarEncoding.None, bool Editable = false, string Evidence = "")
 {
     public CuiPropertyOwner? CuiOwner { get; init; }
 }
 
+/** Locates a CUI property by object, component and byte offset so edits can find it again. */
 public sealed record CuiPropertyOwner(int ObjectIndex, int ComponentIndex, int PropertyOffset);
 
+/** A named group of properties with optional child groups, shown as one tree node. */
 public sealed record AssetNode(string Name, IReadOnlyList<AssetProperty> Properties,
     IReadOnlyList<AssetNode>? Children = null);
 
+/** A tag hash found at Offset in an asset; IsCandidate means it is only an aligned value that happens to match a tag. */
 public sealed record AssetReference(int Offset, uint TagHash, string Name, bool IsCandidate = false);
+/** A node of the asset relationship graph, tied to a byte offset. */
 public sealed record AssetGraphNode(string Id, string Label, int Offset);
+/** A labelled edge between two graph nodes, by ID. */
 public sealed record AssetGraphEdge(string SourceId, string TargetId, string Label);
+/** Node and edge lists of an asset's internal graph (for example behavior nodes). */
 public sealed record AssetGraph(IReadOnlyList<AssetGraphNode> Nodes, IReadOnlyList<AssetGraphEdge> Edges);
 
+/** Result of inspecting one asset: sections, references, diagnostics and an optional graph. */
 public sealed record AssetInspection(string Kind, string Title, IReadOnlyList<AssetNode> Sections,
     IReadOnlyList<AssetReference> References, IReadOnlyList<string> Diagnostics)
 {
     public AssetGraph? Graph { get; init; }
 }
 
+/** Everything an inspector gets: the tag's hash, class and bytes plus optional name, existence and read callbacks. */
 public sealed record AssetInspectionContext(uint TagHash, uint ClassHash, ReadOnlyMemory<byte> Data,
     string Name = "", Func<uint, string?>? ResolveName = null,
     Func<uint, bool>? ContainsTag = null, Func<uint, byte[]>? ReadTag = null);
 
+/** A format-specific reader that turns tag bytes of the classes it accepts into an AssetInspection. */
 public interface IAssetInspector
 {
     string Id { get; }
@@ -47,6 +58,7 @@ public sealed class AssetInspectionService
     private readonly List<IAssetInspector> inspectors = [];
     public IReadOnlyList<IAssetInspector> Inspectors => inspectors.AsReadOnly();
 
+    /** Names the broad asset kind of a package entry from its type and class reference hash. */
     public static string Classify(PackageEntry entry) => entry.Type is 8 or 16
         ? entry.Reference switch
         {
@@ -67,6 +79,7 @@ public sealed class AssetInspectionService
         Register(new MaterialInspector());
     }
 
+    /** Adds an inspector; throws if its ID is already registered. */
     public void Register(IAssetInspector inspector)
     {
         ArgumentNullException.ThrowIfNull(inspector);
@@ -102,6 +115,7 @@ public sealed class AssetInspectionService
 /** Scalar edits preserve every byte outside the selected field. */
 public static class AssetEdit
 {
+    /** Byte width of a scalar encoding. */
     public static int SizeOf(ScalarEncoding encoding) => encoding switch
     {
         ScalarEncoding.UInt8 => 1,
@@ -159,6 +173,7 @@ public static class AssetEdit
     }
 }
 
+/** Fallback inspector used when no format-specific one accepts the tag. */
 internal static class BinaryInspector
 {
     /** Aligned tag matches are candidates, because scalar values can equal valid tag hashes. */

@@ -4,9 +4,12 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Authoring;
 
+/** Requested clip: source action and the weapon event it drives. */
 public sealed record WeaponSourceClip(string Action, string Event);
+/** Compiled clip: name, tag, frame count and source duration. */
 public sealed record WeaponCompiledClip(string Name, uint Tag, int Frames, float SourceDuration,
     float NativeDuration, bool ReplacesEvent);
+/** Compiled weapon clips and their assets. */
 public sealed record PreparedWeaponClips(IReadOnlyList<ProjectAssetAddition> Assets,
     IReadOnlyList<WeaponCompiledClip> Clips, IReadOnlyList<WeaponPresentationClip> AdditionalClips);
 
@@ -16,6 +19,7 @@ public static class WeaponAssetClipCompiler
     private const uint FireTemplate = 0x81A6B4F1, ReloadTemplate = 0x81A6B4F0, EmptyTemplate = 0x80B3030C;
     private const int WeaponControlOffset = 70, WeaponBoneOffset = 72, WeaponBones = 5;
 
+    /** Compiles the requested glTF actions into new clip assets in a new package. */
     public static PreparedWeaponClips Prepare(PackageCatalog catalog, string path,
         IReadOnlyDictionary<string, int> sourceControls, IReadOnlyList<WeaponSourceClip> sourceClips,
         float metresPerUnit, ushort packageId, int firstEntry, string name, WeaponArmsSource? arms = null)

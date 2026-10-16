@@ -2,6 +2,7 @@ using System.Numerics;
 
 namespace SunriseStudio.Formats;
 
+/** Configured-layout half of the preview data: rectangles supplied by configuration tags instead of the stored layout. */
 public sealed partial class CuiPreviewData
 {
     public IReadOnlyDictionary<CuiComponent, Vector4> ConfiguredRectangles { get; private init; } = new Dictionary<CuiComponent, Vector4>();

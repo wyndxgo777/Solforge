@@ -8,9 +8,12 @@ public readonly record struct CompoundBox(double MinX, double MinY, double MinZ,
 {
     public Vector3 Min => new((float)MinX, (float)MinY, (float)MinZ);
     public Vector3 Max => new((float)MaxX, (float)MaxY, (float)MaxZ);
+    /** Box with the given corners. */
     public static CompoundBox From(Vector3 min, Vector3 max) => new(min.X, min.Y, min.Z, max.X, max.Y, max.Z);
+    /** Smallest box containing both boxes. */
     public CompoundBox Union(CompoundBox other) => new(Math.Min(MinX, other.MinX), Math.Min(MinY, other.MinY),
         Math.Min(MinZ, other.MinZ), Math.Max(MaxX, other.MaxX), Math.Max(MaxY, other.MaxY), Math.Max(MaxZ, other.MaxZ));
+    /** True when inner lies inside this box, within tolerance. */
     public bool Contains(CompoundBox inner, double tolerance = 0) => inner.MinX >= MinX - tolerance
         && inner.MinY >= MinY - tolerance && inner.MinZ >= MinZ - tolerance && inner.MaxX <= MaxX + tolerance
         && inner.MaxY <= MaxY + tolerance && inner.MaxZ <= MaxZ + tolerance;

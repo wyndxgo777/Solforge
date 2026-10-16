@@ -3,6 +3,7 @@ using System.Text.Json;
 
 namespace SunriseStudio.Formats;
 
+/** Accessor-reading part of the glTF reader. */
 public static partial class GltfInterchange
 {
     /** Geometry and skin readers share bounded accessor decoding. */
@@ -34,6 +35,7 @@ public static partial class GltfInterchange
                 throw new InvalidDataException("glTF accessor leaves its buffer view.");
             return (bytes, start, stride, count, type, normalized);
         }
+        /** Reads an accessor as floats, expecting the type that matches width (16 MAT4, 4 VEC4, 3 VEC3, 2 VEC2, else SCALAR). */
         public float[] Floats(int index, int width)
         {
             var a = Accessor(index, width switch { 16 => "MAT4", 4 => "VEC4", 3 => "VEC3", 2 => "VEC2", _ => "SCALAR" });
@@ -57,6 +59,7 @@ public static partial class GltfInterchange
                 }
             return values;
         }
+        /** Reads an unsigned-integer accessor (byte, short or int; not normalized) as VEC4 when width is 4, else SCALAR; throws on other component types. */
         public uint[] Indices(int index, int width = 1)
         {
             var a = Accessor(index, width == 4 ? "VEC4" : "SCALAR");

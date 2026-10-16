@@ -1,7 +1,12 @@
+/**
+ * File: Partial ProjectBuilder: extends authored graphs with the installed dependencies that native fields
+ * reference.
+ */
 using SunriseStudio.Packages;
 
 namespace SunriseStudio.Projects;
 
+/** Partial: native dependency planning. */
 public static partial class ProjectBuilder
 {
     /**

@@ -5,14 +5,18 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Formats;
 
+/** Exports package skeleton animation to glTF; sampled joint poses are written as a skinned-rig animation. One joint of the sampled rig: name, parent index and bind-pose local transform. */
 public sealed record AnimationJoint(string Name, int ParentIndex, BoneTransform BindLocal);
+/** One sampled time step: local transforms for every joint, in joint order. */
 public sealed record AnimationFrame(float Time, IReadOnlyList<BoneTransform> LocalTransforms);
+/** A clip resampled at a fixed frame rate over a joint hierarchy, ready for a writer. */
 public sealed record SampledAnimation(string Name, IReadOnlyList<AnimationJoint> Joints,
     IReadOnlyList<AnimationFrame> Frames);
 
 /** Exported joint poses retain their native control graph's evaluation. */
 public static class AnimationInterchange
 {
+    /** Reads the entity's rig and the clip from the packages, samples it and writes a glTF file. */
     public static void ExportNativeAnimation(PackageCatalog catalog, uint entityTag, uint clipTag,
         string path, int framesPerSecond = 30)
     {
@@ -42,6 +46,7 @@ public static class AnimationInterchange
             new AnimationJoint(x.Name, x.ParentIndex, x.BindLocal)).ToArray(), frames);
     }
 
+    /** Samples an already-read rig, binding and clip, then writes the result as glTF. */
     public static void WriteGltf(string path, SkeletonRig rig, AnimationRigBinding binding,
         AnimationControlClip clip, int framesPerSecond = 30) =>
         WriteGltf(path, Sample(rig, binding, clip, framesPerSecond));

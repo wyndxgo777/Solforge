@@ -11,6 +11,7 @@ internal static class ImportChecks
 {
     private const uint LeviathanMap = 0x80EDC19B, LeviathanCompound = 0x80EDC2D0;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(PackageCatalog catalog)
     {
         var baseline = new CollisionSceneLoader(catalog).Load(new SceneDocument { TagHash = LeviathanCompound });

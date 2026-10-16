@@ -5,6 +5,7 @@ using SunriseStudio.Editor;
 using SunriseStudio.Packages;
 using SunriseStudio.Viewport;
 
+/** Checks the live pose source: prepared weights and refusals follow the overlay generation and stale worker results are dropped. */
 internal static class LivePoseSourceChecks
 {
     private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;

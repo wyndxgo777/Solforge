@@ -36,6 +36,7 @@ public sealed class SphericalHarmonics9
         return Vector3.Max(sum, Vector3.Zero);
     }
 
+    /** Per-coefficient linear interpolation of two probes. */
     public static SphericalHarmonics9 Lerp(SphericalHarmonics9 a, SphericalHarmonics9 b, float t)
     {
         var result = new SphericalHarmonics9();

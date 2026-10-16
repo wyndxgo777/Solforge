@@ -7,6 +7,7 @@ internal static class CuiChecks
 {
     public const uint ScreenTag = 0x80801111, WidgetTag = 0x80802222;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run()
     {
         Offsets();

@@ -7,6 +7,7 @@ namespace SunriseStudio.ProjectSystem.Tests;
 /** Phase 15: docs/sunrise.project.schema.json names exactly the members the manifest records write. */
 internal static class SchemaChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(List<string> checks)
     {
         using var stream = typeof(SchemaChecks).Assembly.GetManifestResourceStream("Solforge.ProjectSchema")

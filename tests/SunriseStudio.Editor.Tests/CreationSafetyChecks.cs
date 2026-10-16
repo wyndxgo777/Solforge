@@ -8,6 +8,7 @@ using SunriseStudio.Editor.Creation;
 using SunriseStudio.Formats;
 using SunriseStudio.Packages;
 
+/** Checks that creation workflows only offer templates their encoder can actually write, and refuse static templates that are installed-only. */
 internal static class CreationSafetyChecks
 {
     /** Offered templates and failed searches must not fabricate selectable asset identities. */

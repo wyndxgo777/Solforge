@@ -48,6 +48,7 @@ public sealed unsafe partial class Dx11Renderer
         Context.Unmap(sceneInstances!, 0);
     }
 
+    /** Sets the view-projection matrix and light direction used by scene instance draws. */
     public void SetSceneView(Matrix4x4 viewProjection, Vector3 lightDirection)
     {
         EnsureSceneResources();

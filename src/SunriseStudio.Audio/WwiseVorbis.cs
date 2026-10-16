@@ -9,6 +9,7 @@ internal sealed class VorbisBitReader(byte[] data, int start, int length)
     public long BitPosition => bit;
     public long Remaining => length * 8L - bit;
 
+    /** Reads count bits (LSB first). */
     public uint Read(int count)
     {
         if (count == 0) return 0;
@@ -26,6 +27,7 @@ internal sealed class VorbisBitWriter(int capacity = 256)
     private byte[] buffer = new byte[Math.Max(capacity, 16)];
     private long bit;
 
+    /** Appends count bits of value. */
     public void Write(uint value, int count)
     {
         for (int i = 0; i < count;)
@@ -38,8 +40,10 @@ internal sealed class VorbisBitWriter(int capacity = 256)
         }
     }
 
+    /** Pads the stream to a byte boundary. */
     public void PadToByte() => bit = (bit + 7) & ~7L;
 
+    /** The bytes written so far. */
     public byte[] ToArray() => buffer.AsSpan(0, (int)((bit + 7) >> 3)).ToArray();
 }
 
@@ -92,6 +96,7 @@ internal sealed class WwiseVorbisCodec : IWemCodec
     /** Checks that the rebuilt setup parses, without decoding audio. */
     public void Validate() => _ = new VorbisDecoder(channels, blockSmall, blockLarge, setup);
 
+    /** Decodes to 16-bit PCM, mixing down to maxChannels. */
     public PcmWave Decode(int maxChannels, CancellationToken token)
     {
         int outChannels = AudioDownmix.Create(channels, layout, maxChannels)?.OutputChannels ?? channels;
@@ -102,6 +107,7 @@ internal sealed class WwiseVorbisCodec : IWemCodec
         return new(sampleRate, (ushort)outChannels, 16, output);
     }
 
+    /** Decodes to float samples, mixing down to maxChannels. */
     public AudioSamples DecodeSamples(int maxChannels, CancellationToken token)
     {
         int outChannels = AudioDownmix.Create(channels, layout, maxChannels)?.OutputChannels ?? channels;

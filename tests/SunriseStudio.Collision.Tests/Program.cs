@@ -70,13 +70,16 @@ catch (Exception error)
     Environment.ExitCode = 1;
 }
 
+/** Assertion helpers shared by the collision checks. */
 internal static class Checks
 {
+    /** Throws when the condition is false. */
     internal static void Check(bool value, string message)
     {
         if (!value) throw new InvalidDataException(message);
     }
 
+    /** Runs the action, requires it to throw T, and returns the exception. */
     internal static T Throws<T>(Action action) where T : Exception
     {
         try { action(); }

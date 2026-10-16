@@ -2,8 +2,10 @@ using System.Buffers.Binary;
 using SunriseStudio.Audio;
 using SunriseStudio.Packages;
 
+/** Checks that installed music transitions (initial fades, bridges, source tails) render with the authored fade curves and intervals. */
 internal static class TransitionChecks
 {
+    /** Runs the same kind of checks against the real packages of the owned installation. */
     public static async Task Owned(PackageCatalog catalog, string directory, string? output)
     {
         using var startSession = new AudioSession(catalog, 0x80B4F00D, cacheDirectory: Path.Combine(directory, "start-cache"));
@@ -81,6 +83,7 @@ internal static class TransitionChecks
         .Segment(30, 100, 3000, [new(0, 500), new(0, 2500)], 3).Track(3, 30, TestMusic.Clip(33, 1000, endTrimMs: 2000))
         .Build();
 
+    /** Runs the checks that use generated fixtures instead of installed game content. */
     public static void Synthetic(string directory)
     {
         var analysis = Fixture(0);

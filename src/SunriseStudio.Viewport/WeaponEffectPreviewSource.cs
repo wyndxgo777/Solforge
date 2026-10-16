@@ -4,8 +4,10 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Viewport;
 
+/** An effect spawned by a weapon clip at a frame: clip, entity, sequence, system and attachment. */
 public sealed record WeaponEffectPreviewLink(string Name, string ClipName, uint ClipTag,
     int Frame, uint EffectEntityTag, uint SequenceTag, uint SystemTag, uint AttachmentHash);
+/** A scene for a weapon effect preview and the tags it was built from. */
 public sealed record PreparedWeaponEffectPreview(SceneDocument Scene, IReadOnlySet<uint> SourceTags);
 
 /** Clip-spawned effects share the weapon's point provider through an explicit preview context. */

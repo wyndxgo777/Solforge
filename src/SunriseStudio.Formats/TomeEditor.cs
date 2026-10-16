@@ -14,6 +14,7 @@ public sealed class TomeOcclusionEdit
     public List<IReadOnlyList<Vector3>> Kept { get; init; } = [];
 }
 
+/** Summary of an edit: tiles touched and cells, portals and voxels added, cut, opened or closed. */
 public sealed record TomeEditReport(int LeafTiles, int HierarchyTiles, int CellsAdded, int PortalsAdded, int PortalsCut,
     int ClusterPortalsAdded, long OpenedVoxels, long ClosedVoxels);
 
@@ -177,6 +178,7 @@ public static partial class TomeEditor
         internal Vector3 Origin => origin;
         internal float Size => size;
 
+        /** Converts a world-space box to a voxel box on the grid. */
         internal TomeVoxelBox Box(Vector3 min, Vector3 max)
         {
             var a = (min - origin) / size;
@@ -196,7 +198,9 @@ public static partial class TomeEditor
                 (int)MathF.Round(b.X), (int)MathF.Round(b.Y), (int)MathF.Round(b.Z));
         }
 
+        /** World position of a voxel corner. */
         internal Vector3 Corner(int x, int y, int z) => origin + new Vector3(x, y, z) * size;
+        /** World position of a voxel center. */
         internal Vector3 Center(int x, int y, int z) => origin + new Vector3(x + 0.5f, y + 0.5f, z + 0.5f) * size;
     }
 
@@ -220,6 +224,7 @@ public static partial class TomeEditor
         internal List<int> LeafSlots { get; } = [];
         internal int[] Parents { get; }
 
+        /** Yields the tile's ancestors, parent first. */
         internal IEnumerable<int> Ancestors(int slot)
         {
             for (int node = Parents[slot]; node >= 0; node = Parents[node]) yield return node;

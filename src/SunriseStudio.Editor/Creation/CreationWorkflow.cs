@@ -86,6 +86,7 @@ public abstract class CreationWorkflow
     /** Problems beyond single fields; Create stays disabled while any remain. */
     protected virtual IEnumerable<string> Validate(StudioWorkspace workspace) => [];
 
+    /** Every reason the workflow cannot be created yet, including the subclass's own Validate. */
     public IReadOnlyList<string> Problems(StudioWorkspace workspace)
     {
         var problems = new List<string>();

@@ -104,6 +104,7 @@ public sealed unsafe class EffectRenderer : IDisposable
         return visuals.Count - 1;
     }
 
+    /** Copies this frame's billboards into the dynamic instance buffer, growing it when needed. */
     public void Upload(ReadOnlySpan<EffectBillboard> billboards)
     {
         uploaded = billboards.Length;
@@ -176,6 +177,7 @@ public sealed unsafe class EffectRenderer : IDisposable
         renderer.CountDraws(draws);
     }
 
+    /** Releases the GPU resources this renderer owns. */
     public void Dispose()
     {
         if (disposed) return;

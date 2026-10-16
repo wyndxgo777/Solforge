@@ -87,6 +87,7 @@ public sealed class HavokPackfile
         RootClass = objects.TryGetValue(RootOffset, out var root) ? root : throw new InvalidDataException("Havok root object has no class.");
     }
 
+    /** Parses a Havok packfile from its bytes. */
     public static HavokPackfile Parse(byte[] bytes) => new(bytes);
 
     /** True when the bytes start with the Havok packfile magic. */
@@ -110,19 +111,28 @@ public sealed class HavokPackfile
     /** Class of the object at a data offset, or null. */
     public string? ClassAt(int offset) => objects.GetValueOrDefault(offset);
 
+    /** Converts a data-section offset to a file offset; throws if it leaves the data section. */
     public int Absolute(int offset)
     {
         if (offset < 0 || offset >= DataLength) throw new InvalidDataException("Havok offset leaves the data section.");
         return DataStart + offset;
     }
 
+    /** Reads a byte at a data-section offset. */
     public byte U8(int offset) => Bytes[Absolute(offset)];
+    /** Reads a little-endian uint16 at a data-section offset. */
     public ushort U16(int offset) => BinaryPrimitives.ReadUInt16LittleEndian(Bytes.AsSpan(Absolute(offset), 2));
+    /** Reads a little-endian int32 at a data-section offset. */
     public int I32(int offset) => BinaryPrimitives.ReadInt32LittleEndian(Bytes.AsSpan(Absolute(offset), 4));
+    /** Reads a little-endian uint32 at a data-section offset. */
     public uint U32(int offset) => BinaryPrimitives.ReadUInt32LittleEndian(Bytes.AsSpan(Absolute(offset), 4));
+    /** Reads a little-endian uint64 at a data-section offset. */
     public ulong U64(int offset) => BinaryPrimitives.ReadUInt64LittleEndian(Bytes.AsSpan(Absolute(offset), 8));
+    /** Reads a little-endian float at a data-section offset. */
     public float F32(int offset) => BinaryPrimitives.ReadSingleLittleEndian(Bytes.AsSpan(Absolute(offset), 4));
+    /** Reads three floats at a data-section offset. */
     public Vector3 V3(int offset) => new(F32(offset), F32(offset + 4), F32(offset + 8));
+    /** Reads four floats as a quaternion at a data-section offset. */
     public Quaternion Q4(int offset) => new(F32(offset), F32(offset + 4), F32(offset + 8), F32(offset + 12));
 
     private record struct Section(string Tag, int Start, int Local, int Global, int Virtual, int Exports, int Imports, int End);

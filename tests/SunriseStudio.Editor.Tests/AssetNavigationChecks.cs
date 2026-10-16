@@ -13,6 +13,7 @@ internal static class AssetNavigationChecks
 {
     private const uint EntityTag = 0x80C0FA98, ModelTag = 0x80FEE881, ClipTag = 0x80FE2C08;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(string gameRoot, string temporaryRoot)
     {
         string fixturePath = Path.Combine(temporaryRoot, "asset-navigation-world");

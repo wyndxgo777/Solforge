@@ -2,16 +2,20 @@ using System.Numerics;
 
 namespace SunriseStudio.Scene;
 
+/** A mission with its bubbles and map tags. This file holds the world catalog and object records. */
 public sealed record WorldMissionEntry(uint Tag, string Name, IReadOnlyList<uint> BubbleHashes,
     IReadOnlyList<uint> MapTags);
 
+/** The maps and missions available to load, with any diagnostics. */
 public sealed record WorldCatalog(IReadOnlyList<MapEntry> Maps, IReadOnlyList<WorldMissionEntry> Missions,
     IReadOnlyList<string> Diagnostics)
 {
+    /** Missions that run on the map. */
     public IReadOnlyList<WorldMissionEntry> MissionsFor(uint mapTag) =>
         Missions.Where(x => x.MapTags.Contains(mapTag)).ToArray();
 }
 
+/** Options for loading a world: scenario states, bubbles, map indices, LODs and mission map layers. */
 public sealed record WorldLoadOptions
 {
     public ScenarioStateMode ScenarioStates { get; init; } = ScenarioStateMode.All;
@@ -23,18 +27,26 @@ public sealed record WorldLoadOptions
     public bool UseMissionMapLayers { get; init; } = true;
 }
 
+/** Kind of world object. */
 public enum WorldObjectKind { Mesh, Marker, Light, AuthoredObject, Squad, State }
+/** Identifies a scenario state by mission, bubble and ordinal. */
 public sealed record WorldStateKey(uint MissionTag, uint BubbleHash, int Ordinal);
+/** A named, grouped property of an inspected object. */
 public sealed record WorldProperty(string Group, string Name, string Value);
+/** A reference from an inspected object to a tag. */
 public sealed record WorldReference(string Name, uint TagHash, int Offset = -1);
+/** A light row with the table that owns it. */
 public sealed record WorldLight(PlacedLightTable Owner, AuthoredLightRow Row);
+/** Lets a wrapper stand in for the object that is selected; Key is that object. */
 public interface ISceneSelectionProxy { object Key { get; } }
 
+/** An object of the world: id, name, kind, source and its bubble, mission and state. */
 public sealed record WorldObject(string Id, string Name, WorldObjectKind Kind, object Source,
     uint AssetTag, uint BubbleHash, string BubbleName, uint MissionTag, int StateOrdinal,
     string StateName, Vector3? Position, Vector3? Extents,
     IReadOnlyList<WorldStateKey> Owners);
 
+/** A world object with its properties, references and slots. */
 public sealed record WorldObjectInspection(WorldObject Object, IReadOnlyList<WorldProperty> Properties,
     IReadOnlyList<WorldReference> References, IReadOnlyList<AuthoredSlotInfo> Slots,
     IReadOnlyList<object> RelatedObjects);
@@ -59,6 +71,7 @@ public sealed class WorldDocument
         .SelectMany(x => x.States).ToArray() ?? [];
     public uint? MissionTag => MissionScene?.TagHash;
     public string Name => MissionScene?.Name ?? MapScene.Name;
+    /** Maps a bubble hash to its canonical alias. */
     public uint CanonicalBubble(uint value) => BubbleAliases.GetValueOrDefault(value, value);
 
     /** Proxy keys and stable metadata identities survive name-only relabeling. */
@@ -99,6 +112,10 @@ public sealed class WorldDocument
     /** Inspect without the cache, for readers off the UI thread (the cache is not thread-safe). */
     public WorldObjectInspection? Describe(object source) => Find(source) is { } row ? WorldInspection.Describe(this, row) : null;
 
+    /**
+     * Describes a scene object's properties and references, cached per row; null when it is not part of
+     * this world.
+     */
     public WorldObjectInspection? Inspect(object source)
     {
         if (Find(source) is not { } row) return null;

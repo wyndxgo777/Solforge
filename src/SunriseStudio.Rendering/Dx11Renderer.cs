@@ -244,6 +244,7 @@ public sealed unsafe partial class Dx11Renderer : IDisposable
         Context.UpdateSubresource(vertices, mesh.Vertices);
     }
 
+    /** Uploads an RGBA8 image as a 2D texture with tightly packed rows. */
     public GpuTexture CreateTexture(int width, int height, ReadOnlySpan<byte> rgba) =>
         CreateTexture(width, height, Format.R8G8B8A8_UNorm, rgba, checked(width * 4));
 
@@ -485,6 +486,7 @@ public sealed unsafe partial class Dx11Renderer : IDisposable
             DiagnosticLineUploadMilliseconds += System.Diagnostics.Stopwatch.GetElapsedTime(began).TotalMilliseconds;
     }
 
+    /** Presents the main swap chain; vsync waits for the vertical blank. */
     public void EndFrame(bool vsync = true) =>
         swapChain?.Present(vsync ? 1u : 0u, PresentFlags.None).CheckError();
 
