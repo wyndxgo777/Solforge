@@ -19,10 +19,12 @@ public sealed partial class AssetViewport
         public bool Cutout { get; } = cutout;
     }
 
-    // Stand-in textures use mips no wider than this.
-    private const int FallbackTextureEdge = 1024;
+    /** Stand-in textures use mips no wider than this; the host lowers it in Low memory mode. */
+    public int FallbackTextureMaxEdge { get; set; } = 1024;
     // Uploads per frame; the rest wait for the next frame.
     private const int FallbackUploadsPerFrame = 16;
+    // Decoded stand-ins waiting for upload; the worker pauses past this so RAM holds only a few frames of uploads.
+    private const int FallbackReadyLimit = 4 * FallbackUploadsPerFrame;
     // A null value means the material has no usable colour texture and the part stays grey.
     private readonly Dictionary<uint, FallbackTexture?> fallbackTextures = [];
     private readonly HashSet<uint> fallbackRequested = [];
@@ -92,7 +94,7 @@ public sealed partial class AssetViewport
             FallbackTexture? texture = null;
             if (ready.Source is { } data)
             {
-                try { texture = new(UploadFallback(data, ready.FirstMip), ready.Cutout); }
+                try { texture = new(UploadFallback(data, ready.FirstMip), ready.Cutout); fallbackTextureBytes += data.ByteCount; }
                 catch (Exception error) when (error is ArgumentException or NotSupportedException
                     or SharpGen.Runtime.SharpGenException) { }
             }
@@ -102,13 +104,16 @@ public sealed partial class AssetViewport
         var batch = fallbackPending.ToArray();
         fallbackPending.Clear();
         var token = fallbackLifetime.Token;
-        int generation = fallbackGeneration;
+        int generation = fallbackGeneration, edge = Math.Max(1, FallbackTextureMaxEdge);
         fallbackLoad = Task.Run(() =>
         {
             foreach (uint material in batch)
             {
-                if (token.IsCancellationRequested) return;
-                fallbackReady.Enqueue(ReadFallbackTexture(catalog, material, generation));
+                // The graphics thread takes FallbackUploadsPerFrame a frame; decoding further ahead only holds RAM.
+                while (fallbackReady.Count >= FallbackReadyLimit && !token.IsCancellationRequested
+                    && generation == Volatile.Read(ref fallbackGeneration)) Thread.Sleep(5);
+                if (token.IsCancellationRequested || generation != Volatile.Read(ref fallbackGeneration)) return;
+                fallbackReady.Enqueue(ReadFallbackTexture(catalog, material, generation, edge));
             }
         }, token);
     }
@@ -130,18 +135,26 @@ public sealed partial class AssetViewport
     }
 
     /** Picks the first sRGB 2D colour texture the pixel shader declares; runs on a worker. */
-    private static FallbackTextureData ReadFallbackTexture(PackageCatalog catalog, uint material, int generation)
+    private static FallbackTextureData ReadFallbackTexture(PackageCatalog catalog, uint material, int generation, int edge)
     {
         try
         {
             var info = new GameMaterialReader(catalog).Read(material);
             var binding = info.Textures.Where(t => t.IsPreviewCandidate && t.IsSrgb).OrderBy(t => t.Slot).FirstOrDefault();
             if (binding is null) return new(material, generation, null, 0, false);
-            var data = new TextureDataReader(catalog).Read(binding.TextureTag);
+            var reader = new TextureDataReader(catalog);
+            // The resident mips hold the chosen mip whenever their top is at least the edge, so the streamed mips
+            // (most of the bytes) are read only when the resident top is smaller; the uploaded image is the same.
+            var data = reader.Read(binding.TextureTag, residentOnly: true);
+            if (data.Subresources.Count == 0
+                || Math.Max(data.Width, data.Height) < edge && reader.StreamedByteCount(binding.TextureTag) > 0)
+                data = reader.Read(binding.TextureTag);
             if (data.IsCube || data.IsVolume) return new(material, generation, null, 0, false);
             int first = data.Subresources.Where(s => s.ArraySlice == 0)
-                .OrderBy(s => Math.Max(s.Width, s.Height) <= FallbackTextureEdge ? 0 : 1).ThenBy(s => s.MipLevel).First().MipLevel;
+                .OrderBy(s => Math.Max(s.Width, s.Height) <= edge ? 0 : 1).ThenBy(s => s.MipLevel).First().MipLevel;
             bool cutout = info.PixelShader is { } shader && AlphaTestReadsAlpha(shader.Disassembly, binding.Slot);
+            // Only the uploaded mips stay in RAM until the graphics thread takes them.
+            data = data with { Subresources = data.Subresources.Where(s => s.ArraySlice == 0 && s.MipLevel >= first).ToArray() };
             return new(material, generation, data, first, cutout);
         }
         catch (Exception error) when (error is IOException or InvalidDataException or NotSupportedException
@@ -223,9 +236,23 @@ public sealed partial class AssetViewport
         geometryBatches.Clear();
         foreach (var texture in fallbackTextures.Values) texture?.Texture.Dispose();
         fallbackTextures.Clear();
+        fallbackTextureBytes = 0;
         fallbackRequested.Clear();
         fallbackPending.Clear();
     }
+
+    /** Frees every stand-in texture and drops decoded ones still waiting; a closed map calls it. */
+    public void ReleaseFallbackCache()
+    {
+        fallbackGeneration++;
+        while (fallbackReady.TryDequeue(out _)) { }
+        ReleaseFallbackTextures();
+    }
+
+    /** GPU bytes of the uploaded stand-in textures, for the memory report. */
+    public long FallbackTextureBytes => fallbackTextureBytes;
+    private long fallbackTextureBytes;
+    public int FallbackTextureCount => fallbackTextures.Count;
 
     private void DisposeFallbackTextures()
     {

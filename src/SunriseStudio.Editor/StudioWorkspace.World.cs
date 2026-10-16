@@ -183,7 +183,9 @@ public sealed partial class StudioWorkspace
             else if (document is null && catalog.TryGetEntry(documentTag, out var entry))
                 document = ReadDocument(catalog, entry, DisplayName(entry), entry.Reference is not (0x808091DE or 0x80809994),
                     priorDocument?.OpenContext);
-            var native = PrepareScene(world.Scene, out string nativeError);
+            // Below High (or with game shaders off) nothing draws the native plan, so its textures and buffers are not built.
+            string nativeError = "";
+            var native = NativeWorldWanted ? PrepareScene(world.Scene, out nativeError) : null;
             var worlds = loader.BuildCatalog(OperationToken);
             return () =>
             {
@@ -225,9 +227,26 @@ public sealed partial class StudioWorkspace
         worldTextures.Clear();
         cachedWorldLoader?.ForgetMeshes(null);
         Document = null;
-        NativePlan = null; NativePlanScene = null;
+        NativePlan?.ReleaseUploads();
+        NativePlan = null; NativePlanScene = null; NativeError = "";
+        Catalog?.TrimReadCache(0);
         SceneRevision++; WorldRevision++; DocumentRevision++;
         Status = "World closed";
+    }
+
+    /**
+     * True when the open world's native plan is drawn (game shaders on, quality High or Full); the host sets it every
+     * frame. A world loaded while it is false skips the plan, and the host prepares it when it turns true.
+     */
+    public bool NativeWorldWanted { get; set; } = true;
+
+    /** Drops the world's native plan once the viewport has released its renderer; PrepareNative builds it again. */
+    public void ReleaseNative()
+    {
+        if (IsBusy || World is null) return;
+        NativePlan?.ReleaseUploads();
+        NativePlan = null; NativePlanScene = null; NativeError = "";
+        worldTextures.Clear();
     }
 
     public void CancelShaderPreparation()

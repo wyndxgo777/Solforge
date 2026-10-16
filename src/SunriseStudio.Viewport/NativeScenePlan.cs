@@ -115,6 +115,20 @@ public sealed class NativeScenePlan
     public required IReadOnlyList<NativeSceneGroup> Groups { get; init; }
     /** Decoded payloads; the renderer empties this after upload so the pixels are not kept twice. */
     public required Dictionary<uint, TextureData> Textures { get; init; }
+    /** Textures Prepare already created on the GPU (given an uploader); the renderer adopts them in place of Textures. */
+    public Dictionary<uint, GpuTexture> UploadedTextures { get; init; } = [];
+    /** Texture uploads that failed during Prepare, with the error; the renderer marks them bad. */
+    public Dictionary<uint, string> UploadFailures { get; init; } = [];
+
+    /** Disposes uploads no renderer adopted; the host calls it when it drops a plan. Adopted uploads are already gone. */
+    public void ReleaseUploads()
+    {
+        lock (UploadedTextures)
+        {
+            foreach (var texture in UploadedTextures.Values) texture.Dispose();
+            UploadedTextures.Clear();
+        }
+    }
     public uint FrameTexture24Tag { get; init; }
     /** The ocean wave settings extern 91 reads; null when the map and the render globals name none. */
     public NativeOceanSettings? Ocean { get; init; }
@@ -232,7 +246,8 @@ public sealed class NativeScenePlan
     public static NativeScenePlan Prepare(PackageCatalog catalog, SceneDocument scene,
         CancellationToken cancellationToken = default, Action<string>? progress = null,
         long textureBudgetBytes = DefaultTextureBudgetBytes, IReadOnlyDictionary<uint, Vector4>? parameterOverrides = null,
-        bool assetPreview = false, IDictionary<uint, TextureData>? textureCache = null)
+        bool assetPreview = false, IDictionary<uint, TextureData>? textureCache = null,
+        Dx11Renderer? uploader = null, long textureCacheLimitBytes = long.MaxValue)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(textureBudgetBytes);
         var reader = new GameMaterialReader(catalog);
@@ -541,234 +556,287 @@ public sealed class NativeScenePlan
             catch (Exception error) when (Recoverable(error))
             { Detail("Light material unreadable", $"Material 0x{lightMaterial:X8}: {error.Message}"); }
         selectedTextures.UnionWith(lightTextures);
-        var textures = new Dictionary<uint, TextureData>();
-        var badTextures = new Dictionary<uint, string>();
-        uint[] textureOrder = selectedTextures.Order().ToArray();
-        var decodedTextures = new TextureData?[textureOrder.Length];
-        var textureErrors = new Exception?[textureOrder.Length];
-        int textureNumber = 0;
-        var progressLock = new object();
-        // Catalog reads decode blocks in parallel; results are published below in tag order.
+        // With an uploader each texture goes to the GPU as soon as it is decoded and only what the texture cache can hold
+        // stays in RAM, so a map no longer holds every decoded texture at once. Uploads are disposed if preparation fails.
+        var uploadedTextures = new GpuTexture?[0];
         try
         {
-            Parallel.For(0, textureOrder.Length, new ParallelOptions { CancellationToken = cancellationToken }, index =>
+            var textures = new Dictionary<uint, TextureData>();
+            var badTextures = new Dictionary<uint, string>();
+            uint[] textureOrder = selectedTextures.Order().ToArray();
+            var decodedTextures = new TextureData?[textureOrder.Length];
+            var textureErrors = new Exception?[textureOrder.Length];
+            int textureNumber = 0;
+            var progressLock = new object();
+            uploadedTextures = new GpuTexture?[uploader is null ? 0 : textureOrder.Length];
+            var uploadErrors = new string?[uploadedTextures.Length];
+            var uploadedSizes = new long[uploadedTextures.Length];
+            long cacheBytes = textureCache?.Values.Sum(texture => texture.ByteCount) ?? 0;
+            // Catalog reads decode blocks in parallel; results are published below in tag order.
+            try
+            {
+                Parallel.For(0, textureOrder.Length, new ParallelOptions { CancellationToken = cancellationToken }, index =>
+                {
+                    uint tag = textureOrder[index];
+                    lock (progressLock) progress?.Invoke($"Decoding shared texture {++textureNumber}/{textureOrder.Length}");
+                    var atlas = AtlasOf(tag);
+                    bool fromCache = false;
+                    if (textureCache is not null && atlas is null && textureCache.TryGetValue(tag, out var kept))
+                    { decodedTextures[index] = kept; fromCache = true; }
+                    else
+                        try
+                        {
+                            decodedTextures[index] = atlas is { } found ? found.Set.Compose(found.Tag, source =>
+                                textureCache is not null && textureCache.TryGetValue(source, out var cached) ? cached : textureReader.Read(source))
+                                : textureReader.Read(tag, residentOnly.Contains(tag));
+                        }
+                        catch (Exception error) when (Recoverable(error)) { textureErrors[index] = error; return; }
+                    if (uploader is null || decodedTextures[index] is not { } decoded) return;
+                    uploadedSizes[index] = decoded.ByteCount;
+                    try
+                    {
+                        uploadedTextures[index] = uploader.CreateTextureResource(decoded.Width, decoded.Height, decoded.Depth,
+                            decoded.ArraySize, decoded.MipCount, (Vortice.DXGI.Format)decoded.Format, decoded.IsCube, decoded.IsVolume,
+                            decoded.Subresources.Select(x => new TextureSubresourceUpload(x.MipLevel, x.ArraySlice, x.Data,
+                                x.RowPitch, x.SlicePitch)).ToArray());
+                    }
+                    catch (Exception error) when (error is not OutOfMemoryException) { uploadErrors[index] = error.Message; }
+                    // The decoded copy stays only for the texture cache, within its limit; the GPU holds the rest.
+                    bool cacheable = !fromCache && textureCache is not null && atlas is null && !residentOnly.Contains(tag)
+                        && Interlocked.Add(ref cacheBytes, decoded.ByteCount) <= textureCacheLimitBytes;
+                    if (!cacheable) decodedTextures[index] = null;
+                });
+            }
+            catch (AggregateException error) { ExceptionDispatchInfo.Capture(error.InnerExceptions[0]).Throw(); }
+            var uploads = new Dictionary<uint, GpuTexture>();
+            var uploadFailures = new Dictionary<uint, string>();
+            var uploadSizes = new Dictionary<uint, long>();
+            long uploadedBytes = 0;
+            for (int index = 0; index < textureOrder.Length; index++)
             {
                 uint tag = textureOrder[index];
-                lock (progressLock) progress?.Invoke($"Decoding shared texture {++textureNumber}/{textureOrder.Length}");
-                var atlas = AtlasOf(tag);
-                if (textureCache is not null && atlas is null && textureCache.TryGetValue(tag, out var kept))
-                { decodedTextures[index] = kept; return; }
+                if (uploader is not null && textureErrors[index] is null)
+                {
+                    // Upload failures stay drawable, as the renderer's own upload treats them: it marks the texture bad.
+                    if (uploadedTextures[index] is { } gpu)
+                    { uploads.Add(tag, gpu); uploadSizes[tag] = uploadedSizes[index]; uploadedBytes += uploadedSizes[index]; }
+                    else uploadFailures.Add(tag, uploadErrors[index] ?? "Texture upload failed.");
+                    if (decodedTextures[index] is { } keep && textureCache is not null) textureCache[tag] = keep;
+                    continue;
+                }
+                if (decodedTextures[index] is { } decoded)
+                {
+                    textures.Add(tag, decoded);
+                    // The cache keeps full textures only, so a later plan with room never reuses a reduced one.
+                    if (textureCache is not null && !IsAtlas(tag) && !residentOnly.Contains(tag)) textureCache[tag] = decoded;
+                    continue;
+                }
+                var error = textureErrors[index]!;
+                string reason = FailureReason(error, "Texture payload decoding failed");
+                badTextures.Add(tag, reason);
+                Detail(reason, $"Texture 0x{tag:X8}: {error.Message}");
+            }
+            var prepared = new List<(NativeScenePart Part, NativeSceneMaterial Material)>();
+            foreach (var candidate in candidates)
+            {
+                if (!admitted.Contains(candidate.Material.Execution.Material.Tag)) continue;
+                var failures = PartTextures(candidate.Part, candidate.Material).Where(badTextures.ContainsKey).Select(tag => badTextures[tag]).ToArray();
+                if (failures.Length != 0)
+                { Skip(failures.Contains("Package block authentication failed") ? "Package block authentication failed" : failures[0]); continue; }
+                prepared.Add(candidate);
+            }
+            var clothStreams = new Dictionary<string, byte[]>();
+            var groups = prepared.GroupBy(p => GroupKey(p.Part, p.Material)).Select(group =>
+            {
+                var first = group.First(); var mesh = first.Part.Instance.Mesh.Native!;
+                byte[]? cloth = null;
+                string geometry = GeometryKey(mesh);
+                if (ReadsClothDisplay(first.Part.Instance, first.Material, reader))
+                {
+                    // The bind stream is not the authored bytes, so no other reader shares it.
+                    geometry += "|cloth";
+                    if (!clothStreams.TryGetValue(geometry, out cloth)) clothStreams.Add(geometry, cloth = NativeClothDisplay.BindStream(mesh));
+                }
+                return new NativeSceneGroup(geometry, PipelineKey(mesh, first.Part.Instance.Layer == SceneLayer.Skybox) + StencilKey(first.Material), mesh, first.Material,
+                    first.Part.Scalars?.DataTag ?? 0, mesh.RenderStage, first.Part.Instance.Layer == SceneLayer.Skybox,
+                    group.Select(x => x.Part).ToArray()) { ClothDisplayStream = cloth };
+            }).ToArray();
+            var dyeSources = groups.Where(group => group.Material.Gear is { Scopes.Count: > 0 })
+                .SelectMany(group => group.Parts).Select(part => NativeGearPlating.DyesFor(scene, part.Instance).Source).Distinct().ToArray();
+            if (dyeSources.Length != 0)
+                details.Add($"Gear dye scopes use {string.Join(", ", dyeSources)}; the slot of each dye follows its record's scope index.");
+            if (groups.Any(group => group.Material.Gear is { PlateTextures.Count: > 0 }))
+                details.Add("Gear plate atlases are composed from their descriptor rows at the game's size for the gear kind and set; "
+                    + "the kind comes from the item's bucket, fitted to the installed rectangles, and the formats and smaller mips are unverified.");
+            if (unknownGearKind) details.Add("Gear kind unknown; weapon atlas sizes used.");
+            int channelParts = groups.Where(group => group.Material.ObjectChannels is not null).Sum(group => group.Parts.Count);
+            if (channelParts != 0 || channelTables.Tables.Unread != 0)
+                details.Add($"Object channels: {channelParts} entity parts read rest tables ({channelTables.Tables.DistinctTables} distinct); "
+                    + $"{channelTables.Tables.Unread} models did not read and use (1,1,1,1).");
+            var usedTextures = groups.SelectMany(g => g.Parts.SelectMany(p => PartTextures(p, g.Material))).ToHashSet();
+            usedTextures.UnionWith(lightTextures);
+            foreach (uint tag in textures.Keys.Where(tag => !usedTextures.Contains(tag)).ToArray()) textures.Remove(tag);
+            foreach (uint tag in uploads.Keys.Where(tag => !usedTextures.Contains(tag)).ToArray())
+            {
+                uploadedBytes -= uploadSizes[tag];
+                uploads[tag].Dispose();
+                uploads.Remove(tag);
+                uploadedTextures[Array.IndexOf(textureOrder, tag)] = null;
+            }
+            var (minimum, maximum) = Union(prepared.Select(item => item.Part));
+            var atmosphereLookups = new Dictionary<uint, TextureData>();
+            foreach (var placed in scene.Atmospheres)
+            {
+                var settings = NativeAtmosphereSettings.Parse(placed.Settings);
+                if (!settings.HasMode0Lookups) continue;
+                // Handles 0 and 1 are 3D lookups; handle 2 is the 2D lookup extern 7 resource 7 binds.
+                foreach (var (tag, volume) in new[] { (settings.Lookups[0], true), (settings.SecondLookup, true), (settings.Lookups[2], false) })
+                {
+                    if (atmosphereLookups.ContainsKey(tag)) continue;
+                    try
+                    {
+                        var data = textureReader.Read(tag);
+                        if (data.IsVolume != volume || data.IsCube)
+                            throw new InvalidDataException($"Atmosphere lookup is not a {(volume ? "3D" : "2D")} texture.");
+                        atmosphereLookups.Add(tag, data);
+                    }
+                    catch (Exception error) when (Recoverable(error)) { Detail("Atmosphere lookup failed", $"0x{tag:X8}: {error.Message}"); }
+                }
+            }
+            var fogTables = new Dictionary<uint, byte[]>();
+            foreach (var placed in scene.Atmospheres)
+            {
+                uint tag = NativeAtmosphereSettings.Parse(placed.Settings).FogTable;
+                if (tag == uint.MaxValue || fogTables.ContainsKey(tag)) continue;
                 try
                 {
-                    decodedTextures[index] = atlas is { } found ? found.Set.Compose(found.Tag, source =>
-                        textureCache is not null && textureCache.TryGetValue(source, out var cached) ? cached : textureReader.Read(source))
-                        : textureReader.Read(tag, residentOnly.Contains(tag));
+                    var bytes = catalog.Read(tag);
+                    if (bytes.Length != NativeObjectFog.TableBytes) throw new InvalidDataException("Fog colour table is not 16 x 256 RGBA8.");
+                    fogTables.Add(tag, bytes);
                 }
-                catch (Exception error) when (Recoverable(error)) { textureErrors[index] = error; }
-            });
-        }
-        catch (AggregateException error) { ExceptionDispatchInfo.Capture(error.InnerExceptions[0]).Throw(); }
-        for (int index = 0; index < textureOrder.Length; index++)
-        {
-            uint tag = textureOrder[index];
-            if (decodedTextures[index] is { } decoded)
+                catch (Exception error) when (Recoverable(error)) { Detail("Fog colour table failed", $"0x{tag:X8}: {error.Message}"); }
+            }
+            var timesOfDay = new Dictionary<uint, NativeTimeOfDay>();
+            foreach (var placed in scene.TimesOfDay)
             {
+                if (timesOfDay.ContainsKey(placed.PlacementListTag)) continue;
+                try
+                {
+                    var (windows, handles) = NativeTimeOfDay.ReadHeader(catalog.Read(placed.CurveSetTag));
+                    var curves = handles.Select(h => h == uint.MaxValue ? null : NativeDirectionCurve.Parse(catalog.Read(h))).ToArray();
+                    timesOfDay.Add(placed.PlacementListTag, new NativeTimeOfDay(windows, curves));
+                }
+                catch (Exception error) when (Recoverable(error))
+                { Detail("Time-of-day curves failed", $"0x{placed.CurveSetTag:X8}: {error.Message}"); }
+            }
+            TextureData ReadEnvironmentTexture(uint tag, byte[] header)
+            {
+                if (textures.TryGetValue(tag, out var existing)) return existing;
+                if (header.Length != 40) throw new InvalidDataException("Environment texture header has an unsupported size.");
+                long bytes = BinaryPrimitives.ReadUInt32LittleEndian(header);
+                if (sizes.TryAdd(tag, (bytes, 0))) requiredBytes += bytes;
+                // Cubemap bindings read the header's mip count, so environment textures always load whole.
+                var decoded = textureReader.Read(tag);
                 textures.Add(tag, decoded);
-                // The cache keeps full textures only, so a later plan with room never reuses a reduced one.
-                if (textureCache is not null && !IsAtlas(tag) && !residentOnly.Contains(tag)) textureCache[tag] = decoded;
-                continue;
+                selectedBytes += bytes;
+                return decoded;
             }
-            var error = textureErrors[index]!;
-            string reason = FailureReason(error, "Texture payload decoding failed");
-            badTextures.Add(tag, reason);
-            Detail(reason, $"Texture 0x{tag:X8}: {error.Message}");
-        }
-        var prepared = new List<(NativeScenePart Part, NativeSceneMaterial Material)>();
-        foreach (var candidate in candidates)
-        {
-            if (!admitted.Contains(candidate.Material.Execution.Material.Tag)) continue;
-            var failures = PartTextures(candidate.Part, candidate.Material).Where(badTextures.ContainsKey).Select(tag => badTextures[tag]).ToArray();
-            if (failures.Length != 0)
-            { Skip(failures.Contains("Package block authentication failed") ? "Package block authentication failed" : failures[0]); continue; }
-            prepared.Add(candidate);
-        }
-        var clothStreams = new Dictionary<string, byte[]>();
-        var groups = prepared.GroupBy(p => GroupKey(p.Part, p.Material)).Select(group =>
-        {
-            var first = group.First(); var mesh = first.Part.Instance.Mesh.Native!;
-            byte[]? cloth = null;
-            string geometry = GeometryKey(mesh);
-            if (ReadsClothDisplay(first.Part.Instance, first.Material, reader))
+            uint frameTexture24 = 0;
+            try
             {
-                // The bind stream is not the authored bytes, so no other reader shares it.
-                geometry += "|cloth";
-                if (!clothStreams.TryGetValue(geometry, out cloth)) clothStreams.Add(geometry, cloth = NativeClothDisplay.BindStream(mesh));
+                cancellationToken.ThrowIfCancellationRequested();
+                frameTexture24 = reader.ReadFrameTexture24(RenderGlobalsTag);
+                ReadEnvironmentTexture(frameTexture24, catalog.Read(frameTexture24));
             }
-            return new NativeSceneGroup(geometry, PipelineKey(mesh, first.Part.Instance.Layer == SceneLayer.Skybox) + StencilKey(first.Material), mesh, first.Material,
-                first.Part.Scalars?.DataTag ?? 0, mesh.RenderStage, first.Part.Instance.Layer == SceneLayer.Skybox,
-                group.Select(x => x.Part).ToArray()) { ClothDisplayStream = cloth };
-        }).ToArray();
-        var dyeSources = groups.Where(group => group.Material.Gear is { Scopes.Count: > 0 })
-            .SelectMany(group => group.Parts).Select(part => NativeGearPlating.DyesFor(scene, part.Instance).Source).Distinct().ToArray();
-        if (dyeSources.Length != 0)
-            details.Add($"Gear dye scopes use {string.Join(", ", dyeSources)}; the slot of each dye follows its record's scope index.");
-        if (groups.Any(group => group.Material.Gear is { PlateTextures.Count: > 0 }))
-            details.Add("Gear plate atlases are composed from their descriptor rows at the game's size for the gear kind and set; "
-                + "the kind comes from the item's bucket, fitted to the installed rectangles, and the formats and smaller mips are unverified.");
-        if (unknownGearKind) details.Add("Gear kind unknown; weapon atlas sizes used.");
-        int channelParts = groups.Where(group => group.Material.ObjectChannels is not null).Sum(group => group.Parts.Count);
-        if (channelParts != 0 || channelTables.Tables.Unread != 0)
-            details.Add($"Object channels: {channelParts} entity parts read rest tables ({channelTables.Tables.DistinctTables} distinct); "
-                + $"{channelTables.Tables.Unread} models did not read and use (1,1,1,1).");
-        var usedTextures = groups.SelectMany(g => g.Parts.SelectMany(p => PartTextures(p, g.Material))).ToHashSet();
-        usedTextures.UnionWith(lightTextures);
-        foreach (uint tag in textures.Keys.Where(tag => !usedTextures.Contains(tag)).ToArray()) textures.Remove(tag);
-        var (minimum, maximum) = Union(prepared.Select(item => item.Part));
-        var atmosphereLookups = new Dictionary<uint, TextureData>();
-        foreach (var placed in scene.Atmospheres)
-        {
-            var settings = NativeAtmosphereSettings.Parse(placed.Settings);
-            if (!settings.HasMode0Lookups) continue;
-            // Handles 0 and 1 are 3D lookups; handle 2 is the 2D lookup extern 7 resource 7 binds.
-            foreach (var (tag, volume) in new[] { (settings.Lookups[0], true), (settings.SecondLookup, true), (settings.Lookups[2], false) })
-            {
-                if (atmosphereLookups.ContainsKey(tag)) continue;
+            catch (Exception error) when (Recoverable(error))
+            { Detail("Frame lookup failed", error.Message); }
+            // The noise textures load only when a drawn material reads extern 91.
+            if (ocean is not null && groups.Any(group => NativeOcean.Reads(group.Material.Execution)))
                 try
                 {
-                    var data = textureReader.Read(tag);
-                    if (data.IsVolume != volume || data.IsCube)
-                        throw new InvalidDataException($"Atmosphere lookup is not a {(volume ? "3D" : "2D")} texture.");
-                    atmosphereLookups.Add(tag, data);
+                    foreach (var (tag, data) in NativeOcean.ReadTextures(textureReader, ocean)) textures.TryAdd(tag, data);
                 }
-                catch (Exception error) when (Recoverable(error)) { Detail("Atmosphere lookup failed", $"0x{tag:X8}: {error.Message}"); }
-            }
-        }
-        var fogTables = new Dictionary<uint, byte[]>();
-        foreach (var placed in scene.Atmospheres)
-        {
-            uint tag = NativeAtmosphereSettings.Parse(placed.Settings).FogTable;
-            if (tag == uint.MaxValue || fogTables.ContainsKey(tag)) continue;
-            try
+                catch (Exception error) when (Recoverable(error)) { Detail("Ocean noise failed", error.Message); }
+            var cubemaps = new List<NativeCubemapBinding>();
+            var cubeSkips = new Dictionary<string, int>();
+            foreach (var placement in scene.Cubemaps.DistinctBy(item => (item.PlacementSourceTag, item.AuxiliaryOffset)))
             {
-                var bytes = catalog.Read(tag);
-                if (bytes.Length != NativeObjectFog.TableBytes) throw new InvalidDataException("Fog colour table is not 16 x 256 RGBA8.");
-                fogTables.Add(tag, bytes);
+                cancellationToken.ThrowIfCancellationRequested();
+                try
+                {
+                    uint tag = placement.Cubemap.Texture0Tag;
+                    var header = catalog.Read(tag);
+                    if (header.Length != 40 || !catalog.TryGetEntry(tag, out var entry) || entry.Type != 32 || entry.SubType != 2)
+                        throw new NotSupportedException("Cubemap volume texture is not one cube.");
+                    var binding = NativeCubemapBinding.Create(placement.Cubemap.SourceData.Span, tag, header[27], header[23]);
+                    var texture = ReadEnvironmentTexture(tag, header);
+                    if (!texture.IsCube || texture.ArraySize != 6)
+                        throw new NotSupportedException("Cubemap volume texture is not one cube.");
+                    cubemaps.Add(binding);
+                }
+                catch (Exception error) when (Recoverable(error))
+                {
+                    cubeSkips[error.Message] = cubeSkips.GetValueOrDefault(error.Message) + 1;
+                    Detail("Cubemap volume skipped", error.Message);
+                }
             }
-            catch (Exception error) when (Recoverable(error)) { Detail("Fog colour table failed", $"0x{tag:X8}: {error.Message}"); }
-        }
-        var timesOfDay = new Dictionary<uint, NativeTimeOfDay>();
-        foreach (var placed in scene.TimesOfDay)
-        {
-            if (timesOfDay.ContainsKey(placed.PlacementListTag)) continue;
-            try
+            return new NativeScenePlan
             {
-                var (windows, handles) = NativeTimeOfDay.ReadHeader(catalog.Read(placed.CurveSetTag));
-                var curves = handles.Select(h => h == uint.MaxValue ? null : NativeDirectionCurve.Parse(catalog.Read(h))).ToArray();
-                timesOfDay.Add(placed.PlacementListTag, new NativeTimeOfDay(windows, curves));
-            }
-            catch (Exception error) when (Recoverable(error))
-            { Detail("Time-of-day curves failed", $"0x{placed.CurveSetTag:X8}: {error.Message}"); }
+                AssetPreview = assetPreview,
+                TimesOfDay = timesOfDay,
+                Atmospheres = scene.Atmospheres.ToArray(),
+                LocalLights = scene.LightTables.SelectMany(table => table.Table.Rows
+                    .Where(row => row.AuthoredStages.Contains(4)).Select(row => (row, table.BubbleHash))).ToArray(),
+                AtmosphereLookups = atmosphereLookups,
+                FogTables = fogTables,
+                AtmosphereSlots = atmosphereSlots,
+                WindSettings = windPayload?.Wind,
+                WindNoiseTexture = windPayload?.NoiseTexture ?? 0,
+                Reader = reader,
+                ViewScope = viewScope,
+                TransparentScope = transparentScope,
+                TransparentLighting = transparentLighting,
+                Parameters = parameters,
+                ParameterOverrides = parameterOverrides,
+                Groups = groups,
+                Textures = textures,
+                UploadedTextures = uploads,
+                UploadFailures = uploadFailures,
+                FrameTexture24Tag = frameTexture24,
+                Ocean = ocean,
+                Cubemaps = cubemaps.AsReadOnly(),
+                CubemapSkippedReasons = cubeSkips,
+                SkippedReasons = skipped,
+                StageSkippedReasons = stageSkips,
+                SkySkippedReasons = skySkips,
+                Diagnostics = details,
+                InputPartCount = scene.Instances.Count,
+                InputKindCounts = scene.Instances.GroupBy(i => i.Mesh.Native is null ? "None" : i.Layer == SceneLayer.Skybox ? "Sky" : i.Mesh.Native.Kind.ToString())
+                    .ToDictionary(g => g.Key, g => g.Count()),
+                RequiredTextureBytes = requiredBytes,
+                TextureBytes = textures.Values.Sum(t => t.ByteCount) + uploadedBytes,
+                TextureBudgetBytes = textureBudgetBytes,
+                ResidentOnlyTextureCount = residentOnly.Count,
+                GeometryBytes = groups.DistinctBy(g => g.GeometryKey).Sum(g =>
+                    g.Mesh.VertexStreams.Sum(s => (long)s.Data.Length) + g.Mesh.IndexData.Length),
+                ScalarBytes = groups.Where(g => g.Parts[0].Scalars is not null).DistinctBy(g => g.ScalarDataTag).Sum(g => (long)g.Parts[0].Scalars!.Data.Length),
+                Minimum = minimum,
+                Maximum = maximum,
+                placementSkips = placementSkips,
+                decoratorReads = () =>
+                {
+                    var fresh = new NativeDecorators(catalog) { SceneMap = decoratorReader.SceneMap };
+                    fresh.ShareOcclusion(decoratorReader);
+                    return instance => fresh.Read(instance, decoratorMaps.GetValueOrDefault(instance.BubbleHash) ?? new HashSet<uint>(),
+                        decoratorSlices.GetValueOrDefault(instance.BubbleHash) ?? new HashSet<int>());
+                }
+            };
         }
-        TextureData ReadEnvironmentTexture(uint tag, byte[] header)
+        catch
         {
-            if (textures.TryGetValue(tag, out var existing)) return existing;
-            if (header.Length != 40) throw new InvalidDataException("Environment texture header has an unsupported size.");
-            long bytes = BinaryPrimitives.ReadUInt32LittleEndian(header);
-            if (sizes.TryAdd(tag, (bytes, 0))) requiredBytes += bytes;
-            // Cubemap bindings read the header's mip count, so environment textures always load whole.
-            var decoded = textureReader.Read(tag);
-            textures.Add(tag, decoded);
-            selectedBytes += bytes;
-            return decoded;
+            foreach (var texture in uploadedTextures) texture?.Dispose();
+            throw;
         }
-        uint frameTexture24 = 0;
-        try
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            frameTexture24 = reader.ReadFrameTexture24(RenderGlobalsTag);
-            ReadEnvironmentTexture(frameTexture24, catalog.Read(frameTexture24));
-        }
-        catch (Exception error) when (Recoverable(error))
-        { Detail("Frame lookup failed", error.Message); }
-        // The noise textures load only when a drawn material reads extern 91.
-        if (ocean is not null && groups.Any(group => NativeOcean.Reads(group.Material.Execution)))
-            try
-            {
-                foreach (var (tag, data) in NativeOcean.ReadTextures(textureReader, ocean)) textures.TryAdd(tag, data);
-            }
-            catch (Exception error) when (Recoverable(error)) { Detail("Ocean noise failed", error.Message); }
-        var cubemaps = new List<NativeCubemapBinding>();
-        var cubeSkips = new Dictionary<string, int>();
-        foreach (var placement in scene.Cubemaps.DistinctBy(item => (item.PlacementSourceTag, item.AuxiliaryOffset)))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            try
-            {
-                uint tag = placement.Cubemap.Texture0Tag;
-                var header = catalog.Read(tag);
-                if (header.Length != 40 || !catalog.TryGetEntry(tag, out var entry) || entry.Type != 32 || entry.SubType != 2)
-                    throw new NotSupportedException("Cubemap volume texture is not one cube.");
-                var binding = NativeCubemapBinding.Create(placement.Cubemap.SourceData.Span, tag, header[27], header[23]);
-                var texture = ReadEnvironmentTexture(tag, header);
-                if (!texture.IsCube || texture.ArraySize != 6)
-                    throw new NotSupportedException("Cubemap volume texture is not one cube.");
-                cubemaps.Add(binding);
-            }
-            catch (Exception error) when (Recoverable(error))
-            {
-                cubeSkips[error.Message] = cubeSkips.GetValueOrDefault(error.Message) + 1;
-                Detail("Cubemap volume skipped", error.Message);
-            }
-        }
-        return new NativeScenePlan
-        {
-            AssetPreview = assetPreview,
-            TimesOfDay = timesOfDay,
-            Atmospheres = scene.Atmospheres.ToArray(),
-            LocalLights = scene.LightTables.SelectMany(table => table.Table.Rows
-                .Where(row => row.AuthoredStages.Contains(4)).Select(row => (row, table.BubbleHash))).ToArray(),
-            AtmosphereLookups = atmosphereLookups,
-            FogTables = fogTables,
-            AtmosphereSlots = atmosphereSlots,
-            WindSettings = windPayload?.Wind,
-            WindNoiseTexture = windPayload?.NoiseTexture ?? 0,
-            Reader = reader,
-            ViewScope = viewScope,
-            TransparentScope = transparentScope,
-            TransparentLighting = transparentLighting,
-            Parameters = parameters,
-            ParameterOverrides = parameterOverrides,
-            Groups = groups,
-            Textures = textures,
-            FrameTexture24Tag = frameTexture24,
-            Ocean = ocean,
-            Cubemaps = cubemaps.AsReadOnly(),
-            CubemapSkippedReasons = cubeSkips,
-            SkippedReasons = skipped,
-            StageSkippedReasons = stageSkips,
-            SkySkippedReasons = skySkips,
-            Diagnostics = details,
-            InputPartCount = scene.Instances.Count,
-            InputKindCounts = scene.Instances.GroupBy(i => i.Mesh.Native is null ? "None" : i.Layer == SceneLayer.Skybox ? "Sky" : i.Mesh.Native.Kind.ToString())
-                .ToDictionary(g => g.Key, g => g.Count()),
-            RequiredTextureBytes = requiredBytes,
-            TextureBytes = textures.Values.Sum(t => t.ByteCount),
-            TextureBudgetBytes = textureBudgetBytes,
-            ResidentOnlyTextureCount = residentOnly.Count,
-            GeometryBytes = groups.DistinctBy(g => g.GeometryKey).Sum(g =>
-                g.Mesh.VertexStreams.Sum(s => (long)s.Data.Length) + g.Mesh.IndexData.Length),
-            ScalarBytes = groups.Where(g => g.Parts[0].Scalars is not null).DistinctBy(g => g.ScalarDataTag).Sum(g => (long)g.Parts[0].Scalars!.Data.Length),
-            Minimum = minimum,
-            Maximum = maximum,
-            placementSkips = placementSkips,
-            decoratorReads = () =>
-            {
-                var fresh = new NativeDecorators(catalog) { SceneMap = decoratorReader.SceneMap };
-                fresh.ShareOcclusion(decoratorReader);
-                return instance => fresh.Read(instance, decoratorMaps.GetValueOrDefault(instance.BubbleHash) ?? new HashSet<uint>(),
-                    decoratorSlices.GetValueOrDefault(instance.BubbleHash) ?? new HashSet<int>());
-            }
-        };
     }
 
     /**

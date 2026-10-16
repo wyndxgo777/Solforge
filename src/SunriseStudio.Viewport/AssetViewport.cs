@@ -253,10 +253,11 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
     public static NativeScenePlan PrepareNativeScene(PackageCatalog catalog, SceneDocument scene,
         CancellationToken token = default, Action<string>? progress = null,
         long textureBudgetBytes = NativeScenePlan.DefaultTextureBudgetBytes, bool assetPreview = false,
-        IDictionary<uint, TextureData>? textureCache = null) =>
+        IDictionary<uint, TextureData>? textureCache = null, Dx11Renderer? uploader = null,
+        long textureCacheLimitBytes = long.MaxValue) =>
         NativeScenePlan.Prepare(catalog, scene, token, progress, textureBudgetBytes,
             new Dictionary<uint, Vector4> { [NativeSceneRenderer.AmbientIntensityKey] = Vector4.UnitX }, assetPreview,
-            textureCache);
+            textureCache, uploader, textureCacheLimitBytes);
 
     /** The plan must describe the current scene; GPU uploads run on the host's graphics thread. */
     public void SetNativeScene(NativeScenePlan plan)

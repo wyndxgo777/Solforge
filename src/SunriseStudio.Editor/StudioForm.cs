@@ -191,6 +191,7 @@ public sealed partial class StudioForm : Form
         {
             scale = Math.Max(1, DeviceDpi / 96f) * settings.UiScale;
             renderer = new Dx11Renderer(Handle, ClientSize.Width, ClientSize.Height, options.Warp);
+            workspace.TextureUploader = renderer;
             loadingLogo = StudioBrand.CreateTexture(renderer);
             backdrop = new LoadingBackdrop(renderer);
             ImGuiController.HostFonts ??= SolTheme.AddFonts;
@@ -277,6 +278,8 @@ public sealed partial class StudioForm : Form
         workspace.LowMemoryMode = settings.LowMemoryMode || settings.LowMemoryWithGame && (destiny2Detected || livePage.IsAttached);
         workspace.LowMemoryTextureBudget = settings.TextureBudgetMiB * 1024L * 1024;
         workspace.TextureCacheLimit = settings.TextureCacheMiB * 1024L * 1024;
+        // Low memory mode halves the stand-in texture edge (a quarter of their GPU and decode bytes).
+        viewport.FallbackTextureMaxEdge = workspace.LowMemoryMode ? 512 : 1024;
 
         // An attached game shares this GPU; Studio draws at most 30 frames a second, and 10 in the background.
         // When Destiny 2 is running detached, throttle to 15 / 5 FPS to yield resources completely to the game.
@@ -293,6 +296,7 @@ public sealed partial class StudioForm : Form
             projectRevision = workspace.ProjectRevision;
             PollStartup();
             AdoptDocument();
+            SyncWorldMemory();
             AdoptPlacementUpdates();
             PollCollisionLayer();
             livePage.Poll(workspace, viewport!);
@@ -948,6 +952,8 @@ public sealed partial class StudioForm : Form
         nodeGraph.Live?.Dispose();
         liveMaterials.Clear();
         assetViewport?.Dispose(); viewport?.Dispose(); workspace.Dispose();
+        workspace.TextureUploader = null;
+        workspace.NativePlan?.ReleaseUploads();
         loadingLogo?.Dispose(); toolbarLogo?.Dispose(); backdrop?.Dispose(); gui?.Dispose(); renderer?.Dispose(); studioIcon.Dispose();
         if (!options.Smoke)
         {

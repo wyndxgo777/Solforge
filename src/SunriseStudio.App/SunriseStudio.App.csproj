@@ -17,5 +17,7 @@
     <!-- Frame code reaches optimized code a few frames after a map load instead of a few dozen. -->
     <RuntimeHostConfigurationOption Include="System.Runtime.TieredCompilation.CallCountingDelayMs" Value="0" />
     <RuntimeHostConfigurationOption Include="System.Runtime.TieredCompilation.CallCountThreshold" Value="5" />
+    <!-- Compacts the large object heap when it is fragmented, so freed map buffers go back to Windows (16 GB PCs). -->
+    <RuntimeHostConfigurationOption Include="System.GC.ConserveMemory" Value="5" />
   </ItemGroup>
 </Project>
