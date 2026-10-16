@@ -9,6 +9,7 @@ namespace SunriseStudio.Interchange;
 /** Shader motion runs before skinning and uses the original per-vertex colour channels. */
 internal static class NativeVertexMotion
 {
+    /** Reads vertex motion for a native entity mesh with a verified input layout; returns null for other meshes. */
     internal static BundleVertexMotion? Read(PackageCatalog catalog, MeshData mesh, GameMaterialReader reader)
     {
         if (mesh.Native is not { Kind: NativeMeshKind.Entity, InputLayoutVerified: true } native) return null;

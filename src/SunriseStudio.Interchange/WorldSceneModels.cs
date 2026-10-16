@@ -2,6 +2,7 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Interchange;
 
+/** Data model of the world scene export. Options for world export: project and whether to include materials. */
 public sealed record WorldSceneExportOptions(StudioProject? Project = null, bool IncludeMaterials = true)
 {
     /** Draw-time shader inputs by part, such as gear dyes and plates; a part with none uses its plain material. */
@@ -17,8 +18,11 @@ public sealed record WorldSceneExportOptions(StudioProject? Project = null, bool
  * @param Occlusion BLENDINDICES0, the record's map AO bytes as unorm.
  */
 public readonly record struct WorldDecoratorInputs(System.Numerics.Vector4 Record, System.Numerics.Vector4 Occlusion);
+/** A binary buffer file with its length and hash. */
 public sealed record WorldBuffer(string Path, long Length, string Sha256);
+/** A typed slice of a buffer. */
 public sealed record WorldBufferView(int Buffer, long Offset, int Count, int Components, string ComponentType);
+/** A mesh part's vertex streams. */
 public sealed record WorldGeometry(int Id, uint ModelTag, int PartIndex, int LogicalPartIndex,
     WorldBufferView Positions, WorldBufferView Normals, WorldBufferView TexCoords, WorldBufferView Indices,
     WorldBufferView? Tangents, string Basis, WorldMotion? Motion)
@@ -28,7 +32,9 @@ public sealed record WorldGeometry(int Id, uint ModelTag, int PartIndex, int Log
     /** Lanes z and w of the UV stream, untransformed; null when it stores two lanes. */
     public WorldBufferView? TexCoordsZw { get; init; }
 }
+/** Vertex motion data for a geometry. */
 public sealed record WorldMotion(string Profile, WorldBufferView Colors, float[][] Constants, float[][] Rates);
+/** A material in the world scene. */
 public sealed record WorldMaterial(int Id, uint TagHash, int RenderStage, string Name,
     string? Path, string? Sha256, bool NeedsNativeBasis, string BlendMode)
 {
@@ -36,29 +42,38 @@ public sealed record WorldMaterial(int Id, uint TagHash, int RenderStage, string
     /** The native draw culls clockwise triangles, the faces Blender sees as back faces. */
     public bool BackfaceCulling { get; init; }
 }
+/** A world material's native document and preview. */
 public sealed record WorldMaterialDocument(SunriseStudio.Formats.MaterialDocument Native, BundleMaterialPreview Preview);
+/** A texture file in the world scene. */
 public sealed record WorldTexture(uint TagHash, string Path, string Sha256, int Width, int Height, int Format);
+/** One part of a prototype: geometry, material, transform, LOD and initial visibility. */
 public sealed record WorldPart(int Geometry, int Material, uint ModelTag, int PartIndex, int LogicalPartIndex,
     uint ConfigTag, uint ResourceClass, string Name, float[] Transform, int Lod, int RenderStage,
     bool? InitiallyVisible, string? VisibilityReason, string Layer);
+/** A set of parts that instances share. */
 public sealed record WorldPrototype(int Id, IReadOnlyList<WorldPart> Parts, bool CollectionInstanceSafe);
+/** The per-instance rows of a prototype. */
 public sealed record WorldInstanceTable(WorldBufferView Rows, int Stride)
 {
     /** One row per placement: WorldDecoratorInputs Record then Occlusion; null when no placement has any. */
     public WorldBufferView? Inputs { get; init; }
 }
+/** A placed marker with its source, layer, state and transform. */
 public sealed record WorldMarker(string Name, uint TagHash, uint SourceTag, int SourceOffset, ulong PlacementIdentity,
     string Layer, uint BubbleHash, uint ActivityTag, int StateOrdinal, string StateName,
     float[] Position, float[] Rotation, float[] Extents);
+/** Counts and timings of an export. */
 public sealed record WorldSceneStatistics(int Instances, int Parts, int Geometries, int Prototypes,
     int Materials, int Textures, long Vertices, long Indices, long BufferBytes,
     IReadOnlyDictionary<string, double> Seconds);
+/** The world scene manifest. */
 public sealed record WorldSceneManifest(string Format, int Version, string Name, uint SourceTag,
     string Coordinates, string MatrixConvention, IReadOnlyList<WorldBuffer> Buffers, IReadOnlyList<WorldGeometry> Geometry,
     IReadOnlyList<WorldMaterial> Materials, IReadOnlyList<WorldTexture> Textures,
     IReadOnlyList<WorldPrototype> Prototypes, IReadOnlyList<string> Names, WorldInstanceTable Instances,
     IReadOnlyList<WorldMarker> Markers,
     IReadOnlyList<BundleNotice> Notices, WorldSceneStatistics Statistics);
+/** Result of a world export: manifest path and contents. */
 public sealed record WorldSceneExportResult(string ManifestPath, WorldSceneManifest Manifest);
 /**
  * One placed light fitted to a point, spot or line light. Light values are the game's lighting units before exposure.

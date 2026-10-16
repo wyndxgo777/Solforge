@@ -232,6 +232,7 @@ public static partial class WorldSceneExport
     /** CPU port of pixel shader 0x80B35F99 for one world direction, after its mirror-ball reflection. */
     private sealed class SkyRadiance(Vector4[] cb0, SkyLookup first, SkyLookup second)
     {
+        /** Sky radiance in direction d, a CPU port of the sky pixel shader. */
         public Vector3 At(Vector3 d)
         {
             float ax = MathF.Abs(d.X), ay = MathF.Abs(d.Y), sum = ax + ay;
@@ -258,6 +259,7 @@ public static partial class WorldSceneExport
     /** A decoded R16G16B16A16_FLOAT volume, sampled linearly with U and W wrapping and V clamped, as sampler 0x80C7631D does. */
     private sealed class SkyLookup(int width, int height, int depth, Vector4[] texels)
     {
+        /** Loads a sky texture from the packages. */
         public static SkyLookup Read(PackageCatalog catalog, uint tag)
         {
             var data = new TextureDataReader(catalog).Read(tag);
@@ -276,6 +278,7 @@ public static partial class WorldSceneExport
             return new(top.Width, top.Height, top.Depth, texels);
         }
 
+        /** Samples the sky at a lookup coordinate. */
         public Vector4 Sample(Vector3 at)
         {
             float x = at.X * width - 0.5f, y = Math.Clamp(at.Y * height - 0.5f, 0, height - 1), z = at.Z * depth - 0.5f;

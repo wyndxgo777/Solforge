@@ -4,6 +4,7 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Interchange;
 
+/** Reads and writes emitter constants of particle effects. Scalar and vector channel kinds are the sets below. */
 internal static class BundleParticlesCodec
 {
     private static readonly HashSet<int> Scalars = [5, 10, 12, 13, 14, 15, 16, 17, 19, 21, 22, 24, 31];

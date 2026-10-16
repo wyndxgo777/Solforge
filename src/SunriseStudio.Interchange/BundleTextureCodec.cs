@@ -10,6 +10,7 @@ namespace SunriseStudio.Interchange;
 /** Recompression replaces changed blocks only; unchanged native texture bytes stay intact. */
 public static class BundleTextureCodec
 {
+    /** Decodes one mip, array slice and depth slice of a texture to RGBA; throws when the subresource or depth slice does not exist. */
     public static RgbaImage Decode(TextureData texture, int mip = 0, int slice = 0, int depthSlice = 0)
     {
         var sub = texture.Subresources.Single(value => value.MipLevel == mip && value.ArraySlice == slice);

@@ -5,6 +5,7 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Interchange;
 
+/** Native reference collection of AssetBundle. */
 public static partial class AssetBundle
 {
     /** Reference evidence comes from native readers, never editable manifest claims. */

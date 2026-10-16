@@ -6,6 +6,7 @@ using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Interchange;
 
+/** Water part of world scene export (sea height). */
 public static partial class WorldSceneExport
 {
     /** Moves flat sea parts to the height of their map's wave settings, where the game draws them. */

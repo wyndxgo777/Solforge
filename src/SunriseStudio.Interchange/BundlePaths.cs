@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace SunriseStudio.Interchange;
 
+/** Path and JSON helpers for bundles: safe path resolution, link rejection and hashing. */
 internal static class BundlePaths
 {
     internal static readonly JsonSerializerOptions Json = new()
@@ -12,8 +13,11 @@ internal static class BundlePaths
         UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
         Converters = { new JsonStringEnumConverter() }
     };
+    /** Upper-case SHA-256 hex of the bytes. */
     internal static string Hash(ReadOnlySpan<byte> data) => Convert.ToHexString(SHA256.HashData(data));
+    /** SHA-256 hex of a file's contents. */
     internal static string FileHash(string path) => Hash(File.ReadAllBytes(path));
+    /** True when path is inside root. */
     internal static bool Within(string path, string root)
     {
         string prefix = Path.TrimEndingDirectorySeparator(Path.GetFullPath(root));
@@ -21,6 +25,7 @@ internal static class BundlePaths
         return value.Equals(prefix, StringComparison.OrdinalIgnoreCase)
             || value.StartsWith(prefix + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
     }
+    /** Throws if the path or any parent is a link or junction. */
     internal static void RejectLinks(string path)
     {
         for (string? current = Path.GetFullPath(path); current is not null; current = Path.GetDirectoryName(current))
@@ -28,6 +33,7 @@ internal static class BundlePaths
                 && (File.GetAttributes(current) & FileAttributes.ReparsePoint) != 0)
                 throw new IOException("Bundle paths cannot traverse links or junctions.");
     }
+    /** Resolves a manifest-relative path under root; throws for rooted, dotted or colon paths and links. */
     internal static string Resolve(string root, string relative)
     {
         if (string.IsNullOrWhiteSpace(relative) || Path.IsPathRooted(relative)
@@ -38,6 +44,7 @@ internal static class BundlePaths
         RejectLinks(full);
         return full;
     }
+    /** Reads a JSON document (up to 256 MB) after rejecting links. */
     internal static T Read<T>(string path)
     {
         RejectLinks(path);
@@ -76,6 +83,7 @@ internal static class BundlePaths
                         if (!File.Exists(resource)) throw new InvalidDataException("glTF external resource is missing.");
                     }
     }
+    /** Writes a value as JSON, creating the folder. */
     internal static void Write<T>(string path, T value)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);

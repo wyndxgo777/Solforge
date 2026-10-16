@@ -15,6 +15,7 @@ internal sealed class WorldBinaryWriter(string root, CancellationToken token) : 
     private readonly List<WorldBuffer> buffers = [];
     public IReadOnlyList<WorldBuffer> Buffers => buffers;
 
+    /** Writes count x components floats, taken from value(item, component), and returns its buffer view. */
     internal WorldBufferView Floats(int count, int components, Func<int, int, float> value)
     {
         var view = Begin(count, components, 4, "Float32");
@@ -52,6 +53,7 @@ internal sealed class WorldBinaryWriter(string root, CancellationToken token) : 
         return view;
     }
 
+    /** Writes triangle indices as a buffer view; throws if empty, not a multiple of 3 or out of range. */
     internal WorldBufferView Indices(uint[] values, int vertices)
     {
         if (values.Length == 0 || values.Length % 3 != 0 || values.Any(value => value >= vertices))
@@ -65,6 +67,7 @@ internal sealed class WorldBinaryWriter(string root, CancellationToken token) : 
         return view;
     }
 
+    /** Writes count fixed-size records with the encode callback and returns its buffer view. */
     internal WorldBufferView Records(int count, int stride, Action<int, SpanWriter> encode)
     {
         var view = Begin(count, stride, 1, "UInt8");
@@ -81,9 +84,13 @@ internal sealed class WorldBinaryWriter(string root, CancellationToken token) : 
     /** Record helpers write the declared little-endian wire layout without a struct ABI dependency. */
     internal sealed class SpanWriter(byte[] bytes)
     {
+        /** Writes a little-endian 32-bit value. */
         internal void U32(int offset, uint value) => System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(bytes.AsSpan(offset), value);
+        /** Writes a little-endian signed 32-bit value. */
         internal void I32(int offset, int value) => System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(bytes.AsSpan(offset), value);
+        /** Writes a little-endian 64-bit value. */
         internal void U64(int offset, ulong value) => System.Buffers.Binary.BinaryPrimitives.WriteUInt64LittleEndian(bytes.AsSpan(offset), value);
+        /** Writes a float; throws for non-finite values. */
         internal void F32(int offset, float value)
         {
             if (!float.IsFinite(value)) throw new InvalidDataException("World placement contains a nonfinite matrix.");
@@ -109,6 +116,7 @@ internal sealed class WorldBinaryWriter(string root, CancellationToken token) : 
 
     private void Write(ReadOnlySpan<byte> data) { stream!.Write(data); hash!.AppendData(data); bytes += data.Length; }
 
+    /** Closes the buffer file. */
     internal void Finish() => Close();
     private void Close()
     {
@@ -118,5 +126,6 @@ internal sealed class WorldBinaryWriter(string root, CancellationToken token) : 
         hash.Dispose(); hash = null;
     }
 
+    /** Releases the stream and hash. */
     public void Dispose() { stream?.Dispose(); hash?.Dispose(); }
 }

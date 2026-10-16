@@ -6,6 +6,7 @@ using SunriseStudio.Rendering;
 
 namespace SunriseStudio.Interchange;
 
+/** Material part of world scene export: one material per key, with dye-aware previews. */
 public static partial class WorldSceneExport
 {
     /**
