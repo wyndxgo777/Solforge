@@ -31,7 +31,7 @@ public sealed partial class StudioForm
         if (!workspace.IsBusy && workspace.World is null)
         { focusWorldScene = focusMissionPage = false; }
         // A focus request shows a popped-out editor's window instead of docking a second copy.
-        if ((focusAssets || focusLive || focusAssetPage || focusWorldScene || focusMissionPage)
+        if ((focusAssets || focusLive || focusLocalServer || focusAssetPage || focusWorldScene || focusMissionPage)
             && !ShowPopout(StudioPanelKind.Workspace))
         {
             bool absent = layout.Find(StudioPanelKind.Workspace) is null;
