@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Solforge: the shared typed node-graph core (Studio.md §3, Solforge.Graphs). Material, weapon/item and mission
+       graphs, editing with undo, validation and compilers. Plain net9.0 with no references, so the MCP server,
+       the editor and the checks all use it. -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <RootNamespace>Solforge.Graphs</RootNamespace>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+</Project>
