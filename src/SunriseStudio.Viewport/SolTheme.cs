@@ -41,8 +41,8 @@ public static unsafe class SolTheme
     public static readonly Vector4 Sun = Hex(0xffb648);
     public static readonly Vector4 SunHi = Hex(0xffcb7a);
     public static readonly Vector4 Sun2 = Hex(0xff7a2f);
-    public static readonly Vector4 SunGradStart = Hex(0xffd88a);
-    public static readonly Vector4 SunGradEnd = Hex(0xff9a45);
+    public static readonly Vector4 SunGradStart = Hex(0xffe0a0);
+    public static readonly Vector4 SunGradEnd = Hex(0xff7a2f);
     /** The light ends of sun-shimmer (#ffe0a0 -> sun -> sun-2 -> sun -> #ffe0a0). */
     public static readonly Vector4 SunShimmerEdge = Hex(0xffe0a0);
     /** Text on a sun fill: the site button's hsl(--cpl-color-black), 2%. */
@@ -266,7 +266,7 @@ public static unsafe class SolTheme
         if (border != 0) { ChamferPath(draw, min, max, cut * Scale); draw.PathStroke(border, ImDrawFlags.Closed, 1); }
     }
 
-    /** A chamfered box filled with sun-grad (#ffd88a -> #ffb648 -> #ff9a45, left to right). */
+    /** A chamfered box filled with sun-grad (#ffe0a0 -> #ffb648 -> #ff7a2f, left to right). */
     public static void ChamferGradient(ImDrawListPtr draw, Vector2 min, Vector2 max, float cut, float alpha = 1)
     {
         if (max.X - min.X < 1 || max.Y - min.Y < 1) return;
@@ -287,7 +287,7 @@ public static unsafe class SolTheme
     }
 
     /**
-     * The launcher's .dl-bar: a pill filled with #ffd88a -> sun -> sun-2 along x, drawn as slices so the middle
+     * The launcher's .dl-bar: a pill filled with #ffe0a0 -> sun -> sun-2 along x, drawn as slices so the middle
      * stop holds. A sheen in [0, 1) sweeps a pale band across it; a negative sheen leaves it still.
      */
     public static void ProgressFill(ImDrawListPtr draw, Vector2 min, Vector2 max, float sheen = -1)
