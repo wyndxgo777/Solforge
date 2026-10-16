@@ -469,6 +469,19 @@ public sealed partial class NativeSceneRenderer : IDisposable
         Action<string, int, int>? preparationProgress = null, GpuPreload? preload = null)
     {
         int number = 0;
+        // Textures the plan already created on the GPU move here; the plan then holds no reference to them.
+        lock (plan.UploadedTextures)
+        {
+            foreach (var (tag, uploaded) in plan.UploadedTextures)
+            {
+                if (textures.ContainsKey(tag)) { uploaded.Dispose(); continue; }
+                textures.Add(tag, Own(uploaded));
+                badTextures.Remove(tag);
+            }
+            plan.UploadedTextures.Clear();
+        }
+        foreach (var (tag, message) in plan.UploadFailures)
+            if (!textures.ContainsKey(tag) && badTextures.Add(tag)) AddDiagnostic($"Texture 0x{tag:X8}: {message}");
         preparationProgress?.Invoke("Uploading textures", 0, plan.Textures.Count);
         preload?.WaitTextures(preparationProgress);
         foreach (var item in plan.Textures)

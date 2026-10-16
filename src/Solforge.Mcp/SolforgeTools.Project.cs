@@ -58,7 +58,9 @@ public static partial class SolforgeTools
         // Editor and project.
         yield return Query("get_editor_state", "Solforge's state in one call: installation and game build, project, open map and " +
             "mission, open asset, busy work and progress, last error, whether the 3D viewport renders (and why not), Live link, " +
-            "Destiny 2 running, MCP and the skills folder. Works with nothing open.", McpJson.Schema());
+            "Destiny 2 running, MCP and the skills folder, and a memory breakdown in MiB (process and managed heaps, the open " +
+            "scene's decoded and native mesh bytes per detail level, caches, native plan and viewport GPU estimates). " +
+            "Works with nothing open.", McpJson.Schema());
         yield return Query("get_project", "The open project: name, folder, mod details, counts of asset, object and script " +
             "changes, and the game install it targets.", McpJson.Schema());
         yield return Query("list_project_files", "Files in the project folder (relative paths, sizes), filtered and paged. " +

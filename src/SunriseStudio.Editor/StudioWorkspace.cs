@@ -150,6 +150,7 @@ public sealed partial class StudioWorkspace : IDisposable
                     ResetAssetVisits();
                     World = null; worldChanges = []; placementUpdates.Clear();
                     WorldCatalog = worlds; WorldRevision++; SceneRevision++; NameRevision++;
+                    NativePlan?.ReleaseUploads();
                     NativePlan = null; NativePlanScene = null; NativeError = ""; NativeRevision++;
                     undo.Clear(); redo.Clear();
                     AssetRevision++; DocumentRevision++;
@@ -913,6 +914,12 @@ public sealed partial class StudioWorkspace : IDisposable
     {
         worldTextures.Clear();
         Catalog?.TrimReadCache(0);
+        CompactHeap();
+    }
+
+    /** One blocking, compacting full collection that also compacts the large object heap, so freed RAM goes back to Windows. */
+    public static void CompactHeap()
+    {
         System.Runtime.GCSettings.LargeObjectHeapCompactionMode = System.Runtime.GCLargeObjectHeapCompactionMode.CompactOnce;
         GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: true);
     }
@@ -927,16 +934,23 @@ public sealed partial class StudioWorkspace : IDisposable
         {
             // Upstream loads every texture's streamed mips (no budget); only Low memory mode bounds them.
             long textureBudget = LowMemoryMode ? LowMemoryTextureBudget : long.MaxValue;
+            // A world plan uploads each texture as it decodes, so RAM never holds the map's decoded textures at once.
             return AssetViewport.PrepareNativeScene(catalog, scene, OperationToken,
                 ReportProgress, textureBudgetBytes: textureBudget, assetPreview: assetPreview,
-                textureCache: assetPreview || LowMemoryMode ? null : worldTextures);
+                textureCache: assetPreview || LowMemoryMode ? null : worldTextures,
+                uploader: assetPreview ? null : TextureUploader, textureCacheLimitBytes: TextureCacheLimit);
         }
         catch (Exception failure) when (failure is not OperationCanceledException and not OutOfMemoryException)
         { error = failure.Message; return null; }
     }
 
+    /** The graphics device world plans upload their textures to while they prepare; the host sets it. */
+    public SunriseStudio.Rendering.Dx11Renderer? TextureUploader { get; set; }
+
     private void AdoptNative(NativeScenePlan? plan, SceneDocument? scene)
     {
+        // A replaced plan the viewport never adopted still owns GPU textures; an adopted one owns none.
+        if (NativePlan is { } prior && !ReferenceEquals(prior, plan)) prior.ReleaseUploads();
         NativePlan = plan; NativePlanScene = scene; NativeRevision++;
         if (LowMemoryMode) worldTextures.Clear();
         else BoundTextureCache();
