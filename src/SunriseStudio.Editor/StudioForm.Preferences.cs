@@ -99,6 +99,9 @@ public sealed partial class StudioForm
         DrawAiProviderRows("cline", "Cline");
         bool allow = settings.AiAutoAllow;
         if (UiAuto.Checkbox("Auto-allow one-time prompts", ref allow)) { settings.AiAutoAllow = allow; aiAllowSeen = null; SaveSettings(); }
+        bool skip = settings.AiSkipPermissions;
+        if (UiAuto.Checkbox("Skip permission prompts (engines start in no-prompt mode)", ref skip)) { settings.AiSkipPermissions = skip; SaveSettings(); }
+        SettingNote("Claude Code and agy: --dangerously-skip-permissions; Cline: --yolo. Applies to the next Start. Auto-allow above stays as the fallback.");
         bool resume = settings.AiResumeSessions;
         if (UiAuto.Checkbox("Resume last session on Start/Restart", ref resume)) { settings.AiResumeSessions = resume; SaveSettings(); }
         bool mcp = settings.AiMcpEnabled;

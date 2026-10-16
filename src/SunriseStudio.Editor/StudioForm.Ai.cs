@@ -491,6 +491,7 @@ public sealed partial class StudioForm
             _ => ""
         };
         arguments = EngineLaunch.JoinArguments(EngineProviders.Arguments(preset, choice), arguments);
+        if (settings.AiSkipPermissions) arguments = EngineLaunch.JoinArguments(arguments, EngineLaunch.SkipPermissionsArguments(engine.Command));
         if (resume) arguments = EngineLaunch.JoinArguments(arguments, EngineLaunch.ResumeArguments(engine.Command, AiLastSession(engine.Command, executable, folder)));
         arguments = EngineLaunch.WithPrompt(engine.Command, arguments, prompt);
         aiTerminal.Start(EngineLaunch.CmdLine(executable, arguments), folder, 120, 32, environment);

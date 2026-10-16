@@ -153,6 +153,7 @@ Real count is 14 libraries (incl. App), not 20.
   tracking; `StudioForm.Ai.Host.cs` = the tool host (UI-thread marshalling via `BeginInvoke`, context snapshot every 250 ms,
   visible list every 1 s, screenshots from `FrameRendered` + `CapturePng`, approvals, AI edits with Undo, mission-script hot reload).
   `AssetViewport.Ai.cs` adds `ScreenOrigin`/`ScreenSize`/`ScreenRect`; `LivePage.Ai.cs` adds `AiState`.
+  Engines start in no-prompt mode by default (`AiSkipPermissions`, Settings > AI; `EngineLaunch.SkipPermissionsArguments`): claude and agy `--dangerously-skip-permissions`, cline `--yolo` (limited tool set). Auto-allow below is the fallback.
   The header's Auto-allow toggle (right of Folders, `AiAutoAllow` setting) runs on its own 100 ms UI timer, reads `VtScreen.Snapshot(30)` when the screen changed and sends Enter
   once per prompt (after 250 ms stable, 550 ms for Claude Code, which may get one retry after a redraw) when `Solforge.Mcp.ApprovalPrompts` sees a claude/agy/cline allow prompt at the bottom with a one-time Yes/Allow highlighted.
   Start/Restart resume the engine's last session for the folder when `AiResumeSessions` is on (default; right-click New session): claude `--continue` if `~/.claude/projects/<folder>/*.jsonl` exists,

@@ -101,6 +101,17 @@ public static class EngineLaunch
     public static string CmdLine(string executable, string arguments, bool keep = true) =>
         $"cmd.exe /d /s /{(keep ? 'k' : 'c')} \"{Quote(executable)}{(arguments.Length > 0 ? " " + arguments : "")}\"";
 
+    /**
+     * The engine's no-prompt flag (checked against each CLI's --help): claude and agy --dangerously-skip-permissions,
+     * cline --yolo (-y; auto-approves a limited tool set). "" for any other engine.
+     */
+    public static string SkipPermissionsArguments(string command) => command switch
+    {
+        "claude" or "agy" => "--dangerously-skip-permissions",
+        "cline" => "--yolo",
+        _ => ""
+    };
+
     /** One argument as the Windows argv parser reads it back. */
     public static string Quote(string value)
     {
