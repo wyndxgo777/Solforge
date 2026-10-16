@@ -146,13 +146,13 @@ public static partial class SolforgeTools
             ("region", "array", "Optional [x, y, width, height] in image pixels to read only that part (HUD corner, a panel, a button)", false),
             ("contains", "string", "Keep only lines containing this text (case-insensitive): where is 'Launch'?", false),
             ("words", "boolean", "Include each word with its own box (default false: lines only)", false),
-            ("scale", "number", "Upscale before OCR (default auto: 3x for regions up to 640 px, 2x up to 1280, else 1x)", false),
+            ("scale", "number", "Upscale before OCR (default auto: 2x for images or regions up to 1280 px, else 1x)", false),
             ("lang", "string", "OCR language tag, e.g. 'en-US' (default: the Windows user languages, else en-US)", false));
         regionSchema["properties"]!["region"]!["items"] = new JsonObject { ["type"] = "number" };
         yield return read("read_screen_text", "Read the text on screen (OCR with Windows.Media.Ocr, built into Windows; no GPU, " +
             "no download): every line with its [x, y, width, height] box in image pixels, optionally only a region or only lines " +
             "containing some text. Reads the live viewport frame by default or the full-size screenshot (source='screenshot'). " +
-            "Destiny's letter-spaced labels can come back split ('N ESS U S'); read a tight region or use scale 3 for small HUD text.",
+            "Destiny's letter-spaced labels can come back split ('N ESS U S'); read a tight region or try scale 2-3 for small HUD text.",
             regionSchema,
             async (args, cancel) =>
             {

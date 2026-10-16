@@ -59,7 +59,7 @@ public sealed class ScreenOcr : IDisposable
         }
     }
 
-    /** OCR of an image file. region is [x, y, w, h] in image pixels; scale 0 lets the helper pick (3x small, 2x mid, 1x large). */
+    /** OCR of an image file. region is [x, y, w, h] in image pixels; scale 0 lets the helper pick (2x up to 1280 px, else 1x). */
     public async Task<JsonObject> ReadFileAsync(string path, int[]? region, double scale, string? lang, CancellationToken cancel)
     {
         if (PowerShellPath() is null) return Failure("Screen OCR needs Windows (Windows PowerShell 5.1 and Windows.Media.Ocr).");

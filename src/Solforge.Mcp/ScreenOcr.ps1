@@ -56,13 +56,14 @@ function Read-ScreenText([string]$path, $region, [double]$scale, [string]$lang) 
         $decoder = Await ([Windows.Graphics.Imaging.BitmapDecoder]::CreateAsync($stream)) ([Windows.Graphics.Imaging.BitmapDecoder])
         $width = [int]$decoder.PixelWidth; $height = [int]$decoder.PixelHeight
         # Crop to the region (clamped to the image), then scale small text up: Windows OCR wants letters ~20+ px tall.
+        # Auto is 2x up to 1280 px: on game HUD crops 3x sometimes loses whole lines that 2x reads.
         $rx = 0; $ry = 0; $rw = $width; $rh = $height
         if ($region -and $region.Count -eq 4) {
             $rx = [Math]::Max(0, [Math]::Min($width - 1, [int]$region[0])); $ry = [Math]::Max(0, [Math]::Min($height - 1, [int]$region[1]))
             $rw = [Math]::Max(1, [Math]::Min($width - $rx, [int]$region[2])); $rh = [Math]::Max(1, [Math]::Min($height - $ry, [int]$region[3]))
         }
         $max = [double][Windows.Media.Ocr.OcrEngine]::MaxImageDimension
-        if ($scale -le 0) { $long = [Math]::Max($rw, $rh); $scale = if ($long -le 640) { 3.0 } elseif ($long -le 1280) { 2.0 } else { 1.0 } }
+        if ($scale -le 0) { $scale = if ([Math]::Max($rw, $rh) -le 1280) { 2.0 } else { 1.0 } }
         $scale = [Math]::Min($scale, [Math]::Min($max / $rw, $max / $rh))
         $transform = [Windows.Graphics.Imaging.BitmapTransform]::new()
         $transform.ScaledWidth = [uint32][Math]::Max(1, [Math]::Round($width * $scale))
