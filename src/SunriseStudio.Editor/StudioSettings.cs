@@ -82,6 +82,8 @@ public sealed class StudioSettings
     public bool AiAskClinePass { get; set; }
     /** AI workspace: the provider preset per engine command (claude, cline); never holds keys or tokens. */
     public Dictionary<string, Solforge.Mcp.EngineProviders.Choice> AiProviders { get; set; } = [];
+    /** The AI panel was docked once by default; never added again, so closing it stays closed. */
+    public bool AiPanelOffered { get; set; }
     /** Editors shown in their own windows, with each window's screen bounds. */
     public List<StudioPopoutState> Popouts { get; set; } = [];
 

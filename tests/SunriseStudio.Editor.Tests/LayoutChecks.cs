@@ -26,6 +26,20 @@ internal static class LayoutChecks
             && old.Show(StudioPanelKind.LocalServer).Panel == StudioPanelKind.LocalServer, "An old layout did not restore.");
         Check(StudioLayout.Preset(StudioLayout.SolforgePreset).Find(StudioPanelKind.LocalServer) is not null,
             "The default layout has no Local Server panel.");
+        foreach (var name in new[] { StudioLayout.SolforgePreset, StudioLayout.AiPreset, StudioLayout.ScenePreset, StudioLayout.ClassicPreset })
+        {
+            var preset = StudioLayout.Preset(name);
+            Check(preset.Find(StudioPanelKind.AI) is not null && preset.Find(StudioPanelKind.LocalServer) is not null,
+                $"Preset {name} lacks the AI or Local Server panel.");
+        }
+        Check(StudioLayout.Preset(StudioLayout.ScenePreset).Find(StudioPanelKind.Changes) is null,
+            "The scene preset still docks Project changes in Local Server's slot.");
+        // A saved layout with no AI area gets it once on the right; an existing one is left alone.
+        var noAi = StudioLayout.Restore(JsonDocument.Parse("""{"Id":1,"Panel":"Empty","Axis":"Rows","Ratio":0.7,"First":{"Id":2,"Panel":"Workspace","Axis":"Columns","Ratio":0.5},"Second":{"Id":3,"Panel":"Changes","Axis":"Columns","Ratio":0.5}}""").RootElement);
+        Check(noAi.AddAiRight() && noAi.Root.Second!.Panel == StudioPanelKind.AI && noAi.Root.Axis == StudioSplitAxis.Columns
+            && noAi.Find(StudioPanelKind.Workspace) is not null && noAi.Find(StudioPanelKind.Changes) is not null, "AI was not docked on the right.");
+        Check(!noAi.AddAiRight() && noAi.Panels.Count(node => node.Panel == StudioPanelKind.AI) == 1, "AI was docked twice.");
+        Check(new StudioSettings().AiPanelOffered == false && !StudioSettings.Load(path).AiPanelOffered, "The AI offer flag does not start unset.");
         // A panel name this build does not know falls back to the default layout instead of failing.
         var unknown = StudioLayout.Restore(JsonDocument.Parse("""{"Id":1,"Panel":"NoSuchPanel","Axis":"Rows","Ratio":0.5}""").RootElement);
         Check(unknown.Find(StudioPanelKind.Workspace) is not null, "An unknown panel name broke the layout.");

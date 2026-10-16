@@ -26,6 +26,15 @@ public sealed partial class StudioForm
         RememberPopouts();
     }
 
+    /** Once per settings file: a saved layout with no AI area and no AI window gets the panel on the right. */
+    private void OfferAiPanel()
+    {
+        if (options.Smoke || settings.AiPanelOffered) return;
+        settings.AiPanelOffered = true;
+        if (layout.Find(StudioPanelKind.AI) is null && !IsPoppedOut(StudioPanelKind.AI) && layout.AddAiRight()) layoutDirty = true;
+        layoutDirty = true;
+    }
+
     /** The area closes and its editor moves to a new window; the last area stays, empty. */
     private void PopOut(StudioLayoutNode node)
     {
