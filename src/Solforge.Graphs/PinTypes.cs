@@ -1,3 +1,4 @@
+/** File: Pin types, type compatibility rules and the GraphValue constant carrier used by the evaluator. */
 using System.Globalization;
 using System.Numerics;
 
@@ -63,12 +64,14 @@ public static class PinTypes
         : from == to || from == PinType.Any || to == PinType.Any
         || to == PinType.Numeric && IsNumeric(from) || from == PinType.Numeric && IsNumeric(to);
 
+    /** Whether the type is a bool, int, float or vector. */
     public static bool IsNumeric(PinType type) =>
         type is PinType.Bool or PinType.Int or PinType.Float or PinType.Vector2 or PinType.Vector3 or PinType.Color or PinType.Numeric;
 
     /** Whether a link is allowed at all: directly or through a conversion. */
     public static bool Connectable(PinType from, PinType to) => Compatible(from, to) || Conversion(from, to) is not null;
 
+    /** Display label for a pin type. */
     public static string Label(PinType type) => type switch
     {
         PinType.Vector2 => "Vector 2", PinType.Vector3 => "Vector 3", _ => type.ToString()
@@ -78,7 +81,9 @@ public static class PinTypes
 /** A data value as compilers and constant folding see it: up to four numbers, or text. */
 public readonly record struct GraphValue(PinType Type, double X, double Y = 0, double Z = 0, double W = 0, string? Text = null)
 {
+    /** Makes a float value. */
     public static GraphValue Float(double value) => new(PinType.Float, value);
+    /** Makes an int value. */
     public static GraphValue Int(long value) => new(PinType.Int, value);
     public static GraphValue Bool(bool value) => new(PinType.Bool, value ? 1 : 0);
     public static GraphValue Str(string text) => new(PinType.String, 0, Text: text);

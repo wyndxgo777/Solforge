@@ -1,3 +1,7 @@
+/**
+ * File: Node types shared by all graph kinds (reroute, function call and boundary nodes, and more). Registry and
+ * helpers are in NodeTypes.cs.
+ */
 namespace Solforge.Graphs;
 
 /** Node types every graph kind shares: reroutes, functions, constants, math, logic, vectors and conversions. */
@@ -12,6 +16,7 @@ public static partial class NodeLibrary
     public static readonly string[] MathTypes =
         ["math.add", "math.subtract", "math.multiply", "math.divide", "math.min", "math.max", "math.power"];
 
+    /** Yields the core node type definitions. */
     private static IEnumerable<NodeType> CoreTypes()
     {
         const GraphKind all = GraphKind.All;

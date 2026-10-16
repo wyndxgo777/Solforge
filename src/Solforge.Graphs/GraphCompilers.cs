@@ -1,3 +1,8 @@
+/**
+ * File: Compilers for material and weapon graphs: graph -> flattened graph -> evaluated values -> write/edit lists
+ * applied by the editor. Mission graphs compile to Lua in MissionGraphCompiler.cs; perks lower further in
+ * PerkLowering.cs.
+ */
 using System.Globalization;
 using System.Text.Json.Nodes;
 
@@ -10,11 +15,16 @@ public sealed record MaterialConstantWrite(string Stage, string Bank, int Vector
     public IEnumerable<int> Components => Mask.ToLowerInvariant().Select(c => "xyzw".IndexOf(c) is >= 0 and var i ? i : "rgba".IndexOf(c)).Where(i => i >= 0).Distinct();
 }
 
+/** One texture assignment a material graph produces: shader stage, slot, texture tag and the node that set it. */
 public sealed record MaterialTextureWrite(string Stage, int Slot, string Texture, string NodeId);
 
 /** What the preview swatch shows. */
 public sealed record MaterialPreview(double[] BaseColor, double Roughness, double Metalness, double[] Emissive, double Opacity);
 
+/**
+ * Everything a material graph compiles to: constant and texture writes against the target material, a preview swatch
+ * and diagnostics.
+ */
 public sealed record MaterialCompileResult(string Target, IReadOnlyList<MaterialConstantWrite> Constants,
     IReadOnlyList<MaterialTextureWrite> Textures, MaterialPreview Preview, IReadOnlyList<(string Name, string Value)> Parameters,
     IReadOnlyList<GraphDiagnostic> Diagnostics);
@@ -53,8 +63,13 @@ public sealed record WeaponCompileResult(string Target, IReadOnlyList<ItemEditOp
     public IReadOnlyList<CustomPerkDefinition> Definitions { get; init; } = [];
 }
 
+/** Compiles Material graphs: evaluates the graph into constant/texture writes for a material tag. */
 public static class MaterialGraphCompiler
 {
+    /**
+     * Validates and flattens the graph, then evaluates it into writes and a preview; problems are returned as
+     * diagnostics, not thrown.
+     */
     public static MaterialCompileResult Compile(GraphDocument document)
     {
         var diagnostics = GraphValidation.Validate(document).ToList();
@@ -95,8 +110,10 @@ public static class MaterialGraphCompiler
         return new(target, constants, textures, preview, parameters, diagnostics);
     }
 
+    /** Splits a value into its X, Y, Z, W components. */
     private static double[] Parts(GraphValue value) => [value.X, value.Y, value.Z, value.W];
 
+    /** JSON form of a material compile result, used by the MCP graph tools. */
     public static JsonObject ToJson(MaterialCompileResult result) => new()
     {
         ["target"] = result.Target,
@@ -117,8 +134,13 @@ public static class MaterialGraphCompiler
     };
 }
 
+/** Compiles Weapon (item) graphs into apply_item_edit operations and custom-perk rule descriptors. */
 public static class WeaponGraphCompiler
 {
+    /**
+     * Validates and flattens the graph, then walks the Weapon Output inputs (name, fields, stats, perks) into item
+     * edit ops.
+     */
     public static WeaponCompileResult Compile(GraphDocument document)
     {
         var diagnostics = GraphValidation.Validate(document).ToList();
@@ -209,6 +231,7 @@ public static class WeaponGraphCompiler
     /** Tier bytes at investment +186 by index (InvestmentItemKinds.TierName): 0 None ... 5 Exotic. */
     public static readonly string[] RarityNames = ["None", "Common", "Uncommon", "Rare", "Legendary", "Exotic"];
 
+    /** Collects the rules of a Custom Perk node: each linked event node plus the steps wired to it. */
     private static IEnumerable<PerkRule> CustomPerkRules(FlatGraph flat, GraphEvaluator evaluator, GraphNode perk, List<GraphDiagnostic> diagnostics)
     {
         foreach (var (eventNode, _) in flat.Targets(perk.Id, "perk"))
@@ -236,6 +259,7 @@ public static class WeaponGraphCompiler
         }
     }
 
+    /** JSON form of a weapon compile result (target plus ops), used by the MCP graph tools. */
     public static JsonObject ToJson(WeaponCompileResult result) => new()
     {
         ["target"] = result.Target,
@@ -250,6 +274,7 @@ public static class WeaponGraphCompiler
         ["perkDefinitions"] = new JsonArray(result.Definitions.Select(definition => (JsonNode)PerkLowering.ToJson(definition)).ToArray())
     };
 
+    /** JSON form of one perk step. */
     private static JsonNode Step(PerkStep step)
     {
         var values = new JsonObject();

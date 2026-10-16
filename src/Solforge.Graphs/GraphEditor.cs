@@ -1,8 +1,13 @@
+/**
+ * File: Interactive graph editing model: selection, undo/redo, add/connect/move/align/duplicate. The ImGui canvas is
+ * in Editor/StudioForm.NodeGraph.cs.
+ */
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace Solforge.Graphs;
 
+/** How Align lines up the selected nodes. */
 public enum AlignMode { Left, Right, Top, Bottom, CenterHorizontal, CenterVertical }
 
 /** Node box sizes in canvas units at zoom 1; the canvas draws with these and align/distribute measure with them. */
@@ -10,6 +15,7 @@ public static class GraphLayout
 {
     public const float Width = 220, CollapsedWidth = 170, Header = 30, Row = 22, Padding = 8, RerouteSize = 14;
 
+    /** Box size of a node in canvas units (reroutes and collapsed nodes are smaller than normal ones). */
     public static (float Width, float Height) Size(GraphDocument document, GraphNode node, GraphFunction? scope = null)
     {
         if (node.Type == NodeLibrary.Reroute) return (RerouteSize, RerouteSize);
@@ -33,9 +39,11 @@ public sealed class GraphEditor
     private readonly List<(string Json, string? Scope, string Label)> undo = [], redo = [];
     private string? scopeId;
 
+    /** Wraps a document for editing. */
     public GraphEditor(GraphDocument document) { Document = document; }
 
     public GraphDocument Document { get; private set; }
+    /** Ids of the selected nodes. */
     public HashSet<string> Selection { get; } = new(StringComparer.Ordinal);
     /** Bumped on every change, so views and validation know to refresh. */
     public int Revision { get; private set; }
@@ -48,7 +56,9 @@ public sealed class GraphEditor
     public string UndoLabel => undo.Count > 0 ? undo[^1].Label : "";
     public string RedoLabel => redo.Count > 0 ? redo[^1].Label : "";
 
+    /** Finds a node in the current scope by id. */
     public GraphNode? Node(string id) => Nodes.FirstOrDefault(node => node.Id == id);
+    /** Pins of a node in the current scope. */
     public IReadOnlyList<PinDef> PinsOf(GraphNode node) => Document.PinsOf(node, Scope);
 
     /** Opens a function's body for editing (null returns to the main graph). */
@@ -69,9 +79,12 @@ public sealed class GraphEditor
         Revision++;
     }
 
+    /** Undoes the last change; false when nothing to undo. */
     public bool Undo() => Swap(undo, redo);
+    /** Redoes the last undone change; false when nothing to redo. */
     public bool Redo() => Swap(redo, undo);
 
+    /** Moves the newest snapshot from one stack onto the other and restores it. */
     private bool Swap(List<(string Json, string? Scope, string Label)> from, List<(string Json, string? Scope, string Label)> to)
     {
         if (from.Count == 0) return false;
@@ -95,6 +108,7 @@ public sealed class GraphEditor
         Selection.Clear();
     }
 
+    /** Adds a node of a registered type at canvas x,y with an undo step; throws for unknown types. */
     public GraphNode AddNode(string type, float x, float y, IReadOnlyDictionary<string, string>? properties = null)
     {
         var definition = NodeLibrary.Find(type) ?? throw new ArgumentException($"Unknown node type {type}.");
@@ -102,6 +116,7 @@ public sealed class GraphEditor
         return AddRaw(type, x, y, properties);
     }
 
+    /** Creates the node and fills default property values without an undo checkpoint (used by compound edits). */
     private GraphNode AddRaw(string type, float x, float y, IReadOnlyDictionary<string, string>? properties = null)
     {
         var node = new GraphNode { Id = Document.NewId("n"), Type = type, X = x, Y = y };
@@ -139,6 +154,7 @@ public sealed class GraphEditor
         return null;
     }
 
+    /** Adds a link without an undo checkpoint (callers checkpoint and validate first). */
     private void ConnectRaw(string fromNode, string fromPin, string toNode, string toPin)
     {
         var source = Node(fromNode)!; var target = Node(toNode)!;
@@ -173,6 +189,7 @@ public sealed class GraphEditor
         return false;
     }
 
+    /** Removes one link (undoable). */
     public void Disconnect(GraphLink link)
     {
         if (!Links.Contains(link)) return;
@@ -214,12 +231,14 @@ public sealed class GraphEditor
         Revision++;
     }
 
+    /** Whether a node lies fully inside a comment box. */
     public bool Inside(GraphComment comment, GraphNode node)
     {
         var (width, height) = GraphLayout.Size(Document, node, Scope);
         return node.X >= comment.X && node.Y >= comment.Y && node.X + width <= comment.X + comment.Width && node.Y + height <= comment.Y + comment.Height;
     }
 
+    /** Sets a node property value (undoable; no-op when unchanged). */
     public void SetProperty(string nodeId, string key, string value)
     {
         if (Node(nodeId) is not { } node || node.Get(key, "\0") == value) return;
@@ -227,6 +246,7 @@ public sealed class GraphEditor
         node.Properties[key] = value;
     }
 
+    /** Folds the given nodes (or unfolds them all when every one is already folded). */
     public void ToggleCollapsed(IEnumerable<string> ids)
     {
         var nodes = Nodes.Where(node => ids.Contains(node.Id)).ToList();
@@ -265,6 +285,7 @@ public sealed class GraphEditor
         return comment;
     }
 
+    /** Applies a change to a comment box (undoable). */
     public void EditComment(string id, Action<GraphComment> change)
     {
         if (Document.Comments.FirstOrDefault(comment => comment.Id == id) is not { } comment) return;
@@ -329,6 +350,7 @@ public sealed class GraphEditor
         return added;
     }
 
+    /** Duplicates the selected nodes and the links between them; returns the new ids. */
     public IReadOnlyList<string> Duplicate()
     {
         var nodes = Nodes.Where(node => Selection.Contains(node.Id)).ToList();
@@ -338,6 +360,7 @@ public sealed class GraphEditor
 
     // Align and distribute.
 
+    /** Aligns the selected nodes (two or more) per the mode. */
     public void Align(AlignMode mode)
     {
         var nodes = Nodes.Where(node => Selection.Contains(node.Id)).ToList();

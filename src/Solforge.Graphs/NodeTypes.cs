@@ -1,3 +1,7 @@
+/**
+ * File: Node type model (pins, properties, categories) and the NodeLibrary registry; the node lists are in
+ * NodeLibrary.Core/Material/Mission/Weapon.cs.
+ */
 namespace Solforge.Graphs;
 
 /** Which graphs a node type can appear in. */
@@ -14,6 +18,7 @@ public enum PropertyKind { Text, Number, Integer, Bool, Choice, Color, Tag, Code
 public sealed record PinDef(string Id, string Name, PinType Type, bool Output, string? Default = null, bool Multi = false,
     bool Required = false);
 
+/** A user-editable node property: id, label, kind, default, optional choices and help text. */
 public sealed record PropertyDef(string Id, string Name, PropertyKind Kind, string Default = "",
     IReadOnlyList<string>? Choices = null, string Help = "");
 
@@ -23,7 +28,9 @@ public sealed record NodeType(string Id, string Title, string Category, GraphKin
 {
     public IEnumerable<PinDef> Inputs => Pins.Where(pin => !pin.Output);
     public IEnumerable<PinDef> Outputs => Pins.Where(pin => pin.Output);
+    /** Pin of this type by direction and id, or null. */
     public PinDef? Pin(string id, bool output) => Pins.FirstOrDefault(pin => pin.Output == output && pin.Id == id);
+    /** Property definition by id, or null. */
     public PropertyDef? Property(string id) => Properties.FirstOrDefault(property => property.Id == id);
     public bool IsEvent => !Inputs.Any(pin => pin.Type == PinType.Exec) && Outputs.Any(pin => pin.Type == PinType.Exec);
 }
@@ -34,8 +41,10 @@ public sealed record NodeSearchResult(NodeType Type, string? PinId, int Score, b
 /** The built-in node types and the context-sensitive add-menu search. */
 public static partial class NodeLibrary
 {
+    /** All registered node types by id. */
     private static readonly Dictionary<string, NodeType> types = new(StringComparer.Ordinal);
 
+    /** Registers the built-in node types once. */
     static NodeLibrary()
     {
         foreach (var type in CoreTypes().Concat(MaterialTypes()).Concat(ItemNodeTypes()).Concat(MissionTypes()))
@@ -44,11 +53,13 @@ public static partial class NodeLibrary
 
     public static IReadOnlyCollection<NodeType> All => types.Values;
 
+    /** Looks up a node type by id, or null. */
     public static NodeType? Find(string id) => types.GetValueOrDefault(id);
 
     /** Adds or replaces a node type, such as SDK functions the editor loads at run time. */
     public static void Register(NodeType type) { lock (types) types[type.Id] = type; }
 
+    /** Node types usable in a graph kind. */
     public static IEnumerable<NodeType> For(GraphKind kind) => types.Values.Where(type => (type.Kinds & kind) != 0);
 
     /**
@@ -97,11 +108,14 @@ public static partial class NodeLibrary
     // Builders keep the tables below short.
     internal static PinDef In(string id, string name, PinType type, string? value = null, bool multi = false, bool required = false) =>
         new(id, name, type, false, value, multi, required);
+    /** Builds an output pin definition. */
     internal static PinDef Out(string id, string name, PinType type) => new(id, name, type, true);
     internal static PinDef ExecIn => new("exec", "", PinType.Exec, false);
     internal static PinDef Then => new("then", "", PinType.Exec, true);
+    /** Builds a property definition (choices optional). */
     internal static PropertyDef Prop(string id, string name, PropertyKind kind, string value = "", string help = "",
         params string[] choices) => new(id, name, kind, value, choices.Length == 0 ? null : choices, help);
+    /** Builds a node type definition used by the NodeLibrary.* lists. */
     internal static NodeType Node(string id, string title, string category, GraphKind kinds, string description,
         PinDef[] pins, PropertyDef[]? properties = null, string keywords = "", bool hidden = false) =>
         new(id, title, category, kinds, pins, properties ?? Array.Empty<PropertyDef>(), description, keywords, hidden);

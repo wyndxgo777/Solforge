@@ -1,3 +1,7 @@
+/**
+ * File: Lowers a custom perk definition (rules from the weapon graph compiler) to a native sandbox perk program plan,
+ * plus JSON for the editor to pack (see Editor/Creation/CustomPerkAuthoring.cs).
+ */
 using System.Globalization;
 using System.Text.Json.Nodes;
 
@@ -21,6 +25,7 @@ public sealed record NativePerkStep(string Primitive, IReadOnlyDictionary<string
 public sealed record NativePerkPlan(IReadOnlyList<NativePerkStep> Activation, IReadOnlyList<NativePerkStep> Effects,
     IReadOnlyList<NativePerkStep> Deactivation, IReadOnlyList<GraphDiagnostic> Diagnostics)
 {
+    /** A plan with no steps or stats. */
     public static NativePerkPlan Empty { get; } = new([], [], [], []);
     public bool Ok => Diagnostics.All(item => item.Severity != DiagnosticSeverity.Error);
     /** Stats only: the plug carries investment stats and no sandbox perk program. */
@@ -55,6 +60,7 @@ public static class PerkLowering
     public const double MaxScalar = 5;
     public const int MaxOrbs = 10;
 
+    /** Turns the perk rules into native program steps; unsupported combinations become Error diagnostics. */
     public static NativePerkPlan Lower(CustomPerkDefinition perk)
     {
         var diagnostics = new List<GraphDiagnostic>();
@@ -190,6 +196,7 @@ public static class PerkLowering
             { InnerValues = values, StateProperty = MagazineProperty, AnyLabels = labels };
     }
 
+    /** Whether two native steps are identical (same primitive, state property and values). */
     private static bool Same(NativePerkStep left, NativePerkStep right) =>
         left.Primitive == right.Primitive && left.StateProperty == right.StateProperty
         && left.Values.OrderBy(pair => pair.Key).SequenceEqual(right.Values.OrderBy(pair => pair.Key))
@@ -197,10 +204,12 @@ public static class PerkLowering
         && left.AnyLabels.Count == right.AnyLabels.Count
         && left.AnyLabels.All(pair => right.AnyLabels.TryGetValue(pair.Key, out var other) && pair.Value.SequenceEqual(other));
 
+    /** Reads a numeric step value, with a fallback. */
     private static double Number(PerkStep step, string key, double fallback) =>
         step.Values.TryGetValue(key, out string? text) && double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out double value)
             ? value : fallback;
 
+    /** JSON form of a custom perk definition. */
     public static JsonObject ToJson(CustomPerkDefinition perk) => new()
     {
         ["name"] = perk.Name, ["description"] = perk.Description, ["icon"] = perk.Icon, ["socket"] = perk.Socket, ["node"] = perk.NodeId,
@@ -209,6 +218,7 @@ public static class PerkLowering
         ["activation"] = Steps(perk.Native.Activation), ["effects"] = Steps(perk.Native.Effects), ["deactivation"] = Steps(perk.Native.Deactivation)
     };
 
+    /** JSON form of native steps, values rounded to six places. */
     private static JsonArray Steps(IReadOnlyList<NativePerkStep> steps) => new(steps.Select(step =>
     {
         var values = new JsonObject();

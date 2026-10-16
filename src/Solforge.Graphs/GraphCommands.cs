@@ -1,3 +1,7 @@
+/**
+ * File: JSON command layer over node graphs; the MCP graph tools (Solforge.Mcp/SolforgeTools.Graphs.cs) and the
+ * editor call these. Documents live in GraphDocument.cs, edits in GraphEditor.cs.
+ */
 using System.Globalization;
 using System.Text.Json.Nodes;
 
@@ -16,6 +20,7 @@ public static class GraphCommands
         "expand", "align", "distribute", "toggle_collapsed", "rename"
     ];
 
+    /** Parses a graph kind name ("material", "weapon"/"item", "mission"...) from tool arguments. */
     public static GraphKind ParseKind(string? text) => (text ?? "").Trim().ToLowerInvariant() switch
     {
         "material" => GraphKind.Material,
@@ -40,6 +45,7 @@ public static class GraphCommands
                 ["outputs"] = new JsonArray(document.PinsOf(node, scope).Where(pin => pin.Output).Select(PinJson).ToArray())
             };
         }).ToArray());
+        /** Serialises links as {from, fromPin, to, toPin} objects for tool results. */
         static JsonArray Links(List<GraphLink> links) => new(links.Select(link => (JsonNode)new JsonObject
             { ["from"] = link.FromNode, ["fromPin"] = link.FromPin, ["to"] = link.ToNode, ["toPin"] = link.ToPin }).ToArray());
         return new JsonObject
@@ -61,6 +67,7 @@ public static class GraphCommands
         };
     }
 
+    /** Describes one pin (id, name, type, optional default) as JSON for node-type listings. */
     private static JsonNode PinJson(PinDef pin)
     {
         var json = new JsonObject { ["id"] = pin.Id, ["name"] = pin.Name, ["type"] = pin.Type.ToString() };
@@ -70,6 +77,7 @@ public static class GraphCommands
         return json;
     }
 
+    /** Serialises compile/validation diagnostics as a JSON array. */
     public static JsonArray Diagnostics(IEnumerable<GraphDiagnostic> diagnostics) => new(diagnostics.Select(item =>
     {
         var json = new JsonObject { ["severity"] = item.Severity.ToString().ToLowerInvariant(), ["message"] = item.Message };
@@ -145,6 +153,10 @@ public static class GraphCommands
             string text = (string?)op[name] ?? "";
             return text.StartsWith('$') && refs.TryGetValue(text[1..], out var id) ? id : text;
         }
+        /**
+         * Reads a numeric argument from an op object, accepting numbers or numeric strings; falls back when absent or
+         * invalid.
+         */
         static float Number(JsonObject op, string name, float fallback) =>
             op[name] is JsonValue value && value.TryGetValue(out double number) ? (float)number
                 : op[name] is JsonValue text && text.TryGetValue(out string? raw) && float.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out float parsed) ? parsed : fallback;

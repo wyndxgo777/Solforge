@@ -1,3 +1,7 @@
+/**
+ * File: LiveDebounce: rate limiter for live material preview updates while a node value is dragged (used by
+ * Editor/NodeGraphLivePreview.cs).
+ */
 using System.Globalization;
 
 namespace Solforge.Graphs;

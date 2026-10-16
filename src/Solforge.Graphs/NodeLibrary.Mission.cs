@@ -1,3 +1,4 @@
+/** File: Mission-graph node types; compiled by MissionGraphCompiler.cs. */
 namespace Solforge.Graphs;
 
 /**
@@ -37,6 +38,7 @@ public static partial class NodeLibrary
     /** Signals the Phase 31 phase nodes stand for; any other name works too. */
     public static readonly string[] MissionSignals = ["ObjectiveUpdated", "CombatWaveSpawned", "BossVulnerable", "EncounterComplete"];
 
+    /** Yields the mission node type definitions. */
     private static IEnumerable<NodeType> MissionTypes()
     {
         const GraphKind kind = GraphKind.Mission;
