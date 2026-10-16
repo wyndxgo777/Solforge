@@ -27,7 +27,7 @@ public sealed partial class StudioForm
     private static void DrawBlenderAddonLink()
     {
         ImGui.SameLine();
-        if (ImGui.Button("Blender add-on")) OpenUrl(BlenderAddonUrl);
+        if (UiAuto.Button("Blender add-on")) OpenUrl(BlenderAddonUrl);
         StudioUi.Tip("Needs the Sunrise Blender add-on, installed in Blender separately. Opens its page.");
     }
 
@@ -76,27 +76,27 @@ public sealed partial class StudioForm
             ImGui.TextUnformatted(Path.GetFileName(Path.GetDirectoryName(bundlePath)));
             if (ImGui.IsItemHovered()) ImGui.SetTooltip(bundlePath);
             ImGui.Spacing();
-            ImGui.RadioButton("Apply deltas", ref bundleMode, 0);
-            ImGui.SameLine(); ImGui.RadioButton("Add new asset", ref bundleMode, 1);
+            UiAuto.RadioButton("Apply deltas", ref bundleMode, 0);
+            ImGui.SameLine(); UiAuto.RadioButton("Add new asset", ref bundleMode, 1);
             if (bundleMode == 1)
             {
-                ImGui.SetNextItemWidth(-1); ImGui.InputTextWithHint("##bundle-name", "Asset name", ref bundleName, 256);
+                ImGui.SetNextItemWidth(-1); UiAuto.InputTextWithHint("##bundle-name", "Asset name", ref bundleName, 256);
                 ImGui.SetNextItemWidth(130 * scale);
-                ImGui.InputText("Package ID", ref bundlePackage, 4, ImGuiInputTextFlags.CharsHexadecimal);
+                UiAuto.InputText("Package ID", ref bundlePackage, 4, ImGuiInputTextFlags.CharsHexadecimal);
                 if (ImGui.IsItemHovered()) ImGui.SetTooltip("Unused native package ID (hex)");
             }
             bool validPackage = ushort.TryParse(bundlePackage, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out ushort packageId)
                 && SunriseStudio.Packages.PackageWriter.IsNewPackageId(packageId);
             ImGui.Spacing();
             ImGui.BeginDisabled(!workspace.CanEdit || bundleMode == 1 && !validPackage);
-            if (ImGui.Button("Import", new(110 * scale, 0)))
+            if (UiAuto.Button("Import", new(110 * scale, 0)))
             {
                 var mode = bundleMode == 0 ? AssetBundleImportMode.ApplyDeltas : AssetBundleImportMode.NewAsset;
                 workspace.ImportAssetBundle(bundlePath, new(mode, packageId, bundleName));
                 ImGui.CloseCurrentPopup();
             }
             ImGui.EndDisabled(); ImGui.SameLine();
-            if (ImGui.Button("Cancel", new(110 * scale, 0))) ImGui.CloseCurrentPopup();
+            if (UiAuto.Button("Cancel", new(110 * scale, 0))) ImGui.CloseCurrentPopup();
             ImGui.EndPopup();
         }
         CenterModal(580);
@@ -107,7 +107,7 @@ public sealed partial class StudioForm
             var manifest = exported.Manifest;
             ImGui.TextUnformatted(manifest.Name);
             ImGui.TextDisabled($"{manifest.Meshes.Count:N0} parts / {manifest.Textures.Count:N0} textures / {manifest.Animations.Count:N0} animations");
-            if (ImGui.Button("Open export folder")) OpenFolder(Path.GetDirectoryName(exported.ManifestPath)!);
+            if (UiAuto.Button("Open export folder")) OpenFolder(Path.GetDirectoryName(exported.ManifestPath)!);
             DrawBlenderAddonLink();
             notices = manifest.Notices;
         }
@@ -134,7 +134,7 @@ public sealed partial class StudioForm
             }
         }
         ImGui.Spacing();
-        if (ImGui.Button("Close", new(110 * scale, 0))) ImGui.CloseCurrentPopup();
+        if (UiAuto.Button("Close", new(110 * scale, 0))) ImGui.CloseCurrentPopup();
         ImGui.EndPopup();
     }
 
@@ -165,10 +165,10 @@ public sealed partial class StudioForm
                 ImGui.EndTable();
             }
         }
-        if (ImGui.Button("Open folder")) OpenFolder(Path.GetDirectoryName(result.ManifestPath)!);
+        if (UiAuto.Button("Open folder")) OpenFolder(Path.GetDirectoryName(result.ManifestPath)!);
         DrawBlenderAddonLink();
         ImGui.SameLine();
-        if (ImGui.Button("Close")) ImGui.CloseCurrentPopup();
+        if (UiAuto.Button("Close")) ImGui.CloseCurrentPopup();
         ImGui.EndPopup();
     }
 }

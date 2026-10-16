@@ -680,7 +680,7 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
 
         float buttonWidth = 200;
         ImGui.SetCursorScreenPos(new Vector2(origin.X + MathF.Max(10, (size.X - buttonWidth) * 0.5f), centerY + 90));
-        if (ImGui.Button(user ? "Turn on 3D viewport##resume-render" : "Resume 3D Viewport##resume-render", new Vector2(buttonWidth, 32)))
+        if (UiAuto.Button(user ? "Turn on 3D viewport##resume-render" : "Resume 3D Viewport##resume-render", new Vector2(buttonWidth, 32)))
         {
             if (user) TurnOnRendering?.Invoke();
             else ForceResumeRendering = true;
@@ -703,18 +703,18 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
         if (textureData is { } data)
         {
             Slider("Mip");
-            bool changed = ImGui.SliderInt("Mip", ref mip, 0, data.MipCount - 1);
+            bool changed = UiAuto.SliderInt("Mip", ref mip, 0, data.MipCount - 1);
             if (data.ArraySize > 1)
             {
                 Slider("Face");
-                changed |= ImGui.SliderInt("Face", ref slice, 0, data.ArraySize - 1);
+                changed |= UiAuto.SliderInt("Face", ref slice, 0, data.ArraySize - 1);
             }
             var resource = data.Subresources.First(s => s.MipLevel == mip && s.ArraySlice == slice);
             depthSlice = Math.Clamp(depthSlice, 0, resource.Depth - 1);
             if (resource.Depth > 1)
             {
                 Slider("Slice");
-                changed |= ImGui.SliderInt("Slice", ref depthSlice, 0, resource.Depth - 1);
+                changed |= UiAuto.SliderInt("Slice", ref depthSlice, 0, resource.Depth - 1);
             }
             if (changed)
             {
@@ -756,6 +756,7 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
                 bool cursor = ShowCursor;
                 if (ImGuiIcons.Toggle("cursor", StudioIcon.Cursor, tips[4], ref cursor)) ShowCursor = cursor;
             }
+            DrawPlayerToggle(Next, button);
             Next(button);
             ImGuiIcons.Toggle("wireframe", StudioIcon.Wireframe, "Wireframe", ref wireframe);
             Next(button);
@@ -778,15 +779,15 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
             {
                 Next(110);
                 ImGui.SetNextItemWidth(110);
-                if (ImGui.BeginCombo("##asset-lod", $"LOD {Visibility.DetailLevel}"))
+                if (UiAuto.BeginCombo("##asset-lod", $"LOD {Visibility.DetailLevel}"))
                 {
                     foreach (int level in Visibility.AvailableDetailLevels)
-                        if (ImGui.Selectable($"LOD {level}", Visibility.DetailLevel == level))
+                        if (UiAuto.Selectable($"LOD {level}", Visibility.DetailLevel == level))
                         {
                             Visibility.DetailLevel = level;
                             if (SelectedObject is MeshInstance part && !Visibility.IsVisible(part)) SetSelection(null);
                         }
-                    ImGui.EndCombo();
+                    UiAuto.EndCombo();
                 }
                 if (ImGui.IsItemHovered()) ImGui.SetTooltip("Native level of detail");
             }
@@ -804,10 +805,10 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
                 {
                     Next(100);
                     ImGui.SetNextItemWidth(100);
-                    if (ImGui.BeginCombo("##asset-layers", "Layers"))
+                    if (UiAuto.BeginCombo("##asset-layers", "Layers"))
                     {
                         SceneLayerMenu.Draw(Visibility, presentLayers, this);
-                        ImGui.EndCombo();
+                        UiAuto.EndCombo();
                     }
                 }
             }
@@ -1464,6 +1465,7 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
         DrawPointProxies(view);
         RecordOverlayPhase(7, ref phase);
         if (ShowCursor) DrawCursor(view, height);
+        DrawPlayer(view, height);
         RecordOverlayPhase(8, ref phase);
         return result;
     }

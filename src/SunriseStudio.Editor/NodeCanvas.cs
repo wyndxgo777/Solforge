@@ -288,7 +288,7 @@ internal sealed class NodeCanvas
         {
             ImGui.TextDisabled(contextEdge is null ? "" : LinkText(contextEdge, nodes));
             ImGui.BeginDisabled(!editable || contextEdge is not { Editable: true } || actions.Disconnect is null);
-            if (ImGui.MenuItem("Disconnect") && contextEdge is { } edge) { actions.Disconnect!(edge.Source, edge.Target); SelectedEdge = null; }
+            if (UiAuto.MenuItem("Disconnect") && contextEdge is { } edge) { actions.Disconnect!(edge.Source, edge.Target); SelectedEdge = null; }
             ImGui.EndDisabled();
             if (contextEdge is { Editable: false }) ImGui.TextDisabled(FixedLinkNote);
             ImGui.EndPopup();
@@ -298,14 +298,14 @@ internal sealed class NodeCanvas
             var inputs = edges.Where(edge => edge.Target == contextNode && edge.Editable).ToArray();
             var outputs = edges.Where(edge => edge.Source == contextNode && edge.Editable).ToArray();
             ImGui.BeginDisabled(!editable || actions.Disconnect is null);
-            if (ImGui.MenuItem("Disconnect inputs", "", false, inputs.Length != 0))
+            if (UiAuto.MenuItem("Disconnect inputs", "", false, inputs.Length != 0))
                 foreach (var edge in inputs) actions.Disconnect!(edge.Source, edge.Target);
-            if (ImGui.MenuItem("Disconnect outputs", "", false, outputs.Length != 0))
+            if (UiAuto.MenuItem("Disconnect outputs", "", false, outputs.Length != 0))
                 foreach (var edge in outputs) actions.Disconnect!(edge.Source, edge.Target);
             ImGui.EndDisabled();
-            if (actions.Open is not null && ImGui.MenuItem("Open")) actions.Open(contextNode);
+            if (actions.Open is not null && UiAuto.MenuItem("Open")) actions.Open(contextNode);
             ImGui.BeginDisabled(!editable || actions.Remove is null);
-            if (ImGui.MenuItem("Remove node")) actions.Remove!(contextNode);
+            if (UiAuto.MenuItem("Remove node")) actions.Remove!(contextNode);
             ImGui.EndDisabled();
             ImGui.EndPopup();
         }

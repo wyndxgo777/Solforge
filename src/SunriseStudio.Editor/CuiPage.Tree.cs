@@ -81,7 +81,7 @@ public sealed partial class CuiPage
         ImGui.SameLine();
         if (ImGuiIcons.Button("cui-collapse", StudioIcon.Tree, "Collapse tree")) { expandedWidgets.Clear(); treeDirty = true; }
         ImGui.SameLine(); ImGui.SetNextItemWidth(-1);
-        ImGui.InputTextWithHint("##cui-composed-filter", "Find widget", ref filter, 256);
+        UiAuto.InputTextWithHint("##cui-composed-filter", "Find widget", ref filter, 256);
         float rowHeight = ImGui.GetFrameHeight(), iconSize = rowHeight - 4;
         if (!ImGui.BeginTable("cui-widgets", 2, ImGuiTableFlags.ScrollY | ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingStretchProp,
             ImGui.GetContentRegionAvail())) return;
@@ -127,7 +127,7 @@ public sealed partial class CuiPage
                 ImGui.SameLine(0, 4);
                 bool muted = hidden || bound || !visual || liveHidden;
                 if (muted) ImGui.PushStyleColor(ImGuiCol.Text, StudioTheme.Muted);
-                if (ImGui.Selectable(StructureName(node), id == selectedComposed, ImGuiSelectableFlags.AllowDoubleClick, new(0, iconSize)))
+                if (UiAuto.Selectable(StructureName(node), id == selectedComposed, ImGuiSelectableFlags.AllowDoubleClick, new(0, iconSize)))
                 {
                     selectedComposed = id;
                     if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left)) focusComposed = true;

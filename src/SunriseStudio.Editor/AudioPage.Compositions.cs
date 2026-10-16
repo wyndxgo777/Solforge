@@ -23,29 +23,29 @@ public sealed partial class AudioPage
         if (active.Analysis is not { } analysis)
         {
             ImGui.BeginDisabled(IsBusy);
-            if (ImGui.Button("Read music routing"))
+            if (UiAuto.Button("Read music routing"))
                 Begin("Reading music routing", async token => { await active.Analyze(token); return new(); });
             ImGui.EndDisabled(); return;
         }
         ImGui.BeginDisabled(IsBusy);
-        ImGui.SetNextItemWidth(110); ImGui.SliderInt("Preview loops", ref previewLoops, 1, 16);
-        ImGui.Checkbox("Initial delay", ref initialDelay); ImGui.SameLine();
-        ImGui.Checkbox("Effect gain", ref effectVolumes);
+        ImGui.SetNextItemWidth(110); UiAuto.SliderInt("Preview loops", ref previewLoops, 1, 16);
+        UiAuto.Checkbox("Initial delay", ref initialDelay); ImGui.SameLine();
+        UiAuto.Checkbox("Effect gain", ref effectVolumes);
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Volume only; no filters or reverb.");
-        ImGui.SameLine(); ImGui.Checkbox("Random variants", ref randomChoices);
+        ImGui.SameLine(); UiAuto.Checkbox("Random variants", ref randomChoices);
         foreach (var group in analysis.GameSyncs)
         {
             var key = (group.Id, group.Switch);
             string current = gameSyncSelections.TryGetValue(key, out uint value)
                 ? group.Choices.FirstOrDefault(choice => choice.Value == value)?.Name ?? value.ToString() : "Automatic";
             ImGui.PushID($"sync:{group.Id}:{group.Switch}"); ImGui.SetNextItemWidth(250);
-            if (ImGui.BeginCombo(group.Name, current))
+            if (UiAuto.BeginCombo(group.Name, current))
             {
-                if (ImGui.Selectable("Automatic", !gameSyncSelections.ContainsKey(key))) gameSyncSelections.Remove(key);
+                if (UiAuto.Selectable("Automatic", !gameSyncSelections.ContainsKey(key))) gameSyncSelections.Remove(key);
                 foreach (var choice in group.Choices)
-                    if (ImGui.Selectable(choice.Name + "##" + choice.Value, gameSyncSelections.GetValueOrDefault(key) == choice.Value))
+                    if (UiAuto.Selectable(choice.Name + "##" + choice.Value, gameSyncSelections.GetValueOrDefault(key) == choice.Value))
                         gameSyncSelections[key] = choice.Value;
-                ImGui.EndCombo();
+                UiAuto.EndCombo();
             }
             ImGui.PopID();
         }
@@ -56,18 +56,18 @@ public sealed partial class AudioPage
             {
                 ImGui.PushID(unchecked((int)parameter.Id));
                 bool enabled = parameterValues.ContainsKey(parameter.Id);
-                if (ImGui.Checkbox(parameter.Name, ref enabled))
+                if (UiAuto.Checkbox(parameter.Name, ref enabled))
                 { if (enabled) parameterValues[parameter.Id] = parameter.Minimum; else parameterValues.Remove(parameter.Id); }
                 if (enabled)
                 {
                     float value = parameterValues[parameter.Id]; ImGui.SameLine(); ImGui.SetNextItemWidth(200);
-                    if (ImGui.SliderFloat("##value", ref value, parameter.Minimum, parameter.Maximum, "%.3f")) parameterValues[parameter.Id] = value;
+                    if (UiAuto.SliderFloat("##value", ref value, parameter.Minimum, parameter.Maximum, "%.3f")) parameterValues[parameter.Id] = value;
                 }
                 ImGui.PopID();
             }
             ImGui.EndChild(); ImGui.TreePop();
         }
-        if (ImGui.Button("Render choices"))
+        if (UiAuto.Button("Render choices"))
         {
             player.Stop(); loadedWave = ""; info = null; selectedComposition = -1;
             var choices = new AudioCompositionOptions { LoopCount = previewLoops, IncludeInitialDelay = initialDelay,
@@ -82,11 +82,11 @@ public sealed partial class AudioPage
             ImGui.SeparatorText("MUSIC TIMELINE");
             if (!analysis.Playlists.ContainsKey(selectedPlaylist)) selectedPlaylist = DefaultPlaylist(analysis);
             ImGui.SetNextItemWidth(320);
-            if (ImGui.BeginCombo("Playlist", analysis.Playlists[selectedPlaylist].Name))
+            if (UiAuto.BeginCombo("Playlist", analysis.Playlists[selectedPlaylist].Name))
             {
                 foreach (var playlist in analysis.Playlists.Values)
-                    if (ImGui.Selectable(playlist.Name + "##" + playlist.Id, selectedPlaylist == playlist.Id)) { selectedPlaylist = playlist.Id; playlistStart = 0; }
-                ImGui.EndCombo();
+                    if (UiAuto.Selectable(playlist.Name + "##" + playlist.Id, selectedPlaylist == playlist.Id)) { selectedPlaylist = playlist.Id; playlistStart = 0; }
+                UiAuto.EndCombo();
             }
             if (playlistEntriesId != selectedPlaylist || !ReferenceEquals(playlistEntriesAnalysis, analysis))
             {
@@ -94,18 +94,18 @@ public sealed partial class AudioPage
                 playlistEntriesId = selectedPlaylist; playlistEntriesAnalysis = analysis; playlistStart = 0;
             }
             ImGui.SetNextItemWidth(320);
-            if (ImGui.BeginCombo("Start at", playlistStart == 0 ? "Beginning" : playlistEntries.First(value => value.Id == playlistStart).Name))
+            if (UiAuto.BeginCombo("Start at", playlistStart == 0 ? "Beginning" : playlistEntries.First(value => value.Id == playlistStart).Name))
             {
-                if (ImGui.Selectable("Beginning", playlistStart == 0)) playlistStart = 0;
+                if (UiAuto.Selectable("Beginning", playlistStart == 0)) playlistStart = 0;
                 foreach (var entry in playlistEntries)
-                    if (ImGui.Selectable(entry.Name + "##" + entry.Id, entry.Id == playlistStart)) playlistStart = entry.Id;
-                ImGui.EndCombo();
+                    if (UiAuto.Selectable(entry.Name + "##" + entry.Id, entry.Id == playlistStart)) playlistStart = entry.Id;
+                UiAuto.EndCombo();
             }
-            ImGui.SetNextItemWidth(110); ImGui.InputInt("Variation", ref timelineVariation);
+            ImGui.SetNextItemWidth(110); UiAuto.InputInt("Variation", ref timelineVariation);
             timelineVariation = Math.Clamp(timelineVariation, 0, 10000);
-            if (ImGui.Button("Prepare next play")) PrepareTimeline(false);
-            ImGui.SameLine(); if (ImGui.Button("Play next")) PrepareTimeline(true);
-            ImGui.SameLine(); if (ImGui.Button("Reset history")) active.ResetPlaylistHistory();
+            if (UiAuto.Button("Prepare next play")) PrepareTimeline(false);
+            ImGui.SameLine(); if (UiAuto.Button("Play next")) PrepareTimeline(true);
+            ImGui.SameLine(); if (UiAuto.Button("Reset history")) active.ResetPlaylistHistory();
             ImGui.TextDisabled($"Next play {active.PlaylistPlayCount(selectedPlaylist) + 1}");
             ImGui.SameLine(); ImGui.TextDisabled("Dry mix");
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("Dry mix: no effects.");

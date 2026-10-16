@@ -51,7 +51,7 @@ public sealed partial class StudioForm
     private void DrawRenderingMenuItem()
     {
         bool on = settings.ViewportRendering;
-        if (ImGui.MenuItem("3D viewport rendering", ShortcutInput.Text(ShortcutActions.ToggleViewportRendering), ref on)) SetViewportRendering(on);
+        if (UiAuto.MenuItem("3D viewport rendering", ShortcutInput.Text(ShortcutActions.ToggleViewportRendering), ref on)) SetViewportRendering(on);
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Off stops all 3D drawing to save GPU and memory; panels and the AI tools keep working.");
     }
 

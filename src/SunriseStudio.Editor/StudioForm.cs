@@ -264,6 +264,7 @@ public sealed partial class StudioForm : Form
             AdoptPlacementUpdates();
             PollCollisionLayer();
             livePage.Poll(workspace, viewport!);
+            TrackPlayer();
             PollStartup();
             RefreshWorldLabels();
             PrepareMissionRows();
@@ -639,6 +640,7 @@ public sealed partial class StudioForm : Form
         float contentHeight = Math.Max(100, height - top - status);
         DrawLayout(new(0, top), new(width, contentHeight));
         DrawStatus(new(0, height - status), new(width, status));
+        UiAuto.SetWindow("Dialogs");
         DrawDialogs();
     }
 
@@ -653,6 +655,7 @@ public sealed partial class StudioForm : Form
         ImGui.SetNextWindowPos(position);
         ImGui.SetNextWindowSize(size);
         bool open = ImGui.Begin(id, PanelFlags | extra);
+        UiAuto.SetWindow(id);
         SolTheme.PanelGradient();
         return open;
     }
@@ -684,14 +687,14 @@ public sealed partial class StudioForm : Form
             {
                 focusAssets = false;
                 DrawAssetDocument();
-                ImGui.EndTabItem();
+                UiAuto.EndTabItem();
             }
             if (BeginEditorTab("Live", focusLive))
             {
                 focusLive = false;
                 shownPage = "live";
                 livePage.Draw(workspace, viewport!, DrawSceneWithTree);
-                ImGui.EndTabItem();
+                UiAuto.EndTabItem();
             }
             ImGui.EndTabBar();
         }
@@ -718,9 +721,9 @@ public sealed partial class StudioForm : Form
             ImGui.SetCursorPosX(28 * scale); ImGui.TextDisabled("Select an asset to begin");
             ImGui.Spacing();
             ImGui.SetCursorPosX(28 * scale);
-            if (ImGui.Button("New project")) projectDialog = true;
+            if (UiAuto.Button("New project")) projectDialog = true;
             ImGui.SameLine();
-            if (ImGui.Button("Open project")) OpenProjectDialog();
+            if (UiAuto.Button("Open project")) OpenProjectDialog();
         }
         else
         {
@@ -764,7 +767,7 @@ public sealed partial class StudioForm : Form
             StudioUi.Tip(document.PreviewError);
             // Select rereads the asset, so a drive that came back gives the model.
             ImGui.SameLine();
-            if (ImGui.SmallButton("Retry")) workspace.Run(() => workspace.Select(document.Entry.TagHash, retainHistory: true));
+            if (UiAuto.SmallButton("Retry")) workspace.Run(() => workspace.Select(document.Entry.TagHash, retainHistory: true));
         }
         var tabs = StudioCategories.Tabs(category, pages.Pages, document, modelView);
         if (category.Sections.Length != 0 && !tabs.Any(page => page.Id == category.Sections[0]))
@@ -806,7 +809,7 @@ public sealed partial class StudioForm : Form
                 shownPage = shownPrefix + page.Id;
                 drawn = page.Id;
                 page.Draw(context);
-                ImGui.EndTabItem();
+                UiAuto.EndTabItem();
             }
         ImGui.EndTabBar();
         return drawn;
@@ -850,7 +853,7 @@ public sealed partial class StudioForm : Form
                     Process.Start(new ProcessStartInfo(folder) { UseShellExecute = true });
             }
             ImGui.SameLine();
-            if (ImGui.SmallButton("Dismiss")) workspace.DismissNotice();
+            if (UiAuto.SmallButton("Dismiss")) workspace.DismissNotice();
             DrawStatusFacts();
             ImGui.End(); ImGui.PopStyleVar();
             return;

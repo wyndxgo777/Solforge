@@ -234,11 +234,11 @@ public sealed class PerkBehaviorEditor
         ImGui.PushID(id);
         ImGui.BeginDisabled(!editable);
         ImGui.SetNextItemWidth(160);
-        if (ImGui.BeginCombo("##phase", PhaseName(phase)))
+        if (UiAuto.BeginCombo("##phase", PhaseName(phase)))
         {
             foreach (var value in Enum.GetValues<PerkBehaviorPhase>())
-                if (ImGui.Selectable(PhaseName(value), value == phase)) phase = value;
-            ImGui.EndCombo();
+                if (UiAuto.Selectable(PhaseName(value), value == phase)) phase = value;
+            UiAuto.EndCombo();
         }
         ImGui.SameLine();
         if (StudioUi.IconButton("add-node", StudioIcon.Plus, "Add node")) ImGui.OpenPopup("Add native operation");
@@ -288,7 +288,7 @@ public sealed class PerkBehaviorEditor
     /** A node kind row; the tooltip of a kind no in-game perk has used says it is not tested. */
     private static bool KindRow(string key, string name, string description)
     {
-        bool clicked = ImGui.Selectable(name + "##" + key);
+        bool clicked = UiAuto.Selectable(name + "##" + key);
         StudioUi.Tip(NativePerkBehavior.IsTested(key) ? description : description + " May not work in game.");
         return clicked;
     }
@@ -301,7 +301,7 @@ public sealed class PerkBehaviorEditor
     {
         if (!ImGui.BeginPopup("Add native operation")) return;
         ImGui.SetNextItemWidth(300);
-        ImGui.InputTextWithHint("##operation-search", "Find a native operation", ref primitiveSearch, 256);
+        UiAuto.InputTextWithHint("##operation-search", "Find a native operation", ref primitiveSearch, 256);
         foreach (var primitive in NativePerkBehavior.Primitives.Where(value => value.Kind == Kind(phase) && value.CanCreate
             && (primitiveSearch.Length == 0 || value.Name.Contains(primitiveSearch, StringComparison.OrdinalIgnoreCase)
                 || value.Description.Contains(primitiveSearch, StringComparison.OrdinalIgnoreCase))))
@@ -322,7 +322,7 @@ public sealed class PerkBehaviorEditor
             ImGui.BeginDisabled();
             foreach (var kind in unwritten)
             {
-                ImGui.Selectable($"{kind.Kind} opcode {kind.Opcode}  ({kind.NativeClass:X8})##{kind.NativeClass}");
+                UiAuto.Selectable($"{kind.Kind} opcode {kind.Opcode}  ({kind.NativeClass:X8})##{kind.NativeClass}");
                 StudioUi.Tip($"Used by {kind.Programs} perks. Kept, not writable.");
             }
             ImGui.EndDisabled();
@@ -372,24 +372,24 @@ public sealed class PerkBehaviorEditor
             {
                 string label = property.Choices.FirstOrDefault(choice => choice.Value == property.Value)?.Label ?? Format(property);
                 ImGui.SetNextItemWidth(-1);
-                if (ImGui.BeginCombo("##choice", label))
+                if (UiAuto.BeginCombo("##choice", label))
                 {
                     foreach (var choice in property.Choices)
-                        if (ImGui.Selectable(choice.Label, choice.Value == property.Value))
+                        if (UiAuto.Selectable(choice.Label, choice.Value == property.Value))
                             Try(() => SetProperty(node.Id, property.Key, choice.Value));
-                    ImGui.EndCombo();
+                    UiAuto.EndCombo();
                 }
             }
             else if (property.Kind == PerkBehaviorValueKind.Boolean)
             {
                 bool value = property.Value != 0;
-                if (ImGui.Checkbox("Enabled", ref value)) Try(() => SetProperty(node.Id, property.Key, value ? 1 : 0));
+                if (UiAuto.Checkbox("Enabled", ref value)) Try(() => SetProperty(node.Id, property.Key, value ? 1 : 0));
             }
             else
             {
                 string value = propertyDrafts.GetValueOrDefault(key, Format(property));
                 ImGui.SetNextItemWidth(-1);
-                bool enter = ImGui.InputText("##value", ref value, 96, ImGuiInputTextFlags.EnterReturnsTrue);
+                bool enter = UiAuto.InputText("##value", ref value, 96, ImGuiInputTextFlags.EnterReturnsTrue);
                 propertyDrafts[key] = value;
                 if (enter || ImGui.IsItemDeactivatedAfterEdit()) Try(() =>
                 {
@@ -436,16 +436,16 @@ public sealed class PerkBehaviorEditor
                 ImGui.PopID();
             }
             ImGui.SetNextItemWidth(-1);
-            if (table is not null && ImGui.BeginCombo("##add-label", "Add label", ImGuiComboFlags.HeightLarge))
+            if (table is not null && UiAuto.BeginCombo("##add-label", "Add label", ImGuiComboFlags.HeightLarge))
             {
                 ImGui.SetNextItemWidth(-1);
-                ImGui.InputTextWithHint("##label-search", "Search", ref pickerSearch, 128);
+                UiAuto.InputTextWithHint("##label-search", "Search", ref pickerSearch, 128);
                 int array = a;
                 foreach (var entry in table.Entries.Where(entry => pickerSearch.Length == 0
                     || entry.Name.Contains(pickerSearch, StringComparison.OrdinalIgnoreCase)).Take(PickerRows))
-                    if (ImGui.Selectable(entry.Group ? entry.Name : $"{entry.Name} (bit {entry.Bit})"))
+                    if (UiAuto.Selectable(entry.Group ? entry.Name : $"{entry.Name} (bit {entry.Bit})"))
                         Try(() => AddLabel(node.Id, filter.Key, array, entry.Hash));
-                ImGui.EndCombo();
+                UiAuto.EndCombo();
             }
             ImGui.EndDisabled();
             ImGui.PopID();
@@ -460,14 +460,14 @@ public sealed class PerkBehaviorEditor
         // An empty picker waits for the census; the toolbar shows its state.
         if (picker.Count == 0) { ImGui.TextDisabled(label); return; }
         ImGui.SetNextItemWidth(-1);
-        if (!ImGui.BeginCombo("##picker", label, ImGuiComboFlags.HeightLarge)) return;
+        if (!UiAuto.BeginCombo("##picker", label, ImGuiComboFlags.HeightLarge)) return;
         ImGui.SetNextItemWidth(-1);
-        ImGui.InputTextWithHint("##picker-search", "Search", ref pickerSearch, 128);
+        UiAuto.InputTextWithHint("##picker-search", "Search", ref pickerSearch, 128);
         foreach (var choice in picker.Where(choice => pickerSearch.Length == 0
             || choice.Label.Contains(pickerSearch, StringComparison.OrdinalIgnoreCase)).Take(PickerRows))
-            if (ImGui.Selectable(choice.Label, choice.Value == property.Value))
+            if (UiAuto.Selectable(choice.Label, choice.Value == property.Value))
                 Try(() => SetProperty(node.Id, property.Key, choice.Value));
-        ImGui.EndCombo();
+        UiAuto.EndCombo();
     }
 
     /** New counters, group lists and condition lists take children; installed ones stay as they are. */
@@ -482,14 +482,14 @@ public sealed class PerkBehaviorEditor
         }
         ImGui.BeginDisabled(!editable || !parent.Editable);
         ImGui.SetNextItemWidth(-1);
-        if (ImGui.BeginCombo("##add-child", "Add " + ChildName(parent).ToLowerInvariant(), ImGuiComboFlags.HeightLarge))
+        if (UiAuto.BeginCombo("##add-child", "Add " + ChildName(parent).ToLowerInvariant(), ImGuiComboFlags.HeightLarge))
         {
             foreach (string key in NativePerkBehavior.ChildPrimitives(parent))
             {
                 var spec = NativePerkBehavior.PrimitiveOf(key);
                 if (KindRow(key, spec?.Name ?? "Group", spec?.Description ?? "")) Try(() => AddChild(parent.Id, key));
             }
-            ImGui.EndCombo();
+            UiAuto.EndCombo();
         }
         ImGui.EndDisabled();
     }
@@ -507,7 +507,7 @@ public sealed class PerkBehaviorEditor
     {
         StudioUi.Heading("HUD buff", StudioUi.MayNotWork);
         bool shown = graph.Hud is not null;
-        if (ImGui.Checkbox("Show while active", ref shown))
+        if (UiAuto.Checkbox("Show while active", ref shown))
             Try(() => SetHud(shown ? new() { Label = (uint)NativePerkBehavior.HudLabels[0].Value } : null));
         StudioUi.Tip("Adds an entry to the HUD buff tray while the perk is active.");
         if (graph.Hud is not { } hud) return;
@@ -517,16 +517,16 @@ public sealed class PerkBehaviorEditor
         else
         {
             ImGui.SetNextItemWidth(-1);
-            if (ImGui.BeginCombo("##hud-label", label))
+            if (UiAuto.BeginCombo("##hud-label", label))
             {
                 foreach (var choice in labels)
-                    if (ImGui.Selectable(choice.Label, choice.Value == hud.Label))
+                    if (UiAuto.Selectable(choice.Label, choice.Value == hud.Label))
                         Try(() => SetHud(new() { Label = (uint)choice.Value, ShowTimer = hud.ShowTimer }));
-                ImGui.EndCombo();
+                UiAuto.EndCombo();
             }
         }
         bool timer = hud.ShowTimer;
-        if (ImGui.Checkbox("Show deactivation timer", ref timer))
+        if (UiAuto.Checkbox("Show deactivation timer", ref timer))
             Try(() => SetHud(new() { Label = hud.Label, ShowTimer = timer }));
     }
 

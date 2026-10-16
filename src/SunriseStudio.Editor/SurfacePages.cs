@@ -60,18 +60,18 @@ public sealed class MaterialsPage : IPreparedStudioPage
         var material = surface.Materials.FirstOrDefault(value => value.TagHash == selectedMaterial) ?? surface.Materials[0];
         selectedMaterial = material.TagHash;
         ImGui.SetNextItemWidth(-1);
-        if (ImGui.BeginCombo("##material", material.Name))
+        if (UiAuto.BeginCombo("##material", material.Name))
         {
             foreach (var value in surface.Materials)
             {
                 ImGui.PushID(unchecked((int)value.TagHash));
-                if (ImGui.Selectable(value.Name, value.TagHash == selectedMaterial)) selectedMaterial = value.TagHash;
+                if (UiAuto.Selectable(value.Name, value.TagHash == selectedMaterial)) selectedMaterial = value.TagHash;
                 ImGui.PopID();
             }
-            ImGui.EndCombo();
+            UiAuto.EndCombo();
         }
         ImGui.BeginChild("material-details");
-        if (ImGui.SmallButton("Open material")) context.Workspace.Select(material.TagHash);
+        if (UiAuto.SmallButton("Open material")) context.Workspace.Select(material.TagHash);
         string profiles = string.Join("  ", new[] { material.Material.VertexShader, material.Material.PixelShader, material.Material.ComputeShader }
             .Where(shader => shader is not null).Select(shader => $"{StageShort(shader!.Stage.ToString())} {shader.Profile}"));
         if (profiles.Length != 0) { ImGui.SameLine(); ImGui.TextDisabled(profiles); }
@@ -99,7 +99,7 @@ public sealed class MaterialsPage : IPreparedStudioPage
                 ImGui.TextUnformatted($"{binding.Stage} / t{binding.Slot}");
                 string name = surface.TextureNames.GetValueOrDefault(binding.TextureTag)
                     ?? context.Workspace.DisplayName(binding.TextureTag);
-                if (ImGui.Selectable(name)) context.Workspace.Select(binding.TextureTag);
+                if (UiAuto.Selectable(name)) context.Workspace.Select(binding.TextureTag);
                 if (!binding.DeclaredByShader) ImGui.TextDisabled("Undeclared binding");
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted($"{binding.Width} x {binding.Height}");
@@ -121,7 +121,7 @@ public sealed class MaterialsPage : IPreparedStudioPage
                     float fit = 96f / Math.Max(image.Width, image.Height);
                     ImGui.Image(image.ImGuiId, new Vector2(image.Width, image.Height) * fit);
                 }
-                if (ImGui.Selectable(surface.TextureNames.GetValueOrDefault(tag) ?? context.Workspace.DisplayName(tag)))
+                if (UiAuto.Selectable(surface.TextureNames.GetValueOrDefault(tag) ?? context.Workspace.DisplayName(tag)))
                     context.Workspace.Select(tag);
                 if (errors.TryGetValue(tag, out string? error)) ErrorMark(error);
                 ImGui.PopID();
@@ -200,19 +200,19 @@ public sealed class ShadersPage : IStudioPage
         if (context.Workspace.Document?.Surface is not { Shaders.Count: > 0 } surface) return;
         var selected = surface.Shaders.FirstOrDefault(shader => shader.TagHash == selectedShader) ?? surface.Shaders[0];
         ImGui.SetNextItemWidth(-1);
-        if (ImGui.BeginCombo("##shader", $"{selected.Stage} / {selected.Name}"))
+        if (UiAuto.BeginCombo("##shader", $"{selected.Stage} / {selected.Name}"))
         {
             foreach (var shader in surface.Shaders)
             {
                 ImGui.PushID(unchecked((int)shader.TagHash));
-                if (ImGui.Selectable($"{shader.Stage} / {shader.Name}", shader.TagHash == selected.TagHash)) selectedShader = shader.TagHash;
+                if (UiAuto.Selectable($"{shader.Stage} / {shader.Name}", shader.TagHash == selected.TagHash)) selectedShader = shader.TagHash;
                 ImGui.PopID();
             }
-            ImGui.EndCombo();
+            UiAuto.EndCombo();
         }
         ImGui.TextUnformatted($"{selected.Profile} / {selected.Bytecode.Length:N0} bytes");
         ImGui.SameLine();
-        if (ImGui.SmallButton("Open bytecode")) context.Workspace.Select(selected.Shader.BytecodeTag);
+        if (UiAuto.SmallButton("Open bytecode")) context.Workspace.Select(selected.Shader.BytecodeTag);
         if (ImGui.CollapsingHeader("Declarations"))
             foreach (string declaration in selected.Declarations) ImGui.TextUnformatted(declaration);
         if (!ReferenceEquals(previous, selected))

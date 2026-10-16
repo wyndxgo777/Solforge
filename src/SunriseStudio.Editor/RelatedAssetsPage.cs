@@ -17,7 +17,7 @@ public sealed class RelatedAssetsPage : IStudioPage
     {
         if (context.Workspace.Document?.Connections is not { } connections) return;
         ImGui.SetNextItemWidth(-1);
-        ImGui.InputTextWithHint("##relatedSearch", "Find connected asset", ref search, 256);
+        UiAuto.InputTextWithHint("##relatedSearch", "Find connected asset", ref search, 256);
         if (!ReferenceEquals(previous, connections) || search != appliedSearch)
         {
             rows = connections.Related.Where(link => search.Length == 0
@@ -42,7 +42,7 @@ public sealed class RelatedAssetsPage : IStudioPage
                 var row = rows[index];
                 string kind = KindLabel(row.Kind), name = ShortName(row.Name);
                 ImGui.PushID(index); ImGui.TableNextRow(); ImGui.TableNextColumn();
-                if (ImGui.Selectable(name, false, ImGuiSelectableFlags.SpanAllColumns))
+                if (UiAuto.Selectable(name, false, ImGuiSelectableFlags.SpanAllColumns))
                     context.Workspace.SelectRelated(row);
                 if (ImGui.IsItemHovered()) ImGui.SetTooltip($"{row.Name}\n{row.TagHash:X8}\n{kind}");
                 ImGui.TableNextColumn();

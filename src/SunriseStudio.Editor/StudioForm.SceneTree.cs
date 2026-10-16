@@ -171,7 +171,7 @@ public sealed partial class StudioForm
         ImGui.PushID(id);
         DrawObjectGroups();
         ImGui.SetNextItemWidth(-1);
-        if (ImGui.InputTextWithHint("##search", "Find object", ref hierarchySearch, 256)) treeRowsDirty = true;
+        if (UiAuto.InputTextWithHint("##search", "Find object", ref hierarchySearch, 256)) treeRowsDirty = true;
         ImGui.BeginDisabled(selectedObject is null);
         if (ImGuiIcons.Button("tree-selection", StudioIcon.Focus, "Reveal selection")) TrackTreeSelection(selectedObject, false);
         ImGui.EndDisabled();
@@ -228,7 +228,7 @@ public sealed partial class StudioForm
                     int prefix = node.Authored is not null ? node.Name.LastIndexOf(" / ", StringComparison.Ordinal) : -1;
                     string label = node.Authored?.Representative is { } representative && ProjectName(representative) is { } named
                         ? named : prefix < 0 ? node.Name : node.Name[(prefix + 3)..];
-                    bool clicked = ImGui.Selectable(label, selectedTreeId == node.Id, ImGuiSelectableFlags.AllowDoubleClick,
+                    bool clicked = UiAuto.Selectable(label, selectedTreeId == node.Id, ImGuiSelectableFlags.AllowDoubleClick,
                         new(0, iconSize));
                     bool doubled = ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left);
                     if (clicked)

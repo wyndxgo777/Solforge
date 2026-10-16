@@ -52,7 +52,7 @@ public sealed partial class StudioForm
         if (nameDraftKey != key) { nameDraftKey = key; nameDraft = ProjectName(row) ?? ""; }
         ImGui.BeginDisabled(!workspace.CanEdit);
         ImGui.SetNextItemWidth(-1);
-        ImGui.InputTextWithHint("##object-name", workspace.CanEdit ? "Name in this project" : "Create a project to name objects",
+        UiAuto.InputTextWithHint("##object-name", workspace.CanEdit ? "Name in this project" : "Create a project to name objects",
             ref nameDraft, 200);
         if (ImGui.IsItemDeactivatedAfterEdit() && nameDraft.Trim() != (ProjectName(row) ?? ""))
         {

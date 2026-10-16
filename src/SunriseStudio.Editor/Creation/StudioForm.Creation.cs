@@ -98,7 +98,7 @@ public sealed partial class StudioForm
     private void CreationMenuItem(string label, CreationType type, Action start)
     {
         string? reason = CreationRefusal(type);
-        if (ImGui.MenuItem(label + (reason is null ? "..." : ""), "", false, reason is null)) start();
+        if (UiAuto.MenuItem(label + (reason is null ? "..." : ""), "", false, reason is null)) start();
         StudioUi.Tip(reason ?? type.Summary);
     }
 

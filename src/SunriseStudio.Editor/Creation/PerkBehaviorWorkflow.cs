@@ -174,7 +174,7 @@ public sealed class PerkBehaviorWorkflow : CreationWorkflow
         if (!ImGui.CollapsingHeader("Package settings")) return;
         string value = package.Text;
         ImGui.SetNextItemWidth(150 * CreationWidgets.Scale);
-        if (ImGui.InputText("Package ID", ref value, 4, ImGuiInputTextFlags.CharsHexadecimal)) package.Text = value;
+        if (UiAuto.InputText("Package ID", ref value, 4, ImGuiInputTextFlags.CharsHexadecimal)) package.Text = value;
         if (package.Hint.Length != 0) StudioUi.Help(package.Hint);
     }
 }

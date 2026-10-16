@@ -43,6 +43,12 @@ public interface ISolforgeHost
     Task<string> RunActionAsync(string tool, JsonObject args, CancellationToken cancel);
     /** A project-wide read (SolforgeTools.CatalogTools and WorldTools); an "error" member makes it a tool error. */
     Task<JsonObject> QueryAsync(string tool, JsonObject args, CancellationToken cancel);
+    /** Every control Solforge drew in its last frame (list_ui_controls); the first call after a quiet minute waits a frame or two. */
+    Task<IReadOnlyList<UiControl>> UiControlsAsync(CancellationToken cancel);
+    /** Applies one approved ui_* command on the UI thread; Ok is false with the reason when it could not. */
+    Task<(bool Ok, string Message)> UiCommandAsync(UiCommand command, CancellationToken cancel);
+    /** The live viewport frames, captured continuously while anyone watches. */
+    ViewportFeed Viewport { get; }
 }
 
 /** A page of a panel: path picks a node or section, filter narrows rows. */
@@ -63,7 +69,10 @@ public static partial class SolforgeTools
         "content by name with list_maps (zones) and search_assets, open it with open_map, then find_world_objects (layer volumes " +
         "or collision) and get_placement before edit_placement or edit_bounds. Playbooks for common jobs are skills named " +
         "solforge-new-weapon, solforge-new-armor, solforge-map-bounds, solforge-patrol-content, solforge-new-enemy and " +
-        "solforge-new-mission; read the matching one first. Action tools need the user's approve click.";
+        "solforge-new-mission; read the matching one first. Solforge's own UI: list_ui_controls, then ui_invoke, ui_set_value, " +
+        "ui_set_checked or ui_select. The live view: get_viewport_frame, get_viewport_frames, wait_for_viewport_change (each with " +
+        "text for models without vision). Where the player is in game: get_player_position (map, zone, xyz, yaw, nearest " +
+        "objects and slots) and wait_for_player_near. Action tools need the user's approve click.";
 
     /** read_panel names; each pages with offset/limit. */
     public static readonly string[] Panels =
@@ -288,12 +297,15 @@ public static partial class SolforgeTools
                 },
                 args => args["content"] is not null ? $"Write {McpJson.String(args, "path")} ({McpJson.String(args, "content")?.Length ?? 0} chars)"
                     : $"Edit {McpJson.String(args, "path")}: replace {Quote(McpJson.String(args, "find"))} with {Quote(McpJson.String(args, "replace"))}"),
-            .. ProjectTools(host, Read, Act)
+            .. ProjectTools(host, Read, Act),
+            .. UiTools(host, Read),
+            .. PlayerTools(host, Read)
         ];
     }
 
     private const string NoReference = "No reference library found (08-docs\\reference above the project or game folder, or SOLFORGE_REFERENCE).";
-    private const string NoMission = "No mission is open in Solforge; open the map with its mission (Missions tab) first.";
+    private const string NoMission = "No mission is open in Solforge. list_missions lists the open map's missions; open_map with " +
+        "mission=<tag> opens one (its map is found for you).";
 
     public static uint? ParseHash(string? text)
     {

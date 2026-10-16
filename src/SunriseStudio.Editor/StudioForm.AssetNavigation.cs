@@ -16,17 +16,17 @@ public sealed partial class StudioForm
                 : document.OpenContext?.EntityTag ?? 0;
             string label = owner == 0 ? "Choose entity owner" : workspace.DisplayName(owner);
             ImGui.SetNextItemWidth(-1);
-            if (ImGui.BeginCombo("##animation-owner", label))
+            if (UiAuto.BeginCombo("##animation-owner", label))
             {
                 foreach (uint candidate in connections.EntityCandidates)
-                    if (ImGui.Selectable(workspace.DisplayName(candidate) + "##" + candidate, candidate == owner))
+                    if (UiAuto.Selectable(workspace.DisplayName(candidate) + "##" + candidate, candidate == owner))
                     {
                         var nextContext = document.OpenContext is { WeaponItemTag: > 0 } weapon
                             ? weapon with { EntityTag = candidate } : new AssetOpenContext(EntityTag: candidate);
                         workspace.Select(document.Entry.TagHash, context: nextContext);
                         ShowAssetPage("sunrise.preview");
                     }
-                ImGui.EndCombo();
+                UiAuto.EndCombo();
             }
         }
     }

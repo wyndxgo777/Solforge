@@ -175,7 +175,7 @@ public sealed partial class ComponentsPage : IStudioPage
         string draft = drafts.GetValueOrDefault(key, property.Value);
         ImGui.BeginDisabled(!workspace.CanEdit);
         ImGui.SetNextItemWidth(-1);
-        bool apply = ImGui.InputText("##value", ref draft, 64, ImGuiInputTextFlags.EnterReturnsTrue);
+        bool apply = UiAuto.InputText("##value", ref draft, 64, ImGuiInputTextFlags.EnterReturnsTrue);
         ImGui.EndDisabled();
         // Long evidence is dropped; the field name already says what it is.
         string evidence = property.Evidence.Length is > 0 and < 60 ? property.Evidence + "\n" : "";

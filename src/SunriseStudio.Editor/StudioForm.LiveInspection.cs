@@ -71,7 +71,7 @@ public sealed partial class StudioForm
         if (hasClass)
         {
             ImGui.SameLine();
-            if (ImGui.Button("Open class")) OpenObjectAsset(row.ClassTag);
+            if (UiAuto.Button("Open class")) OpenObjectAsset(row.ClassTag);
             if (ImGui.IsItemHovered()) ImGui.SetTooltip($"{workspace.DisplayName(row.ClassTag)} ({row.ClassTag:X8})");
         }
         DrawObservedPlacement(row);
@@ -80,7 +80,7 @@ public sealed partial class StudioForm
             .Where(tag => tag is not (0 or uint.MaxValue or LiveDynamicBinding.MarkerTag)).Distinct())
         {
             int parts = item.Meshes.Count(mesh => mesh.Mesh.TagHash == model);
-            if (ImGui.Selectable($"{workspace.DisplayName(model)} ({parts} parts)##model-{model}")) OpenObjectAsset(model);
+            if (UiAuto.Selectable($"{workspace.DisplayName(model)} ({parts} parts)##model-{model}")) OpenObjectAsset(model);
         }
         ImGui.TextDisabled(!livePage.AnimationEnabled ? "Rest pose"
             : livePage.SelectedPoseStatus.Length > 0 ? livePage.SelectedPoseStatus : "Waiting for the game's pose");
@@ -89,9 +89,9 @@ public sealed partial class StudioForm
         {
             ImGui.SeparatorText("Selected part");
             ImGui.TextUnformatted($"Part {mesh.Mesh.PartIndex} / LOD {mesh.Mesh.LodLevel}");
-            if (ImGui.SmallButton($"Mesh {mesh.Mesh.TagHash:X8}")) OpenObjectAsset(mesh.Mesh.TagHash);
+            if (UiAuto.SmallButton($"Mesh {mesh.Mesh.TagHash:X8}")) OpenObjectAsset(mesh.Mesh.TagHash);
             if (mesh.Mesh.MaterialTag is not (0 or uint.MaxValue)
-                && ImGui.SmallButton($"Material {mesh.Mesh.MaterialTag:X8}")) OpenObjectAsset(mesh.Mesh.MaterialTag);
+                && UiAuto.SmallButton($"Material {mesh.Mesh.MaterialTag:X8}")) OpenObjectAsset(mesh.Mesh.MaterialTag);
         }
         return true;
     }
@@ -136,7 +136,7 @@ public sealed partial class StudioForm
             ? $"Root {answer.RootHandle:X8}\nRoot flags 0x{answer.RootFlags:X8}\nChain flags 0x{answer.ChainFlags:X8}" : "");
         if (livePage.ObjectBridgeDiagnostic is { Length: > 0 } diagnostic)
         { ImGui.TextColored(new Vector4(1, .6f, .35f, 1), diagnostic); return; }
-        if (ImGui.SmallButton("Refresh##live-object")) livePage.RefreshInspected();
+        if (UiAuto.SmallButton("Refresh##live-object")) livePage.RefreshInspected();
         StudioUi.Tip("Ask the game again");
         ImGui.SameLine();
         if (!matches) { ImGui.TextDisabled("Not requested"); return; }
@@ -155,7 +155,7 @@ public sealed partial class StudioForm
             string name = parent is null ? $"{answer.ParentHandle:X8} (not in the registry)" : livePage.DisplayName(workspace, parent);
             ImGui.TextDisabled("Attached to"); ImGui.SameLine();
             ImGui.BeginDisabled(parent is null);
-            if (ImGui.SmallButton(name + "##parent") && parent is not null) livePage.SelectRow(parent);
+            if (UiAuto.SmallButton(name + "##parent") && parent is not null) livePage.SelectRow(parent);
             ImGui.EndDisabled();
         }
         if (answer.Children.Count > 0 && ImGui.TreeNode(
@@ -166,7 +166,7 @@ public sealed partial class StudioForm
                 var childRow = ObservedChild(child);
                 string label = childRow is null ? $"{child.Handle:X8}" : livePage.DisplayName(workspace, childRow);
                 ImGui.BeginDisabled(childRow is null);
-                if (ImGui.Selectable(label + "##child-" + child.Handle) && childRow is not null) livePage.SelectRow(childRow);
+                if (UiAuto.Selectable(label + "##child-" + child.Handle) && childRow is not null) livePage.SelectRow(childRow);
                 ImGui.EndDisabled();
             }
             ImGui.TreePop();
@@ -174,7 +174,7 @@ public sealed partial class StudioForm
         if (answer.Models.Count > 0 && ImGui.TreeNode($"Drawn models ({answer.Models.Count})###live-drawn"))
         {
             foreach (uint model in answer.Models)
-                if (ImGui.Selectable($"{workspace.DisplayName(model)}##drawn-{model}")) OpenObjectAsset(model);
+                if (UiAuto.Selectable($"{workspace.DisplayName(model)}##drawn-{model}")) OpenObjectAsset(model);
             ImGui.TreePop();
         }
         else if (answer.Models.Count == 0)

@@ -169,17 +169,17 @@ public sealed partial class MissionGraphPage
             }
             if (ImGui.BeginTabBar("mission-views"))
             {
-                if (ImGui.BeginTabItem("Nodes")) { DrawNodes(CanEdit); ImGui.EndTabItem(); }
-                if (ImGui.BeginTabItem("Lua")) { DrawSource(CanEdit); ImGui.EndTabItem(); }
+                if (UiAuto.BeginTabItem("Nodes")) { DrawNodes(CanEdit); UiAuto.EndTabItem(); }
+                if (UiAuto.BeginTabItem("Lua")) { DrawSource(CanEdit); UiAuto.EndTabItem(); }
                 var calls = ApiChecks();
                 string sdk = SdkProblem;
                 int problems = graph.Diagnostics.Count + sceneChecks.Count + calls.Count
                     + (scriptError.Length > 0 ? 1 : 0) + (sdk.Length > 0 ? 1 : 0);
                 // The ### id keeps the tab selected when its count changes.
-                if (ImGui.BeginTabItem(problems > 0 ? $"Checks ({problems})###checks" : "Checks###checks"))
+                if (UiAuto.BeginTabItem(problems > 0 ? $"Checks ({problems})###checks" : "Checks###checks"))
                 {
                     DrawChecks(calls, sdk, problems);
-                    ImGui.EndTabItem();
+                    UiAuto.EndTabItem();
                 }
                 ImGui.EndTabBar();
             }
@@ -251,14 +251,14 @@ public sealed partial class MissionGraphPage
         DrawNewScript(workspace);
         ImGui.BeginDisabled(catalog is null);
         ImGui.SetNextItemWidth(combo);
-        if (ImGui.BeginCombo("##mission-script", home == ScriptHome.Installed && script is not null ? script.Name : "Installed scripts"))
+        if (UiAuto.BeginCombo("##mission-script", home == ScriptHome.Installed && script is not null ? script.Name : "Installed scripts"))
         {
             if (catalog is { Scripts.Count: 0 })
                 ImGui.TextDisabled(Directory.Exists(catalog.ScriptsRoot) ? "No installed scripts" : "No scripts folder in this installation");
             foreach (var entry in catalog?.Scripts ?? [])
-                if (ImGui.Selectable(entry.Name, home == ScriptHome.Installed && entry.FullPath == script?.FullPath))
+                if (UiAuto.Selectable(entry.Name, home == ScriptHome.Installed && entry.FullPath == script?.FullPath))
                     RequestSwitch(() => Adopt(entry, ScriptHome.Installed, true));
-            ImGui.EndCombo();
+            UiAuto.EndCombo();
         }
         ImGui.EndDisabled();
         Tip(catalog is null ? "Scripts did not load" : ScriptTip(ScriptHome.Installed, "Installed scripts"));
@@ -270,15 +270,15 @@ public sealed partial class MissionGraphPage
         Flow(combo);
         ImGui.BeginDisabled(project is null);
         ImGui.SetNextItemWidth(combo);
-        if (ImGui.BeginCombo("##project-missions", home == ScriptHome.Project && script is not null ? script.Name : "Mod scripts"))
+        if (UiAuto.BeginCombo("##project-missions", home == ScriptHome.Project && script is not null ? script.Name : "Mod scripts"))
         {
             if (ImGui.IsWindowAppearing()) { projectScripts = []; Try(() => projectScripts = MissionProject.List(project!)); }
             if (projectScripts.Count == 0) ImGui.TextDisabled("This project has no mod scripts");
             foreach (var entry in projectScripts)
-                if (ImGui.Selectable(entry.Name + "##" + entry.RelativePath, home == ScriptHome.Project && entry.FullPath == script?.FullPath))
+                if (UiAuto.Selectable(entry.Name + "##" + entry.RelativePath, home == ScriptHome.Project && entry.FullPath == script?.FullPath))
                     RequestSwitch(() => Adopt(Describe(entry), ScriptHome.Project, true));
             DrawLegacyScripts(workspace);
-            ImGui.EndCombo();
+            UiAuto.EndCombo();
         }
         ImGui.EndDisabled();
         Tip(project is null ? "Open a project to edit mod scripts" : ScriptTip(ScriptHome.Project, "This project's mod scripts"));
@@ -334,7 +334,7 @@ public sealed partial class MissionGraphPage
         Flow(icon is null ? ImGui.CalcTextSize(label, true).X + ImGui.GetStyle().FramePadding.X * 2 : ImGui.GetFrameHeight());
         if (icon is { } image) return IconButton(label, image, tooltip, enabled);
         ImGui.BeginDisabled(!enabled);
-        bool hit = ImGui.Button(label);
+        bool hit = UiAuto.Button(label);
         ImGui.EndDisabled();
         return hit;
     }
@@ -453,12 +453,12 @@ public sealed partial class MissionGraphPage
         ImGui.TextUnformatted(script?.Name ?? "Mission script");
         if (HasLuaDrafts) ImGui.TextWrapped("Apply or revert Lua edits to save. Discard drops them.");
         ImGui.BeginDisabled(!CanSave);
-        if (ImGui.Button("Save and continue") && Try(() => { ApplyDraft(); Save(); }))
+        if (UiAuto.Button("Save and continue") && Try(() => { ApplyDraft(); Save(); }))
         { FinishSwitch(); ImGui.CloseCurrentPopup(); }
         ImGui.EndDisabled(); ImGui.SameLine();
-        if (ImGui.Button("Discard"))
+        if (UiAuto.Button("Discard"))
         { ClearLuaDrafts(); IsDirty = false; sourceDraft = graph?.Source ?? ""; FinishSwitch(); ImGui.CloseCurrentPopup(); }
-        ImGui.SameLine(); if (ImGui.Button("Cancel")) ImGui.CloseCurrentPopup();
+        ImGui.SameLine(); if (UiAuto.Button("Cancel")) ImGui.CloseCurrentPopup();
         ImGui.EndPopup();
     }
 
@@ -497,9 +497,9 @@ public sealed partial class MissionGraphPage
     private void DrawSource(bool editable)
     {
         ImGui.BeginDisabled(!editable || !HasSourceDraft);
-        if (ImGui.SmallButton("Apply")) Change(_ => MissionGraphDocument.Parse(sourceDraft));
+        if (UiAuto.SmallButton("Apply")) Change(_ => MissionGraphDocument.Parse(sourceDraft));
         ImGui.SameLine();
-        if (ImGui.SmallButton("Revert")) sourceDraft = graph!.Source;
+        if (UiAuto.SmallButton("Revert")) sourceDraft = graph!.Source;
         ImGui.EndDisabled();
         if (editable) ImGui.SameLine();
         // Room to paste the largest installed script over the draft.

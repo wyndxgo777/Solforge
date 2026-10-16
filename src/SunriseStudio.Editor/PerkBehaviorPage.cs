@@ -46,7 +46,7 @@ public sealed class PerkBehaviorPage : IStudioPage
         bool dirty = draft.Editor.IsDirty;
         var problems = draft.Editor.Problems;
         ImGui.BeginDisabled(!workspace.CanEdit || !dirty || changed || problems.Count != 0);
-        if (ImGui.Button("Compile and save")) workspace.Run(() =>
+        if (UiAuto.Button("Compile and save")) workspace.Run(() =>
         {
             if (workspace.Document?.Entry.TagHash != document.Entry.TagHash
                 || Hash(workspace.Document.Bytes) != draft.SourceHash)
@@ -60,7 +60,7 @@ public sealed class PerkBehaviorPage : IStudioPage
         StudioUi.Tip(StudioUi.MayNotWork + (workspace.IsProjectTag(document.Entry.TagHash) ? "" : " Changes every item with this perk."));
         ImGui.SameLine();
         ImGui.BeginDisabled(workspace.IsBusy);
-        if (ImGui.Button("Reload source")) workspace.Run(() =>
+        if (UiAuto.Button("Reload source")) workspace.Run(() =>
         {
             draft.Editor.Load(Open(document.Bytes, document.Entry.TagHash));
             draft.SourceHash = hash;

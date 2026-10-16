@@ -37,10 +37,10 @@ public static class SceneLayerMenu
             {
                 ImGui.TableNextColumn();
                 bool boxes = visibility.ShowCollisionBoxes;
-                if (ImGui.Checkbox("##box-Collision", ref boxes)) visibility.ShowCollisionBoxes = boxes;
+                if (UiAuto.Checkbox("##box-Collision", ref boxes)) visibility.ShowCollisionBoxes = boxes;
                 ImGui.TableNextColumn();
                 bool shown = visibility.ShowCollisionContent;
-                if (ImGui.Checkbox("##content-Collision", ref shown)) visibility.ShowCollisionContent = shown;
+                if (UiAuto.Checkbox("##content-Collision", ref shown)) visibility.ShowCollisionContent = shown;
                 continue;
             }
             ImGui.TableNextColumn(); if (box) Choice(visibility, layer, $"##box-{layer}", visibility.HiddenOverlayLayers);
@@ -48,7 +48,7 @@ public static class SceneLayerMenu
         }
         ImGui.EndTable();
         bool inactiveParts = visibility.ShowInactiveParts;
-        if (ImGui.Checkbox("Inactive parts", ref inactiveParts)) visibility.ShowInactiveParts = inactiveParts;
+        if (UiAuto.Checkbox("Inactive parts", ref inactiveParts)) visibility.ShowInactiveParts = inactiveParts;
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Show parts that start hidden or have no material");
         if (collision is not null && (present is null || present.Contains(SceneLayer.Collision))) DrawCollisionOptions(collision);
     }
@@ -58,17 +58,17 @@ public static class SceneLayerMenu
     {
         ImGui.Separator();
         bool edges = viewport.CollisionEdges, solid = viewport.CollisionSolid;
-        if (ImGui.Checkbox("Collision edges", ref edges)) viewport.CollisionEdges = edges;
-        if (ImGui.Checkbox("Solid collision", ref solid)) viewport.CollisionSolid = solid;
+        if (UiAuto.Checkbox("Collision edges", ref edges)) viewport.CollisionEdges = edges;
+        if (UiAuto.Checkbox("Solid collision", ref solid)) viewport.CollisionSolid = solid;
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Opaque faces that hide what is behind them; triggers stay translucent");
         bool inactive = viewport.ShowInactiveCollision;
-        if (ImGui.Checkbox("Inactive bodies", ref inactive)) viewport.ShowInactiveCollision = inactive;
+        if (UiAuto.Checkbox("Inactive bodies", ref inactive)) viewport.ShowInactiveCollision = inactive;
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Show bodies that start disabled");
         foreach (var role in Enum.GetValues<CollisionRole>())
         {
             bool shown = !viewport.HiddenCollisionRoles.Contains(role);
             if (role != default) ImGui.SameLine();
-            if (ImGui.Checkbox($"{role}##collision-role", ref shown))
+            if (UiAuto.Checkbox($"{role}##collision-role", ref shown))
             { if (shown) viewport.HiddenCollisionRoles.Remove(role); else viewport.HiddenCollisionRoles.Add(role); }
             if (ImGui.IsItemHovered())
                 ImGui.SetTooltip(role switch
@@ -100,7 +100,7 @@ public static class SceneLayerMenu
     {
         ImGui.PushID(label);
         bool visible = !hidden.Contains(layer) && !visibility.HiddenLayers.Contains(layer);
-        if (ImGui.Checkbox(label, ref visible))
+        if (UiAuto.Checkbox(label, ref visible))
         {
             visibility.HiddenLayers.Remove(layer);
             if (visible) hidden.Remove(layer); else hidden.Add(layer);

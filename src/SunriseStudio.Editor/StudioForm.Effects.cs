@@ -20,7 +20,7 @@ public sealed partial class StudioForm
             && (key is null || EffectPlacementKey.Of(marker) == key)).ToArray();
         if (markers.Length == 0 || !ImGui.CollapsingHeader("Effects##effect-controls", ImGuiTreeNodeFlags.DefaultOpen)) return;
         bool showAll = effectControls.ShowAll;
-        if (ImGui.Checkbox("Show all effects", ref showAll)) effectControls.ShowAll = showAll;
+        if (UiAuto.Checkbox("Show all effects", ref showAll)) effectControls.ShowAll = showAll;
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Run every particle effect all the time, whatever starts it in the game.");
         foreach (var placement in markers.GroupBy(EffectPlacementKey.Of))
         {
@@ -32,7 +32,7 @@ public sealed partial class StudioForm
         if (selected?.Effect is { } effect)
         {
             bool forced = effectControls.Forced(selected);
-            if (ImGui.Checkbox("Force on", ref forced)) effectControls.SetForced(selected, forced);
+            if (UiAuto.Checkbox("Force on", ref forced)) effectControls.SetForced(selected, forced);
             ImGui.SameLine();
             ImGui.TextDisabled(effect.Activation?.Trigger() ?? "sequence not read");
         }
@@ -41,7 +41,7 @@ public sealed partial class StudioForm
             for (int index = 0; index < markers.Length; index++)
             {
                 bool forced = effectControls.Forced(markers[index]);
-                if (ImGui.Checkbox($"{markers[index].Name}##force{index}", ref forced)) effectControls.SetForced(markers[index], forced);
+                if (UiAuto.Checkbox($"{markers[index].Name}##force{index}", ref forced)) effectControls.SetForced(markers[index], forced);
                 if (ImGui.IsItemHovered()) ImGui.SetTooltip(markers[index].Effect!.Activation?.Trigger() ?? "sequence not read");
             }
             ImGui.TreePop();
@@ -62,10 +62,10 @@ public sealed partial class StudioForm
             string name = resolved ?? $"Channel {index + 1}";
             float value = effectControls.Channel(key, channel.Key);
             bool on = value != 0;
-            if (ImGui.Checkbox($"##on{channel.Key:X8}", ref on)) effectControls.SetChannel(key, channel.Key, on ? 1 : 0);
+            if (UiAuto.Checkbox($"##on{channel.Key:X8}", ref on)) effectControls.SetChannel(key, channel.Key, on ? 1 : 0);
             ImGui.SameLine();
             ImGui.SetNextItemWidth(70 * scale);
-            if (ImGui.DragFloat($"{name}##value{channel.Key:X8}", ref value, 0.01f))
+            if (UiAuto.DragFloat($"{name}##value{channel.Key:X8}", ref value, 0.01f))
                 effectControls.SetChannel(key, channel.Key, value);
             StudioUi.Tip((resolved is null ? $"0x{channel.Key:X8}\n" : "")
                 + string.Join("\n", channel.Select(gate => $"Open from {gate.Min:G4} up to {gate.Max:G4}").Distinct()));
@@ -83,10 +83,10 @@ public sealed partial class StudioForm
             bool autoStart = sequence.First().AutoStart;
             var (playing, generation) = effectControls.Sequence(key, sequence.Key, autoStart);
             ImGui.PushID($"sequence{sequence.Key:X8}");
-            if (ImGui.SmallButton("Play")) effectControls.Play(key, sequence.Key, autoStart);
+            if (UiAuto.SmallButton("Play")) effectControls.Play(key, sequence.Key, autoStart);
             ImGui.SameLine();
             ImGui.BeginDisabled(!playing);
-            if (ImGui.SmallButton("Stop")) effectControls.Stop(key, sequence.Key, autoStart);
+            if (UiAuto.SmallButton("Stop")) effectControls.Stop(key, sequence.Key, autoStart);
             ImGui.EndDisabled();
             ImGui.SameLine();
             ImGui.TextUnformatted(workspace.DisplayName(sequence.Key));

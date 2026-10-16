@@ -90,14 +90,14 @@ public sealed partial class CuiPage : IPreparedStudioPage
         if (document.ClassHash == 0x8080496A)
         {
             if (composition is not null) DrawComposition(context, composition);
-            else if (ImGui.Button("Open widget resource")) context.Workspace.Select(document.RootResource);
+            else if (UiAuto.Button("Open widget resource")) context.Workspace.Select(document.RootResource);
             return;
         }
         var available = ImGui.GetContentRegionAvail();
         float listWidth = Math.Clamp(available.X * .27f, 130, 250);
         ImGui.BeginChild("cui-list", new(listWidth, 0), ImGuiChildFlags.Borders);
         ImGui.SetNextItemWidth(-1);
-        ImGui.InputTextWithHint("##cui-find", "Find widget", ref filter, 256);
+        UiAuto.InputTextWithHint("##cui-find", "Find widget", ref filter, 256);
         ImGui.BeginChild("cui-widget-rows", Vector2.Zero);
         for (int i = 0; i < rectangles.Count; i++)
         {
@@ -106,7 +106,7 @@ public sealed partial class CuiPage : IPreparedStudioPage
             if (filter.Length != 0 && !label.Contains(filter, StringComparison.OrdinalIgnoreCase)
                 && !item.Node.Id.ToString().Contains(filter, StringComparison.Ordinal)) continue;
             ImGui.PushID(i);
-            if (ImGui.Selectable(label, selected == i))
+            if (UiAuto.Selectable(label, selected == i))
             { selected = i; edited = item.Rectangle; fit = true; }
             if (ImGui.IsItemHovered()) ImGui.SetTooltip($"{item.Node.Name}\nNode {item.Node.Id}");
             if (selected == i && revealSelection) { ImGui.SetScrollHereY(.5f); revealSelection = false; }
@@ -119,7 +119,7 @@ public sealed partial class CuiPage : IPreparedStudioPage
             foreach (var import in document.Imports)
             {
                 ImGui.PushID(import.Offset);
-                if (ImGui.Selectable(context.Workspace.DisplayName(import.TagHash), false,
+                if (UiAuto.Selectable(context.Workspace.DisplayName(import.TagHash), false,
                     ImGuiSelectableFlags.AllowDoubleClick) && ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
                     context.Workspace.Select(import.TagHash);
                 ImGui.PopID();
@@ -144,18 +144,18 @@ public sealed partial class CuiPage : IPreparedStudioPage
                 float value = configured ? ConfiguredRectangle(context)[axis] : edited[axis];
                 ImGui.SetNextItemWidth(Math.Max(40, ImGui.GetContentRegionAvail().X - 65));
                 string label = axis switch { 0 => "X", 1 => "Y", 2 => "Width", _ => "Height" };
-                if (ImGui.DragFloat(label, ref value, 1, 0, 0, "%.1f")) edited[axis] = value;
+                if (UiAuto.DragFloat(label, ref value, 1, 0, 0, "%.1f")) edited[axis] = value;
                 ImGui.EndDisabled();
                 if (configured && PropertyBinding(context, document, rectangles[selected].Component,
                     rectangles[selected].Properties[axis]) is { } binding) ConfigLabel(context, binding);
                 ImGui.PopID();
             }
-            if (ImGui.Button("Apply")) Apply(context);
+            if (UiAuto.Button("Apply")) Apply(context);
             ImGui.EndDisabled();
             ImGui.SameLine();
-            if (ImGui.Button("Reset")) edited = rectangles[selected].Rectangle;
+            if (UiAuto.Button("Reset")) edited = rectangles[selected].Rectangle;
             ImGui.SameLine();
-            if (ImGui.Button("Fit")) fit = true;
+            if (UiAuto.Button("Fit")) fit = true;
             var content = preview?.LocalContent.GetValueOrDefault(rectangles[selected].Component.Offset);
             if (content is { TextHash: not 0 })
             {
@@ -277,17 +277,17 @@ public sealed partial class CuiPage : IPreparedStudioPage
     private void DrawComposition(StudioPageContext context, CuiComposition scene)
     {
         RefreshBindings(scene);
-        if (ImGui.Button("Fit")) fit = true;
+        if (UiAuto.Button("Fit")) fit = true;
         ImGui.SameLine(); ImGui.TextDisabled("Default profile");
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Static properties only");
-        ImGui.SameLine(); ImGui.Checkbox("Apply bindings", ref applyBindings);
+        ImGui.SameLine(); UiAuto.Checkbox("Apply bindings", ref applyBindings);
         if (ImGui.IsItemHovered()) ImGui.SetTooltip($"Hide widgets whose bound visibility is false\n{bindingInputs.Count} inputs set, {bindingHidden.Count} widgets hidden");
         DrawStructureToolbar(context, scene);
         var choice = scene.Nodes.FirstOrDefault(node => node.Id == selectedComposed);
         if (choice is not null)
         {
             ImGui.SameLine();
-            if (ImGui.Button("Edit source")) context.Workspace.Select(choice.DefinitionResource);
+            if (UiAuto.Button("Edit source")) context.Workspace.Select(choice.DefinitionResource);
         }
         DrawLiveToolbar();
         DrawLiveNotes();
@@ -305,7 +305,7 @@ public sealed partial class CuiPage : IPreparedStudioPage
             foreach (uint tag in choice.Properties.Select(property => property.Source.TagHash).Distinct())
             {
                 ImGui.PushID(unchecked((int)tag));
-                if (ImGui.SmallButton(context.Workspace.DisplayName(tag))) context.Workspace.Select(tag);
+                if (UiAuto.SmallButton(context.Workspace.DisplayName(tag))) context.Workspace.Select(tag);
                 ImGui.PopID();
             }
             // While the game state applies, it goes first so the short pane shows it without scrolling.

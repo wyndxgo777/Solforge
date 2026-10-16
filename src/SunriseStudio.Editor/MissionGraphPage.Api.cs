@@ -192,7 +192,7 @@ public sealed partial class MissionGraphPage
                 ImGui.SameLine();
                 // The button stays lit while the parameter is in Lua mode.
                 if (lua) ImGui.PushStyleColor(ImGuiCol.Button, ImGui.GetStyle().Colors[(int)ImGuiCol.Header]);
-                bool toggle = ImGui.SmallButton("Lua");
+                bool toggle = UiAuto.SmallButton("Lua");
                 if (lua) ImGui.PopStyleColor();
                 Tip("Edit as Lua");
                 if (toggle) SetApiLuaMode(key, ordinal, parameter.Path, !lua);
@@ -223,7 +223,7 @@ public sealed partial class MissionGraphPage
             case MissionApiWidget.Boolean:
             {
                 bool value = parameter.Text == "true";
-                if (ImGui.Checkbox("##value", ref value)) ApplyApiValue(key, ordinal, parameter.Path, value ? "true" : "false");
+                if (UiAuto.Checkbox("##value", ref value)) ApplyApiValue(key, ordinal, parameter.Path, value ? "true" : "false");
                 break;
             }
             case MissionApiWidget.Integer or MissionApiWidget.Number:
@@ -250,10 +250,10 @@ public sealed partial class MissionGraphPage
             case MissionApiWidget.Choice:
             {
                 ImGui.SetNextItemWidth(-1);
-                if (!ImGui.BeginCombo("##choice", parameter.Choice ?? "Choose")) break;
+                if (!UiAuto.BeginCombo("##choice", parameter.Choice ?? "Choose")) break;
                 foreach (string entry in parameter.Entries)
-                    if (ImGui.Selectable(entry, entry == parameter.Choice) && entry != parameter.Choice) PickApiChoice(key, ordinal, parameter.Path, entry);
-                ImGui.EndCombo();
+                    if (UiAuto.Selectable(entry, entry == parameter.Choice) && entry != parameter.Choice) PickApiChoice(key, ordinal, parameter.Path, entry);
+                UiAuto.EndCombo();
                 break;
             }
             case MissionApiWidget.Reference or MissionApiWidget.SlotHandle:
@@ -264,12 +264,12 @@ public sealed partial class MissionGraphPage
             case MissionApiWidget.Atom:
             {
                 ImGui.SetNextItemWidth(-1);
-                if (ImGui.BeginCombo("##kind", parameter.Choice ?? "Choose kind"))
+                if (UiAuto.BeginCombo("##kind", parameter.Choice ?? "Choose kind"))
                 {
                     foreach (string kind in parameter.Entries)
-                        if (ImGui.Selectable(kind, kind == parameter.Choice) && kind != parameter.Choice)
+                        if (UiAuto.Selectable(kind, kind == parameter.Choice) && kind != parameter.Choice)
                             ApiEdit(key, ordinal, node => MissionApiWriter.SetAtomKind(node, parameter.Path, kind));
-                    ImGui.EndCombo();
+                    UiAuto.EndCombo();
                 }
                 Children(parameter);
                 break;
@@ -304,7 +304,7 @@ public sealed partial class MissionGraphPage
     {
         if (!apiInput.TryGetValue(id + "\n" + current, out text!)) text = current;
         ImGui.SetNextItemWidth(-1);
-        bool enter = ImGui.InputText("##field", ref text, 4096, ImGuiInputTextFlags.EnterReturnsTrue);
+        bool enter = UiAuto.InputText("##field", ref text, 4096, ImGuiInputTextFlags.EnterReturnsTrue);
         bool left = ImGui.IsItemDeactivatedAfterEdit();
         if (text == current) apiInput.Remove(id + "\n" + current); else apiInput[id + "\n" + current] = text;
         if (!(enter || left) || text == current) return false;
@@ -364,12 +364,12 @@ public sealed partial class MissionGraphPage
     {
         if (apiSchema is null || scriptGraph is null) return;
         ImGui.SeparatorText("Callbacks");
-        ImGui.SetNextItemWidth(-1); ImGui.InputTextWithHint("##callback-filter", "Find callback", ref apiFilter, 128);
+        ImGui.SetNextItemWidth(-1); UiAuto.InputTextWithHint("##callback-filter", "Find callback", ref apiFilter, 128);
         foreach (string name in apiSchema.CallbackNames().Where(value => apiFilter.Length == 0 || value.Contains(apiFilter, StringComparison.OrdinalIgnoreCase)))
         {
             bool present = scriptGraph.Nodes.Any(node => node.Key == MissionScriptGraph.Root + "/field/" + name);
             ImGui.BeginDisabled(present);
-            if (ImGui.Selectable(name + "##callback")) AddApiCallback(name);
+            if (UiAuto.Selectable(name + "##callback")) AddApiCallback(name);
             ImGui.EndDisabled();
             if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
                 ImGui.SetTooltip(apiSchema.EventForCallback(name)?.Note ?? apiSchema.Program.Entries.FirstOrDefault(entry => entry.Name == name)?.Note ?? name);
@@ -385,12 +385,12 @@ public sealed partial class MissionGraphPage
         if (scriptGraph?.Api is not { } analysis) return;
         var names = scriptGraph.ScopeNames(scope);
         ImGui.SeparatorText("Sunrise API");
-        ImGui.SetNextItemWidth(-1); ImGui.InputTextWithHint("##member-filter", "Find call", ref apiFilter, 128);
+        ImGui.SetNextItemWidth(-1); UiAuto.InputTextWithHint("##member-filter", "Find call", ref apiFilter, 128);
         foreach (var (member, receiver) in PaletteMembers(analysis, names))
         {
             string label = receiver + member.Separator + member.Name;
             if (apiFilter.Length > 0 && !label.Contains(apiFilter, StringComparison.OrdinalIgnoreCase)) continue;
-            if (ImGui.Selectable(label + "##" + member.Receiver + "." + member.Name + "." + member.Gate?.SlotType)) AddApiMember(scope, member);
+            if (UiAuto.Selectable(label + "##" + member.Receiver + "." + member.Name + "." + member.Gate?.SlotType)) AddApiMember(scope, member);
             if (ImGui.IsItemHovered() && member.Note is { } note) ImGui.SetTooltip(note);
         }
     }

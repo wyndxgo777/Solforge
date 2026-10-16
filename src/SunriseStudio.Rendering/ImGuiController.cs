@@ -15,6 +15,10 @@ public sealed unsafe class ImGuiController : IDisposable
     private readonly Dx11Renderer renderer;
     private readonly Control window;
     private readonly IntPtr imguiContext;
+    private static int popouts;
+
+    /** The name UiAuto gives this window's controls: "main", or "popout1", "popout2"... */
+    public string AutomationSurface { get; set; } = "main";
     private ID3D11VertexShader vertexShader = null!;
     private ID3D11PixelShader pixelShader = null!;
     private ID3D11InputLayout inputLayout = null!;
@@ -192,6 +196,7 @@ public sealed unsafe class ImGuiController : IDisposable
         renderer = shared.renderer;
         this.window = window;
         owner = shared;
+        AutomationSurface = "popout" + Interlocked.Increment(ref popouts);
         ImGui.SetCurrentContext(shared.imguiContext);
         var fonts = ImGui.GetIO().Fonts;
         imguiContext = ImGui.CreateContext(fonts);
@@ -269,6 +274,7 @@ public sealed unsafe class ImGuiController : IDisposable
         }
         UpdateModifiers(io, active);
         ImGui.NewFrame();
+        UiAuto.BeginFrame(AutomationSurface);
         frameStarted = true;
     }
 

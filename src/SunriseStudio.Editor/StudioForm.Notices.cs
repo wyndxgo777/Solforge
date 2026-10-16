@@ -29,17 +29,17 @@ public sealed partial class StudioForm
         if (ImGui.BeginTabBar("notice-tabs"))
         {
             for (int i = 0; i < NoticeTabs.Length; i++)
-                if (ImGui.BeginTabItem(NoticeTabs[i].Title))
+                if (UiAuto.BeginTabItem(NoticeTabs[i].Title))
                 {
                     if (ImGui.BeginChild("notice-text", new(0, -ImGui.GetFrameHeightWithSpacing()), ImGuiChildFlags.Borders,
                         ImGuiWindowFlags.HorizontalScrollbar))
                         DrawNotice(notices[i]);
                     ImGui.EndChild();
-                    ImGui.EndTabItem();
+                    UiAuto.EndTabItem();
                 }
             ImGui.EndTabBar();
         }
-        if (ImGui.Button("Close", new(100 * scale, 0))) ImGui.CloseCurrentPopup();
+        if (UiAuto.Button("Close", new(100 * scale, 0))) ImGui.CloseCurrentPopup();
         ImGui.EndPopup();
     }
 

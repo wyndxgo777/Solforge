@@ -22,7 +22,7 @@ public sealed class GraphPage : IStudioPage
     {
         if (context.Workspace.Document?.Inspection.Graph is not { } graph) return;
         if (!ReferenceEquals(active, graph)) Layout(graph);
-        if (ImGui.Button("Reset view")) { pan = new(28, 28); zoom = 1; }
+        if (UiAuto.Button("Reset view")) { pan = new(28, 28); zoom = 1; }
         ImGui.SameLine(); ImGui.TextDisabled($"{graph.Nodes.Count:N0} nodes");
         var origin = ImGui.GetCursorScreenPos();
         var size = ImGui.GetContentRegionAvail();

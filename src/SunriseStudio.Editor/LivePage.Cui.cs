@@ -112,7 +112,7 @@ public sealed partial class LivePage
         StateIcon(active ? StudioIcon.Focus : null, entry.Top ? "Top screen; Sync follows it" : $"Top screen of layer {row.Layer}");
         if (!entry.Known) ImGui.PushStyleColor(ImGuiCol.Text, StudioTheme.Muted);
         // Never shown selected: the top screen has its own icon, and a click alone opens nothing.
-        if (ImGui.Selectable(entry.Name, false, ImGuiSelectableFlags.AllowDoubleClick) && entry.Known
+        if (UiAuto.Selectable(entry.Name, false, ImGuiSelectableFlags.AllowDoubleClick) && entry.Known
             && ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
             pendingCuiOpen = row.HierarchyTag;
         if (!entry.Known) ImGui.PopStyleColor();

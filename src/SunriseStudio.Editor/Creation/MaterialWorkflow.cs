@@ -92,7 +92,7 @@ public sealed class MaterialWorkflow : CreationWorkflow
         if (described is null)
         {
             ImGui.TextWrapped(describeError.Length != 0 ? describeError : "Choose a template material");
-            if (describeError.Length != 0 && ImGui.Button("Retry material")) { describedTag = null; Retry(); }
+            if (describeError.Length != 0 && UiAuto.Button("Retry material")) { describedTag = null; Retry(); }
             return;
         }
         if (described.Slots.Count == 0) { ImGui.TextDisabled("The material binds no textures"); return; }
@@ -125,7 +125,7 @@ public sealed class MaterialWorkflow : CreationWorkflow
                 ImGui.PushID(constant.Offset);
                 string text = values.GetValueOrDefault(constant.Offset, constant.Value);
                 ImGui.SetNextItemWidth(70 * CreationWidgets.Scale);
-                if (ImGui.InputText($"{constant.Component}##value", ref text, 32))
+                if (UiAuto.InputText($"{constant.Component}##value", ref text, 32))
                 {
                     if (text == constant.Value) values.Remove(constant.Offset);
                     else values[constant.Offset] = text;

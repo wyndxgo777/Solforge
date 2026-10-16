@@ -67,7 +67,7 @@ public sealed partial class VendorWorkflow
     private void DrawStock()
     {
         if (detail is null) { ImGui.TextDisabled("Choose a base vendor"); return; }
-        ImGui.SetNextItemWidth(-1); ImGui.InputTextWithHint("##sale-filter", "Find sale", ref saleSearch, 128);
+        ImGui.SetNextItemWidth(-1); UiAuto.InputTextWithHint("##sale-filter", "Find sale", ref saleSearch, 128);
         for (int index = 0; index < sales.Count; index++)
         {
             var row = sales[index];
@@ -75,7 +75,7 @@ public sealed partial class VendorWorkflow
             ImGui.PushID(index);
             bool expanded = ImGui.CollapsingHeader($"{row.Label}##sale");
             ImGui.SameLine();
-            if (ImGui.SmallButton("Remove")) { sales.RemoveAt(index); CreationWidgets.Reset(); ImGui.PopID(); break; }
+            if (UiAuto.SmallButton("Remove")) { sales.RemoveAt(index); CreationWidgets.Reset(); ImGui.PopID(); break; }
             if (expanded)
             {
                 CreationWidgets.Picker("sale-item", ref row.Item, ref row.Label, SearchItems, workspace.InvestmentRevision, 90);
@@ -90,14 +90,14 @@ public sealed partial class VendorWorkflow
                     CreationWidgets.Picker("payment", ref cost.Item, ref cost.Label, SearchItems, workspace.InvestmentRevision, 70);
                     bool conditional = cost.Source >= 0 && detail.Sales[row.Source].Costs[cost.Source].Conditional;
                     ImGui.SetNextItemWidth(170 * CreationWidgets.Scale);
-                    ImGui.InputText(conditional ? "Base quantity" : "Quantity", ref cost.Quantity, 32, ImGuiInputTextFlags.CharsDecimal);
+                    UiAuto.InputText(conditional ? "Base quantity" : "Quantity", ref cost.Quantity, 32, ImGuiInputTextFlags.CharsDecimal);
                     ImGui.SameLine();
-                    bool remove = ImGui.SmallButton("Remove price");
+                    bool remove = UiAuto.SmallButton("Remove price");
                     ImGui.PopID();
                     if (remove) { row.Costs.RemoveAt(k); CreationWidgets.Reset(); break; }
                 }
                 ImGui.BeginDisabled(row.Costs.Count >= InvestmentVendorAuthoring.MaximumCosts);
-                if (ImGui.SmallButton("Add static price"))
+                if (UiAuto.SmallButton("Add static price"))
                     row.Costs.Add(new(new(0, "Choose item", 1, null!, null!, false), -1) { Item = null });
                 ImGui.EndDisabled();
                 if (row.Costs.Count == 0) ImGui.TextDisabled("No payment items");
@@ -109,7 +109,7 @@ public sealed partial class VendorWorkflow
             var policies = detail.Sales.Select(row => new CreationChoice((uint)row.Index, $"{row.Index + 1}: {row.Name}")).ToArray();
             CreationWidgets.Choice("Sale policy", ref newSale, policies);
             ImGui.SameLine();
-            if (ImGui.SmallButton("Add sale") && newSale < detail.Sales.Count) sales.Add(new(detail.Sales[(int)newSale]));
+            if (UiAuto.SmallButton("Add sale") && newSale < detail.Sales.Count) sales.Add(new(detail.Sales[(int)newSale]));
         }
         else ImGui.TextDisabled("This base has no sale policy to copy");
     }
@@ -121,7 +121,7 @@ public sealed partial class VendorWorkflow
         if (error.Length != 0) ImGui.TextWrapped(error);
         if (interactionError.Length != 0) ImGui.TextWrapped(interactionError);
         if (TextChanged && textError.Length != 0) ImGui.TextWrapped(textError);
-        if (ImGui.SmallButton("Retry preparation"))
+        if (UiAuto.SmallButton("Retry preparation"))
         {
             if (error.Length != 0) loadedBase = null;
             if (interactionError.Length != 0) loadedInteraction = null;

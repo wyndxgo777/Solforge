@@ -23,8 +23,9 @@ public sealed class SolforgeMcpService : IAsyncDisposable
     public static SolforgeMcpService Start(ISolforgeHost host, string version)
     {
         var dispatcher = new McpDispatcher(SolforgeTools.Create(host), version, SolforgeTools.Instructions);
-        var server = new McpHttpServer(dispatcher);
+        var server = new McpHttpServer(dispatcher) { Viewport = host.Viewport };
         server.Start();
+        host.Viewport.LocalUrl = server.ViewportUrl;
         McpDiscovery.CleanStale();
         var service = new SolforgeMcpService(server, dispatcher);
         service.Publish(host.ProjectRoot);
@@ -58,6 +59,7 @@ public sealed class SolforgeMcpService : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         McpDiscovery.Remove(Environment.ProcessId);
+        if (server.Viewport is { } feed) { feed.Relay?.Stop(); feed.LocalUrl = null; }
         await server.DisposeAsync().ConfigureAwait(false);
     }
 

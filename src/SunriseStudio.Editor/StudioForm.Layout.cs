@@ -119,11 +119,11 @@ public sealed partial class StudioForm
         SolTheme.PanelHeader(PanelTitle(node.Panel), titleWidth);
         ImGui.SetNextItemWidth(titleWidth);
         SolTheme.PushHeaderCombo();
-        if (ImGui.BeginCombo("##editor-type", ""))
+        if (UiAuto.BeginCombo("##editor-type", ""))
         {
             foreach (var kind in Enum.GetValues<StudioPanelKind>())
             {
-                if (ImGui.Selectable(PanelTitle(kind), node.Panel == kind))
+                if (UiAuto.Selectable(PanelTitle(kind), node.Panel == kind))
                     pendingLayoutChange = () => { ClosePopout(kind); layout.SetPanel(node.Id, kind); };
                 if (kind != node.Panel && kind != StudioPanelKind.Empty && ImGui.IsItemHovered())
                 {
@@ -131,33 +131,33 @@ public sealed partial class StudioForm
                     else if (IsPoppedOut(kind)) ImGui.SetTooltip("Bring back from its own window");
                 }
             }
-            ImGui.EndCombo();
+            UiAuto.EndCombo();
         }
         ImGui.PopStyleColor(3);
         ImGui.SameLine(0, 4 * scale);
-        if (ImGui.Button("...", new(button, 0))) ImGui.OpenPopup("Area");
+        if (UiAuto.Button("...", new(button, 0))) ImGui.OpenPopup("Area");
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Area options");
         if (ImGui.BeginPopup("Area"))
         {
             bool canSplit = layout.Panels.Count < StudioLayout.MaximumPanels;
-            if (ImGui.MenuItem("Split left / right", "", false, canSplit && size.X >= 280 * scale))
+            if (UiAuto.MenuItem("Split left / right", "", false, canSplit && size.X >= 280 * scale))
                 pendingLayoutChange = () => { layout.Split(node.Id, StudioSplitAxis.Columns); maximizedPanel = null; };
-            if (ImGui.MenuItem("Split top / bottom", "", false, canSplit && size.Y >= 220 * scale))
+            if (UiAuto.MenuItem("Split top / bottom", "", false, canSplit && size.Y >= 220 * scale))
                 pendingLayoutChange = () => { layout.Split(node.Id, StudioSplitAxis.Rows); maximizedPanel = null; };
             ImGui.Separator();
-            if (ImGui.MenuItem(maximizedPanel is null ? "Maximize area" : "Restore areas"))
+            if (UiAuto.MenuItem(maximizedPanel is null ? "Maximize area" : "Restore areas"))
                 pendingLayoutChange = () => maximizedPanel = maximizedPanel is null ? node.Id : null;
-            if (ImGui.MenuItem("Pop out window", "", false, node.Panel != StudioPanelKind.Empty && renderer is not null))
+            if (UiAuto.MenuItem("Pop out window", "", false, node.Panel != StudioPanelKind.Empty && renderer is not null))
                 pendingLayoutChange = () => PopOut(node);
             if (StudioLayoutNode.Collapsible(node.Panel))
             {
                 ImGui.Separator();
-                if (ImGui.MenuItem("Collapse to a strip", "", node.Collapsed == true))
+                if (UiAuto.MenuItem("Collapse to a strip", "", node.Collapsed == true))
                     pendingLayoutChange = () => node.Collapsed = node.Collapsed == true ? false : true;
-                if (ImGui.MenuItem("Collapse while empty", "", node.Collapsed is null))
+                if (UiAuto.MenuItem("Collapse while empty", "", node.Collapsed is null))
                     pendingLayoutChange = () => node.Collapsed = node.Collapsed is null ? false : null;
             }
-            if (ImGui.MenuItem("Close area", "", false, node != layout.Root))
+            if (UiAuto.MenuItem("Close area", "", false, node != layout.Root))
                 pendingLayoutChange = () => { layout.Close(node.Id); maximizedPanel = null; };
             ImGui.EndPopup();
         }
@@ -204,20 +204,20 @@ public sealed partial class StudioForm
 
     private void DrawLayoutMenu()
     {
-        if (ImGui.BeginMenu("Panels"))
+        if (UiAuto.BeginMenu("Panels"))
         {
             foreach (var kind in Enum.GetValues<StudioPanelKind>().Where(kind => kind != StudioPanelKind.Empty))
-                if (ImGui.MenuItem(PanelTitle(kind), "", layout.Find(kind) is not null || IsPoppedOut(kind))
+                if (UiAuto.MenuItem(PanelTitle(kind), "", layout.Find(kind) is not null || IsPoppedOut(kind))
                     && !ShowPopout(kind, true))
                 {
                     layout.Show(kind);
                     maximizedPanel = null;
                     layoutDirty = true;
                 }
-            ImGui.EndMenu();
+            UiAuto.EndMenu();
         }
-        if (ImGui.MenuItem("Restore areas", "", false, maximizedPanel is not null)) maximizedPanel = null;
-        if (ImGui.MenuItem("Reset layout")) ResetLayout();
+        if (UiAuto.MenuItem("Restore areas", "", false, maximizedPanel is not null)) maximizedPanel = null;
+        if (UiAuto.MenuItem("Reset layout")) ResetLayout();
     }
 
     private void SaveLayout()
@@ -271,7 +271,7 @@ public sealed partial class StudioForm
         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(4 * scale));
         ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, Vector2.One);
         BeginPanel($"area-{node.Id}-folded", position, size, ImGuiWindowFlags.NoScrollbar);
-        bool open = ImGui.Button("+", new(ImGui.GetFrameHeight(), 0));
+        bool open = UiAuto.Button("+", new(ImGui.GetFrameHeight(), 0));
         string title = PanelTitle(node.Panel);
         StudioUi.Tip($"Open {title}" + (node.Collapsed is null ? " (folded while empty; its area menu can keep it open)" : ""));
         if (size.X < size.Y)

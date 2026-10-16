@@ -69,11 +69,11 @@ public sealed partial class CuiPage
                 int group = contentValues.TryGetValue(CuiVisualPropertyKind.Group, out uint stored) ? unchecked((int)stored) : 0;
                 int count = field.Kind == CuiVisualPropertyKind.Group ? content?.BitmapFrames.Count ?? 0
                     : content is not null && (uint)group < content.BitmapFrames.Count ? content.BitmapFrames[group].Count : 0;
-                if (ImGui.BeginCombo(field.Name, $"{field.Name} {value}"))
+                if (UiAuto.BeginCombo(field.Name, $"{field.Name} {value}"))
                 {
                     for (int index = 0; index < count; index++)
-                        if (ImGui.Selectable($"{field.Name} {index}", value == index)) contentValues[field.Kind] = (uint)index;
-                    ImGui.EndCombo();
+                        if (UiAuto.Selectable($"{field.Name} {index}", value == index)) contentValues[field.Kind] = (uint)index;
+                    UiAuto.EndCombo();
                 }
                 ImGui.EndDisabled();
                 if (pendingBitmap && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
@@ -86,7 +86,7 @@ public sealed partial class CuiPage
                 if (configured is not null && context.Workspace.ConfigSetting(configured) is { } setting)
                     SunriseStudio.Projects.ModManifest.TryParseBool(setting.Default, out enabled);
                 ImGui.BeginDisabled(configured is not null);
-                if (ImGui.Checkbox(field.Name, ref enabled)) contentValues[field.Kind] = enabled ? 1u : 0u;
+                if (UiAuto.Checkbox(field.Name, ref enabled)) contentValues[field.Kind] = enabled ? 1u : 0u;
                 ImGui.EndDisabled();
                 if (configured is not null) ConfigLabel(context, configured);
             }
@@ -94,18 +94,18 @@ public sealed partial class CuiPage
             {
                 string[] labels = field.Kind == CuiVisualPropertyKind.TextCase ? ["Original", "Uppercase", "Lowercase"] : ["Left", "Center", "Right"];
                 int choice = value <= 2 ? (int)value : -1;
-                if (ImGui.Combo(field.Name, ref choice, labels, labels.Length)) contentValues[field.Kind] = (uint)choice;
+                if (UiAuto.Combo(field.Name, ref choice, labels, labels.Length)) contentValues[field.Kind] = (uint)choice;
             }
             else if (field.Kind == CuiVisualPropertyKind.FontSize)
             {
                 int size = (int)value;
-                if (ImGui.InputInt(field.Name, ref size)) contentValues[field.Kind] = (uint)Math.Clamp(size, 0, ushort.MaxValue);
+                if (UiAuto.InputInt(field.Name, ref size)) contentValues[field.Kind] = (uint)Math.Clamp(size, 0, ushort.MaxValue);
                 if (ImGui.IsItemHovered()) ImGui.SetTooltip("Zero uses the native style size.");
             }
             else
             {
                 string input = contentInputs[field.Kind];
-                if (ImGui.InputText(field.Name + " key", ref input, 8, ImGuiInputTextFlags.CharsHexadecimal))
+                if (UiAuto.InputText(field.Name + " key", ref input, 8, ImGuiInputTextFlags.CharsHexadecimal))
                 {
                     contentInputs[field.Kind] = input;
                     if (uint.TryParse(input, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out uint parsed))
@@ -116,11 +116,11 @@ public sealed partial class CuiPage
                 if (!string.IsNullOrEmpty(name)) ImGui.TextWrapped(name);
                 if (field.Kind == CuiVisualPropertyKind.Text)
                 {
-                    if (ImGui.Button("Choose text")) ImGui.OpenPopup("cui-text-picker");
+                    if (UiAuto.Button("Choose text")) ImGui.OpenPopup("cui-text-picker");
                     if (ImGui.BeginPopup("cui-text-picker"))
                     {
                         ImGui.SetNextItemWidth(320);
-                        ImGui.InputTextWithHint("##search", "Find localized text", ref textSearch, 256);
+                        UiAuto.InputTextWithHint("##search", "Find localized text", ref textSearch, 256);
                         var strings = context.Workspace.Names?.GameNames?.Strings;
                         if (textSearch != searchedText || !ReferenceEquals(strings, searchedStrings))
                         {
@@ -132,7 +132,7 @@ public sealed partial class CuiPage
                         foreach (var match in textMatches)
                         {
                             ImGui.PushID(unchecked((int)match.Hash));
-                            if (ImGui.Selectable(match.Text, match.Hash == value))
+                            if (UiAuto.Selectable(match.Text, match.Hash == value))
                             {
                                 contentValues[field.Kind] = match.Hash;
                                 contentInputs[field.Kind] = match.Hash.ToString("X8");
@@ -147,7 +147,7 @@ public sealed partial class CuiPage
                 }
                 else if (field.Kind == CuiVisualPropertyKind.Bitmap)
                 {
-                    if (ImGui.Button("Choose bitmap")) ImGui.OpenPopup("cui-bitmap-picker");
+                    if (UiAuto.Button("Choose bitmap")) ImGui.OpenPopup("cui-bitmap-picker");
                     if (ImGui.BeginPopup("cui-bitmap-picker"))
                     {
                         var workspace = context.Workspace;
@@ -174,7 +174,7 @@ public sealed partial class CuiPage
         valid = ContentKeysValid();
         ImGui.BeginDisabled(!valid || contentFields.All(field => contentValues[field.Kind] == field.Value)
             && (contentTint is null || contentTint.Value == editedTint));
-        if (ImGui.Button("Apply content"))
+        if (UiAuto.Button("Apply content"))
             context.Workspace.Run(() =>
             {
                 if (contentValues.TryGetValue(CuiVisualPropertyKind.Bitmap, out uint bitmap)
@@ -186,7 +186,7 @@ public sealed partial class CuiPage
             });
         ImGui.EndDisabled();
         ImGui.SameLine();
-        if (ImGui.Button("Reset content")) ResetContent();
+        if (UiAuto.Button("Reset content")) ResetContent();
         ImGui.EndDisabled();
     }
 
@@ -220,15 +220,15 @@ public sealed partial class CuiPage
     {
         if (missing.Count == 0) return;
         ImGui.SetNextItemWidth(-1);
-        if (ImGui.BeginCombo("##add-property", addingOverride?.Name ?? "Add property"))
+        if (UiAuto.BeginCombo("##add-property", addingOverride?.Name ?? "Add property"))
         {
             foreach (var choice in missing)
-                if (ImGui.Selectable(choice.Name, choice == addingOverride))
+                if (UiAuto.Selectable(choice.Name, choice == addingOverride))
                 {
                     addingOverride = choice; overrideValue = choice.InitialValue;
                     overrideInput = overrideValue.ToString("X8"); overrideTint = Vector4.One;
                 }
-            ImGui.EndCombo();
+            UiAuto.EndCombo();
         }
         if (contentPending && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
             ImGui.SetTooltip("Apply or reset content before adding a property.");
@@ -241,14 +241,14 @@ public sealed partial class CuiPage
         else if (property.Kind == CuiVisualPropertyKind.AutoWidth)
         {
             bool enabled = overrideValue != 0;
-            if (ImGui.Checkbox("Enabled", ref enabled)) overrideValue = enabled ? 1u : 0u;
+            if (UiAuto.Checkbox("Enabled", ref enabled)) overrideValue = enabled ? 1u : 0u;
         }
         else if (property.Kind is CuiVisualPropertyKind.TextCase or CuiVisualPropertyKind.Alignment)
         {
             string[] labels = property.Kind == CuiVisualPropertyKind.TextCase
                 ? ["Original", "Uppercase", "Lowercase"] : ["Left", "Center", "Right"];
             int choice = (int)overrideValue;
-            if (ImGui.Combo("Value", ref choice, labels, labels.Length)) overrideValue = (uint)choice;
+            if (UiAuto.Combo("Value", ref choice, labels, labels.Length)) overrideValue = (uint)choice;
         }
         else if (property.Kind is CuiVisualPropertyKind.Group or CuiVisualPropertyKind.Frame)
         {
@@ -256,22 +256,22 @@ public sealed partial class CuiPage
                 ? unchecked((int)stored.Value) : 0;
             int count = property.Kind == CuiVisualPropertyKind.Group ? content?.BitmapFrames.Count ?? 0
                 : content is not null && (uint)group < content.BitmapFrames.Count ? content.BitmapFrames[group].Count : 0;
-            if (ImGui.BeginCombo("Value", $"{property.Name} {overrideValue}"))
+            if (UiAuto.BeginCombo("Value", $"{property.Name} {overrideValue}"))
             {
                 for (int index = 0; index < count; index++)
-                    if (ImGui.Selectable($"{property.Name} {index}", overrideValue == index)) overrideValue = (uint)index;
-                ImGui.EndCombo();
+                    if (UiAuto.Selectable($"{property.Name} {index}", overrideValue == index)) overrideValue = (uint)index;
+                UiAuto.EndCombo();
             }
             valid = overrideValue < count;
         }
         else if (property.Kind == CuiVisualPropertyKind.FontSize)
         {
             int value = (int)overrideValue;
-            if (ImGui.InputInt("Value", ref value)) overrideValue = (uint)Math.Clamp(value, 0, ushort.MaxValue);
+            if (UiAuto.InputInt("Value", ref value)) overrideValue = (uint)Math.Clamp(value, 0, ushort.MaxValue);
         }
         else
         {
-            ImGui.InputText("Key", ref overrideInput, 8, ImGuiInputTextFlags.CharsHexadecimal);
+            UiAuto.InputText("Key", ref overrideInput, 8, ImGuiInputTextFlags.CharsHexadecimal);
             valid = uint.TryParse(overrideInput, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out overrideValue);
             if (valid)
             {
@@ -284,12 +284,12 @@ public sealed partial class CuiPage
             }
         }
         ImGui.BeginDisabled(!valid);
-        if (ImGui.Button("Add"))
+        if (UiAuto.Button("Add"))
             context.Workspace.Run(() => save(
                 CuiVisualProperties.Add(ownerDocument.Data.Span, ownerDocument, rectangle.Node, rectangle.Component,
                     property.Kind, overrideValue, overrideTint), "Saved CUI override"));
         ImGui.EndDisabled(); ImGui.SameLine();
-        if (ImGui.Button("Cancel")) addingOverride = null;
+        if (UiAuto.Button("Cancel")) addingOverride = null;
         ImGui.PopID();
         ImGui.Separator();
     }

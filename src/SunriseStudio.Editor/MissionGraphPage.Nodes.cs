@@ -30,14 +30,14 @@ public sealed partial class MissionGraphPage
     {
         if (IsScriptGroup && HasSourceDraft) editable = false;
         ImGui.SetNextItemWidth(Math.Clamp(ImGui.GetContentRegionAvail().X * .4f, 120, 300));
-        if (ImGui.BeginCombo("##graph-group", GroupTitle(groupKey), ImGuiComboFlags.HeightLarge))
+        if (UiAuto.BeginCombo("##graph-group", GroupTitle(groupKey), ImGuiComboFlags.HeightLarge))
         {
-            if (ImGui.Selectable("Script", groupKey == MissionScriptGraph.Root)) OpenGroup(MissionScriptGraph.Root);
+            if (UiAuto.Selectable("Script", groupKey == MissionScriptGraph.Root)) OpenGroup(MissionScriptGraph.Root);
             foreach (var node in (scriptGraph?.Nodes.Where(scriptGraph.CanOpen) ?? []).Concat(scriptGraph?.Callbacks ?? []))
-                if (ImGui.Selectable("    " + node.Title + "##" + node.Key, groupKey == BodyKey(node.Key))) OpenGroup(BodyKey(node.Key));
+                if (UiAuto.Selectable("    " + node.Title + "##" + node.Key, groupKey == BodyKey(node.Key))) OpenGroup(BodyKey(node.Key));
             foreach (var group in graph!.Groups)
-                if (ImGui.Selectable(group.Title + "##" + group.Key, group.Key == groupKey)) OpenGroup(group.Key);
-            ImGui.EndCombo();
+                if (UiAuto.Selectable(group.Title + "##" + group.Key, group.Key == groupKey)) OpenGroup(group.Key);
+            UiAuto.EndCombo();
         }
         if (groupKey != MissionScriptGraph.Root)
         {
@@ -203,7 +203,7 @@ public sealed partial class MissionGraphPage
         if (edge.Label.Length != 0) ImGui.TextDisabled(edge.Label);
         if (!edge.Editable) { ImGui.TextWrapped(NodeCanvas.FixedLinkNote); return; }
         ImGui.BeginDisabled(!editable || actions.Disconnect is null);
-        if (ImGui.Button("Disconnect")) actions.Disconnect!(edge.Source, edge.Target);
+        if (UiAuto.Button("Disconnect")) actions.Disconnect!(edge.Source, edge.Target);
         if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
             ImGui.SetTooltip("Or drag the link off its input, or right-click it");
         ImGui.EndDisabled();

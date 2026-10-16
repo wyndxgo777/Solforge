@@ -21,12 +21,12 @@ public sealed partial class AudioPage
             transitionContainer = analysis.TransitionContainers.Values.OrderByDescending(value => value.Rules.Count).First().Id;
         ImGui.SetNextItemWidth(310);
         bool changed = false;
-        if (ImGui.BeginCombo("Container", analysis.TransitionContainers[transitionContainer].Name))
+        if (UiAuto.BeginCombo("Container", analysis.TransitionContainers[transitionContainer].Name))
         {
             foreach (var container in analysis.TransitionContainers.Values)
-                if (ImGui.Selectable(container.Name + "##" + container.Id, container.Id == transitionContainer))
+                if (UiAuto.Selectable(container.Name + "##" + container.Id, container.Id == transitionContainer))
                 { transitionContainer = container.Id; changed = true; }
-            ImGui.EndCombo();
+            UiAuto.EndCombo();
         }
         if (changed || !ReferenceEquals(analysis, transitionAnalysis))
         {
@@ -39,22 +39,22 @@ public sealed partial class AudioPage
         }
         SegmentPicker("Source", ref transitionSource);
         ImGui.BeginDisabled(transitionPlaylists.Count == 0);
-        if (ImGui.Checkbox("Playlist destination", ref transitionToPlaylist))
+        if (UiAuto.Checkbox("Playlist destination", ref transitionToPlaylist))
             transitionDestination = transitionToPlaylist ? transitionPlaylists.FirstOrDefault()?.Id ?? 0 : transitionSegments.FirstOrDefault()?.Id ?? 0;
         ImGui.EndDisabled();
         if (transitionToPlaylist)
         {
             ImGui.SetNextItemWidth(310);
-            if (ImGui.BeginCombo("Destination", analysis.Playlists.GetValueOrDefault(transitionDestination)?.Name ?? "Choose playlist"))
+            if (UiAuto.BeginCombo("Destination", analysis.Playlists.GetValueOrDefault(transitionDestination)?.Name ?? "Choose playlist"))
             {
                 foreach (var playlist in transitionPlaylists)
-                    if (ImGui.Selectable(playlist.Name + "##" + playlist.Id, playlist.Id == transitionDestination)) transitionDestination = playlist.Id;
-                ImGui.EndCombo();
+                    if (UiAuto.Selectable(playlist.Name + "##" + playlist.Id, playlist.Id == transitionDestination)) transitionDestination = playlist.Id;
+                UiAuto.EndCombo();
             }
         }
         else SegmentPicker("Destination", ref transitionDestination);
         double exit = analysis.Segments.TryGetValue(transitionSource, out var source) ? (source.Exit - source.Entry) / 1000 : 0;
-        ImGui.SetNextItemWidth(150); ImGui.InputFloat("Change after (s)", ref transitionTime, 1, 8, "%.3f");
+        ImGui.SetNextItemWidth(150); UiAuto.InputFloat("Change after (s)", ref transitionTime, 1, 8, "%.3f");
         transitionTime = Math.Clamp(float.IsFinite(transitionTime) ? transitionTime : 0, 0, (float)exit);
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("From the entry cue; the rule picks the sync point.");
         if (source is not null)
@@ -76,15 +76,15 @@ public sealed partial class AudioPage
             ImGui.TextDisabled($"Prepared: {AudioSynchronization.Label(point.Kind)}  |  {point.SecondsFromEntry:0.000} s");
         if (analysis.TransitionContainers[transitionContainer].Rules.Any(rule => rule.DestinationEntry is 2 or 3))
         {
-            ImGui.SetNextItemWidth(150); ImGui.InputInt("Destination variation", ref transitionVariation);
+            ImGui.SetNextItemWidth(150); UiAuto.InputInt("Destination variation", ref transitionVariation);
             transitionVariation = Math.Max(0, transitionVariation);
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("Repeatable random pick.");
         }
         if (session?.Timeline is { Destination: { } entry } prepared && prepared.Playlist == transitionContainer)
             ImGui.TextDisabled($"{AudioDestination.Label(entry.Kind)}  |  {entry.SecondsFromEntry:0.000} s into destination");
         ImGui.BeginDisabled(transitionSource == 0 && transitionDestination == 0);
-        if (ImGui.Button("Prepare transition")) PrepareTransition(false);
-        ImGui.SameLine(); if (ImGui.Button("Play transition")) PrepareTransition(true);
+        if (UiAuto.Button("Prepare transition")) PrepareTransition(false);
+        ImGui.SameLine(); if (UiAuto.Button("Play transition")) PrepareTransition(true);
         ImGui.EndDisabled();
         ImGui.TreePop();
     }
@@ -93,11 +93,11 @@ public sealed partial class AudioPage
     {
         ImGui.SetNextItemWidth(310);
         uint current = selected;
-        if (!ImGui.BeginCombo(label, selected == 0 ? "Nothing" : transitionSegments.FirstOrDefault(value => value.Id == current)?.Name ?? "Choose segment")) return;
-        if (ImGui.Selectable("Nothing", selected == 0)) selected = 0;
+        if (!UiAuto.BeginCombo(label, selected == 0 ? "Nothing" : transitionSegments.FirstOrDefault(value => value.Id == current)?.Name ?? "Choose segment")) return;
+        if (UiAuto.Selectable("Nothing", selected == 0)) selected = 0;
         foreach (var segment in transitionSegments)
-            if (ImGui.Selectable(segment.Name + "##" + segment.Id, segment.Id == selected)) selected = segment.Id;
-        ImGui.EndCombo();
+            if (UiAuto.Selectable(segment.Name + "##" + segment.Id, segment.Id == selected)) selected = segment.Id;
+        UiAuto.EndCombo();
     }
 
     private void PrepareTransition(bool play)

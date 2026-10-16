@@ -248,14 +248,14 @@ public sealed partial class StudioForm
         var target = GroupCandidate(out string reason);
         bool grouped = target is not null && GroupOf(target.Key) is not null;
         ImGui.BeginDisabled(!workspace.CanEdit || target is null || grouped);
-        if (ImGui.Button("New group from selection", new(-1, 0)) && target is not null) CreateGroupFromSelection(target);
+        if (UiAuto.Button("New group from selection", new(-1, 0)) && target is not null) CreateGroupFromSelection(target);
         ImGui.EndDisabled();
         if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
             ImGui.SetTooltip(target is null ? reason : grouped ? "The selected object is already in a group." : "Makes a group of the selected object");
         foreach (var group in groups)
         {
             ImGui.PushID(group.Id);
-            if (ImGui.Selectable($"{group.Name} ({group.Keys.Count()})", selectedGroupId == group.Id)) SelectObjectGroup(group.Id);
+            if (UiAuto.Selectable($"{group.Name} ({group.Keys.Count()})", selectedGroupId == group.Id)) SelectObjectGroup(group.Id);
             ImGui.PopID();
         }
         ImGui.Separator();
@@ -270,25 +270,25 @@ public sealed partial class StudioForm
         if (target is not null && GroupOf(target.Key) is { } group)
         {
             ImGui.TextDisabled("Group"); ImGui.SameLine(); ImGui.TextUnformatted(group.Name);
-            if (ImGui.SmallButton("Select group")) SelectObjectGroup(group.Id);
+            if (UiAuto.SmallButton("Select group")) SelectObjectGroup(group.Id);
             ImGui.SameLine();
-            if (ImGui.SmallButton("Remove from group"))
+            if (UiAuto.SmallButton("Remove from group"))
                 SetGroupMembers(group, group.Members.Where(member => member.Key != target.Key).ToArray());
         }
         else
         {
             ImGui.BeginDisabled(target is null);
             ImGui.SetNextItemWidth(-1);
-            if (ImGui.BeginCombo("##add-to-group", "Add to group"))
+            if (UiAuto.BeginCombo("##add-to-group", "Add to group"))
             {
                 foreach (var each in project.ObjectGroups)
                 {
                     ImGui.PushID(each.Id);
-                    if (ImGui.Selectable(each.Name) && target is not null) SetGroupMembers(each, [.. each.Members, target]);
+                    if (UiAuto.Selectable(each.Name) && target is not null) SetGroupMembers(each, [.. each.Members, target]);
                     ImGui.PopID();
                 }
-                if (ImGui.Selectable("New group") && target is not null) CreateGroupFromSelection(target);
-                ImGui.EndCombo();
+                if (UiAuto.Selectable("New group") && target is not null) CreateGroupFromSelection(target);
+                UiAuto.EndCombo();
             }
             ImGui.EndDisabled();
             if (target is null && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
@@ -313,7 +313,7 @@ public sealed partial class StudioForm
             + (group.CollisionParts is { } held ? $" and {held.Count:N0} collision parts" : ""));
         ImGui.BeginDisabled(!workspace.CanEdit);
         ImGui.SetNextItemWidth(-1);
-        ImGui.InputTextWithHint("##group-name", "Group name", ref groupNameDraft, ProjectObjectName.MaximumNameLength);
+        UiAuto.InputTextWithHint("##group-name", "Group name", ref groupNameDraft, ProjectObjectName.MaximumNameLength);
         if (ImGui.IsItemDeactivatedAfterEdit() && groupNameDraft.Trim() != group.Name)
         {
             string text = groupNameDraft;
@@ -325,7 +325,7 @@ public sealed partial class StudioForm
         ImGui.EndDisabled();
         ImGui.SameLine();
         ImGui.BeginDisabled(!workspace.CanEdit);
-        if (ImGui.Button("Delete group")) RemoveGroup(group);
+        if (UiAuto.Button("Delete group")) RemoveGroup(group);
         ImGui.EndDisabled();
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Removes the group only; its objects and their edits stay.");
         if (ImGui.CollapsingHeader("Transform group", ImGuiTreeNodeFlags.DefaultOpen))
@@ -337,7 +337,7 @@ public sealed partial class StudioForm
             ImGui.TextDisabled("Scale by"); ImGui.SetNextItemWidth(-1); ImGui.InputFloat3("##group-scale", ref groupScale, "%.4f");
             if (ImGui.IsItemHovered())
                 ImGui.SetTooltip("Equal values also resize objects that store a scale; unequal values only spread positions");
-            if (ImGui.Button("Apply to group", new(-1, 0)))
+            if (UiAuto.Button("Apply to group", new(-1, 0)))
                 ApplyGroupChange(group.Id, new(groupMove, groupTurn == Vector3.Zero ? Quaternion.Identity
                     : DegreesToQuaternion(groupTurn), groupScale));
             ImGui.EndDisabled();
@@ -349,11 +349,11 @@ public sealed partial class StudioForm
                 var row = inspectionWorld?.Find(source);
                 ImGui.PushID(row?.Id ?? MemberName(source));
                 ImGui.BeginDisabled(!workspace.CanEdit);
-                bool remove = ImGui.SmallButton("x");
+                bool remove = UiAuto.SmallButton("x");
                 ImGui.EndDisabled();
                 if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.SetTooltip("Remove from group");
                 ImGui.SameLine();
-                if (ImGui.Selectable(MemberName(source)) && row is not null) SelectWorldObject(row);
+                if (UiAuto.Selectable(MemberName(source)) && row is not null) SelectWorldObject(row);
                 ImGui.PopID();
                 if (remove) SetGroupMembers(group, group.Members.Where(other => other.Key != member.Key).ToArray());
             }
@@ -361,7 +361,7 @@ public sealed partial class StudioForm
             {
                 ImGui.PushID(member.Key);
                 ImGui.BeginDisabled(!workspace.CanEdit);
-                bool remove = ImGui.SmallButton("x");
+                bool remove = UiAuto.SmallButton("x");
                 ImGui.EndDisabled();
                 ImGui.SameLine();
                 string label = ProjectNames().GetValueOrDefault("edit:" + member.Key) ?? $"{member.Layout} {member.SourceTag:X8}";
@@ -375,9 +375,9 @@ public sealed partial class StudioForm
         if (group.CollisionParts is not null) StudioUi.Tip("They move with the group");
         if (partsOpen)
         {
-            if (ImGui.Button("Select collision parts", new(-1, 0))) SelectGroupCollisionParts(group);
+            if (UiAuto.Button("Select collision parts", new(-1, 0))) SelectGroupCollisionParts(group);
             ImGui.BeginDisabled(!workspace.CanEdit);
-            if (ImGui.Button("Remove collision parts", new(-1, 0))) SetGroupCollisionParts(group, []);
+            if (UiAuto.Button("Remove collision parts", new(-1, 0))) SetGroupCollisionParts(group, []);
             ImGui.EndDisabled();
         }
         DrawAccentNote(groupPartsNote);

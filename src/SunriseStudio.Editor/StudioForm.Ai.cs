@@ -73,6 +73,8 @@ public sealed partial class StudioForm
     private void DrawAiWorkspace(Vector2 position, Vector2 size)
     {
         BeginPanel("AI workspace", position, size);
+        // The MCP never lists or drives the AI workspace (approvals, auto-allow, engine controls).
+        UiAuto.PushBlocked();
         TrackAreaFocus();
         if (!aiKeyHooked)
         {
@@ -100,6 +102,7 @@ public sealed partial class StudioForm
         else if (card) DrawAiInstallCard(engine);
         if (gui is not null && (!card || aiTerminal.Terminal is not null)) aiTerminal.Draw(gui.MonospaceFont, ImGui.GetContentRegionAvail());
         ImGui.EndChild();
+        UiAuto.PopBlocked();
         ImGui.End();
     }
 
@@ -115,12 +118,12 @@ public sealed partial class StudioForm
         float comboWidth = Math.Clamp(room * .3f, Math.Min(room, 90 * scale), 150 * scale);
         AiFlow(ref x, comboWidth, room);
         ImGui.SetNextItemWidth(comboWidth);
-        if (ImGui.BeginCombo("##ai-engine", AiEngineLabel(engine)))
+        if (UiAuto.BeginCombo("##ai-engine", AiEngineLabel(engine)))
         {
             if (ImGui.IsWindowAppearing()) ResolveAiEngines(true);
             for (int i = 0; i < AiEngines.Length; i++)
-                if (ImGui.Selectable(AiEngineLabel(AiEngines[i]), i == aiEngine) && i != aiEngine) SelectAiEngine(i);
-            ImGui.EndCombo();
+                if (UiAuto.Selectable(AiEngineLabel(AiEngines[i]), i == aiEngine) && i != aiEngine) SelectAiEngine(i);
+            UiAuto.EndCombo();
         }
         StudioUi.Tip("Runs your own install and login; Solforge never stores API keys.");
         bool custom = engine.Command.Length == 0;
@@ -129,7 +132,7 @@ public sealed partial class StudioForm
             float inputWidth = Math.Clamp(room - x - spacing, Math.Min(room, 120 * scale), 220 * scale);
             AiFlow(ref x, inputWidth, room);
             ImGui.SetNextItemWidth(inputWidth);
-            if (ImGui.InputTextWithHint("##ai-custom", "command line", ref aiCustomCommand, 512)) settings.AiCustomCommand = aiCustomCommand;
+            if (UiAuto.InputTextWithHint("##ai-custom", "command line", ref aiCustomCommand, 512)) settings.AiCustomCommand = aiCustomCommand;
             if (ImGui.IsItemDeactivatedAfterEdit()) SaveSettings();
         }
         string command = custom ? aiCustomCommand.Trim() : engine.Command;
@@ -143,7 +146,7 @@ public sealed partial class StudioForm
                 : $"Start/Restart {(settings.AiResumeSessions ? "resumes" : "does not resume")} the engine's last session for this folder.");
         ImGui.SameLine();
         ImGui.BeginDisabled(aiTerminal.Terminal is not { HasExited: false });
-        if (ImGui.Button("Stop")) aiTerminal.Stop();
+        if (UiAuto.Button("Stop")) aiTerminal.Stop();
         ImGui.EndDisabled();
 
         // The chip takes what is left beside the status dot and the "..." button, with a sensible minimum.
@@ -154,14 +157,14 @@ public sealed partial class StudioForm
         string chip = StudioUi.Fit(AiContextChip(), chipRoom - style.FramePadding.X * 2);
         AiFlow(ref x, ButtonWidth(chip), room);
         ImGui.PushStyleColor(ImGuiCol.Button, ImGui.GetStyle().Colors[(int)ImGuiCol.FrameBg]);
-        bool openContext = ImGui.Button(chip + "###ai-context");
+        bool openContext = UiAuto.Button(chip + "###ai-context");
         ImGui.PopStyleColor();
         if (openContext) ImGui.OpenPopup(AiContextPopup);
         StudioUi.Tip("What the AI sees now. Click for details, pins and screenshots; right-click to ask the AI about it.");
         if (ImGui.BeginPopupContextItem("ai-context-ask"))
         {
             ImGui.BeginDisabled(!CanAskAi);
-            if (ImGui.MenuItem("Ask about this")) AskAiAboutContext();
+            if (UiAuto.MenuItem("Ask about this")) AskAiAboutContext();
             ImGui.EndDisabled();
             ImGui.EndPopup();
         }
@@ -175,29 +178,29 @@ public sealed partial class StudioForm
             StudioUi.Tip($"Auto-allow is on ({aiAllowCount} allowed this session). Turn it off in the ... menu.");
         }
         ImGui.SameLine();
-        if (ImGui.Button("...###ai-more")) ImGui.OpenPopup("ai-more");
+        if (UiAuto.Button("...###ai-more")) ImGui.OpenPopup("ai-more");
         StudioUi.Tip("New session, auto-allow, folders, screenshots and AI settings");
         bool openFolders = false;
         if (ImGui.BeginPopup("ai-more"))
         {
             ImGui.BeginDisabled(command.Length == 0 || missing);
-            if (ImGui.MenuItem("New session")) StartAiEngine(engine, command, resume: false);
+            if (UiAuto.MenuItem("New session")) StartAiEngine(engine, command, resume: false);
             ImGui.EndDisabled();
             bool resume = settings.AiResumeSessions;
-            if (ImGui.MenuItem("Resume last session on Start/Restart", "", ref resume)) { settings.AiResumeSessions = resume; SaveSettings(); }
+            if (UiAuto.MenuItem("Resume last session on Start/Restart", "", ref resume)) { settings.AiResumeSessions = resume; SaveSettings(); }
             bool allow = settings.AiAutoAllow;
-            if (ImGui.MenuItem("Auto-allow one-time prompts", "", ref allow)) { settings.AiAutoAllow = allow; aiAllowSeen = null; SaveSettings(); }
+            if (UiAuto.MenuItem("Auto-allow one-time prompts", "", ref allow)) { settings.AiAutoAllow = allow; aiAllowSeen = null; SaveSettings(); }
             if (ImGui.IsItemHovered()) ImGui.SetTooltip(AutoAllowTip);
             ImGui.Separator();
             ImGui.BeginDisabled(!CanAskAi);
-            if (ImGui.MenuItem("Ask about this")) AskAiAboutContext();
+            if (UiAuto.MenuItem("Ask about this")) AskAiAboutContext();
             ImGui.EndDisabled();
-            if (ImGui.MenuItem("Send screenshot", "", false, workspace.Project is not null && viewport is { IsRendering: true })) SendAiScreenshot();
+            if (UiAuto.MenuItem("Send screenshot", "", false, workspace.Project is not null && viewport is { IsRendering: true })) SendAiScreenshot();
             bool publish = !aiPaused;
-            if (ImGui.MenuItem("Publish context", "", ref publish)) aiPaused = !publish;
-            if (ImGui.MenuItem("Folders...")) openFolders = true;
+            if (UiAuto.MenuItem("Publish context", "", ref publish)) aiPaused = !publish;
+            if (UiAuto.MenuItem("Folders...")) openFolders = true;
             ImGui.Separator();
-            if (ImGui.MenuItem("AI settings...")) preferencesOpen = true;
+            if (UiAuto.MenuItem("AI settings...")) preferencesOpen = true;
             ImGui.EndPopup();
         }
         if (openFolders) ImGui.OpenPopup(AiFoldersPopup);
@@ -407,20 +410,20 @@ public sealed partial class StudioForm
         if (!ready)
         {
             ImGui.TextColored(SolTheme.Sun, "npm was not found. Install Node.js (LTS) from https://nodejs.org first.");
-            if (ImGui.Button("Open nodejs.org")) Process.Start(new ProcessStartInfo("https://nodejs.org") { UseShellExecute = true })?.Dispose();
+            if (UiAuto.Button("Open nodejs.org")) Process.Start(new ProcessStartInfo("https://nodejs.org") { UseShellExecute = true })?.Dispose();
         }
         ImGui.Spacing();
         ImGui.TextDisabled(engine.PowerShell ? "Run in PowerShell:" : "Run:");
         string line = engine.Install;
         ImGui.SetNextItemWidth(-1);
-        ImGui.InputText("##ai-install-line", ref line, 512, ImGuiInputTextFlags.ReadOnly);
+        UiAuto.InputText("##ai-install-line", ref line, 512, ImGuiInputTextFlags.ReadOnly);
         if (engine.Note.Length > 0) ImGui.TextWrapped(engine.Note);
         ImGui.BeginDisabled(!ready);
         if (SolTheme.PrimaryButton("Install in terminal")) RunAiInstall(engine);
         ImGui.EndDisabled();
         StudioUi.Tip("Runs the command above in this terminal. Solforge checks again when it finishes.");
         ImGui.SameLine();
-        if (ImGui.Button("Check again")) ResolveAiEngines(true);
+        if (UiAuto.Button("Check again")) ResolveAiEngines(true);
         ImGui.EndChild();
     }
 
@@ -477,7 +480,7 @@ public sealed partial class StudioForm
     private void DrawAiContext()
     {
         bool publish = !aiPaused;
-        if (ImGui.Checkbox("Publish context", ref publish)) aiPaused = !publish;
+        if (UiAuto.Checkbox("Publish context", ref publish)) aiPaused = !publish;
         StudioUi.Tip("Off pauses everything the AI can see about the scene (privacy).");
         SolTheme.SectionHeader("CONTEXT (LIVE)");
         if (aiPaused) ImGui.TextColored(SolTheme.Sun, "Paused: the AI sees nothing.");
@@ -493,7 +496,7 @@ public sealed partial class StudioForm
         if (SolTheme.PrimaryButton("Pin")) PinAiObject();
         StudioUi.Tip("Keep the hovered (or selected) object in the AI's context.");
         ImGui.SameLine();
-        if (ImGui.Button("Send screenshot")) SendAiScreenshot();
+        if (UiAuto.Button("Send screenshot")) SendAiScreenshot();
         StudioUi.Tip("Save the viewport as a PNG in the project and paste its path into the terminal.");
         if (aiPinned.Count > 0)
         {
@@ -501,7 +504,7 @@ public sealed partial class StudioForm
             for (int i = 0; i < aiPinned.Count; i++)
             {
                 ImGui.PushID(i);
-                if (ImGui.SmallButton("x")) { aiPinned.RemoveAt(i--); ImGui.PopID(); continue; }
+                if (UiAuto.SmallButton("x")) { aiPinned.RemoveAt(i--); ImGui.PopID(); continue; }
                 ImGui.SameLine();
                 ImGui.TextWrapped(aiPinned[i].Label);
                 ImGui.PopID();
@@ -551,7 +554,7 @@ public sealed partial class StudioForm
             {
                 ImGui.PushID(folder);
                 bool on = !settings.AiHiddenFolders.Contains(folder, StringComparer.OrdinalIgnoreCase);
-                if (ImGui.Checkbox("##on", ref on))
+                if (UiAuto.Checkbox("##on", ref on))
                 {
                     settings.AiHiddenFolders.RemoveAll(item => string.Equals(item, folder, StringComparison.OrdinalIgnoreCase));
                     if (!on) settings.AiHiddenFolders.Add(folder);
@@ -566,7 +569,7 @@ public sealed partial class StudioForm
         for (int i = 0; i < settings.AiFolders.Count; i++)
         {
             ImGui.PushID(i);
-            if (ImGui.SmallButton("x")) { settings.AiFolders.RemoveAt(i--); SaveSettings(); ImGui.PopID(); continue; }
+            if (UiAuto.SmallButton("x")) { settings.AiFolders.RemoveAt(i--); SaveSettings(); ImGui.PopID(); continue; }
             ImGui.SameLine();
             if (Directory.Exists(settings.AiFolders[i])) ImGui.TextWrapped(settings.AiFolders[i]);
             else ImGui.TextColored(SolTheme.Faint, settings.AiFolders[i] + " (missing)");
@@ -574,10 +577,10 @@ public sealed partial class StudioForm
         }
         string add = aiNewFolder.Trim().Trim('"');
         ImGui.SetNextItemWidth(-(ButtonWidth("Add") + ImGui.GetStyle().ItemSpacing.X));
-        ImGui.InputTextWithHint("##ai-folder", "folder path", ref aiNewFolder, 512);
+        UiAuto.InputTextWithHint("##ai-folder", "folder path", ref aiNewFolder, 512);
         ImGui.SameLine();
         ImGui.BeginDisabled(!Directory.Exists(add) || settings.AiFolders.Contains(add, StringComparer.OrdinalIgnoreCase));
-        if (ImGui.Button("Add")) { settings.AiFolders.Add(Path.GetFullPath(add)); aiNewFolder = ""; SaveSettings(); }
+        if (UiAuto.Button("Add")) { settings.AiFolders.Add(Path.GetFullPath(add)); aiNewFolder = ""; SaveSettings(); }
         ImGui.EndDisabled();
     }
 

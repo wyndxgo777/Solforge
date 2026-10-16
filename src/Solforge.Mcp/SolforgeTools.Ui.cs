@@ -1,0 +1,204 @@
+using System.Text.Json.Nodes;
+
+namespace Solforge.Mcp;
+
+/**
+ * Driving Solforge's own UI and watching the live viewport. list_ui_controls and the viewport reads are plain reads;
+ * ui_invoke, ui_set_value, ui_set_checked, ui_select and set_viewport_stream wait for the user's approve click in
+ * Solforge, which works the same from every MCP client. Every image result also carries text (frame id, size, time,
+ * what changed and where, the labelled objects on screen) so models without vision can follow along.
+ */
+public static partial class SolforgeTools
+{
+    private static readonly (string, string, string, bool)[] Target =
+    [
+        ("id", "string", "Control id from list_ui_controls, e.g. 'main:1A2B3C4D'", false),
+        ("query", "string", "Or the control's visible label, e.g. 'Build to folder...'; must match one control", false),
+        ("kind", "string", "Optional kind to narrow the query: " + string.Join(", ", UiControls.Kinds), false),
+        ("window", "string", "Optional panel name to narrow the query, e.g. 'Inspector'", false)
+    ];
+
+    private static IEnumerable<McpTool> UiTools(ISolforgeHost host,
+        Func<string, string, JsonObject, Func<JsonObject, CancellationToken, Task<McpToolResult>>, McpTool> read)
+    {
+        yield return read("list_ui_controls", "Solforge's own UI controls drawn right now (buttons, menus and menu items, " +
+            "checkboxes, tabs, text fields, combo boxes, sliders, number fields, list rows) with id, kind, visible label, panel " +
+            "(window), menu/tab/combo scope, screen rect, value, checked state and combo options. Controls inside a closed menu, " +
+            "combo or tab are not drawn: open it with ui_invoke first. The AI workspace and Settings > AI are never listed. " +
+            "Then ui_invoke, ui_set_value, ui_set_checked or ui_select.",
+            McpJson.Schema(("query", "string", "Optional words of the label, panel or scope; best matches first", false),
+                ("kind", "string", "Optional kind: " + string.Join(", ", UiControls.Kinds), false),
+                ("window", "string", "Optional panel name the control must be in", false),
+                ("all", "boolean", "Include controls scrolled out of view (default false)", false),
+                ("offset", "integer", "First row (default 0)", false), ("limit", "integer", "Rows per page (default 100, max 500)", false)),
+            async (args, cancel) =>
+            {
+                var controls = await host.UiControlsAsync(cancel).ConfigureAwait(false);
+                var found = UiControls.Find(controls, McpJson.String(args, "query"), McpJson.String(args, "kind"), McpJson.String(args, "window"),
+                    McpJson.Bool(args, "all", false));
+                var page = Pages.Page(found, McpJson.Int(args, "offset", 0), McpJson.Int(args, "limit", 100), UiControls.ToJson);
+                page["drawn"] = controls.Count;
+                page["windows"] = new JsonArray(controls.Select(control => control.Window).Where(window => window.Length > 0).Distinct()
+                    .Select(window => (JsonNode)window).ToArray());
+                return McpToolResult.Json(page);
+            });
+
+        McpTool Act(string name, string description, UiOperation operation, params (string, string, string, bool)[] extra) =>
+            new(name, description, McpJson.Schema([.. Target, .. extra]), true, async (args, cancel) =>
+            {
+                if (host.Paused) return McpToolResult.Error("The user paused context publishing in Solforge's AI workspace.");
+                string? value = McpJson.String(args, operation == UiOperation.Select ? "option" : "value");
+                if (operation is UiOperation.SetValue or UiOperation.Select && value is null)
+                    return McpToolResult.Error(operation == UiOperation.Select ? "Give the option to choose." : "Give the value to set.");
+                if (operation == UiOperation.SetChecked && args["checked"] is not JsonValue)
+                    return McpToolResult.Error("Give checked: true or false.");
+                var (control, error) = UiControls.Resolve(await host.UiControlsAsync(cancel).ConfigureAwait(false), args);
+                if (control is null) return McpToolResult.Error(error ?? "No such control.");
+                // A combo's value is one of its options.
+                var effective = operation == UiOperation.SetValue && control.Kind == "combo" ? UiOperation.Select : operation;
+                if (!UiControls.Allows(control.Kind, effective))
+                    return McpToolResult.Error($"{control.Id} is a {control.Kind}; {name} does not apply to it.");
+                bool check = McpJson.Bool(args, "checked", true);
+                if (!await host.ApproveAsync(name, UiControls.Summary(control, effective, value, check), cancel).ConfigureAwait(false))
+                    return McpToolResult.Error("The user declined this in Solforge.");
+                long before = host.Viewport.Latest?.Id ?? 0;
+                var (ok, message) = await host.UiCommandAsync(new UiCommand(control.Id, effective, value, check), cancel).ConfigureAwait(false);
+                if (!ok) return McpToolResult.Error(message);
+                var result = McpToolResult.Text(message);
+                result.Texts.Add($"Viewport frame before: {before}. wait_for_viewport_change with since={before} shows the effect; " +
+                    "list_ui_controls shows controls the click opened.");
+                return result;
+            });
+
+        yield return Act("ui_invoke", "Click a Solforge control: a button, menu item, list row, radio button or tab; toggles a " +
+            "checkbox; opens a menu or combo box so its items can be listed. Name it by id or by visible label (query).", UiOperation.Invoke);
+        yield return Act("ui_set_value", "Type into a Solforge text field, or set a slider or number field (a combo box takes one of " +
+            "its options). The value replaces the whole field.", UiOperation.SetValue,
+            ("value", "string", "New text or number (invariant culture, e.g. 2.5)", true));
+        yield return Act("ui_set_checked", "Turn a Solforge checkbox or checkable menu item on or off.", UiOperation.SetChecked,
+            ("checked", "boolean", "true for on, false for off", true));
+        yield return Act("ui_select", "Choose an option in a Solforge combo box or list by its visible text (opens the list, " +
+            "picks the row, closes it), or select a tab or row.", UiOperation.Select,
+            ("option", "string", "The option's visible text (or its index for simple lists)", true));
+
+        // Live viewport: no GPU readback per call; frames come from the continuous capture.
+        yield return read("get_viewport_frame", "The latest live frame of the 3D viewport as a small JPEG, instantly, from the " +
+            "continuous capture (no readback per call), plus text: frame id, size, time, age, what changed since the previous " +
+            "frame and the labelled objects on screen. Pass since=<frame id> to skip the image when nothing changed. width, " +
+            "quality and fps tune the capture for later frames. get_viewport_screenshot is the full-size PNG with labels.",
+            McpJson.Schema(("since", "integer", "Frame id you already have; same id returns text only", false),
+                ("image", "boolean", "Include the JPEG (default true)", false),
+                ("describe", "boolean", "Include the labelled objects on screen (default true)", false),
+                ("width", "integer", "Capture width in pixels for later frames (160-1920, default 960)", false),
+                ("quality", "integer", "JPEG quality for later frames (20-95, default 70)", false),
+                ("fps", "integer", "Capture rate (1-30, default 8)", false)),
+            async (args, cancel) =>
+            {
+                var feed = host.Viewport;
+                Tune(feed, args);
+                var frame = feed.Latest ?? await feed.WaitForChangeAsync(0, TimeSpan.FromSeconds(3), cancel).ConfigureAwait(false);
+                if (frame is null) return NoFrames(feed);
+                bool same = args["since"] is JsonValue && McpJson.Int(args, "since", -1) == frame.Id;
+                return FrameResult(host, [frame], same ? "unchanged since your frame" : null, McpJson.Bool(args, "image", true) && !same,
+                    McpJson.Bool(args, "describe", true));
+            });
+        yield return read("get_viewport_frames", "Frames captured after a frame id, oldest first (the ring keeps the last 32 " +
+            "changes): watch an animation or a camera move between calls. Each frame comes with its id, time and change text.",
+            McpJson.Schema(("since", "integer", "Frame id; frames after it are returned (default 0)", false),
+                ("max", "integer", "Most frames (default 4, max 10)", false), ("image", "boolean", "Include the JPEGs (default true)", false)),
+            (args, _) =>
+            {
+                var feed = host.Viewport;
+                feed.Want();
+                var frames = feed.Since(McpJson.Int(args, "since", 0), Math.Clamp(McpJson.Int(args, "max", 4), 1, 10));
+                if (frames.Count == 0)
+                    return Task.FromResult(feed.Latest is null ? NoFrames(feed)
+                        : McpToolResult.Json(new JsonObject { ["frames"] = new JsonArray(), ["latest"] = feed.Latest.Id, ["status"] = feed.Status }));
+                return Task.FromResult(FrameResult(host, frames, null, McpJson.Bool(args, "image", true), false));
+            });
+        yield return read("wait_for_viewport_change", "Wait until the viewport shows something new (a frame newer than since), " +
+            "up to timeout seconds; returns that frame with its change text, or says nothing changed. Use after an action or " +
+            "while the user moves the camera.",
+            McpJson.Schema(("since", "integer", "Frame id to compare with (default: the latest now)", false),
+                ("timeout", "number", "Seconds to wait (default 10, max 60)", false),
+                ("image", "boolean", "Include the JPEG (default true)", false), ("describe", "boolean", "Include on-screen objects (default true)", false)),
+            async (args, cancel) =>
+            {
+                var feed = host.Viewport;
+                feed.Want();
+                long since = args["since"] is JsonValue ? McpJson.Int(args, "since", 0) : feed.Latest?.Id ?? 0;
+                double seconds = args["timeout"] is JsonValue value && value.TryGetValue(out double number) ? number : 10;
+                var frame = await feed.WaitForChangeAsync(since, TimeSpan.FromSeconds(Math.Clamp(seconds, 0.1, 60)), cancel).ConfigureAwait(false);
+                if (frame is null)
+                    return McpToolResult.Json(new JsonObject { ["changed"] = false, ["since"] = since, ["latest"] = feed.Latest?.Id, ["status"] = feed.Status,
+                        ["lastCaptureMs"] = feed.LastCapture is { } at ? (long?)(DateTimeOffset.UtcNow - at).TotalMilliseconds : null });
+                return FrameResult(host, [frame], null, McpJson.Bool(args, "image", true), McpJson.Bool(args, "describe", true));
+            });
+        yield return read("get_viewport_stream", "Where to watch the live viewport in a browser: the local URL (this PC only) " +
+            "and, when set_viewport_stream turned it on, the relay URL (sign-in with an allowed Project Sol account), plus " +
+            "capture rate, size and status.", McpJson.Schema(),
+            (_, _) =>
+            {
+                var feed = host.Viewport;
+                return Task.FromResult(McpToolResult.Json(new JsonObject
+                {
+                    ["local"] = feed.LocalUrl, ["relay"] = feed.Relay?.ToJson() ?? new FrameRelay(feed).ToJson(),
+                    ["fps"] = feed.Fps, ["width"] = feed.MaxWidth, ["quality"] = feed.Quality, ["status"] = feed.Status, ["latest"] = feed.Latest?.Id
+                }));
+            });
+        yield return new McpTool("set_viewport_stream", "Turn the outbound relay stream of the viewport on or off (off by default). " +
+            "On pushes JPEG frames from this PC to the Project Sol stream relay over HTTPS (no inbound connection needed) at up " +
+            $"to {FrameRelay.MaxFps} fps and {FrameRelay.MaxWidth} px; the viewer URL carries a new random key each time and " +
+            "only signed-in allowed accounts can open it.",
+            McpJson.Schema(("on", "boolean", "true to start, false to stop", true), ("name", "string", "Optional stream name (3-32 of a-z, 0-9, -)", false),
+                ("fps", "integer", $"Frames per second (1-{FrameRelay.MaxFps}, default 2)", false)), true,
+            async (args, cancel) =>
+            {
+                if (args["on"] is not JsonValue) return McpToolResult.Error("Give on: true or false.");
+                bool on = McpJson.Bool(args, "on", false);
+                if (on && host.Paused) return McpToolResult.Error("The user paused context publishing in Solforge's AI workspace.");
+                if (!await host.ApproveAsync("set_viewport_stream", on ? $"Stream the viewport to {FrameRelay.RelayBase}" : "Stop the viewport relay stream", cancel)
+                        .ConfigureAwait(false))
+                    return McpToolResult.Error("The user declined this in Solforge.");
+                var feed = host.Viewport;
+                if (!on) { feed.Relay?.Stop(); return McpToolResult.Text("The relay stream is off."); }
+                var relay = feed.Relay ??= new FrameRelay(feed);
+                if (relay.Start(McpJson.String(args, "name"), McpJson.Int(args, "fps", 2)) is not { } url) return McpToolResult.Error(relay.Status);
+                return McpToolResult.Json(new JsonObject { ["viewerUrl"] = url, ["status"] = relay.Status, ["note"] = "Only accounts on the relay's allow-list can watch." });
+            });
+    }
+
+    private static void Tune(ViewportFeed feed, JsonObject args)
+    {
+        feed.Want();
+        if (args["width"] is JsonValue) feed.MaxWidth = Math.Min(McpJson.Int(args, "width", feed.MaxWidth), feed.Relay is { Running: true } ? FrameRelay.MaxWidth : 1920);
+        if (args["quality"] is JsonValue) feed.Quality = McpJson.Int(args, "quality", feed.Quality);
+        if (args["fps"] is JsonValue) feed.Fps = McpJson.Int(args, "fps", feed.Fps);
+    }
+
+    private static McpToolResult NoFrames(ViewportFeed feed) => McpToolResult.Error(
+        $"No live viewport frame yet ({feed.Status}). The capture starts on this call; try again in a second. If the 3D viewport " +
+        "is off, see get_editor_state and set_viewport_rendering.");
+
+    private static McpToolResult FrameResult(ISolforgeHost host, IReadOnlyList<ViewportFrame> frames, string? note, bool images, bool describe)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var feed = host.Viewport;
+        var text = new JsonObject
+        {
+            ["frames"] = new JsonArray(frames.Select(frame => (JsonNode)frame.Describe(now)).ToArray()),
+            ["latest"] = feed.Latest?.Id, ["status"] = feed.Status
+        };
+        if (note is not null) text["note"] = note;
+        if (describe)
+            text["objects"] = new JsonArray(host.Visible.OrderByDescending(item => item.Width * item.Height).Take(25)
+                .Select(item => (JsonNode)new JsonObject
+                {
+                    ["id"] = item.Id, ["label"] = item.Label, ["kind"] = item.Kind,
+                    ["rect"] = new JsonArray(Math.Round(item.X), Math.Round(item.Y), Math.Round(item.Width), Math.Round(item.Height))
+                }).ToArray());
+        var result = McpToolResult.Json(text);
+        if (images) foreach (var frame in frames) result.Images.Add(frame.Jpeg);
+        return result;
+    }
+}

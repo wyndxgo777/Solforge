@@ -72,11 +72,11 @@ public sealed partial class MissionGraphPage
         luaDrafts[id] = entry with { Draft = draft };
         if (!matches) ImGui.TextWrapped("This field changed. Copy your draft, then revert.");
         ImGui.BeginDisabled(!matches || draft == current);
-        bool apply = ImGui.SmallButton("Apply");
+        bool apply = UiAuto.SmallButton("Apply");
         ImGui.EndDisabled();
         ImGui.SameLine();
         ImGui.BeginDisabled(matches && draft == current);
-        if (ImGui.SmallButton("Revert")) luaDrafts[id] = new(current, current, luaDraftDocument, owner, path);
+        if (UiAuto.SmallButton("Revert")) luaDrafts[id] = new(current, current, luaDraftDocument, owner, path);
         ImGui.EndDisabled();
         ImGui.PopID();
         return apply ? draft : null;

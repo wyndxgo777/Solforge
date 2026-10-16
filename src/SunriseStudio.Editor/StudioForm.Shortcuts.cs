@@ -27,12 +27,12 @@ public sealed partial class StudioForm
         ShortcutInput.Suspended = true;
         var map = ShortcutInput.Map;
         ImGui.SetNextItemWidth(280 * scale);
-        if (ImGui.BeginCombo("Preset", map.Title))
+        if (UiAuto.BeginCombo("Preset", map.Title))
         {
             foreach (var preset in ShortcutPresets.All)
-                if (ImGui.Selectable(preset.Name, !map.IsCustom && ReferenceEquals(map.Preset, preset)))
+                if (UiAuto.Selectable(preset.Name, !map.IsCustom && ReferenceEquals(map.Preset, preset)))
                 { map.UsePreset(preset.Name); SaveShortcuts(); }
-            ImGui.EndCombo();
+            UiAuto.EndCombo();
         }
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Choosing a preset replaces every binding.");
         int conflicts = map.ConflictCount();
@@ -45,18 +45,18 @@ public sealed partial class StudioForm
         if (ImGui.BeginTabBar("shortcut-sections"))
         {
             foreach (var (section, title, scope) in ShortcutTabs)
-                if (ImGui.BeginTabItem(title))
+                if (UiAuto.BeginTabItem(title))
                 {
                     ImGui.TextDisabled(scope);
                     DrawShortcutRows(map, section);
-                    ImGui.EndTabItem();
+                    UiAuto.EndTabItem();
                 }
             ImGui.EndTabBar();
         }
         // The capture popup opens at this level so its id matches the one drawn below.
         if (openShortcutCapture) { ImGui.OpenPopup("Press a shortcut"); openShortcutCapture = false; }
         DrawShortcutCapture(map);
-        if (ImGui.Button("Close", new(100 * scale, 0))) { captureAction = null; ImGui.CloseCurrentPopup(); }
+        if (UiAuto.Button("Close", new(100 * scale, 0))) { captureAction = null; ImGui.CloseCurrentPopup(); }
         ImGui.EndPopup();
     }
 
@@ -87,7 +87,7 @@ public sealed partial class StudioForm
             }
             ImGui.TableNextColumn();
             ImGui.BeginDisabled(!changed);
-            if (ImGui.SmallButton("Reset")) { map.Reset(action.Id); SaveShortcuts(); }
+            if (UiAuto.SmallButton("Reset")) { map.Reset(action.Id); SaveShortcuts(); }
             ImGui.EndDisabled();
             if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.SetTooltip($"Use the {map.Preset.Name} bindings");
             ImGui.PopID();
@@ -101,7 +101,7 @@ public sealed partial class StudioForm
         bool bound = slot < bindings.Count;
         IReadOnlyList<ShortcutAction> conflicts = bound ? map.ConflictsWith(action.Id, bindings[slot]) : Array.Empty<ShortcutAction>();
         if (conflicts.Count > 0) ImGui.PushStyleColor(ImGuiCol.Text, ShortcutConflictColor);
-        if (ImGui.Button(bound ? bindings[slot].ToString() : "Unbound", new(180 * scale, 0)))
+        if (UiAuto.Button(bound ? bindings[slot].ToString() : "Unbound", new(180 * scale, 0)))
         { captureAction = action.Id; captureSlot = slot; openShortcutCapture = true; }
         if (conflicts.Count > 0) ImGui.PopStyleColor();
         if (ImGui.IsItemHovered())
@@ -109,7 +109,7 @@ public sealed partial class StudioForm
                 : "Click, then press the new binding");
         if (!bound) return;
         ImGui.SameLine();
-        if (ImGui.SmallButton("x")) { map.Clear(action.Id, slot); SaveShortcuts(); }
+        if (UiAuto.SmallButton("x")) { map.Clear(action.Id, slot); SaveShortcuts(); }
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Clear");
     }
 

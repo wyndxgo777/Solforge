@@ -19,10 +19,10 @@ public sealed partial class MissionGraphPage
         {
             ImGui.PushID(asset.Id);
             string label = asset.Name + " [" + asset.Id[..Math.Min(8, asset.Id.Length)] + "]";
-            if (ImGui.Selectable(label, legacyAssetId == asset.Id)) RequestSwitch(() => OpenLegacy(asset.Id));
+            if (UiAuto.Selectable(label, legacyAssetId == asset.Id)) RequestSwitch(() => OpenLegacy(asset.Id));
             if (ImGui.BeginPopupContextItem("legacy-source"))
             {
-                if (ImGui.MenuItem("Export original Lua"))
+                if (UiAuto.MenuItem("Export original Lua"))
                 {
                     using var dialog = new FolderBrowserDialog { Description = "Recover legacy Lua source", UseDescriptionForTitle = true };
                     if (dialog.ShowDialog() == DialogResult.OK) Try(() =>

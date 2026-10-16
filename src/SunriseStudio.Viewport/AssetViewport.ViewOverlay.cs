@@ -51,19 +51,19 @@ public sealed partial class AssetViewport
         const string label = "View", popup = "##view-presets-menu";
         next(ImGui.CalcTextSize(label).X + ImGui.GetStyle().FramePadding.X * 2);
         ImGui.BeginDisabled(Camera.HasExternalPose);
-        if (ImGui.Button(label + "##view-presets")) ImGui.OpenPopup(popup);
+        if (UiAuto.Button(label + "##view-presets")) ImGui.OpenPopup(popup);
         ImGui.EndDisabled();
         if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
             ImGui.SetTooltip("Axis views: Numpad 7 top, 1 front, 3 right, Ctrl for the opposite side; Numpad 5 orthographic");
         if (!ImGui.BeginPopup(popup)) return;
-        if (ImGui.MenuItem("Perspective", "", !Camera.Orthographic)) Camera.Orthographic = false;
-        if (ImGui.MenuItem("Orthographic", "Numpad 5", Camera.Orthographic)) Camera.Orthographic = true;
+        if (UiAuto.MenuItem("Perspective", "", !Camera.Orthographic)) Camera.Orthographic = false;
+        if (UiAuto.MenuItem("Orthographic", "Numpad 5", Camera.Orthographic)) Camera.Orthographic = true;
         ImGui.Separator();
         foreach (var preset in CameraViews.All)
-            if (ImGui.MenuItem(CameraViews.Name(preset), ViewKeyText(preset))) SetViewPreset(preset);
+            if (UiAuto.MenuItem(CameraViews.Name(preset), ViewKeyText(preset))) SetViewPreset(preset);
         ImGui.Separator();
-        if (ImGui.MenuItem("Axis gizmo", "", ShowAxisGizmo)) ShowAxisGizmo = !ShowAxisGizmo;
-        if (ImGui.MenuItem("Statistics", "", ShowStatistics)) ShowStatistics = !ShowStatistics;
+        if (UiAuto.MenuItem("Axis gizmo", "", ShowAxisGizmo)) ShowAxisGizmo = !ShowAxisGizmo;
+        if (UiAuto.MenuItem("Statistics", "", ShowStatistics)) ShowStatistics = !ShowStatistics;
         ImGui.EndPopup();
     }
 

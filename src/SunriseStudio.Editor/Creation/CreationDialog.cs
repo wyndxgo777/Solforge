@@ -95,7 +95,7 @@ public sealed class CreationDialog
         if (loadError.Length != 0)
         {
             ImGui.BeginDisabled(workspace.IsBusy);
-            if (ImGui.Button("Retry", new Vector2(120 * scale, 0)))
+            if (UiAuto.Button("Retry", new Vector2(120 * scale, 0)))
             { if (workspace.Error == loadError) workspace.Error = ""; workflow.Retry(); }
             ImGui.EndDisabled();
         }
@@ -107,11 +107,11 @@ public sealed class CreationDialog
         if (showError) ImGui.TextUnformatted(workspace.Error);
         ImGui.PopTextWrapPos();
         ImGui.BeginDisabled(problems.Count != 0 || workspace.IsBusy || anchoring || working);
-        if (ImGui.Button(workflow.CreateLabel, new Vector2(170 * scale, 0))) Start(workspace);
+        if (UiAuto.Button(workflow.CreateLabel, new Vector2(170 * scale, 0))) Start(workspace);
         StudioUi.Tip(allProblems);
         ImGui.EndDisabled();
         ImGui.SameLine();
-        if (ImGui.Button(working ? "Close" : "Cancel", new Vector2(120 * scale, 0)))
+        if (UiAuto.Button(working ? "Close" : "Cancel", new Vector2(120 * scale, 0)))
         { anchoring = working = false; followUp = null; workflow = null; ImGui.CloseCurrentPopup(); }
         if (working && ImGui.IsItemHovered()) ImGui.SetTooltip("The import continues in the background");
         if (anchoring || working) { ImGui.SameLine(); ImGui.TextDisabled("Working..."); }
@@ -199,7 +199,7 @@ public sealed class CreationDialog
             case CreationFieldKind.File:
                 string path = field.Text;
                 ImGui.SetNextItemWidth(-ImGui.GetFrameHeight() - ImGui.GetStyle().ItemSpacing.X);
-                if (ImGui.InputText("##path", ref path, 4096)) field.Text = path;
+                if (UiAuto.InputText("##path", ref path, 4096)) field.Text = path;
                 ImGui.SameLine();
                 if (StudioUi.IconButton("browse", StudioIcon.Open, "Browse")) pickFile(field.FileFilter, chosen => field.Text = chosen);
                 break;
@@ -210,14 +210,14 @@ public sealed class CreationDialog
             case CreationFieldKind.Scalar:
                 string number = field.Text;
                 ImGui.SetNextItemWidth(160 * scale);
-                if (ImGui.InputText("##scalar", ref number, 32, field.Hexadecimal ? ImGuiInputTextFlags.CharsHexadecimal : ImGuiInputTextFlags.None))
+                if (UiAuto.InputText("##scalar", ref number, 32, field.Hexadecimal ? ImGuiInputTextFlags.CharsHexadecimal : ImGuiInputTextFlags.None))
                     field.Text = number;
                 break;
             case CreationFieldKind.Text:
                 string text = field.Text;
                 bool edited = field.Lines > 1
-                    ? ImGui.InputTextMultiline("##text", ref text, 4096, new Vector2(-1, field.Lines * ImGui.GetTextLineHeight() + 8 * scale))
-                    : ImGui.InputText("##text", ref text, 512);
+                    ? UiAuto.InputTextMultiline("##text", ref text, 4096, new Vector2(-1, field.Lines * ImGui.GetTextLineHeight() + 8 * scale))
+                    : UiAuto.InputText("##text", ref text, 512);
                 if (edited) field.Text = text;
                 break;
             case CreationFieldKind.Rows:
@@ -233,10 +233,10 @@ public sealed class CreationDialog
     {
         float width = 110 * CreationWidgets.Scale;
         ImGui.BeginDisabled(part.NewBlocker.Length != 0);
-        if (ImGui.Selectable(part.NewLabel, field.MakeNew, ImGuiSelectableFlags.None, new(width, 0))) field.MakeNew = true;
+        if (UiAuto.Selectable(part.NewLabel, field.MakeNew, ImGuiSelectableFlags.None, new(width, 0))) field.MakeNew = true;
         StudioUi.Tip(part.NewBlocker);
         ImGui.EndDisabled();
         ImGui.SameLine();
-        if (ImGui.Selectable(part.PickLabel, !field.MakeNew, ImGuiSelectableFlags.None, new(width, 0))) field.MakeNew = false;
+        if (UiAuto.Selectable(part.PickLabel, !field.MakeNew, ImGuiSelectableFlags.None, new(width, 0))) field.MakeNew = false;
     }
 }

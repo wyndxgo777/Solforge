@@ -72,7 +72,7 @@ public sealed partial class InvestmentPage : IPreparedStudioPage
             }
             if (!workspace.IsBusy && workspace.Error.Length != 0) ImGui.TextWrapped(workspace.Error);
             ImGui.BeginDisabled(workspace.IsBusy);
-            if (ImGui.Button("Load investment")) workspace.Run(workspace.LoadInvestment);
+            if (UiAuto.Button("Load investment")) workspace.Run(workspace.LoadInvestment);
             ImGui.EndDisabled();
             return;
         }
@@ -89,15 +89,15 @@ public sealed partial class InvestmentPage : IPreparedStudioPage
             else
             {
                 if (workspace.Error.Length != 0) ImGui.TextWrapped(workspace.Error);
-                if (ImGui.SmallButton("Retry")) requestedDocument = null;
+                if (UiAuto.SmallButton("Retry")) requestedDocument = null;
             }
         }
         else if (workspace.InvestmentDetailCurrent && workspace.SelectedInvestmentItem is { } item) DrawItem(context, catalog, item);
         else if (workspace.InvestmentDetailCurrent && workspace.SelectedInvestmentVendor is { } vendor) DrawVendor(context, catalog, vendor);
         else if (workspace.Document is { } document && catalog.FindItem(document.Entry.TagHash) is { } linked)
-        { ImGui.TextUnformatted(linked.Name); if (ImGui.Button("Open item definition")) workspace.Select(linked.Tag); }
+        { ImGui.TextUnformatted(linked.Name); if (UiAuto.Button("Open item definition")) workspace.Select(linked.Tag); }
         else if (workspace.Document is { } shown && catalog.FindVendor(shown.Entry.TagHash) is { } seller)
-        { ImGui.TextUnformatted(seller.Name); if (ImGui.Button("Open vendor")) workspace.Select(seller.Tag); }
+        { ImGui.TextUnformatted(seller.Name); if (UiAuto.Button("Open vendor")) workspace.Select(seller.Tag); }
         else ImGui.TextDisabled("Not an item or vendor");
         DrawEdit(context, catalog);
         DrawAddRow(context, catalog);
@@ -128,7 +128,7 @@ public sealed partial class InvestmentPage : IPreparedStudioPage
         ImGui.EndGroup();
         if (item.Description.Length != 0) ImGui.TextWrapped(item.Description);
         ImGui.Spacing();
-        if (item.DisplayTag != 0 && ImGui.SmallButton("Display strings")) context.Workspace.Select(item.DisplayTag);
+        if (item.DisplayTag != 0 && UiAuto.SmallButton("Display strings")) context.Workspace.Select(item.DisplayTag);
         ImGui.SeparatorText("ITEM");
         foreach (var field in detail.Fields) Field(context, field, field.Offset == 186 ? item.Rarity : null);
         if (detail.Stats.Count != 0 || context.Workspace.CanEdit)
@@ -151,10 +151,10 @@ public sealed partial class InvestmentPage : IPreparedStudioPage
                 ImGui.PushID(socket.Index);
                 ImGui.TextDisabled($"Socket {socket.Index + 1}");
                 StudioUi.Tip($"Type {socket.Type}");
-                if (ImGui.Selectable(socket.PlugName + "##plug"))
+                if (UiAuto.Selectable(socket.PlugName + "##plug"))
                 { BeginEdit(context, socket.PlugField); plugChoices = socket.AllowedPlugs; }
                 if (socket.InitialPlug < catalog.Items.Count)
-                { ImGui.SameLine(); if (ImGui.SmallButton("Open")) context.Workspace.Select(catalog.Items[socket.InitialPlug].Tag); }
+                { ImGui.SameLine(); if (UiAuto.SmallButton("Open")) context.Workspace.Select(catalog.Items[socket.InitialPlug].Tag); }
                 ImGui.PopID();
             }
         }
@@ -171,7 +171,7 @@ public sealed partial class InvestmentPage : IPreparedStudioPage
                 Field(context, perk.Field with { Name = PerkLabel(context, catalog, perk.Index) }, tip: description);
                 if (perk.Conditional) { ImGui.SameLine(); ImGui.TextDisabled("Conditional"); }
                 ImGui.SameLine(); ImGui.BeginDisabled(!context.Workspace.CanEdit);
-                if (ImGui.SmallButton("-##remove")) context.Workspace.Run(() => context.Workspace.RemoveInvestmentPerk(perk));
+                if (UiAuto.SmallButton("-##remove")) context.Workspace.Run(() => context.Workspace.RemoveInvestmentPerk(perk));
                 if (ImGui.IsItemHovered()) ImGui.SetTooltip("Remove perk");
                 ImGui.EndDisabled();
                 ImGui.PopID();
@@ -191,12 +191,12 @@ public sealed partial class InvestmentPage : IPreparedStudioPage
         var curve = DisplayCurve(detail, stat);
         int displayed = curve?.Evaluate(stat.Value) ?? stat.Value;
         string valueLabel = displayed.ToString(CultureInfo.InvariantCulture) + (stat.Index == 24 ? " base" : "");
-        if (ImGui.SmallButton(valueLabel)) BeginEdit(context, stat.Field);
+        if (UiAuto.SmallButton(valueLabel)) BeginEdit(context, stat.Field);
         StudioUi.Tip(curve is null ? "Base value" : $"Base {stat.Value}, shows {displayed}");
         if (stat.Conditional || stat.Computed)
         { ImGui.SameLine(); ImGui.TextDisabled(stat.Computed ? "Computed" : "Conditional"); }
         ImGui.SameLine(); ImGui.BeginDisabled(!context.Workspace.CanEdit);
-        if (ImGui.SmallButton("-##remove")) context.Workspace.Run(() => context.Workspace.RemoveInvestmentStat(stat));
+        if (UiAuto.SmallButton("-##remove")) context.Workspace.Run(() => context.Workspace.RemoveInvestmentStat(stat));
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Remove stat");
         ImGui.EndDisabled();
         if (stat.Value is > 0 and <= 100) ImGui.ProgressBar(stat.Value / 100f, new(-1, 5), "");
@@ -221,7 +221,7 @@ public sealed partial class InvestmentPage : IPreparedStudioPage
             {
                 DrawSaleActions(context, sale);
                 Field(context, sale.ItemField); Field(context, sale.CategoryField);
-                if (sale.ItemIndex < catalog.Items.Count && ImGui.SmallButton("Open item")) context.Workspace.Select(catalog.Items[sale.ItemIndex].Tag);
+                if (sale.ItemIndex < catalog.Items.Count && UiAuto.SmallButton("Open item")) context.Workspace.Select(catalog.Items[sale.ItemIndex].Tag);
                 foreach (var cost in sale.Costs)
                 {
                     ImGui.PushID(cost.QuantityField.Offset);
@@ -240,7 +240,7 @@ public sealed partial class InvestmentPage : IPreparedStudioPage
     {
         ImGui.PushID(field.Offset); ImGui.TextUnformatted(field.Name); StudioUi.Tip(tip); ImGui.SameLine();
         if (field.Editable)
-        { if (ImGui.SmallButton((display ?? field.Value) + "##value")) BeginEdit(context, field); }
+        { if (UiAuto.SmallButton((display ?? field.Value) + "##value")) BeginEdit(context, field); }
         else ImGui.TextDisabled(display ?? field.Value);
         ImGui.PopID();
     }
@@ -270,29 +270,29 @@ public sealed partial class InvestmentPage : IPreparedStudioPage
             if (stat is not null) ImGui.TextDisabled("Base value");
             if (plugChoices is { Count: > 0 })
             {
-                ImGui.SetNextItemWidth(350); ImGui.InputTextWithHint("##plugSearch", "Find allowed plug", ref plugSearch, 256);
+                ImGui.SetNextItemWidth(350); UiAuto.InputTextWithHint("##plugSearch", "Find allowed plug", ref plugSearch, 256);
                 ImGui.BeginChild("allowed-plugs", new(350, 220), ImGuiChildFlags.Borders);
                 foreach (ushort index in plugChoices.Where(index => plugSearch.Length == 0 || catalog.ItemName(index).Contains(plugSearch, StringComparison.OrdinalIgnoreCase)))
-                    if (ImGui.Selectable(catalog.ItemName(index) + $"##{index}")) editValue = index.ToString(CultureInfo.InvariantCulture);
+                    if (UiAuto.Selectable(catalog.ItemName(index) + $"##{index}")) editValue = index.ToString(CultureInfo.InvariantCulture);
                 ImGui.EndChild();
             }
             if (field.Offset == 186 && context.Workspace.SelectedInvestmentItem is not null)
             {
                 ImGui.SetNextItemWidth(350);
-                if (ImGui.BeginCombo("##investmentValue", byte.TryParse(editValue, out byte current) ? ItemKinds.TierName(current) : editValue))
+                if (UiAuto.BeginCombo("##investmentValue", byte.TryParse(editValue, out byte current) ? ItemKinds.TierName(current) : editValue))
                 {
                     foreach (byte value in new byte[] { 0, 1, 2, 3, 4, 5, 255 })
-                        if (ImGui.Selectable(ItemKinds.TierName(value))) editValue = value.ToString(CultureInfo.InvariantCulture);
-                    ImGui.EndCombo();
+                        if (UiAuto.Selectable(ItemKinds.TierName(value))) editValue = value.ToString(CultureInfo.InvariantCulture);
+                    UiAuto.EndCombo();
                 }
             }
-            else { ImGui.SetNextItemWidth(350); ImGui.InputText("##investmentValue", ref editValue, 64); }
+            else { ImGui.SetNextItemWidth(350); UiAuto.InputText("##investmentValue", ref editValue, 64); }
             if (curve is not null && int.TryParse(editValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out int previewValue))
                 ImGui.TextDisabled(previewValue == 0 ? "Uses item-level context" : $"Display {curve.Evaluate(previewValue)}");
             ImGui.BeginDisabled(!context.Workspace.CanEdit);
-            if (ImGui.Button("Save delta") && SaveEditDraft(context.Workspace)) ImGui.CloseCurrentPopup();
+            if (UiAuto.Button("Save delta") && SaveEditDraft(context.Workspace)) ImGui.CloseCurrentPopup();
             ImGui.EndDisabled(); ImGui.SameLine();
-            if (ImGui.Button("Cancel")) { ImGui.CloseCurrentPopup(); ClearEdit(); }
+            if (UiAuto.Button("Cancel")) { ImGui.CloseCurrentPopup(); ClearEdit(); }
             if (context.Workspace.Project is null) ImGui.TextDisabled("Create or open a project to edit");
         }
         ImGui.EndPopup();
