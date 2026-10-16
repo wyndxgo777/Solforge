@@ -122,7 +122,8 @@ public sealed partial class StudioLayout
 
     private static (StudioLayoutNode Node, float Area) LargestPanel(StudioLayoutNode node, float area)
     {
-        if (node.IsLeaf) return (node, area);
+        // Solforge: the AI area is never split to make room for another editor while any other area can be.
+        if (node.IsLeaf) return (node, node.Panel == StudioPanelKind.AI ? 0 : area);
         var first = LargestPanel(node.First!, area * node.Ratio);
         var second = LargestPanel(node.Second!, area * (1 - node.Ratio));
         return first.Area >= second.Area ? first : second;

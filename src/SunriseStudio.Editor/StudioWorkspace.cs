@@ -96,6 +96,13 @@ public sealed partial class StudioWorkspace : IDisposable
     private bool workBlocks = true;
     /** True while work runs that the editor cannot be used during. */
     public bool IsBlocking => work is not null && workBlocks;
+
+    /** Solforge: the load toast's Cancel; Poll then skips the work's adopt and reports "Cancelled". */
+    public void CancelWork()
+    {
+        try { operationCancellation?.Cancel(); }
+        catch (ObjectDisposedException) { }
+    }
     /** The result of the last background command, shown until dismissed. */
     public WorkNotice? Notice { get; private set; }
     public void DismissNotice() => Notice = null;

@@ -36,17 +36,16 @@ public sealed partial class StudioForm
         if ((focusAssets || focusLive || focusAssetPage || focusWorldScene || focusMissionPage)
             && !ShowPopout(StudioPanelKind.Workspace))
         {
+            // Solforge: an open docks the editor only when it is missing and never moves a maximized area (the AI's).
             bool absent = layout.Find(StudioPanelKind.Workspace) is null;
-            var editor = layout.Show(StudioPanelKind.Workspace);
+            layout.Show(StudioPanelKind.Workspace);
             layoutDirty |= absent;
-            if (maximizedPanel is not null) maximizedPanel = editor.Id;
         }
         if (focusMissionGraph && !ShowPopout(StudioPanelKind.MissionGraph))
         {
             bool absent = layout.Find(StudioPanelKind.MissionGraph) is null;
-            var graph = layout.Show(StudioPanelKind.MissionGraph);
+            layout.Show(StudioPanelKind.MissionGraph);
             layoutDirty |= absent;
-            if (maximizedPanel is not null) maximizedPanel = graph.Id;
         }
         if (focusLocalServer && !ShowPopout(StudioPanelKind.LocalServer))
         {
@@ -185,9 +184,24 @@ public sealed partial class StudioForm
     /** Draws one editor below its header; a docked area and a popped-out window share it. */
     private void DrawPanelContent(StudioPanelKind panel, int area, Vector2 position, Vector2 size)
     {
+        // Solforge: while work runs, browsing, the object tree and the AI stay live; editors that change the project
+        // wait (their workspace calls would throw "Wait for the current operation"). A load swaps the document for a spinner.
+        bool hold = workspace.IsBusy && panel is not (StudioPanelKind.AI or StudioPanelKind.Browser
+            or StudioPanelKind.ObjectTree or StudioPanelKind.Empty);
+        if (hold) ImGui.BeginDisabled();
+        try { DrawPanelArea(panel, area, position, size); }
+        finally { if (hold) ImGui.EndDisabled(); }
+    }
+
+    private void DrawPanelArea(StudioPanelKind panel, int area, Vector2 position, Vector2 size)
+    {
         switch (panel)
         {
-            case StudioPanelKind.Workspace: DrawDocument(position, size); break;
+            case StudioPanelKind.Workspace:
+                if (EditorReady) DrawDocument(position, size);
+                else DrawAreaLoading("Document", position, size);
+                break;
+            case StudioPanelKind.Browser when browserPreparing: DrawAreaLoading("Asset browser loading", position, size); break;
             case StudioPanelKind.Browser: DrawBrowser(position, size); break;
             case StudioPanelKind.Inspector: DrawInspector(position, size); break;
             case StudioPanelKind.Changes: DrawChanges(position, size); break;
@@ -250,9 +264,11 @@ public sealed partial class StudioForm
     private void UseProjectLayout()
     {
         string? project = workspace.Project?.DirectoryPath;
-        if (project == layoutProject) return;
+        // Solforge: a moment without a project (reopening the installation adopts Project = null) is not a project
+        // switch; restoring the saved copy then closed popped-out editors (the AI) and dropped unsaved area sizes.
+        if (project is null || project == layoutProject) return;
         layoutProject = project;
-        if (project is null || options.Smoke) return;
+        if (options.Smoke) return;
         if (settings.ProjectLayouts.TryGetValue(ProjectLayoutKey(project), out var saved))
         {
             foreach (var popout in popouts.ToArray()) ClosePopout(popout.Panel);
