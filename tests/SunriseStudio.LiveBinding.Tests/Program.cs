@@ -7,6 +7,7 @@ using SunriseStudio.Rendering;
 using SunriseStudio.Scene;
 using SunriseStudio.Viewport;
 
+/** Console test runner for live binding: mesh-local offsets, reused assets, marker pose composition and the other live checks, run on the WARP software renderer. */
 internal static partial class Program
 {
     private const uint List = 0x80A01000;

@@ -2,6 +2,7 @@ using System.Buffers.Binary;
 using System.Security.Cryptography;
 using SunriseStudio.Packages;
 
+/** Checks the package read cache: replaced packages never return stale bytes and overlay and original reads stay independent. */
 internal static class PackageCacheChecks
 {
     /** Replacing a package must become visible after invalidation without changing returned buffers. */

@@ -1,3 +1,4 @@
+// Console test runner for material interchange: native slots, constants and texture files survive export and import checking.
 using System.Buffers.Binary;
 using System.Security.Cryptography;
 using System.Text.Json;

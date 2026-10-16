@@ -16,6 +16,7 @@ internal static class TemplateChecks
         Row("Directive", "GO_THERE"), Row("Directive", "KILL_BOSS"),
     ];
 
+    /** Runs the checks that use generated fixtures instead of installed game content. */
     public static void Synthetic()
     {
         Check(MissionTemplates.Types.Count == Enum.GetValues<MissionActivityType>().Length, "Every activity type needs a template row.");

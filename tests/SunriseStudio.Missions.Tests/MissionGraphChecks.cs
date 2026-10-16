@@ -5,6 +5,7 @@ using SunriseStudio.Projects;
 /** The flow and campaign graph view: span-exact edits, mod and installed saves, and every installed script read. */
 internal static class MissionGraphChecks
 {
+    /** Runs the checks that use generated fixtures instead of installed game content. */
     public static void Synthetic(string temporary)
     {
         string source = "﻿-- preserve this\r\nlocal flow = require(\"lib.flow\")\r\n"

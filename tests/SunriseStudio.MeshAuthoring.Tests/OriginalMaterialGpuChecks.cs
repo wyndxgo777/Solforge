@@ -7,6 +7,7 @@ using SunriseStudio.Rendering;
 using SunriseStudio.Scene;
 using SunriseStudio.Viewport;
 
+/** GPU check of original materials from Blender fixtures: separate assignments stay separate parts and the native declaration is unchanged. */
 internal static class OriginalMaterialGpuChecks
 {
     /** An owned Blender export reaches the original native shader through a complete project overlay. */

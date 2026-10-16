@@ -1,8 +1,10 @@
 using SunriseStudio.Missions;
 using SunriseStudio.Projects;
 
+/** Checks visual mission authoring: installed aliases resolve and custom mission or slot assignments are kept. */
 internal static class VisualAuthoringChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static string Run(string root, string gameRoot)
     {
         var catalog = new MissionScriptCatalog(gameRoot);

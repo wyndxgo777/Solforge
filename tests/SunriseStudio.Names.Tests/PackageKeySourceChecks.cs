@@ -2,6 +2,7 @@ using System.Buffers.Binary;
 using System.Security.Cryptography;
 using SunriseStudio.Packages;
 
+/** Checks package key discovery and overrides: preferred and invalid keys, compatibility and cache invalidation. */
 internal static class PackageKeySourceChecks
 {
     // Separate package ids exercise both key choices and the package-specific nonce.

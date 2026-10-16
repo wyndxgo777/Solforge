@@ -62,6 +62,7 @@ static class ClassChecks
         return root;
     }
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static async Task Run(string scratch, FixtureHost host)
     {
         Expect(RttiNames.Demangle(".?AVhkpEntity@@") == "hkpEntity", "plain name");

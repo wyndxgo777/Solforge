@@ -1,3 +1,4 @@
+/** Console entry for the mission UI tests; needs an owned installation path argument. */
 internal static class Program
 {
     [STAThread]

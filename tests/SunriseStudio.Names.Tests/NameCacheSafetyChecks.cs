@@ -2,6 +2,7 @@ using System.Text;
 using SunriseStudio.Packages;
 using SunriseStudio.Scene;
 
+/** Checks that project-derived names are never persisted into the shared name cache, even when changes race with cache publication. */
 internal static class NameCacheSafetyChecks
 {
     /** Once an index has observed overlays, removing them cannot make its old buckets cacheable. */

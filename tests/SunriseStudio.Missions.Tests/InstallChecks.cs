@@ -8,6 +8,7 @@ internal static class InstallChecks
 {
     private const string MissingApi = "mission_api.json is missing. Start the game once, then reload.";
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string temporary)
     {
         int shapes = WrongSchema(TestInstall.Write(Path.Combine(temporary, "install-wrong-schema")));

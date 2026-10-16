@@ -1,3 +1,4 @@
+// Console test runner for names: string bank support, immediate metadata names and fast index behavior.
 using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Text;

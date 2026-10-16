@@ -5,6 +5,7 @@ using System.Text.Json;
 using SunriseStudio.Packages;
 using SunriseStudio.Scene;
 
+/** Checks the on-disk name cache: storage, reuse across installs and invalidation. */
 internal static class PersistentNameCacheChecks
 {
     /** Cache hits preserve all naming surfaces and reject changed or damaged inputs. */

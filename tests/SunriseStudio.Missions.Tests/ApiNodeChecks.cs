@@ -47,6 +47,7 @@ internal static class ApiNodeChecks
         new("mission.SceneInput.OTHER.GO", "scene_inputs", "go", "0x00000002") { Scene = "OTHER" },
     ];
 
+    /** Runs the checks that use generated fixtures instead of installed game content. */
     public static void Synthetic()
     {
         var schema = MissionApiSchema.Load(Fixture);

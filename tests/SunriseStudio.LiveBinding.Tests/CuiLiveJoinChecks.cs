@@ -2,6 +2,7 @@ using SunriseStudio.Editor;
 using SunriseStudio.Formats;
 using SunriseStudio.Live;
 
+/** Checks the join of live CUI rows to authored nodes by id and name hash, including hidden parents and nested rows. */
 internal static class CuiLiveJoinChecks
 {
     private const uint Hierarchy = 0x80B00001, Nested = 0x80B00002;

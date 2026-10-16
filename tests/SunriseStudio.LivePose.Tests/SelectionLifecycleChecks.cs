@@ -11,6 +11,7 @@ using SunriseStudio.Rendering;
 using SunriseStudio.Scene;
 using SunriseStudio.Viewport;
 
+/** Checks live selection lifecycle on installed models: selecting an object publishes both geometry and native state, and deselecting or losing the object cleans up. */
 internal static class SelectionLifecycleChecks
 {
     private const BindingFlags Fields = BindingFlags.Instance | BindingFlags.NonPublic;

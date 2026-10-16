@@ -2,8 +2,10 @@ using System.Text.Json;
 using SunriseStudio.Missions;
 using SunriseStudio.Projects;
 
+/** Checks creation of mission flow graphs: custom conditions, installed flow helper expressions and callbacks. */
 internal static class FlowCreationChecks
 {
+    /** Runs the checks that use generated fixtures instead of installed game content. */
     public static void Synthetic()
     {
         const string source = "local flow=require('lib.flow')\nlocal graph=flow.new{key='x',facts={{id='a',observe=function()return true end},{id='b',observe=function()return true end}},steps={{id='first',run=function()local preserve=[=[untouched]=]end}}}";
@@ -35,6 +37,7 @@ internal static class FlowCreationChecks
         Console.WriteLine("mission_flow conditions=nested custom=preserved invalid=blocked controller_path=checked");
     }
 
+    /** Runs the same kind of checks against the real packages of the owned installation. */
     public static void Owned(string root, string game)
     {
         var catalog = new MissionScriptCatalog(game);

@@ -10,6 +10,7 @@ internal static class ComponentSlotChecks
     private const uint Class = 0x80801234, Key = 0x76543210;
     private const ushort Type = 91;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(string parent)
     {
         string root = Path.Combine(parent, "numeric-slots"), game = Path.Combine(root, "game");
@@ -124,6 +125,7 @@ internal static class ComponentSlotChecks
             "Corrupt cache did not rebuild numeric evidence.");
     }
 
+    /** Runs the same kind of checks against the real packages of the owned installation. */
     internal static void Owned(string game)
     {
         using var catalog = PackageCatalog.Open(game);

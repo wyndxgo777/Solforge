@@ -4,12 +4,14 @@ using SunriseStudio.Rendering;
 using SunriseStudio.Scene;
 using SunriseStudio.Viewport;
 
+/** Checks that live poses transform per-instance geometry without altering shared meshes, grid bounds or picking, and that rejected poses change nothing. */
 internal static class GeometryChecks
 {
     private static readonly Vector2 Size = new(320, 240);
     private static readonly (int X, int Y)[] Pixels = Enumerable.Range(0, 240)
         .SelectMany(y => Enumerable.Range(0, 320).Select(x => (x, y))).ToArray();
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run()
     {
         Cpu();

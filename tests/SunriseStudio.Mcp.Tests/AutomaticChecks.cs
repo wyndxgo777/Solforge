@@ -10,6 +10,7 @@ static class AutomaticChecks
         if (!condition) throw new InvalidOperationException("automatic: " + message);
     }
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static async Task Run(string scratch, FixtureHost host)
     {
         Directory.CreateDirectory(scratch);

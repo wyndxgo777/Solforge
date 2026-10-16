@@ -3,8 +3,10 @@ using System.Text.Json;
 using SunriseStudio.Missions;
 using SunriseStudio.Projects;
 
+/** Checks reading legacy mission projects: alternatives are kept, and source, layout, BOM and newlines are not changed by migration. */
 internal static class LegacyMissionChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run(string root)
     {
         var project = StudioProject.Create(Path.Combine(root, "legacy-project"), "Legacy scripts");

@@ -5,6 +5,7 @@ using SunriseStudio.Editor;
 using SunriseStudio.Live;
 using SunriseStudio.Viewport;
 
+/** Checks the live report: detached reports claim no CUI link and extreme finite coordinates serialize their distances. */
 internal static class LiveReportChecks
 {
     /** A valid finite observation must remain valid JSON even when its distance exceeds float range. */

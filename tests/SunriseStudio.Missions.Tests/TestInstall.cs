@@ -4,9 +4,13 @@ internal static class TestInstall
     public const string CleanModule = "missions.test_mission_80aa0001", DamagedModule = "missions.test_damaged_80aa0002";
     public const string CleanKey = "TEST_MISSION", DamagedKey = "TEST_DAMAGED";
 
+    /** Path of the SDK Lua folder inside an installation. */
     public static string Sdk(string game) => Path.Combine(game, "bin", "x64", "Sunrise", "sdk", "lua");
+    /** Path of the mission scripts folder inside an installation. */
     public static string Scripts(string game) => Path.Combine(game, "bin", "x64", "Sunrise", "scripts");
+    /** Path of an SDK Lua module file. */
     public static string ModuleFile(string game, string module) => Path.Combine(Sdk(game), module.Replace('.', Path.DirectorySeparatorChar) + ".lua");
+    /** Path of the test mission script. */
     public static string ScriptFile(string game) => Path.Combine(Scripts(game), "test_mission", "test_mission.lua");
 
     /** A script bound to one activity key, with one context call the API schema types. */

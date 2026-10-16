@@ -15,6 +15,7 @@ static class DecompChecks
         if (!condition) throw new InvalidOperationException("decomp: " + message);
     }
 
+    /** Creates a small decompiled-code folder under the root and returns its path. */
     public static string Fixture(string root)
     {
         Directory.CreateDirectory(Path.Combine(root, "decomp", "all"));
@@ -37,6 +38,7 @@ static class DecompChecks
         return root;
     }
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static async Task Run(string scratch, FixtureHost host)
     {
         string root = Fixture(Path.Combine(scratch, "analysis"));

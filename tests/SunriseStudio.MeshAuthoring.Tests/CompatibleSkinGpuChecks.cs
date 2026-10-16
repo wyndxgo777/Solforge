@@ -13,6 +13,7 @@ using Vortice.Direct3D;
 using Vortice.Direct3D11;
 using Vortice.DXGI;
 
+/** GPU check that a compatible skin deforms correctly, including the last consumed bone. */
 internal static class CompatibleSkinGpuChecks
 {
     private const int Width = 256, Height = 224, BoneCount = 63;

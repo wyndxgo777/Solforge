@@ -1,7 +1,9 @@
 using SunriseStudio.Packages;
 
+/** Checks the object type and slot type name tables against native values. */
 internal static class NativeTableChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run()
     {
         Check(ObjectTypeNames.Count == 29 && ObjectTypeNames.Name(0) == "inherited" && ObjectTypeNames.Name(28) == "system"

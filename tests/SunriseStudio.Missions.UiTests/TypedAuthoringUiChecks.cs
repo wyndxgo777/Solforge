@@ -9,6 +9,7 @@ using static MissionUi;
 /** Typed edits, a new flow, project save and legacy recovery; the installed script is never saved. */
 internal static class TypedAuthoringUiChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static int Run(string game, string? capture)
     {
         string script = Path.Combine(game, "bin/x64/Sunrise/scripts/mission_lights/mission_lights.lua");

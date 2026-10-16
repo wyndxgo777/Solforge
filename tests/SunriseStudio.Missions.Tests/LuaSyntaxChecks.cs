@@ -3,6 +3,7 @@ using SunriseStudio.Missions;
 /** The Lua syntax layer: exact spans, Lua 5.4 only, and every installed script read without loss. */
 internal static class LuaSyntaxChecks
 {
+    /** Runs the checks that use generated fixtures instead of installed game content. */
     public static void Synthetic()
     {
         const string slot = "context:slot(mission.Slot.X):set_directive{directive = mission.Directive.Y, navpoint = context:slot(mission.Slot.Z)}";
