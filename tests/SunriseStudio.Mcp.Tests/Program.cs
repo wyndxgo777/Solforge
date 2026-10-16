@@ -435,12 +435,9 @@ static void PlayerSourceChecks()
     try
     {
         File.WriteAllText(Path.Combine(root, "20261015-120000", "snapshots.jsonl"),
-            "{\"ui\":{\"in_world\":true},\"pos\":[1,2,3]}
-{\"mark\":\"note\"}
-");
+            "{\"ui\":{\"in_world\":true},\"pos\":[1,2,3]}\n{\"mark\":\"note\"}\n");
         Expect(PlayerSources.LatestRecorder(root)?.Position == new Vector3(1, 2, 3), "the newest snapshot, skipping marks");
-        File.AppendAllText(Path.Combine(root, "20261015-120000", "snapshots.jsonl"), "{\"ui\":{\"in_world\":false},\"pos\":null}
-");
+        File.AppendAllText(Path.Combine(root, "20261015-120000", "snapshots.jsonl"), "{\"ui\":{\"in_world\":false},\"pos\":null}\n");
         Expect(PlayerSources.LatestRecorder(root) is null, "a menu after a position hides the old position");
     }
     finally { Directory.Delete(root, true); }

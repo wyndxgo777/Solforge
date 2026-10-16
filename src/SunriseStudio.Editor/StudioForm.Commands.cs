@@ -29,7 +29,7 @@ public sealed partial class StudioForm
                     ImGui.PushID(path);
                     // A moved or deleted project stays listed but cannot be opened.
                     bool exists = IconChecks.Exists(path);
-                    if (UiAuto.MenuItem(Path.GetFileName(Path.GetDirectoryName(path)), "", false, exists)) OpenProject(path);
+                    if (UiAuto.MenuItem(Path.GetFileName(Path.GetDirectoryName(path)) ?? path, "", false, exists)) OpenProject(path);
                     if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
                         ImGui.SetTooltip(exists ? path : path + " (missing)");
                     ImGui.PopID();
