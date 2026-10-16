@@ -1,33 +1,39 @@
+using System.Numerics;
 using ImGuiNET;
 
 namespace SunriseStudio.Editor;
 
 /**
- * The Local Server workbench tab (beside Assets and Live): the local WSL sol-server manager (LocalServerPage).
- * View > Local Server switches to it; its label carries a running/stopped/ghost status dot.
+ * The Local Server panel (its own area in the panel picker): the local WSL sol-server manager (LocalServerPage).
+ * View > Local Server shows and focuses it; its header carries a running/stopped/ghost status dot.
  */
 public sealed partial class StudioForm
 {
     private readonly LocalServerPage localServerPage = new();
     private bool focusLocalServer;
 
-    /** Trailing spaces leave room for the dot; the ### id keeps the tab stable. */
-    private const string LocalServerTabLabel = "Local Server     ###local-server-tab";
-
-    private void DrawLocalServerTab()
+    private void DrawLocalServerPanel(Vector2 position, Vector2 size)
     {
-        bool open = BeginEditorTab(LocalServerTabLabel, focusLocalServer);
-        var (color, tip) = localServerPage.Dot();
-        var min = ImGui.GetItemRectMin();
-        var max = ImGui.GetItemRectMax();
-        float radius = ImGui.GetFontSize() * .22f;
-        var center = new System.Numerics.Vector2(max.X - ImGui.GetStyle().FramePadding.X - radius * 2, (min.Y + max.Y) / 2);
-        ImGui.GetWindowDrawList().AddCircleFilled(center, radius, ImGui.ColorConvertFloat4ToU32(color));
-        if (ImGui.IsItemHovered()) StudioUi.Tip(tip);
-        if (!open) return;
+        if (focusLocalServer) ImGui.SetNextWindowFocus();
+        BeginPanel("Local Server", position, size);
+        TrackAreaFocus();
+        if (focusLocalServer || ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows)) shownPage = "local-server";
         focusLocalServer = false;
-        shownPage = "local-server";
         localServerPage.DrawBody(workspace.Project?.DirectoryPath, workspace.LastBuild?.OutputDirectory);
-        ImGui.EndTabItem();
+        ImGui.End();
+    }
+
+    /** The status dot at the right end of the panel header's title, left of the picker arrow; hover names the state. */
+    private void DrawLocalServerDot(float titleWidth)
+    {
+        var (color, tip) = localServerPage.Dot();
+        var at = ImGui.GetCursorScreenPos();
+        float frame = ImGui.GetFrameHeight();
+        float radius = ImGui.GetFontSize() * .22f;
+        var center = new Vector2(at.X + titleWidth - frame - radius - 4 * scale, at.Y + frame / 2);
+        ImGui.GetWindowDrawList().AddCircleFilled(center, radius, ImGui.ColorConvertFloat4ToU32(color));
+        if (tip.Length != 0 && ImGui.IsWindowHovered()
+            && ImGui.IsMouseHoveringRect(center - new Vector2(radius * 2), center + new Vector2(radius * 2)))
+            ImGui.SetTooltip(tip);
     }
 }

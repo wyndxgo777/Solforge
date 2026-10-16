@@ -663,15 +663,14 @@ public sealed partial class StudioForm : Form
     /** Area layout is local; projects keep no window or machine preferences. */
     private void DrawEditor()
     {
-        DrawMenu();
-        float menu = ImGui.GetFrameHeight();
         float status = 27 * scale, toolbar = 42 * scale;
         float width = ClientSize.Width, height = ClientSize.Height;
-        // The menu bar and the toolbar are the caption wherever no control sits.
+        // One title bar row: brand, menus, toolbar and window buttons; it is the caption wherever no control sits.
         chrome.Scale = scale;
-        chrome.CaptionHeight = menu + toolbar;
-        DrawToolbar(menu, toolbar);
-        float top = menu + toolbar;
+        chrome.CaptionHeight = toolbar;
+        DrawToolbar(0, toolbar);
+        DrawMenu(menuStripX, toolbar);
+        float top = toolbar;
         float contentHeight = Math.Max(100, height - top - status);
         DrawLayout(new(0, top), new(width, contentHeight));
         DrawStatus(new(0, height - status), new(width, status));
@@ -715,7 +714,7 @@ public sealed partial class StudioForm : Form
     /** Draws the active document page in its region. */
     private void DrawDocument(Vector2 position, Vector2 size)
     {
-        if (focusAssets || focusLive || focusLocalServer) ImGui.SetNextWindowFocus();
+        if (focusAssets || focusLive) ImGui.SetNextWindowFocus();
         BeginPanel("Document", position, size);
         if (ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows)) missionGraphActive = false;
         if (ImGui.BeginTabBar("workbench"))
@@ -734,7 +733,6 @@ public sealed partial class StudioForm : Form
                 livePage.Draw(workspace, viewport!, DrawSceneWithTree);
                 UiAuto.EndTabItem();
             }
-            DrawLocalServerTab();
             ImGui.EndTabBar();
         }
         ImGui.End();

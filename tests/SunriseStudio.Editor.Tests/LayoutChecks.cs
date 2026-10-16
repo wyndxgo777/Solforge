@@ -20,6 +20,15 @@ internal static class LayoutChecks
         var restored = StudioLayout.Restore(settings.Layout);
         Check(restored.Save().GetRawText() == layout.Save().GetRawText()
             && settings.SunrisePath == "fixture" && !settings.GameShaders, "Saved layout lost structure or other settings.");
+        // A layout saved before Local Server was its own panel restores as it was; Local Server is one Show away.
+        var old = StudioLayout.Restore(JsonDocument.Parse("""{"Id":1,"Panel":"Empty","Axis":"Rows","Ratio":0.7,"First":{"Id":2,"Panel":"Workspace","Axis":"Columns","Ratio":0.5},"Second":{"Id":3,"Panel":"Changes","Axis":"Columns","Ratio":0.5}}""").RootElement);
+        Check(old.Find(StudioPanelKind.Changes) is not null && old.Find(StudioPanelKind.LocalServer) is null
+            && old.Show(StudioPanelKind.LocalServer).Panel == StudioPanelKind.LocalServer, "An old layout did not restore.");
+        Check(StudioLayout.Preset(StudioLayout.SolforgePreset).Find(StudioPanelKind.LocalServer) is not null,
+            "The default layout has no Local Server panel.");
+        // A panel name this build does not know falls back to the default layout instead of failing.
+        var unknown = StudioLayout.Restore(JsonDocument.Parse("""{"Id":1,"Panel":"NoSuchPanel","Axis":"Rows","Ratio":0.5}""").RootElement);
+        Check(unknown.Find(StudioPanelKind.Workspace) is not null, "An unknown panel name broke the layout.");
         int survivingId = restored.Find(StudioPanelKind.Workspace)!.Id;
         Check(restored.Close(extra.Id) && restored.Find(survivingId) is not null
             && restored.Panels.Count == 4, "Joining an area discarded its sibling.");

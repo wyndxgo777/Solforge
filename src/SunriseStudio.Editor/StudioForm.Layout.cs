@@ -22,6 +22,7 @@ public sealed partial class StudioForm
         StudioPanelKind.Changes => "Project changes",
         StudioPanelKind.MissionGraph => "Mission Graph",
         StudioPanelKind.NodeGraph => "Node Graph",
+        StudioPanelKind.LocalServer => "Local Server",
         StudioPanelKind.Empty => "Choose editor",
         _ => kind.ToString()
     };
@@ -32,7 +33,7 @@ public sealed partial class StudioForm
         if (!workspace.IsBusy && workspace.World is null)
         { focusWorldScene = focusMissionPage = false; }
         // A focus request shows a popped-out editor's window instead of docking a second copy.
-        if ((focusAssets || focusLive || focusLocalServer || focusAssetPage || focusWorldScene || focusMissionPage)
+        if ((focusAssets || focusLive || focusAssetPage || focusWorldScene || focusMissionPage)
             && !ShowPopout(StudioPanelKind.Workspace))
         {
             bool absent = layout.Find(StudioPanelKind.Workspace) is null;
@@ -46,6 +47,13 @@ public sealed partial class StudioForm
             var graph = layout.Show(StudioPanelKind.MissionGraph);
             layoutDirty |= absent;
             if (maximizedPanel is not null) maximizedPanel = graph.Id;
+        }
+        if (focusLocalServer && !ShowPopout(StudioPanelKind.LocalServer))
+        {
+            bool absent = layout.Find(StudioPanelKind.LocalServer) is null;
+            var server = layout.Show(StudioPanelKind.LocalServer);
+            layoutDirty |= absent;
+            if (maximizedPanel is not null) maximizedPanel = server.Id;
         }
         if (focusHierarchy && !ShowPopout(StudioPanelKind.Browser))
         {
@@ -120,6 +128,7 @@ public sealed partial class StudioForm
         // Solforge: Sol panel header (notch + uppercase title); the combo keeps its id and behaviour.
         float titleWidth = Math.Max(button, size.X - button - 16 * scale - SolTheme.HeaderIndent);
         SolTheme.PanelHeader(PanelTitle(node.Panel), titleWidth);
+        if (node.Panel == StudioPanelKind.LocalServer) DrawLocalServerDot(titleWidth);
         ImGui.SetNextItemWidth(titleWidth);
         SolTheme.PushHeaderCombo();
         if (UiAuto.BeginCombo("##editor-type", ""))
@@ -184,6 +193,7 @@ public sealed partial class StudioForm
             case StudioPanelKind.Changes: DrawChanges(position, size); break;
             case StudioPanelKind.AI: DrawAiWorkspace(position, size); break;
             case StudioPanelKind.NodeGraph: DrawNodeGraphPanel(position, size); break;
+            case StudioPanelKind.LocalServer: DrawLocalServerPanel(position, size); break;
             case StudioPanelKind.MissionGraph:
                 if (focusMissionGraph) ImGui.SetNextWindowFocus();
                 BeginPanel("Mission graph area", position, size);

@@ -23,7 +23,7 @@ public sealed partial class StudioLayout
         _ => Default()
     };
 
-    /** Solforge's default (Seth's, 2026-10-15): Asset browser, Workspace and AI, over Project changes and the Mission Graph. */
+    /** Solforge's default (Seth's, 2026-10-15): Asset browser, Workspace and AI, over Local Server and the Mission Graph. */
     private static StudioLayout Solforge() => new(new()
     {
         Id = 1, Axis = StudioSplitAxis.Rows, Ratio = .74f,
@@ -41,7 +41,7 @@ public sealed partial class StudioLayout
         Second = new()
         {
             Id = 7, Axis = StudioSplitAxis.Columns, Ratio = .5f,
-            First = new() { Id = 8, Panel = StudioPanelKind.Changes },
+            First = new() { Id = 8, Panel = StudioPanelKind.LocalServer },
             Second = new() { Id = 9, Panel = StudioPanelKind.MissionGraph }
         }
     });

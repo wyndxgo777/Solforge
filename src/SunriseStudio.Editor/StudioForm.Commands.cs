@@ -18,10 +18,36 @@ public sealed partial class StudioForm
     private int addKind, addType = 8, addSubType;
     private StudioDocument? cloneSource;
 
-    /** The main menu bar; each item is disabled while its command cannot run. */
-    private void DrawMenu()
+    // Width the menus took last frame; the title bar keeps that much room for them after the brand.
+    private float menuStripWidth;
+
+    /**
+     * The menus, drawn into the title bar's row at x; each item is disabled while its command cannot run.
+     * A transparent window over the title bar holds them; its menu bar is the row's full height.
+     */
+    private void DrawMenu(float x, float height)
     {
-        if (!ImGui.BeginMainMenuBar()) return;
+        // Only as wide as the menus, so the toolbar controls beside it still take the clicks.
+        float width = Math.Clamp(menuStripWidth > 0 ? menuStripWidth : 400 * scale, 1, Math.Max(1, ClientSize.Width - x));
+        ImGui.SetNextWindowPos(new(x, 0));
+        ImGui.SetNextWindowSize(new(width, height));
+        // The menu bar's height comes from the frame padding at Begin and BeginMenuBar; the menus keep the normal padding.
+        var padding = ImGui.GetStyle().FramePadding;
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, Vector2.One);
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
+        ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(padding.X, Math.Max(padding.Y, (height - ImGui.GetFontSize()) / 2)));
+        ImGui.PushStyleColor(ImGuiCol.MenuBarBg, Vector4.Zero);
+        bool open = ImGui.Begin("Menus", PanelFlags | ImGuiWindowFlags.MenuBar | ImGuiWindowFlags.NoBackground
+            | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
+        UiAuto.SetWindow("Menus");
+        bool bar = open && ImGui.BeginMenuBar();
+        ImGui.PopStyleVar();
+        if (!bar)
+        {
+            ImGui.End(); ImGui.PopStyleColor(); ImGui.PopStyleVar(3);
+            return;
+        }
         if (UiAuto.BeginMenu("File"))
         {
             if (UiAuto.MenuItem("New project", ShortcutInput.Text(ShortcutActions.NewProject), false, !workspace.IsBusy)) projectDialog = true;
@@ -146,14 +172,21 @@ public sealed partial class StudioForm
             ImGui.TextDisabled(AboutCredit);
             UiAuto.EndMenu();
         }
-        chrome.DrawButtons(ImGui.GetFrameHeight());
-        ImGui.EndMainMenuBar();
+        menuStripWidth = ImGui.GetCursorPosX();
+        ImGui.EndMenuBar();
+        ImGui.End(); ImGui.PopStyleColor(); ImGui.PopStyleVar(3);
     }
 
     /** Pixels from a text line's top to its baseline in the current font. */
     private static float FontAscent() => ImGui.GetFont().Ascent * ImGui.GetFontSize() / ImGui.GetFont().FontSize;
 
-    /** Logo, title, navigation, project actions and shading controls, centred on one line. */
+    // Where the menus start on the title bar row (after the brand); DrawMenu draws them there.
+    private float menuStripX;
+
+    /**
+     * The title bar: logo, title, room for the menus, navigation, project actions, shading controls and the
+     * window buttons, centred on one line. Wherever no control sits it is the window's caption.
+     */
     private void DrawToolbar(float top, float height)
     {
         BeginPanel("Toolbar", new(0, top), new(ClientSize.Width, height), ImGuiWindowFlags.NoScrollbar);
@@ -187,10 +220,11 @@ public sealed partial class StudioForm
         ImGui.TextDisabled(StudioVersion.Text);
         if (ImGui.IsItemHovered()) ImGui.SetTooltip(AboutCredit);
         float brandEnd = ImGui.GetItemRectMax().X - ImGui.GetWindowPos().X;
+        menuStripX = brandEnd + 10 * scale;
         // SameLine returns to the top of the line's first item (the taller logo), so every control below sets its own
         // top on the toolbar's centre line; text aligns to the frame padding from there.
         float row = (height - ImGui.GetFrameHeight()) / 2;
-        ImGui.SameLine(brandEnd + 16 * scale);
+        ImGui.SameLine(menuStripX + Math.Max(menuStripWidth, 0) + 12 * scale);
         ImGui.SetCursorPosY(row);
         DrawNavigationButtons(row);
         float navigationEnd = ImGui.GetItemRectMax().X - ImGui.GetWindowPos().X;
@@ -256,6 +290,7 @@ public sealed partial class StudioForm
         if (ImGuiIcons.Button("tb-settings", StudioIcon.Gear, settingsKeys.Length > 0 ? $"Settings ({settingsKeys})" : "Settings"))
             preferencesOpen = true;
         if (workspace.IsBusy) { ToolbarNext(row); ImGui.AlignTextToFramePadding(); ImGui.TextDisabled("Working"); }
+        chrome.DrawButtons(height);
         ImGui.End();
     }
 
