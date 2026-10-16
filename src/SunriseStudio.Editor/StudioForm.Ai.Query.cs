@@ -135,7 +135,7 @@ public sealed partial class StudioForm
         ["serverScripts"] = settings.ScriptsPath.Length > 0 ? settings.ScriptsPath : null,
         ["blender"] = settings.BlenderPath.Length > 0 ? settings.BlenderPath : null,
         ["viewportRendering"] = settings.ViewportRendering, ["pauseWhileGameRuns"] = settings.PauseRenderWhenGameRunning,
-        ["lowMemoryMode"] = settings.LowMemoryMode, ["textureBudgetMiB"] = settings.TextureBudgetMiB,
+        ["lowMemoryMode"] = settings.LowMemoryMode, ["lowMemoryWithGame"] = settings.LowMemoryWithGame, ["textureBudgetMiB"] = settings.TextureBudgetMiB,
         ["fpsFocused"] = settings.FpsFocused, ["fpsBackground"] = settings.FpsBackground,
         ["aiEngine"] = AiEngines[aiEngine].Name, ["aiAutoAllow"] = settings.AiAutoAllow, ["mcp"] = settings.AiMcpEnabled,
         ["aiFolders"] = new JsonArray(settings.AiFolders.Select(folder => (JsonNode)folder).ToArray())

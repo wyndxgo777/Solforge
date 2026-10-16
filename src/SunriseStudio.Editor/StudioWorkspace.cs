@@ -880,7 +880,7 @@ public sealed partial class StudioWorkspace : IDisposable
     /** Decoded world textures, kept so an edit's reload does not decode them again. */
     private readonly System.Collections.Concurrent.ConcurrentDictionary<uint, TextureData> worldTextures = new();
     /** Low memory optimization (16GB RAM profile): bounds texture budget and avoids pinning uncompressed pixel buffers in CPU heap. */
-    public bool LowMemoryMode { get; set; } = true;
+    public bool LowMemoryMode { get; set; }
     /** The world texture budget Low memory mode uses (Settings > Rendering); applies to the next map or shader load. */
     public long LowMemoryTextureBudget { get; set; } = 256L * 1024 * 1024;
     public void TrimTextureCache() { worldTextures.Clear(); }
@@ -893,7 +893,8 @@ public sealed partial class StudioWorkspace : IDisposable
             || !scene.Instances.Any(instance => instance.Mesh.Native is not null)) return null;
         try
         {
-            long textureBudget = LowMemoryMode ? LowMemoryTextureBudget : NativeScenePlan.DefaultTextureBudgetBytes;
+            // Upstream loads every texture's streamed mips (no budget); only Low memory mode bounds them.
+            long textureBudget = LowMemoryMode ? LowMemoryTextureBudget : long.MaxValue;
             return AssetViewport.PrepareNativeScene(catalog, scene, OperationToken,
                 ReportProgress, textureBudgetBytes: textureBudget, assetPreview: assetPreview,
                 textureCache: assetPreview || LowMemoryMode ? null : worldTextures);

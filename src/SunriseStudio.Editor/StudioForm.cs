@@ -243,7 +243,7 @@ public sealed partial class StudioForm : Form
             each.TurnOnRendering ??= () => SetViewportRendering(true);
         }
 
-        workspace.LowMemoryMode = settings.LowMemoryMode || destiny2Detected || livePage.IsAttached;
+        workspace.LowMemoryMode = settings.LowMemoryMode || settings.LowMemoryWithGame && (destiny2Detected || livePage.IsAttached);
         workspace.LowMemoryTextureBudget = settings.TextureBudgetMiB * 1024L * 1024;
 
         // An attached game shares this GPU; Studio draws at most 30 frames a second, and 10 in the background.
