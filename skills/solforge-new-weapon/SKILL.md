@@ -33,6 +33,7 @@ Goal: a new weapon item (clone of an existing one, or a new exotic) that builds,
 12. Test: start the game, find the item in Collections/vendor/inventory; check name, icon, stats, perks; fire it.
 
 ## UI fallback
+Any Solforge control can be driven with `list_ui_controls` then `ui_invoke` / `ui_set_value` / `ui_set_checked` / `ui_select` (approve click each).
 Weapons > Clone / New dialog; Investment tab for fields, stats, perks; Edit workflow for icon/tuning; Build > Build and install.
 
 ## Verify

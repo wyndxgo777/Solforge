@@ -21,9 +21,10 @@ Goal: a playable scripted mission on an existing activity. Missions are plain Lu
 5. Write beats with `lib.flow` (key e.g. "mm"). Facts: `arrived`, `gate_area`, triggers via `lib.is_slot`. Steps: arrive, reach (directive + navpoint), arm trigger only after the area loaded, fight (`assign_combat_objective`, place, await `cohort.cleared`), open (device + dialogue), exit, done (`clear_directives`, `complete_mission`). Wire `on_start` and `on_load` to `graph:advance`; route `client_state_changed`, `region_changed`, `squad_state`, `device_state`, `player_trigger` into `graph:handle`; disarm a trigger on its first report.
 6. Save with `apply_project_edit` (or `open_file` for the user). Check schema/check output via `read_panel` (mission graph, report).
 7. Deploy: `build_project` (Update running game for scripts only; else `install=true` with game closed). `get_build_status`.
-8. Test in game: start the activity, walk each beat, read the log for script errors (`read_reference` "psd-mission-scripting-debugging").
+8. Test in game: start the activity, walk each beat, read the log for script errors (`read_reference` "psd-mission-scripting-debugging"). Track the player with `get_player_position` (map, zone, nearest mission slots) and `wait_for_player_near` (slot id, radius); `open_map` with only `mission` opens it on its own map.
 
 ## UI fallback
+Any Solforge control can be driven with `list_ui_controls` then `ui_invoke` / `ui_set_value` / `ui_set_checked` / `ui_select` (approve click each).
 Mission Graph tab templates: Immediate step, Arm trigger, Show objective, Play dialogue, Select state, Complete mission, Start scene, Send scene input. Campaign steps: Reach trigger, Complete ghost scan, Use interactable. Ctrl+S saves; Export Lua for review.
 
 ## Verify
