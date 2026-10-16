@@ -32,6 +32,7 @@ PhysicsChecks.Synthetic();
 SharedShapeChecks.Synthetic();
 ConnectivityChecks.Synthetic();
 ImportAdmissionChecks.Run();
+HavokCoverageChecks.Run();
 int gameIndex = Array.IndexOf(args, "--game-root");
 if (gameIndex >= 0)
 {

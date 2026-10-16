@@ -248,7 +248,7 @@ async Task StdioRoundTrip()
             "list_creation_types", "describe_creation",
             "open_map", "open_asset", "set_viewport_rendering", "edit_placement", "edit_bounds", "revert_object_edit",
             "apply_item_edit", "apply_vendor_edit", "start_creation", "replace_texture_pixels", "build_project",
-            .. SolforgeTools.DecompToolNames, .. SolforgeTools.PackageDataToolNames,
+            .. SolforgeTools.DecompToolNames, .. SolforgeTools.PackageDataToolNames, .. SolforgeTools.MediaToolNames,
             "list_content_families", "list_content", "get_content", "validate_content", "get_subclass_layout", "check_subclass_build", "get_help",
             "create_content", "update_content", "delete_content", "export_content",
             "list_ui_controls", "ui_invoke", "ui_set_value", "ui_set_checked", "ui_select",

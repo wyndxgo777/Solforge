@@ -16,6 +16,7 @@ try
     PlaylistChecks.Synthetic(temporary);
     ParityChecks.Synthetic(temporary);
     SoundBankChecks.Synthetic();
+    UsmChecks.Synthetic(temporary);
     byte[] pcm = Wave();
     string wavePath = Path.Combine(temporary, "test.wav"); File.WriteAllBytes(wavePath, pcm);
     var wave = PcmWave.Read(wavePath);

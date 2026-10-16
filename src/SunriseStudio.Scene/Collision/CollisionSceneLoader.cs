@@ -151,14 +151,29 @@ public sealed partial class CollisionSceneLoader(PackageCatalog catalog)
                 scene.Notes.Add("Object physics: shown in own space; open the entity to see bones");
                 break;
             case CollisionShapes.CompressedMesh or CollisionShapes.ConvexVertices or CollisionShapes.Box
-                or CollisionShapes.ConvexTranslate or CollisionShapes.Sphere or CollisionShapes.Capsule:
+                or CollisionShapes.ConvexTranslate or CollisionShapes.Sphere or CollisionShapes.Capsule or CollisionShapes.List:
                 Place(entity, Piece(tag, file.RootOffset, file), 0, -1, -1, QsTransform.Identity, Matrix4x4.Identity);
+                break;
+            case ClothCollidables.Container:
+                AddCloth(entity, tag, file);
                 break;
             default:
                 scene.Notes.Add($"Root {file.RootClass} is not a collision shape.");
                 break;
         }
         Finish(entity);
+    }
+
+    /** Cloth collidables at their rest transforms; planes and convex geometry are counted, not drawn. */
+    private void AddCloth(CollisionEntity entity, uint tag, HavokPackfile file)
+    {
+        var collidables = ClothCollidables.Read(file);
+        foreach (var collidable in collidables)
+        {
+            if (collidable.Shape is not { } shape) { scene.Count(collidable.ShapeClass.Length > 0 ? collidable.ShapeClass : "cloth collidable without shape"); continue; }
+            Place(entity, Piece(tag, collidable.ShapeOffset, shape), 0, -1, -1, QsTransform.Identity, collidable.Transform, CollisionRole.Other);
+        }
+        scene.Notes.Add($"Cloth: {collidables.Count} collidables shown at their rest transforms");
     }
 
     /** An owner opened on its own, or the owner of an opened compound, at the origin. */

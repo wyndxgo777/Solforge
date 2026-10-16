@@ -37,6 +37,7 @@ public static class CollisionShapes
     public const string Capsule = "hkpCapsuleShape";
     public const string Cylinder = "hkpCylinderShape";
     public const string ConvexTranslate = "hkpConvexTranslateShape";
+    public const string List = "hkpListShape";
 
     public const string UndecodedCustom = "custom convex primitive";
 
@@ -66,6 +67,7 @@ public static class CollisionShapes
                     Undecoded = child.Undecoded
                 };
             }
+            case List: return DecodeList(file, offset, depth);
             case Sphere:
                 return SphereShape(Vector3.Zero, file.F32(offset + 0x20));
             case Capsule:
@@ -106,6 +108,13 @@ public static class CollisionShapes
                 Vector3 a = file.V3(offset + 0x30), b = file.V3(offset + 0x40), pad = new(radius);
                 return (Vector3.Min(a, b) - pad, Vector3.Max(a, b) + pad);
             }
+            case List:
+            {
+                // The list keeps the box of its enabled children: half extents at +0x50, centre at +0x60.
+                var half = file.V3(offset + 0x50);
+                var center = file.V3(offset + 0x60);
+                return (center - half, center + half);
+            }
             case ConvexTranslate:
             {
                 var child = Bounds(file, ConvexChild(file, offset, depth), depth + 1);
@@ -115,6 +124,38 @@ public static class CollisionShapes
             default:
                 throw new NotSupportedException($"Collision shape {type} has no decoded bounds.");
         }
+    }
+
+    /**
+     * hkpListShape (64-bit Havok 2012): the hkpShapeCollection header ends at +0x30, then hkArray of ChildInfo
+     * m_childInfo at +0x30 (32-byte rows, child shape pointer at row +0), aabb half extents +0x50, centre +0x60
+     * and the 256-bit m_enabledChildren mask at +0x70. Every enabled child is decoded in the list's space and
+     * merged; the first undecoded child class is reported. Seen in 2,785 of 51,261 build 86657 packfiles.
+     */
+    private static CollisionShape DecodeList(HavokPackfile file, int offset, int depth)
+    {
+        if (depth > 4) throw new InvalidDataException("Collision shape nesting is too deep.");
+        var (count, data) = file.Array(offset + 0x30);
+        var vertices = new List<Vector3>();
+        var indices = new List<int>();
+        string? undecoded = null;
+        for (int i = 0; i < count; i++)
+        {
+            bool enabled = i >= 256 || (file.U32(offset + 0x70 + (i >> 5) * 4) >> (i & 31) & 1) != 0;
+            if (!enabled) continue;
+            if (file.Pointer(data + 0x20 * i) is not int target) { undecoded ??= "list child outside its packfile"; continue; }
+            var child = Decode(file, target, depth + 1);
+            int start = vertices.Count;
+            vertices.AddRange(child.Vertices);
+            indices.AddRange(child.Indices.Select(index => start + index));
+            undecoded ??= child.Undecoded;
+        }
+        var bounds = Bounds(file, offset, depth);
+        return new CollisionShape
+        {
+            Class = List, Vertices = vertices.ToArray(), Indices = indices.ToArray(), BoundsMin = bounds.Min, BoundsMax = bounds.Max,
+            Undecoded = undecoded
+        };
     }
 
     /** The child sits in a single-shape container at +0x28; its pointer is at +0x30. */
@@ -249,6 +290,8 @@ public static class CollisionShapes
             normal = Vector3.Normalize(normal);
             AddFace(vertices, normal, distance, 1e-3f * size, indices);
         }
+        // Physics-body convexes (s_physics_component_havok_data) often ship without planes; hull the points instead.
+        if (indices.Count == 0 && count >= 3) indices.AddRange(ConvexHull.Triangles(vertices));
         return new CollisionShape
         {
             Class = ConvexVertices, Vertices = vertices, Indices = indices.ToArray(), ConvexRadius = file.F32(offset + 0x20),
@@ -295,7 +338,7 @@ public static class CollisionShapes
     }
 
     /** A sphere of the radius about a center; the radius is the whole size, with no convex radius added. */
-    public static CollisionShape SphereShape(Vector3 center, float radius) => CapsuleShape(center, center, radius, Sphere);
+    public static CollisionShape SphereShape(Vector3 center, float radius) => CapsuleShape(center, center, radius, radius, Sphere);
 
     // Segments around the axis, and rings from each pole to the equator.
     private const int CapsuleSegments = 16, CapsuleRings = 6;
@@ -304,9 +347,13 @@ public static class CollisionShapes
      * A cylinder of the radius from a to b with a hemisphere at each end, as one closed mesh.
      * @return Vertices from the pole beyond a, ring by ring, to the pole beyond b.
      */
-    public static CollisionShape CapsuleShape(Vector3 a, Vector3 b, float radius) => CapsuleShape(a, b, radius, Capsule);
+    public static CollisionShape CapsuleShape(Vector3 a, Vector3 b, float radius) => CapsuleShape(a, b, radius, radius, Capsule);
 
-    private static CollisionShape CapsuleShape(Vector3 a, Vector3 b, float radius, string shapeClass)
+    /** A capsule whose end spheres differ (Havok Cloth's tapered capsule); the rings join the two hemispheres. */
+    public static CollisionShape TaperedCapsuleShape(Vector3 a, float radiusA, Vector3 b, float radiusB, string shapeClass) =>
+        CapsuleShape(a, b, radiusA, radiusB, shapeClass);
+
+    private static CollisionShape CapsuleShape(Vector3 a, Vector3 b, float radius, float radiusB, string shapeClass)
     {
         var line = b - a;
         var axis = line.LengthSquared() > 1e-12f ? Vector3.Normalize(line) : Vector3.UnitZ;
@@ -329,9 +376,9 @@ public static class CollisionShapes
         for (int ring = CapsuleRings; ring >= 1; ring--)
         {
             float phi = MathF.PI / 2 * ring / CapsuleRings;
-            Ring(b + axis * (radius * MathF.Cos(phi)), radius * MathF.Sin(phi));
+            Ring(b + axis * (radiusB * MathF.Cos(phi)), radiusB * MathF.Sin(phi));
         }
-        vertices.Add(b + axis * radius);
+        vertices.Add(b + axis * radiusB);
         int rings = 2 * CapsuleRings, last = vertices.Count - 1;
         var indices = new List<int>();
         for (int s = 0; s < CapsuleSegments; s++)
@@ -346,11 +393,11 @@ public static class CollisionShapes
             int end = 1 + (rings - 1) * CapsuleSegments;
             indices.AddRange([end + s, end + next, last]);
         }
-        var pad = new Vector3(radius);
+        Vector3 padA = new(radius), padB = new(radiusB);
         return new CollisionShape
         {
             Class = shapeClass, Vertices = vertices.ToArray(), Indices = indices.ToArray(),
-            BoundsMin = Vector3.Min(a, b) - pad, BoundsMax = Vector3.Max(a, b) + pad
+            BoundsMin = Vector3.Min(a - padA, b - padB), BoundsMax = Vector3.Max(a + padA, b + padB)
         };
     }
 }

@@ -73,6 +73,11 @@ Studio ships no third-party audio program, script or native library.
 | ww2ogg | BSD 3-clause | Wwise codebook layout and setup rebuild | `src/SunriseStudio.Audio/WwiseVorbisCodebooks.cs`, `src/SunriseStudio.Audio/WwiseVorbisSetup.cs` |
 | vgmstream | ISC | Wwise Vorbis setup rebuild, channel downmix, float to PCM16 conversion | `src/SunriseStudio.Audio/WwiseVorbisSetup.cs`, `src/SunriseStudio.Audio/AudioDownmix.cs`, `src/SunriseStudio.Audio/WemDecoder.cs` |
 
+The CRI USM/@UTF container reader and the ADX decoder (`src/SunriseStudio.Audio/CriUtfTable.cs`, `UsmContainer.cs`,
+`AdxDecoder.cs`) were written from public format descriptions (the ADX article on Wikipedia, vgmstream's ADX/USM
+notes); no code was copied. Decoded output was checked against ffmpeg's `adpcm_adx` decoder. The Havok packfile
+readers are Studio's own work from the packfile layout.
+
 The codebook file is packed by Studio's own generator from the static encoder books of libvorbis or
 aoTuV. Both sources give the same file.
 

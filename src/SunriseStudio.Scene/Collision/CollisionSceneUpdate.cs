@@ -15,7 +15,7 @@ public static class CollisionSceneUpdate
     private static readonly HashSet<string> ShapeRoots =
     [
         CollisionShapes.CompressedMesh, CollisionShapes.ConvexVertices, CollisionShapes.Box,
-        CollisionShapes.ConvexTranslate, CollisionShapes.Sphere, CollisionShapes.Capsule
+        CollisionShapes.ConvexTranslate, CollisionShapes.Sphere, CollisionShapes.Capsule, CollisionShapes.List
     ];
 
     /**
