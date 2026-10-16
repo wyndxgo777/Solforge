@@ -86,7 +86,7 @@ internal static class ShortcutInputChecks
         using var form = new StudioForm(new(Smoke: true, SettingsPath: Path.Combine(root, "settings.json")));
         var page = (MissionGraphPage)typeof(StudioForm).GetField("missionGraph", Private)!.GetValue(form)!;
         page.OpenScript(path, root);
-        typeof(MissionGraphPage).GetField("sourceDraft", Private)!.SetValue(page, after);
+        ((Solforge.Graphs.GraphSourceSync)typeof(MissionGraphPage).GetField("source", Private)!.GetValue(page)!).Edit(after, double.MaxValue);
         typeof(StudioForm).GetField("missionGraphActive", Private)!.SetValue(form, true);
         Check(form.Workspace.Project is null && page.CanSave, "Mission save fixture was not editable without a project.");
         typeof(StudioForm).GetMethod("HandleShortcuts", Private)!.Invoke(form, null);

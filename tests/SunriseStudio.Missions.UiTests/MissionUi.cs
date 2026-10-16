@@ -7,8 +7,16 @@ internal static class MissionUi
     public const BindingFlags Access = BindingFlags.Instance | BindingFlags.NonPublic;
 
     public static void Check(bool value, string message) { if (!value) throw new InvalidDataException(message); }
-    public static object? Field(object owner, string name) => owner.GetType().GetField(name, Access)!.GetValue(owner);
-    public static void Set(object owner, string name, object? value) => owner.GetType().GetField(name, Access)!.SetValue(owner, value);
+    // The Lua draft moved into the Graph panel's GraphSourceSync ("source"); "sourceDraft" reads and writes its Draft.
+    public static object? Field(object owner, string name) => name == "sourceDraft"
+        ? Sync(owner).Draft : owner.GetType().GetField(name, Access)!.GetValue(owner);
+    public static void Set(object owner, string name, object? value)
+    {
+        if (name == "sourceDraft") Sync(owner).Edit((string)value!, double.MaxValue);
+        else owner.GetType().GetField(name, Access)!.SetValue(owner, value);
+    }
+    private static Solforge.Graphs.GraphSourceSync Sync(object owner) =>
+        (Solforge.Graphs.GraphSourceSync)owner.GetType().GetField("source", Access)!.GetValue(owner)!;
     public static object? Invoke(object owner, string name, params object?[] arguments) =>
         owner.GetType().GetMethod(name, Access)!.Invoke(owner, arguments);
     public static MissionGraphPage Page(StudioForm form) => (MissionGraphPage)Field(form, "missionGraph")!;
