@@ -6,4 +6,7 @@
     <RootNamespace>Solforge.Mcp</RootNamespace>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Solforge.Graphs/Solforge.Graphs.csproj" />
+  </ItemGroup>
 </Project>

@@ -225,10 +225,11 @@ async Task StdioRoundTrip()
             "find_world_objects", "get_placement", "search_items", "get_item", "search_perks", "list_vendors", "get_vendor",
             "list_creation_types", "describe_creation",
             "open_map", "open_asset", "set_viewport_rendering", "edit_placement", "edit_bounds", "revert_object_edit",
-            "apply_item_edit", "apply_vendor_edit", "start_creation", "replace_texture_pixels", "build_project"];
+            "apply_item_edit", "apply_vendor_edit", "start_creation", "replace_texture_pixels", "build_project",
+            "list_graph_node_types", "list_graphs", "get_graph", "compile_graph", "create_graph", "edit_graph", "apply_graph"];
         string[] actions = ["select_object", "focus_camera", "highlight", "open_file", "apply_project_edit", "open_map", "open_asset",
             "set_viewport_rendering", "edit_placement", "edit_bounds", "revert_object_edit", "apply_item_edit", "apply_vendor_edit",
-            "start_creation", "replace_texture_pixels", "build_project"];
+            "start_creation", "replace_texture_pixels", "build_project", "create_graph", "edit_graph", "apply_graph"];
         Expect(tools.Select(tool => tool?["name"]?.ToString()).SequenceEqual(expected), "tool names: " + string.Join(",", tools.Select(tool => tool?["name"])));
         foreach (var tool in tools)
         {
