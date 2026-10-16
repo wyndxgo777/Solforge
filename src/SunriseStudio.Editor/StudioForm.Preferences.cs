@@ -99,6 +99,9 @@ public sealed partial class StudioForm
         DrawAiProviderRows("cline", "Cline");
         bool allow = settings.AiAutoAllow;
         if (UiAuto.Checkbox("Auto-allow one-time prompts", ref allow)) { settings.AiAutoAllow = allow; aiAllowSeen = null; SaveSettings(); }
+        bool approveRequests = settings.AutoApproveRequests;
+        if (UiAuto.Checkbox("Auto-approve AI requests", ref approveRequests)) { settings.AiAutoApproveRequests = approveRequests; SaveSettings(); }
+        SettingNote("MCP action requests (open file, edits, builds) run with no Approve click and are listed under AI AUTO-APPROVED. Follows Auto-allow until changed.");
         bool skip = settings.AiSkipPermissions;
         if (UiAuto.Checkbox("Skip permission prompts (engines start in no-prompt mode)", ref skip)) { settings.AiSkipPermissions = skip; SaveSettings(); }
         SettingNote("Claude Code and agy: --dangerously-skip-permissions; Cline: --yolo. Applies to the next Start. Auto-allow above stays as the fallback.");

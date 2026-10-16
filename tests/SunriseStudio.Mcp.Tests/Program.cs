@@ -352,6 +352,14 @@ async Task StdioRoundTrip()
         var combo = await Call(45, "tools/call", new JsonObject { ["name"] = "ui_set_value", ["arguments"] = new JsonObject { ["query"] = "follow", ["kind"] = "combo", ["value"] = "Free" } });
         Expect(combo["isError"]?.GetValue<bool>() != true && host.Commands[^1].Operation == UiOperation.Select && host.Commands[^1].Value == "Free", "a combo's value is a select");
         host.ApproveAll = false;
+        // Auto-approve: an action tool completes with no click and is logged; off, it still waits (declined here).
+        host.AutoApprove = true;
+        int clicks = host.Approvals;
+        var auto = await Call(460, "tools/call", new JsonObject { ["name"] = "ui_invoke", ["arguments"] = new JsonObject { ["query"] = "Build" } });
+        Expect(auto["isError"]?.GetValue<bool>() != true && host.Approvals == clicks && host.AutoLog.Count == 1, "auto-approve runs the action with no click");
+        host.AutoApprove = false;
+        var waits = await Call(461, "tools/call", new JsonObject { ["name"] = "ui_invoke", ["arguments"] = new JsonObject { ["query"] = "Build" } });
+        Expect(waits["isError"]?.GetValue<bool>() == true && host.Approvals == clicks + 1 && host.AutoLog.Count == 1, "auto-approve off still waits for the click");
         var frame = await Call(46, "tools/call", new JsonObject { ["name"] = "get_viewport_frame", ["arguments"] = new JsonObject() });
         var frameText = Body(frame);
         Expect(frame["content"]?.AsArray().Count == 2 && frame["content"]![1]!["mimeType"]?.ToString() == "image/jpeg"
@@ -1363,7 +1371,8 @@ sealed class FixtureHost(string project) : ISolforgeHost
          "recent":[{"kind":"select","id":"w:1","label":"Static mesh 7489","secondsAgo":2.5}]}
         """;
     public int Approvals, PlayerReads;
-    public bool ApproveAll;
+    public bool ApproveAll, AutoApprove;
+    public List<string> AutoLog = [];
     public bool Paused { get; set; }
     public static readonly byte[] Jpeg = [0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0xFF, 0xD9];
     public static readonly UiControl[] Controls =
@@ -1423,7 +1432,8 @@ sealed class FixtureHost(string project) : ISolforgeHost
         Panels = panel;
         return Task.FromResult(new JsonObject { ["total"] = 0, ["rows"] = new JsonArray() });
     }
-    public Task<bool> ApproveAsync(string tool, string summary, CancellationToken cancel) { LastSummary = summary; Interlocked.Increment(ref Approvals); return Task.FromResult(ApproveAll); }
+    public Task<bool> ApproveAsync(string tool, string summary, CancellationToken cancel) =>
+        new ApprovalGate(() => AutoApprove, (t, s) => AutoLog.Add(t + ": " + s)).AskAsync(tool, summary, () => { LastSummary = summary; Interlocked.Increment(ref Approvals); return Task.FromResult(ApproveAll); });
     public Task<string> RunActionAsync(string tool, JsonObject args, CancellationToken cancel) => Task.FromResult("ran");
     public readonly List<string> Queries = [];
     public string? LastSummary;

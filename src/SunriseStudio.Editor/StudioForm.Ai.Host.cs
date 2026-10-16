@@ -32,6 +32,8 @@ public sealed partial class StudioForm
     private AiHost? aiHost;
     private readonly List<AiRequest> aiRequests = [];
     private readonly List<AiEdit> aiEdits = [];
+    /** Requests approved automatically (newest last), shown in the AI panel. */
+    private readonly List<(DateTime Time, string Tool, string Summary)> aiAutoApproved = [];
     private readonly List<(WorldObject Object, double Until)> aiHighlights = [];
     private TaskCompletionSource<byte[]?>? aiScreenshot;
     /** A requested screenshot: object id, whether to label, whether to send it to the AI. */
@@ -430,6 +432,14 @@ public sealed partial class StudioForm
     {
         AiRequest[] pending;
         lock (aiRequests) pending = [.. aiRequests];
+        (DateTime Time, string Tool, string Summary)[] auto;
+        lock (aiAutoApproved) auto = [.. aiAutoApproved.TakeLast(6)];
+        if (auto.Length > 0)
+        {
+            SolTheme.SectionHeader("AI AUTO-APPROVED");
+            foreach (var item in auto.Reverse())
+                ImGui.TextWrapped($"{item.Time:HH:mm:ss} {item.Tool}: {item.Summary}");
+        }
         if (pending.Length == 0) return;
         SolTheme.SectionHeader("AI REQUESTS");
         foreach (var request in pending)
@@ -723,12 +733,23 @@ public sealed partial class StudioForm
         /** ISolforgeHost: asks the user to approve an action; false when declined. */
         public async Task<bool> ApproveAsync(string tool, string summary, CancellationToken cancel)
         {
-            var request = new AiRequest(tool, summary, new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously));
-            lock (form.aiRequests) form.aiRequests.Add(request);
-            await form.OnUi(() => { form.OpenAiWorkspace(); return true; }).ConfigureAwait(false);
-            try { return await request.Answer.Task.WaitAsync(TimeSpan.FromMinutes(5), cancel).ConfigureAwait(false); }
-            catch (TimeoutException) { return false; }
-            finally { lock (form.aiRequests) form.aiRequests.Remove(request); }
+            var gate = new ApprovalGate(() => form.settings.AutoApproveRequests, (t, s) =>
+            {
+                lock (form.aiAutoApproved)
+                {
+                    form.aiAutoApproved.Add((DateTime.Now, t, s));
+                    if (form.aiAutoApproved.Count > 50) form.aiAutoApproved.RemoveAt(0);
+                }
+            });
+            return await gate.AskAsync(tool, summary, async () =>
+            {
+                var request = new AiRequest(tool, summary, new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously));
+                lock (form.aiRequests) form.aiRequests.Add(request);
+                await form.OnUi(() => { form.OpenAiWorkspace(); return true; }).ConfigureAwait(false);
+                try { return await request.Answer.Task.WaitAsync(TimeSpan.FromMinutes(5), cancel).ConfigureAwait(false); }
+                catch (TimeoutException) { return false; }
+                finally { lock (form.aiRequests) form.aiRequests.Remove(request); }
+            }).ConfigureAwait(false);
         }
 
         /** ISolforgeHost: runs an editor action tool. */

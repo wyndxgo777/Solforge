@@ -76,6 +76,11 @@ public sealed class StudioSettings
     public List<string> AiHiddenFolders { get; set; } = [];
     /** AI workspace: press Enter on an engine's allow prompt when its highlighted choice is a one-time Yes/Allow. */
     public bool AiAutoAllow { get; set; }
+    /** AI workspace: approve MCP action requests (the AI REQUESTS panel) with no click; null follows AiAutoAllow. */
+    public bool? AiAutoApproveRequests { get; set; }
+    /** Whether MCP action requests are approved automatically. */
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool AutoApproveRequests => AiAutoApproveRequests ?? AiAutoAllow;
     /** AI workspace: start each engine in its no-prompt mode (claude/agy --dangerously-skip-permissions, cline --yolo); auto-allow stays as the fallback. */
     public bool AiSkipPermissions { get; set; } = true;
     /** AI workspace: Start/Restart resume the engine's last session for the folder (New session always starts fresh). */
