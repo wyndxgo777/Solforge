@@ -334,7 +334,7 @@ public sealed class DecompIndex
             {
                 string stem = Path.GetFileNameWithoutExtension(file);
                 int cut = stem.LastIndexOf('_');
-                if (cut > 0 && TryHex(stem[(cut + 1)..], out uint rva)) names[rva] = (stem[..cut], "listings");
+                if (cut > 0 && TryHex(stem.AsSpan(cut + 1), out uint rva)) names[rva] = (stem[..cut], "listings");
             }
         string notes = Path.Combine(root, "NOTES.md");
         if (File.Exists(notes))
@@ -353,7 +353,7 @@ public sealed class DecompIndex
             foreach (string line in File.ReadLines(user))
             {
                 int comma = line.IndexOf(',');
-                if (comma > 0 && TryHex(line[..comma], out uint rva) && line[(comma + 1)..].Trim() is { Length: > 0 } name) names[rva] = (name, NamesFile);
+                if (comma > 0 && TryHex(line.AsSpan(0, comma), out uint rva) && line[(comma + 1)..].Trim() is { Length: > 0 } name) names[rva] = (name, NamesFile);
             }
         return names;
     }
@@ -399,7 +399,7 @@ public sealed class DecompIndex
         if (string.IsNullOrWhiteSpace(text)) return null;
         text = text.Trim();
         foreach (string prefix in new[] { "FUN_", "func_0x", "func_", "DAT_", "UNK_", "LAB_", "sub_" })
-            if (text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && TryHex(text[prefix.Length..], out uint prefixed)) return prefixed;
+            if (text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && TryHex(text.AsSpan(prefix.Length), out uint prefixed)) return prefixed;
         if (TryHex(text, out uint hex) && (text.StartsWith("0x", StringComparison.OrdinalIgnoreCase) || text.Length >= 5)) return hex;
         foreach (var (rva, entry) in names) if (string.Equals(entry.Name, text, StringComparison.OrdinalIgnoreCase)) return rva;
         return null;
