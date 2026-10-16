@@ -3,6 +3,7 @@ using System.Text;
 
 namespace SunriseStudio.Packages;
 
+/** A string and the hash it is stored under. */
 public sealed record StringBankText(uint Hash, string Text);
 
 /** An installed bank whose layout passed every check the writer relies on. */
@@ -22,6 +23,7 @@ public sealed class StringBankTemplate
     internal const uint HashRowClass = 0x80800070, PartRowClass = 0x80809A90, CombinationRowClass = 0x80809A8E;
     internal const uint ArrayMarker = 0x80809FBD, EmptyHash = 0x811C9DC5;
 
+    /** How a string's length is counted: bytes, code points or UTF-16 units. */
     [Flags] internal enum LengthRule { None = 0, Bytes = 1, CodePoints = 2, Utf16 = 4 }
 
     public uint ContainerTag { get; }
@@ -363,8 +365,10 @@ internal static class StringBankBytes
     /** Invalid sequences decode to U+FFFD, as the bank reader decodes them. */
     private const int ReplacementCharacter = 0xFFFD;
 
+    /** Count, header offset and data offset of a typed array. */
     internal readonly record struct TypedArray(int Count, int Header, int Data);
 
+    /** Reads a typed array header, validating bounds. */
     internal static TypedArray Array(byte[] bytes, int field, int stride)
     {
         long count = I64(bytes, field), relative = I64(bytes, field + 8);
@@ -415,8 +419,12 @@ internal static class StringBankBytes
         }
     }
 
+    /** Reads a little-endian uint. */
     internal static uint U32(byte[] bytes, int offset) => BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(offset));
+    /** Reads a little-endian ushort. */
     internal static ushort U16(byte[] bytes, int offset) => BinaryPrimitives.ReadUInt16LittleEndian(bytes.AsSpan(offset));
+    /** Reads a little-endian long. */
     internal static long I64(byte[] bytes, int offset) => BinaryPrimitives.ReadInt64LittleEndian(bytes.AsSpan(offset));
+    /** Reads a little-endian ulong. */
     internal static ulong U64(byte[] bytes, int offset) => BinaryPrimitives.ReadUInt64LittleEndian(bytes.AsSpan(offset));
 }

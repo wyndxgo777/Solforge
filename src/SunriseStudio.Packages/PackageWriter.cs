@@ -6,10 +6,12 @@ using static SunriseStudio.Packages.PackageFile;
 
 namespace SunriseStudio.Packages;
 
+/** One entry to write into a new package: class, type info, data and optional name. */
 public sealed record AuthoredPackageEntry(uint Reference, uint TypeInfo, byte[] Data, string? Name = null)
 {
     public WideHashAliases WideHashes { get; init; } = WideHashAliases.Empty;
 }
+/** Receipt of a written package: path, ids, counts and SHA-256. */
 public sealed record PackageBuildArtifact(string Path, ushort PackageId, ushort PatchId,
     int EntryCount, int BlockCount, string Sha256)
 {
@@ -34,6 +36,7 @@ public static partial class PackageWriter
     /** The client's package header check refuses ids above 0x0CFF, although the registrar takes more. */
     public const ushort FirstNewPackageId = 0x0100, LastNewPackageId = 0x0CFF;
     public static string NewPackageIdRange => $"{FirstNewPackageId:X4} to {LastNewPackageId:X4}";
+    /** True when the id lies in the range reserved for new packages. */
     public static bool IsNewPackageId(int id) => id is >= FirstNewPackageId and <= LastNewPackageId;
 
     /** Inherited blocks may refer to several older generations of the same package family. */

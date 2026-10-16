@@ -27,6 +27,7 @@ public sealed class PackageDependencyGroup
         return entries;
     }
 
+    /** Adds entries to the dependency set and re-encodes it. */
     internal void Add(IEnumerable<int> entries)
     {
         var all = Entries();

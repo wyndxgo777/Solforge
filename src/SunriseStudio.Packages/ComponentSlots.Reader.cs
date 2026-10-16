@@ -14,19 +14,26 @@ public sealed class ComponentSlotConfigSeed
     public string? Diagnostic => Node.Error;
 }
 
+/** One slot row of a component node: slot type and the row's offset. */
 internal readonly record struct ComponentSlotRow(ushort Type, int Offset);
+/** One root of a component node: tag, offset, subblock offset and bubble. */
 internal readonly record struct ComponentSlotRoot(uint Tag, int Offset, int SubblockOffset, int Bubble);
+/** A link to another node in a descriptor chain. */
 internal readonly record struct ComponentSlotLink(uint Tag, int Offset);
+/** One slot descriptor: class, key, type, index, bubble, sense and auth ids, and its offset. */
 internal readonly record struct ComponentSlotDescriptor(uint Class, uint Key, ushort Type, ushort Index,
     uint Bubble, uint Sense, uint Auth, int Offset);
+/** Everything read from one owner, config, indirect or redirect node; Error is set when the node is unreadable. */
 internal sealed record ComponentSlotNode(uint Tag, uint Class, int Length, uint Primary, uint Key,
     ImmutableArray<ComponentSlotRow> Slots, ImmutableArray<ComponentSlotRoot> Roots,
     ImmutableArray<ComponentSlotDescriptor> Descriptors, ImmutableArray<ComponentSlotLink> Next, string? Error)
 {
+    /** Placeholder node carrying only a read error. */
     internal static ComponentSlotNode Failed(uint tag, uint type, string error) =>
         new(tag, type, 0, 0, 0, [], [], [], [], error);
 }
 
+/** Bounds-checked parser for the component slot node classes. */
 internal static class ComponentSlotReader
 {
     internal const uint OwnerClass = 0x80809462, ConfigClass = 0x80809C36,
@@ -34,6 +41,7 @@ internal static class ComponentSlotReader
     internal const int MaximumRows = 1_000_000;
     private const int DescriptorBytes = 128;
 
+    /** True for the four node classes the reader understands. */
     internal static bool Supported(uint type) => type is OwnerClass or ConfigClass or IndirectClass or RedirectClass;
 
     /** Exact typed arrays and bounded pointers precede every owner or chain fact. */
@@ -108,7 +116,9 @@ internal static class ComponentSlotReader
         return new(tag, ConfigClass, data.Length, primary, 0, [], [], descriptors.ToImmutable(), [], null);
     }
 
+    /** True when a value is a class id (0x8080xxxx). */
     internal static bool ClassId(uint value) => value >> 16 == 0x8080;
+    /** True for a class id or the 0xFFFFFFFF none marker. */
     internal static bool Schema(uint value) => value == uint.MaxValue || ClassId(value);
 
     /** Signed pointer bounds are checked before addition, including high-bit malformed inputs. */
@@ -119,10 +129,15 @@ internal static class ComponentSlotReader
         internal int Length => bytes.Length;
         private ReadOnlySpan<byte> At(int offset, int count) => offset < 0 || count < 0 || offset > bytes.Length - count
             ? throw new InvalidDataException("Component role data leaves its source.") : bytes.Slice(offset, count);
+        /** Reads a little-endian uint, bounds-checked. */
         internal uint U32(int at) => BinaryPrimitives.ReadUInt32LittleEndian(At(at, 4));
+        /** Reads a little-endian int, bounds-checked. */
         internal int I32(int at) => BinaryPrimitives.ReadInt32LittleEndian(At(at, 4));
+        /** Reads a little-endian ushort, bounds-checked. */
         internal ushort U16(int at) => BinaryPrimitives.ReadUInt16LittleEndian(At(at, 2));
+        /** Reads a little-endian long, bounds-checked. */
         internal long I64(int at) => BinaryPrimitives.ReadInt64LittleEndian(At(at, 8));
+        /** Follows a self-relative pointer, requiring room for the bytes before and after it. */
         internal int Relative(int field, int before, int after)
         {
             long relative = I64(field);
@@ -130,6 +145,7 @@ internal static class ComponentSlotReader
                 throw new InvalidDataException("Component role pointer leaves its source.");
             return (int)(field + relative);
         }
+        /** Reads a typed array header as start offset and count, capped at MaximumRows. */
         internal (int Start, int Count) Array(int field, uint type, int stride)
         {
             long count = I64(field), relative = I64(checked(field + 8));

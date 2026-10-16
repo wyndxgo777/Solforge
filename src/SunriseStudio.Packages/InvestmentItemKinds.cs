@@ -52,6 +52,7 @@ public static class InvestmentItemKinds
         return (Other, line.Length != 0 ? line : $"Bucket {bucket}");
     }
 
+    /** True for the currency buckets (21 to 25) or a Currency type line. */
     public static bool IsCurrency(byte bucket, string typeLine) => bucket is >= 21 and <= 25 || typeLine == "Currency";
 
     /** Equipment slot of a weapon or armor bucket; empty for other buckets. */

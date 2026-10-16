@@ -11,6 +11,7 @@ public sealed record ComponentSlotEvidence(uint ComponentClass, ushort SlotType,
     uint ConfigTag, int DescriptorOffset, uint SenseSchema, uint AuthSchema, uint BubbleIndex,
     ImmutableArray<ComponentSlotHop> Path);
 
+/** Slot evidence found for one owner, the tags it depends on and any read error. */
 internal sealed record ComponentSlotOwner(ImmutableArray<ComponentSlotEvidence> Evidence,
     ImmutableHashSet<uint> Dependencies, string? Error);
 
@@ -27,6 +28,7 @@ public sealed class ComponentSlotBuilder
         generation = catalog.ReadGeneration; overlay = catalog.OverlayRevision;
     }
 
+    /** Records a pre-parsed config seed so Build need not re-read it; ignores tags that are not component configs. */
     public void ObserveConfig(ComponentSlotConfigSeed seed)
     {
         ArgumentNullException.ThrowIfNull(seed);
@@ -107,11 +109,14 @@ public sealed partial class ComponentSlotCatalog
             .GroupBy(pair => pair.Tag).ToImmutableDictionary(group => group.Key, group => group.Select(pair => pair.Owner).ToImmutableHashSet());
     }
 
+    /** Slot type of a component class, if it has one. */
     public bool TryGetSlotType(uint componentClass, out ushort slotType) => SlotTypes.TryGetValue(componentClass, out slotType);
 
+    /** Parses a config's bytes into a seed for ObserveConfig. */
     public static ComponentSlotConfigSeed ParseConfig(uint tag, ReadOnlySpan<byte> bytes) =>
         new(ComponentSlotReader.Parse(tag, ComponentSlotReader.ConfigClass, bytes));
 
+    /** Builds the slot catalog for every installed and overlay owner. */
     public static ComponentSlotCatalog Build(PackageCatalog catalog, CancellationToken token = default) =>
         new ComponentSlotBuilder(catalog).Build(token);
 
@@ -170,12 +175,14 @@ public sealed partial class ComponentSlotCatalog
         }
     }
 
+    /** Throws when the catalog changed since the snapshot the extraction started from. */
     internal static void RequireSnapshot(PackageCatalog catalog, long generation, long overlay)
     {
         if (catalog.ReadGeneration != generation || catalog.OverlayRevision != overlay)
             throw new InvalidOperationException("Package source changed during component-role extraction.");
     }
 
+    /** Reads and parses one descriptor-chain node; a failed node records its error. */
     internal static ComponentSlotNode ReadNode(PackageCatalog catalog, uint tag)
     {
         if (!catalog.TryGetEntry(tag, out var entry) || !AssetCategories.IsStructured(entry))

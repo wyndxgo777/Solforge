@@ -147,6 +147,7 @@ public sealed partial class PackageCatalog : IDisposable
         if (openedPackageIdentity is not null) RequireCurrentOriginalPackages();
     }
 
+    /** Opens the installed packages under a game root, optionally with a key source and cache options. */
     public static PackageCatalog Open(string gameRoot, string? keySourceExecutable = null,
         StudioCacheOptions? cacheOptions = null) => new(gameRoot, keySourceExecutable, cacheOptions);
 
@@ -158,14 +159,18 @@ public sealed partial class PackageCatalog : IDisposable
         return byTag.TryGetValue(tagHash, out entry!);
     }
 
+    /** True when the tag is in the overlay or the installed packages. */
     public bool ContainsTag(uint tagHash) =>
         Volatile.Read(ref overlayState).Entries.ContainsKey(tagHash) || byTag.ContainsKey(tagHash);
 
+    /** True when a package with the id is installed. */
     public bool ContainsInstalledPackage(ushort packageId) => packages.ContainsKey(packageId);
 
+    /** Name of a tag, preferring the overlay's name over the installed one. */
     public string? GetName(uint tagHash) =>
         Volatile.Read(ref overlayState).Entries.TryGetValue(tagHash, out var overlay) && overlay.Name is not null
             ? overlay.Name : names.GetValueOrDefault(tagHash);
+    /** Tag hash a 64-bit wide hash resolves to, if any. */
     public uint? Resolve64(ulong hash) => TryResolve64(hash, out var entry) ? entry.TagHash : null;
 
     /** Ambiguous or class-incompatible installed claims still reserve their native wide key. */

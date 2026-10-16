@@ -1,5 +1,6 @@
 namespace SunriseStudio.Packages;
 
+/** Disk cache settings: enabled flag, folder and size limit. */
 public sealed record StudioCacheOptions
 {
     public bool Enabled { get; init; } = true;
@@ -9,5 +10,6 @@ public sealed record StudioCacheOptions
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Sunrise Studio", "Cache");
 }
 
+/** Disk cache counters: hits, misses, writes, rejected entries, bytes and the last error. */
 public sealed record StudioCacheStatistics(long Hits, long Misses, long Writes, long Rejected,
     long StoredBytes, string? LastError);

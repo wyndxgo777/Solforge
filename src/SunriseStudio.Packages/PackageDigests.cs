@@ -16,6 +16,7 @@ public sealed record PackageDigestReport(string Path, bool MiscValid, bool Metad
  */
 public static class PackageDigests
 {
+    /** Checks the misc, metadata and block digests of a package; own blocks only unless asked for all. */
     public static PackageDigestReport Verify(string packagePath, bool ownBlocksOnly = true)
     {
         string path = Path.GetFullPath(packagePath);

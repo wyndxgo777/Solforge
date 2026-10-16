@@ -62,6 +62,7 @@ public static class ComponentRoles
         return "Other";
     }
 
+    /** Short role label of a component class (model, animation and so on), or null. */
     public static string? Label(uint component) => component switch
     {
         ModelComponent => "model",
@@ -125,6 +126,7 @@ public static class ComponentRoles
     public static byte? ObjectTypeIndex(ReadOnlySpan<byte> definition) =>
         definition.Length > 150 ? definition[150] : null;
 
+    /** Object type name of an entity definition, or null when it has none. */
     public static string? ObjectType(ReadOnlySpan<byte> definition) =>
         ObjectTypeIndex(definition) is { } type ? ObjectTypeNames.Name(type) ?? $"Object type {type}" : null;
 
@@ -192,7 +194,9 @@ public sealed partial class ComponentIndex
     public string? ObjectType(uint entity) => objectTypes.TryGetValue(entity, out byte type)
         ? ObjectTypeNames.Name(type) ?? $"Object type {type}" : null;
 
+    /** Name of a slot type number. */
     public string? SlotTypeName(int type) => SlotTypeNames.Name(type);
+    /** True when the component class is a slot component. */
     public bool IsSlotComponent(uint component) => slots.TryGetSlotType(component, out _);
 
     /** FNV-1 of the entity's internal name, when the package hashed one. */
@@ -200,13 +204,16 @@ public sealed partial class ComponentIndex
 
     public int CombatantCount => combatants.Count;
 
+    /** Primary class of a config, or 0. */
     public uint PrimaryClass(uint config) => primaries.GetValueOrDefault(config);
 
     /** A role label, else "uses X" from a class most of the component's configs reference, else null. */
     public string? ComponentLabel(uint component) => slots.TryGetSlotType(component, out ushort type)
         ? SlotTypeNames.Name(type) ?? $"slot type {type}"
         : ComponentRoles.Label(component) ?? referenceLabels.GetValueOrDefault(component);
+    /** Prompt text of an entity or config, if any. */
     public string? Prompt(uint entityOrConfig) => prompts.GetValueOrDefault(entityOrConfig);
+    /** Kind of an entity, if known. */
     public string? EntityKind(uint entity) => entityKinds.GetValueOrDefault(entity);
 
     /**

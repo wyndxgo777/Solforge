@@ -27,7 +27,9 @@ public sealed class WideHashAliases : IReadOnlyList<ulong>, IEquatable<WideHashA
                 throw new InvalidDataException($"Wide hash {values[i]:X16} is duplicated.");
     }
 
+    /** True when the alias is in the set. */
     public bool Contains(ulong value) => Array.BinarySearch(values, value) >= 0;
+    /** Equal when both hold the same values. */
     public bool Equals(WideHashAliases? other) => other is not null && values.AsSpan().SequenceEqual(other.values);
     public override bool Equals(object? obj) => obj is WideHashAliases other && Equals(other);
     public override int GetHashCode()
@@ -36,6 +38,7 @@ public sealed class WideHashAliases : IReadOnlyList<ulong>, IEquatable<WideHashA
         foreach (ulong value in values) hash.Add(value);
         return hash.ToHashCode();
     }
+    /** Enumerates the sorted values. */
     public IEnumerator<ulong> GetEnumerator() => ((IEnumerable<ulong>)values).GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

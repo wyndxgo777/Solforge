@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 
 namespace SunriseStudio.Packages;
 
+/** Refresh half of ComponentIndex: build state and dependency maps used to update the index after changes. */
 public sealed partial class ComponentIndex
 {
     private sealed record ConfigFacts(uint Primary, string? Prompt, bool Particles, bool Audio,

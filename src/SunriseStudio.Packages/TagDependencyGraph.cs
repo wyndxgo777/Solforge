@@ -17,6 +17,7 @@ public sealed class TagDependencyGraph
     /** Edges TryAdd refused because they would have closed a cycle, in the order they were offered. */
     public IReadOnlyList<(uint From, uint To)> RejectedEdges => rejected;
 
+    /** Adds a tag as a node if it is not there yet. */
     public void AddNode(uint tag)
     {
         if (dependencies.ContainsKey(tag)) return;
@@ -49,9 +50,11 @@ public sealed class TagDependencyGraph
             throw new InvalidOperationException($"Tag 0x{from:X8} -> 0x{to:X8} would create a dependency cycle.");
     }
 
+    /** Tags the given tag depends on. */
     public IReadOnlyCollection<uint> DependenciesOf(uint tag) =>
         dependencies.TryGetValue(tag, out var set) ? set : [];
 
+    /** Tags that depend on the given tag. */
     public IReadOnlyCollection<uint> DependentsOf(uint tag) =>
         dependents.TryGetValue(tag, out var set) ? set : [];
 

@@ -138,5 +138,6 @@ internal sealed class PackageKeys : IDisposable
     private static uint U32(byte[] bytes, int offset) =>
         BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(offset));
     private sealed record Section(uint Rva, int Offset, int Size, bool Executable);
+    /** Overwrites the key bytes with zeros. */
     public void Dispose() => CryptographicOperations.ZeroMemory(bytes);
 }

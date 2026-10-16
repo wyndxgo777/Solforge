@@ -3,8 +3,10 @@ using static SunriseStudio.Packages.PackageFile;
 
 namespace SunriseStudio.Packages;
 
+/** Root tag with the manifest tag that lists its entries. */
 public sealed record PackageRootManifest(uint RootTag, uint ManifestTag);
 
+/** Manifest half of PackageWriter: root manifest rows for new packages. */
 public static partial class PackageWriter
 {
     private const uint RootManifestRowClass = 0x80809A13;

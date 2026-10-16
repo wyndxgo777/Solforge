@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 
 namespace SunriseStudio.Packages;
 
+/** Cache half of ComponentSlotCatalog: reads and writes the slot summaries through the names cache. */
 public sealed partial class ComponentSlotCatalog
 {
     private const int CacheVersion = 1;

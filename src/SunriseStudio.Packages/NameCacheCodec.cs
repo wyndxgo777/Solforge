@@ -7,13 +7,16 @@ internal sealed class NameCacheWriter(Stream stream, CancellationToken token)
 {
     internal readonly BinaryWriter Data = new(stream, new UTF8Encoding(false, true), true);
     private readonly Dictionary<string, int> strings = new(StringComparer.Ordinal);
+    /** Writes a string once and later references to it by index. */
     internal void Text(string text)
     {
         if (strings.TryGetValue(text, out int index)) { Data.Write7BitEncodedInt(index * 2); return; }
         index = strings.Count; strings.Add(text, index);
         Data.Write7BitEncodedInt(index * 2 + 1); Data.Write(text);
     }
+    /** Writes a flag and, when present, the string. */
     internal void Optional(string? text) { Data.Write(text is not null); if (text is not null) Text(text); }
+    /** Writes a count, then each key with its value. */
     internal void Map<T>(IReadOnlyDictionary<uint, T> values, Action<T> write)
     {
         Data.Write(values.Count);
@@ -24,6 +27,7 @@ internal sealed class NameCacheWriter(Stream stream, CancellationToken token)
             Data.Write(pair.Key); write(pair.Value);
         }
     }
+    /** Writes a count, then each element. */
     internal void Array<T>(IReadOnlyCollection<T> values, Action<T> write)
     {
         Data.Write(values.Count);
@@ -38,6 +42,7 @@ internal sealed class NameCacheReader(Stream stream, CancellationToken token)
 {
     internal readonly BinaryReader Data = new(stream, new UTF8Encoding(false, true), true);
     private readonly List<string> strings = [];
+    /** Reads a count; throws when it is negative or implausibly large. */
     internal int Count()
     {
         token.ThrowIfCancellationRequested();
@@ -61,7 +66,9 @@ internal sealed class NameCacheReader(Stream stream, CancellationToken token)
         strings.Add(text);
         return text;
     }
+    /** Reads an optional string. */
     internal string? Optional() => Data.ReadBoolean() ? Text() : null;
+    /** Reads a count of key and value pairs. */
     internal Dictionary<uint, T> Map<T>(Func<T> read)
     {
         int count = Count();
@@ -73,6 +80,7 @@ internal sealed class NameCacheReader(Stream stream, CancellationToken token)
         }
         return result;
     }
+    /** Reads a counted array. */
     internal T[] Array<T>(Func<T> read)
     {
         int count = Count();
@@ -81,6 +89,7 @@ internal sealed class NameCacheReader(Stream stream, CancellationToken token)
         { if ((i & 1023) == 0) token.ThrowIfCancellationRequested(); result[i] = read(); }
         return result;
     }
+    /** Reads counted pairs into an existing dictionary. */
     internal void Into<T>(Dictionary<uint, T> target, Func<T> read)
     {
         int count = Count(); target.EnsureCapacity(count);

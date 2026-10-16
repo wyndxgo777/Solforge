@@ -2,8 +2,10 @@ using System.Buffers.Binary;
 
 namespace SunriseStudio.Packages;
 
+/** Shape of a texture: 2D, cube or volume. */
 public enum TextureKind { Texture2D, Cube, Volume }
 
+/** Bytes of one mip level and array slice with its size and pitches. */
 public sealed record TextureSubresourceData(int MipLevel, int ArraySlice, int Width, int Height,
     int Depth, int RowPitch, int SlicePitch, byte[] Data);
 

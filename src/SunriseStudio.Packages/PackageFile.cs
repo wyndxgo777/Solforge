@@ -56,6 +56,7 @@ internal sealed class PackageFile
             throw new InvalidDataException($"Unsupported package variant: {Variant}");
     }
 
+    /** Reads the entry and block tables from disk. */
     internal void LoadTables()
     {
         var (entries, blocks) = ReadTables();
@@ -133,14 +134,19 @@ internal sealed class PackageFile
         return result;
     }
 
+    /** Reads a little-endian ushort. */
     internal static ushort U16(byte[] bytes, int offset) =>
         BinaryPrimitives.ReadUInt16LittleEndian(bytes.AsSpan(offset));
+    /** Reads a little-endian uint. */
     internal static uint U32(byte[] bytes, int offset) =>
         BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(offset));
+    /** Reads a little-endian ulong. */
     internal static ulong U64(byte[] bytes, int offset) =>
         BinaryPrimitives.ReadUInt64LittleEndian(bytes.AsSpan(offset));
+    /** Reads a little-endian long. */
     internal static long I64(byte[] bytes, int offset) =>
         BinaryPrimitives.ReadInt64LittleEndian(bytes.AsSpan(offset));
 }
 
+/** One block table record: offset, size, patch, flags and tag bytes. */
 internal sealed record BlockRecord(uint Offset, int Size, ushort Patch, ushort Flags, byte[] Tag);

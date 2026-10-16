@@ -26,5 +26,6 @@ public static class SlotTypeNames
     };
 
     public static int Count => Labels.Count;
+    /** Name of a slot type number, or null. */
     public static string? Name(int type) => Labels.GetValueOrDefault(type);
 }

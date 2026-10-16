@@ -3,6 +3,7 @@ using System.Text;
 
 namespace SunriseStudio.Packages;
 
+/** Disk cache half of PackageCatalog: identity of the opened packages and the cache that follows it. */
 public sealed partial class PackageCatalog
 {
     private string? openedPackageIdentity;
