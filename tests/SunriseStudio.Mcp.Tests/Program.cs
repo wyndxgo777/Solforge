@@ -498,7 +498,7 @@ static void ViewportFeedChecks()
     Expect(feed.Offer(noisy, 2, Encode) is null && encoded == 1 && feed.LastCapture is not null, "noise is not a change and is not encoded");
     var moved = feed.Offer(corner, 3, Encode);
     Expect(moved?.Id == 2 && moved.Change.Contains("top-right", StringComparison.Ordinal) && moved.Change.Contains("brighter", StringComparison.Ordinal)
-        && moved.Change.StartsWith("6.3% of the view changed", StringComparison.Ordinal), "change text: " + moved?.Change);
+        && moved.Change.StartsWith("6.9% of the view changed", StringComparison.Ordinal), "change text: " + moved?.Change); // 8x5 changed cells of the 32x18 grid: row 4 is half covered and still counts.
     feed.Offer(dark, 4, Encode);
     feed.Offer(corner, 5, Encode);
     Expect(feed.Latest?.Id == 4 && feed.Since(0, 10).Select(frame => frame.Id).SequenceEqual([2L, 3L, 4L]) && feed.Since(2, 1).Single().Id == 4, "ids, since and capacity");
