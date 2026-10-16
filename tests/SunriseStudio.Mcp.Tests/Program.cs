@@ -249,7 +249,8 @@ async Task StdioRoundTrip()
             "list_ui_controls", "ui_invoke", "ui_set_value", "ui_set_checked", "ui_select",
             "get_viewport_frame", "get_viewport_frames", "wait_for_viewport_change", "get_viewport_stream", "set_viewport_stream",
             "get_player_position", "wait_for_player_near",
-            "list_graph_node_types", "list_graphs", "get_graph", "compile_graph", "create_graph", "edit_graph", "apply_graph"];
+            "list_graph_node_types", "list_graphs", "get_graph", "compile_graph", "create_graph", "edit_graph", "apply_graph",
+            "list_shaders", "get_shader", "list_animations", "get_animation", "list_audio", "get_audio"];
 
         string[] actions = ["select_object", "focus_camera", "highlight", "open_file", "apply_project_edit", "open_map", "open_asset",
             "set_viewport_rendering", "edit_placement", "edit_bounds", "revert_object_edit", "apply_item_edit", "apply_vendor_edit",
@@ -297,6 +298,27 @@ async Task StdioRoundTrip()
         Expect(maps["rows"]?[0]?["name"]?.ToString() == "The EDZ" && host.Queries.Contains("list_maps"), "list_maps reaches the host: " + maps.ToJsonString());
         var failed = await Call(31, "tools/call", new JsonObject { ["name"] = "get_item", ["arguments"] = new JsonObject { ["item"] = "0x1" } });
         Expect(failed["isError"]?.GetValue<bool>() == true && failed["content"]![0]!["text"]!.ToString().Contains("loading", StringComparison.Ordinal), "host errors are tool errors");
+        // Shader, animation and audio metadata reads go to the host's package readers; bad tags fail before reaching it.
+        var shader = Body(await Call(60, "tools/call", new JsonObject { ["name"] = "get_shader",
+            ["arguments"] = new JsonObject { ["tag"] = "0x80A1B2C3", ["disassembly"] = true } }));
+        Expect(shader["profile"]?.ToString() == "ps_5_0" && shader["constantBuffers"]?[0]?["slot"]?.GetValue<int>() == 12
+            && host.Queries.Contains("get_shader"), "get_shader reaches the host: " + shader.ToJsonString());
+        int assetQueries = host.Queries.Count;
+        foreach (string name in new[] { "get_shader", "get_animation", "get_audio" })
+        {
+            var noTag = await Call(61, "tools/call", new JsonObject { ["name"] = name, ["arguments"] = new JsonObject { ["tag"] = "speaker" } });
+            Expect(noTag["isError"]?.GetValue<bool>() == true && host.Queries.Count == assetQueries, name + " checks its tag first");
+        }
+        var clip = await Call(62, "tools/call", new JsonObject { ["name"] = "get_animation", ["arguments"] = new JsonObject { ["tag"] = "0x80800001" } });
+        Expect(clip["isError"]?.GetValue<bool>() == true && clip["content"]![0]!["text"]!.ToString().Contains("not an animation", StringComparison.Ordinal),
+            "get_animation host errors are tool errors");
+        foreach (string name in new[] { "list_shaders", "list_animations", "list_audio" })
+        {
+            var tool = tools.First(row => row?["name"]?.ToString() == name)!;
+            Expect(tool["inputSchema"]?["properties"]?["offset"] is not null && tool["annotations"]?["readOnlyHint"]?.GetValue<bool>() != false, name + " is a paged read");
+            var page = Body(await Call(63, "tools/call", new JsonObject { ["name"] = name, ["arguments"] = new JsonObject { ["limit"] = 5 } }));
+            Expect(page["rows"] is JsonArray && host.Queries.Contains(name), name + " reaches the host");
+        }
         int asked = host.Approvals;
         var badBounds = await Call(32, "tools/call", new JsonObject { ["name"] = "edit_bounds", ["arguments"] = new JsonObject { ["id"] = "w:9", ["minimum"] = new JsonArray(1, 2) } });
         Expect(badBounds["isError"]?.GetValue<bool>() == true && host.Approvals == asked, "edit_bounds validates before asking");
@@ -351,6 +373,8 @@ async Task StdioRoundTrip()
         host.Paused = true;
         var pausedMaps = await Call(34, "tools/call", new JsonObject { ["name"] = "list_maps", ["arguments"] = new JsonObject() });
         Expect(pausedMaps["isError"]?.GetValue<bool>() != true, "catalog reads work while paused");
+        var pausedAudio = await Call(64, "tools/call", new JsonObject { ["name"] = "list_audio", ["arguments"] = new JsonObject() });
+        Expect(pausedAudio["isError"]?.GetValue<bool>() != true, "shader, animation and audio reads work while paused");
         var pausedWorld = await Call(35, "tools/call", new JsonObject { ["name"] = "find_world_objects", ["arguments"] = new JsonObject() });
         Expect(pausedWorld["isError"]?.GetValue<bool>() == true, "world reads stop while paused");
         var pausedReference = await Call(26, "tools/call", new JsonObject { ["name"] = "read_reference", ["arguments"] = new JsonObject { ["path"] = "unreal/replication.md" } });
@@ -1194,6 +1218,13 @@ sealed class FixtureHost(string project) : ISolforgeHost
             },
             "list_maps" => new JsonObject { ["total"] = 1, ["rows"] = new JsonArray(new JsonObject { ["name"] = "The EDZ", ["zones"] = new JsonArray("Dark Forest") }) },
             "get_item" => new JsonObject { ["error"] = "Solforge is reading the item catalog (loading); call again shortly." },
+            "get_shader" => new JsonObject
+            {
+                ["tag"] = McpJson.String(args, "tag"), ["kind"] = "shader", ["stage"] = "pixel", ["profile"] = "ps_5_0",
+                ["constantBuffers"] = new JsonArray(new JsonObject { ["slot"] = 12, ["float4s"] = 34, ["bytes"] = 544 }),
+                ["disassembly"] = McpJson.Bool(args, "disassembly", false) ? new JsonObject { ["total"] = 1, ["text"] = "ps_5_0" } : null
+            },
+            "get_animation" => new JsonObject { ["error"] = "That tag is neither an animation clip nor an entity; use list_animations." },
             _ => new JsonObject { ["total"] = 0, ["rows"] = new JsonArray() }
         });
     }

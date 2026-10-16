@@ -98,3 +98,18 @@ In the viewport, the player shows as an orange ring with a facing arrow and a br
 
 - `open_map` takes a map, a mission, or both. A mission alone opens on its own map, and a map alone lists its missions.
 - `list_missions` shows only the open map's missions unless you give `map` or `all=true`.
+
+## Shaders, animations and audio
+
+Read-only metadata from the installed game. No map needs to be open, and these tools keep working while context publishing is paused. They use the same package readers as the editor's material, animation and audio pages, and they decode nothing those readers don't already read.
+
+| Tool | Gives |
+| --- | --- |
+| `list_shaders` | Shader headers, paged: tag, stage, bytecode tag, package, size. Filter by `stage`, `package` or `filter`. |
+| `get_shader` | A shader header tag gives its profile (for example `ps_5_0`), constant buffers (slot, size in float4 registers and bytes), texture and sampler slots, `dcl_` declarations, and the materials that use it (from the owner index, which can be partial). A material tag gives every stage, plus the bound textures (stage, slot, texture tag, size, format, sRGB), empty slots and diagnostics. `disassembly=true` adds the DXBC disassembly, one page of lines at a time (`offset`, `limit`). |
+| `list_animations` | Animation clips, paged: tag, name, package. With `entity`, you get only that entity's clips, with definition, clip index and config. |
+| `get_animation` | A clip gives its frame count, sample rate, length in seconds and payload sections, plus the definitions that list it (`users`). When the clip's codec is supported, you also get its control tracks: node and control counts, groups, and the key counts of each track, paged. Add `entity` to get that entity's skeleton too (bones with name, hash and parent, paged). An entity tag gives its skeleton and a count of its clips. |
+| `list_audio` | Wwise events, banks and streams, paged: tag, kind, name, package, size and Wwise id. Filter by `kind`. |
+| `get_audio` | An event, bank or stream gives its Wwise event id, related event id, linked bank (id, Wwise version, object counts by HIRC type, embedded media count), media (id, stream tag, name, size, embedded or streamed) and diagnostics. No audio is decoded. |
+
+The first `get_animation` call scans every animation definition once to find each clip's users, so it can be slow. Later calls use the cached result.

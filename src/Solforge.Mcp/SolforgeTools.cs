@@ -72,7 +72,8 @@ public static partial class SolforgeTools
         "solforge-new-mission; read the matching one first. Solforge's own UI: list_ui_controls, then ui_invoke, ui_set_value, " +
         "ui_set_checked or ui_select. The live view: get_viewport_frame, get_viewport_frames, wait_for_viewport_change (each with " +
         "text for models without vision). Where the player is in game: get_player_position (map, zone, xyz, yaw, nearest " +
-        "objects and slots) and wait_for_player_near. Action tools need the user's approve click. " +
+        "objects and slots) and wait_for_player_near. Shader, animation clip and audio metadata (no map needed): list_shaders, " +
+        "get_shader, list_animations, get_animation, list_audio and get_audio. Action tools need the user's approve click. " +
         "For how the game client works (functions, xrefs, strings, structs, vtables, tag class handlers in destiny2.exe) and for raw " +
         "tag data, unknown tag classes, localized text and JSON/CSV export, start with decomp_status and read the solforge-decomp skill; " +
         "paged results return next_cursor, which you pass back as cursor.";
@@ -86,7 +87,7 @@ public static partial class SolforgeTools
     {
         McpTool Read(string name, string description, JsonObject schema, Func<JsonObject, CancellationToken, Task<McpToolResult>> run) =>
             new(name, description, schema, false, async (args, cancel) =>
-                host.Paused && name is not ("read_project_file" or "search_project" or "search_reference" or "read_reference") && !CatalogTools.Contains(name) && !ContentReadTools.Contains(name)
+                host.Paused && name is not ("read_project_file" or "search_project" or "search_reference" or "read_reference") && !CatalogTools.Contains(name) && !ContentReadTools.Contains(name) && !AssetReadTools.Contains(name)
                     ? McpToolResult.Error("The user paused context publishing in Solforge's AI workspace.")
                     : await run(args, cancel).ConfigureAwait(false));
         McpTool Act(string name, string description, JsonObject schema, Func<JsonObject, string?> validate, Func<JsonObject, string> summary) =>
@@ -306,7 +307,8 @@ public static partial class SolforgeTools
             .. ContentTools(host, Read),
             .. UiTools(host, Read),
             .. PlayerTools(host, Read),
-            .. GraphTools(host)
+            .. GraphTools(host),
+            .. AssetTools(host, Read)
         ];
     }
 
