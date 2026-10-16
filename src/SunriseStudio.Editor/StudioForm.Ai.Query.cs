@@ -50,6 +50,7 @@ public sealed partial class StudioForm
                 "find_world_objects" => await AiOffThread(() => (inspectionWorld, AiCaptureNow()), pair => AiFindWorldObjects(pair.inspectionWorld, pair.Item2, args), cancel),
                 "get_placement" => await OnUi(() => AiPlacement(McpJson.String(args, "id") ?? "")).WaitAsync(cancel),
                 "search_items" or "get_item" or "search_perks" or "list_vendors" or "get_vendor" => await AiInvestmentAsync(tool, args, cancel),
+                "list_shaders" or "get_shader" or "list_animations" or "get_animation" or "list_audio" or "get_audio" => await AiAssetAsync(tool, args, cancel),
                 "list_creation_types" => AiCreationTypes(McpJson.String(args, "filter")),
                 "get_help" => await OnUi(() => AiHelp(args)).WaitAsync(cancel),
                 "get_player_position" => await AiPlayerPositionAsync(args, cancel),
