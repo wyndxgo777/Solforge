@@ -127,6 +127,7 @@ public sealed partial class StudioForm
             if (UiAuto.MenuItem("Grid", "", ref grid)) viewport!.ShowGrid = grid;
             ImGui.Separator();
             DrawRenderingMenuItem();
+            DrawPhoneStreamMenuItems();
             UiAuto.EndMenu();
         }
         DrawWindowMenu();
@@ -276,7 +277,7 @@ public sealed partial class StudioForm
         if (shortcutsDialog) { ImGui.OpenPopup("Shortcuts"); shortcutsDialog = false; }
         if (noticesDialog) { ImGui.OpenPopup("Third-party notices"); noticesDialog = false; }
         DrawLocationDialog(); DrawProjectDialog(); DrawAddDialog(); DrawCacheDialog(); DrawBundleDialogs(); DrawModDialog();
-        DrawShortcutsDialog(); DrawNoticesDialog(); DrawHelpDialog(); DrawPreferences(); DrawDataExplorer();
+        DrawShortcutsDialog(); DrawNoticesDialog(); DrawHelpDialog(); DrawPreferences(); DrawDataExplorer(); DrawPhoneStreamWindow();
         DrawContentEditors();
         DrawCreation();
     }

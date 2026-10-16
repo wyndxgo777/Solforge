@@ -25,9 +25,12 @@ public sealed partial class StudioForm
         if (aiHost is not { } host || renderer is null) return;
         var feed = host.Viewport;
         feed.Paused = aiPaused;
-        if (aiPaused || !feed.Wanted)
+        // Seth's own Stream to phone keeps capturing while AI context publishing is paused; the AI's frame tools and
+        // the local /viewport page still refuse (they check Paused), and an AI-started relay stops capturing as before.
+        bool blocked = aiPaused && !PhoneStreamOwned(feed);
+        if (blocked || !feed.Wanted)
         {
-            if (aiPaused && feed.Latest is not null) feed.Clear();
+            if (blocked && feed.Latest is not null) feed.Clear();
             feed.Status = aiPaused ? "paused (context publishing is off in the AI workspace)" : "idle";
             if (!aiStreamIdle) { renderer.ReleaseGrabs(); aiStreamIdle = true; }
             return;

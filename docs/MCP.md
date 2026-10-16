@@ -69,8 +69,8 @@ Solforge captures the 3D viewport continuously while someone watches: a frame to
 - `wait_for_viewport_change`: blocks until the view changes, up to the timeout.
 - `get_viewport_stream`: a local URL, `http://127.0.0.1:<port>/viewport?key=<view key>`, for an MJPEG stream on this PC. The view key is not the MCP token.
 - `set_viewport_stream` (approval): pushes frames out to the relay, so viewers can watch at `https://relay.example.invalid/stream/<name>?k=<key>`.
-  - It is off by default.
-  - It needs `SOLFORGE_OWNER_SECRET`.
+  - It is off by default. Seth can also turn it on with View > Stream to phone, which shows the link as a QR code.
+  - It needs `SOLFORGE_OWNER_SECRET` (`tools/stream-relay/pc-secret.ps1` sets it; no restart needed).
   - Only accounts on the relay's allow-list can watch.
   - See `tools/stream-relay/README.md`.
 
