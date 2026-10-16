@@ -136,10 +136,28 @@ public sealed partial class StudioForm
         ["blender"] = settings.BlenderPath.Length > 0 ? settings.BlenderPath : null,
         ["viewportRendering"] = settings.ViewportRendering, ["pauseWhileGameRuns"] = settings.PauseRenderWhenGameRunning,
         ["lowMemoryMode"] = settings.LowMemoryMode, ["lowMemoryWithGame"] = settings.LowMemoryWithGame, ["textureBudgetMiB"] = settings.TextureBudgetMiB,
+        ["textureCacheMiB"] = settings.TextureCacheMiB,
         ["fpsFocused"] = settings.FpsFocused, ["fpsBackground"] = settings.FpsBackground,
+        ["memory"] = AiMemory(),
         ["aiEngine"] = AiEngines[aiEngine].Name, ["aiAutoAllow"] = settings.AiAutoAllow, ["mcp"] = settings.AiMcpEnabled,
         ["aiFolders"] = new JsonArray(settings.AiFolders.Select(folder => (JsonNode)folder).ToArray())
     };
+
+    /** Where RAM goes, in MiB: process, managed heap, and the caches that only speed up reloads. */
+    private JsonObject AiMemory()
+    {
+        static double MiB(long bytes) => Math.Round(bytes / 1048576.0, 1);
+        using var process = System.Diagnostics.Process.GetCurrentProcess();
+        var gc = GC.GetGCMemoryInfo();
+        var plan = workspace.NativePlan;
+        return new()
+        {
+            ["workingSet"] = MiB(process.WorkingSet64), ["privateBytes"] = MiB(process.PrivateMemorySize64),
+            ["managedHeap"] = MiB(GC.GetTotalMemory(false)), ["managedCommitted"] = MiB(gc.TotalCommittedBytes),
+            ["textureCache"] = MiB(workspace.TextureCacheBytes), ["packageBlockCache"] = MiB(workspace.Catalog?.CachedBlockBytes ?? 0),
+            ["planGeometry"] = plan is null ? null : (JsonNode)MiB(plan.GeometryBytes), ["planTexturesGpu"] = plan is null ? null : (JsonNode)MiB(plan.TextureBytes)
+        };
+    }
 
     private static JsonObject AiProjectFiles(string? root, JsonObject args)
     {

@@ -59,6 +59,10 @@ public sealed partial class StudioForm
         ImGui.SetNextItemWidth(220 * scale);
         if (ImGui.SliderInt("Texture budget (MiB)", ref budget, 64, 2048)) { settings.TextureBudgetMiB = budget; SaveSettings(); }
         SettingNote("Used while Low memory mode is on. Applies to the next map or shader load.");
+        int cache = settings.TextureCacheMiB;
+        ImGui.SetNextItemWidth(220 * scale);
+        if (ImGui.SliderInt("Reload texture cache (MiB)", ref cache, 0, 2048)) { settings.TextureCacheMiB = cache; SaveSettings(); }
+        SettingNote("Decoded textures kept in RAM so a reload after an edit is faster; the image is the same at any size. Applies after the next load.");
         int focused = settings.FpsFocused, background = settings.FpsBackground;
         ImGui.SetNextItemWidth(220 * scale);
         if (ImGui.SliderInt("FPS cap, focused", ref focused, 0, 240, focused == 0 ? "no cap" : "%d")) { settings.FpsFocused = focused; SaveSettings(); }
