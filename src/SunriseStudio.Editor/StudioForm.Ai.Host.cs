@@ -98,7 +98,8 @@ public sealed partial class StudioForm
         EngineLaunch.ClaudeFiles? files = null;
         if (SolforgeMcpService.FindShim() is { } shim)
         {
-            try { files = EngineLaunch.WriteClaudeFiles(folder, shim); }
+            // ask_gemini only when agy is installed: it runs the user's own agy login, never a copied token.
+            try { files = EngineLaunch.WriteClaudeFiles(folder, shim, gemini: AiResolved("agy") is not null); }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             { aiServiceError = "config: " + exception.Message; }
         }

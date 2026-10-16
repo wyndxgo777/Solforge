@@ -186,6 +186,17 @@ public sealed partial class StudioForm
             ImGui.BeginDisabled(command.Length == 0 || missing);
             if (UiAuto.MenuItem("New session")) StartAiEngine(engine, command, resume: false);
             ImGui.EndDisabled();
+            // Handoff keeps the project, MCP and skills; each engine still runs on its own login (Claude / Google AI Pro).
+            string from = aiRunEngine.Length > 0 ? aiRunEngine : engine.Command;
+            for (int i = 0; i < AiEngines.Length; i++)
+            {
+                var target = AiEngines[i];
+                if (target.Command is not ("claude" or "agy") || target.Command == from) continue;
+                if (UiAuto.MenuItem($"Hand off to {target.Name}", "", false, workspace.Project is not null && AiResolved(target.Command) is not null))
+                    HandOffAiEngine(from, i);
+                if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+                    ImGui.SetTooltip($"Stops this engine, writes .solforge/HANDOFF.md from its last session and starts {target.Name} on it.");
+            }
             bool resume = settings.AiResumeSessions;
             if (UiAuto.MenuItem("Resume last session on Start/Restart", "", ref resume)) { settings.AiResumeSessions = resume; SaveSettings(); }
             bool allow = settings.AiAutoAllow;
@@ -406,8 +417,21 @@ public sealed partial class StudioForm
             aiResolved[command] = EngineCommands.Resolve(command, aiFreshPath, pathExt);
     }
 
+    /** Writes the handoff note from the engine that ran here and starts the target fresh on it (same project, MCP, skills). */
+    private void HandOffAiEngine(string fromCommand, int target)
+    {
+        if (workspace.Project?.DirectoryPath is not { } folder) return;
+        aiTerminal.Stop();
+        string fromName = AiEngines.FirstOrDefault(item => item.Command == fromCommand)?.Name ?? "the previous engine";
+        string? prompt = EngineLaunch.HandoffPrompt;
+        try { EngineLaunch.WriteHandoff(folder, fromCommand, fromName, AiEngines[target].Name); }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) { prompt = null; }
+        SelectAiEngine(target);
+        StartAiEngine(AiEngines[target], AiEngines[target].Command, resume: false, prompt);
+    }
+
     /** Engines run by full path with the refreshed PATH, so an install made after Solforge started works at once. */
-    private void StartAiEngine(AiEngine engine, string command, bool resume)
+    private void StartAiEngine(AiEngine engine, string command, bool resume, string? prompt = null)
     {
         string folder = workspace.Project?.DirectoryPath ?? Environment.CurrentDirectory;
         PrepareAiEngine(folder);
@@ -430,6 +454,7 @@ public sealed partial class StudioForm
         };
         arguments = EngineLaunch.JoinArguments(EngineProviders.Arguments(preset, choice), arguments);
         if (resume) arguments = EngineLaunch.JoinArguments(arguments, EngineLaunch.ResumeArguments(engine.Command, AiLastSession(engine.Command, executable, folder)));
+        arguments = EngineLaunch.WithPrompt(engine.Command, arguments, prompt);
         aiTerminal.Start(EngineLaunch.CmdLine(executable, arguments), folder, 120, 32, environment);
     }
 

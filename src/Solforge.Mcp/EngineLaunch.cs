@@ -18,20 +18,40 @@ public static class EngineLaunch
         "solforge-* skills are playbooks for common jobs (new weapon or armor, map bounds, patrol content, enemies, missions): " +
         "read the matching one first.";
 
-    public sealed record ClaudeFiles(string McpConfig, string Settings);
+    /** Added when the gemini server is in the config (agy installed). Same rule: no double quotes or percent signs. */
+    public const string GeminiPrompt =
+        "The gemini MCP tool ask_gemini hands a self-contained task to Gemini on the user's own Antigravity CLI login; " +
+        "use it when the user asks for Gemini, a second opinion or a very large read.";
 
-    /** Writes the MCP config and the UserPromptSubmit hook settings for the project; @param folder defaults to the discovery folder. */
-    public static ClaudeFiles WriteClaudeFiles(string projectRoot, string shimPath, string? folder = null)
+    /** First prompt of an engine started by a handoff (no double quotes or percent signs). */
+    public const string HandoffPrompt =
+        "Solforge handed this project over from another AI engine. Read .solforge/HANDOFF.md and .solforge/SESSION.md, " +
+        "then say in a few lines what you are picking up and wait for the user to go ahead.";
+
+    /** @param Gemini True when the config also holds the gemini (ask_gemini) server. */
+    public sealed record ClaudeFiles(string McpConfig, string Settings, bool Gemini = false);
+
+    /**
+     * Writes the MCP config and the UserPromptSubmit hook settings for the project; @param folder defaults to the
+     * discovery folder; @param gemini also adds the shim's --gemini server (ask_gemini runs the user's own agy).
+     */
+    public static ClaudeFiles WriteClaudeFiles(string projectRoot, string shimPath, string? folder = null, bool gemini = false)
     {
         folder ??= McpDiscovery.Folder;
         Directory.CreateDirectory(folder);
         string key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Path.GetFullPath(projectRoot).ToUpperInvariant())))[..12];
-        var files = new ClaudeFiles(Path.Combine(folder, $"claude-mcp-{key}.json"), Path.Combine(folder, $"claude-settings-{key}.json"));
+        var files = new ClaudeFiles(Path.Combine(folder, $"claude-mcp-{key}.json"), Path.Combine(folder, $"claude-settings-{key}.json"), gemini);
         var server = new JsonObject
         {
             ["type"] = "stdio", ["command"] = shimPath, ["args"] = new JsonArray("--project", projectRoot), ["env"] = new JsonObject()
         };
-        Write(files.McpConfig, new JsonObject { ["mcpServers"] = new JsonObject { [McpClientConfigs.ServerName] = server } });
+        var servers = new JsonObject { [McpClientConfigs.ServerName] = server };
+        if (gemini)
+            servers[AgyDelegate.ServerName] = new JsonObject
+            {
+                ["type"] = "stdio", ["command"] = shimPath, ["args"] = new JsonArray("--gemini"), ["env"] = new JsonObject()
+            };
+        Write(files.McpConfig, new JsonObject { ["mcpServers"] = servers });
         // Forward slashes and plain quotes read the same in cmd.exe and in bash, whichever runs the hook.
         string hook = $"\"{shimPath.Replace('\\', '/')}\" --context --project \"{projectRoot.Replace('\\', '/').TrimEnd('/')}\"";
         var command = new JsonObject { ["type"] = "command", ["command"] = hook, ["timeout"] = 5 };
@@ -47,7 +67,7 @@ public static class EngineLaunch
     {
         var args = new List<string>();
         if (files is not null) args.AddRange(["--mcp-config", files.McpConfig, "--settings", files.Settings]);
-        args.AddRange(["--append-system-prompt", SystemPrompt]);
+        args.AddRange(["--append-system-prompt", files is { Gemini: true } ? SystemPrompt + " " + GeminiPrompt : SystemPrompt]);
         foreach (string folder in addDirs) { args.Add("--add-dir"); args.Add(folder); }
         return string.Join(' ', args.Select(Quote));
     }
@@ -115,6 +135,115 @@ public static class EngineLaunch
         "cline" => "--id " + Quote(session),
         _ => ""
     };
+
+    /**
+     * Adds a first prompt that starts the engine interactively: claude takes it as the first argument (its --add-dir
+     * and --mcp-config take several values and would swallow a trailing one), agy as -i; other engines get none.
+     */
+    public static string WithPrompt(string engine, string arguments, string? prompt) => prompt is null or "" ? arguments : engine switch
+    {
+        "claude" => JoinArguments(Quote(prompt), arguments),
+        "agy" => JoinArguments(arguments, "-i", Quote(prompt)),
+        _ => arguments
+    };
+
+    /**
+     * Engine handoff: writes .solforge/HANDOFF.md from the previous engine's last session for this folder (its recent
+     * requests and, for Claude Code, its last reply) so the next engine picks up with the same project, MCP and skills.
+     * Only local session files are read; no sign-in is touched. Returns the file's path.
+     */
+    public static string WriteHandoff(string projectRoot, string fromCommand, string fromName, string toName, string? home = null)
+    {
+        home ??= Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        string? session = null, transcript = null, reply = null;
+        IReadOnlyList<string> requests = [];
+        try
+        {
+            if (fromCommand == "claude" && ClaudeSession(projectRoot, home) is { } id)
+            {
+                session = id;
+                transcript = Path.Combine(ClaudeSessionsDir(projectRoot, home), id + ".jsonl");
+                (requests, reply) = ClaudeTranscript(TailLines(transcript));
+            }
+            else if (fromCommand == "agy" && AgySession(projectRoot, home) is { } conversation)
+            {
+                session = conversation;
+                requests = AgyRequests(projectRoot, conversation, TailLines(Path.Combine(home, ".gemini", "antigravity-cli", "history.jsonl")));
+            }
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) { }
+        string folder = Path.Combine(projectRoot, ".solforge");
+        Directory.CreateDirectory(folder);
+        string path = Path.Combine(folder, "HANDOFF.md");
+        File.WriteAllText(path, HandoffText(fromName, toName, session, transcript, requests, reply, DateTime.Now));
+        return path;
+    }
+
+    public static string HandoffText(string fromName, string toName, string? session, string? transcript,
+        IReadOnlyList<string> requests, string? reply, DateTime at)
+    {
+        var text = new StringBuilder("# Engine handoff\n\n");
+        text.Append($"Solforge switched this project from {fromName} to {toName} on {at:yyyy-MM-dd HH:mm}. Pick up where {fromName} left off.\n");
+        text.Append("Same project, solforge MCP tools (get_context, get_open_documents), skills and AGENTS.md rules; ");
+        text.Append(".solforge/SESSION.md holds the live session context.\n");
+        if (session is not null) text.Append($"{fromName} session: {session}{(transcript is null ? "" : $" (full transcript: {transcript})")}\n");
+        text.Append("\n## Recent requests (oldest first)\n");
+        if (requests.Count == 0) text.Append("(none recorded)\n");
+        foreach (string request in requests) text.Append("- ").Append(request.Replace("\r", "").Replace("\n", "\n  ")).Append('\n');
+        if (reply is not null) text.Append($"\n## {fromName}'s last reply\n").Append(reply).Append('\n');
+        return text.ToString();
+    }
+
+    /** The user's typed requests (oldest first, at most keep) and the last assistant text in Claude Code transcript lines. */
+    public static (IReadOnlyList<string> Requests, string? Reply) ClaudeTranscript(IEnumerable<string> lines, int keep = 8)
+    {
+        var requests = new List<string>();
+        string? reply = null;
+        foreach (string line in lines)
+        {
+            if (Parse(line) is not JsonObject entry || IsTrue(entry["isSidechain"]) || IsTrue(entry["isMeta"])) continue;
+            var content = entry["message"]?["content"];
+            string text = (content is JsonArray parts
+                ? string.Join("\n", parts.OfType<JsonObject>().Where(part => Text(part["type"]) == "text").Select(part => Text(part["text"])))
+                : Text(content) ?? "").Trim();
+            if (text.Length == 0) continue;
+            string? type = Text(entry["type"]);
+            // Tool results carry no text part; command and hook echoes start with a tag.
+            if (type == "user" && !text.StartsWith('<')) { requests.Add(Clip(text, 600)); if (requests.Count > keep) requests.RemoveAt(0); }
+            else if (type == "assistant") reply = text;
+        }
+        return (requests, reply is null ? null : Clip(reply, 4000));
+    }
+
+    /** The prompts typed in one agy conversation for this workspace (oldest first, at most keep), slash commands left out. */
+    public static IReadOnlyList<string> AgyRequests(string folder, string conversation, IEnumerable<string> historyLines, int keep = 8)
+    {
+        var requests = new List<string>();
+        foreach (string line in historyLines)
+        {
+            if (Parse(line) is not JsonObject entry || !Same(entry["workspace"], folder) || Text(entry["conversationId"]) != conversation
+                || Text(entry["type"]) == "slash_command" || Text(entry["display"]) is not { Length: > 0 } display) continue;
+            requests.Add(Clip(display.Trim(), 600));
+            if (requests.Count > keep) requests.RemoveAt(0);
+        }
+        return requests;
+    }
+
+    /** The last lines of a file still being written (at most the final 4 MB; a cut first line is dropped). */
+    private static string[] TailLines(string file, long bytes = 4 << 20)
+    {
+        if (!File.Exists(file)) return [];
+        using var stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        bool cut = stream.Length > bytes;
+        if (cut) stream.Seek(-bytes, SeekOrigin.End);
+        using var reader = new StreamReader(stream, Encoding.UTF8);
+        string[] lines = reader.ReadToEnd().Split('\n');
+        return cut ? lines[1..] : lines;
+    }
+
+    private static string Clip(string text, int max) => text.Length <= max ? text : text[..max] + " ...";
+
+    private static bool IsTrue(JsonNode? node) => node?.GetValueKind() == System.Text.Json.JsonValueKind.True;
 
     /** Joins argument strings, skipping empty ones. */
     public static string JoinArguments(params string[] parts) => string.Join(' ', parts.Where(part => part.Length > 0));
