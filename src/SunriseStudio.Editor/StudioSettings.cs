@@ -66,6 +66,8 @@ public sealed class StudioSettings
     public bool AiAutoAllow { get; set; }
     /** AI workspace: Start/Restart resume the engine's last session for the folder (New session always starts fresh). */
     public bool AiResumeSessions { get; set; } = true;
+    /** AI workspace: the provider preset per engine command (claude, cline); never holds keys or tokens. */
+    public Dictionary<string, Solforge.Mcp.EngineProviders.Choice> AiProviders { get; set; } = [];
     /** Editors shown in their own windows, with each window's screen bounds. */
     public List<StudioPopoutState> Popouts { get; set; } = [];
 
@@ -85,6 +87,7 @@ public sealed class StudioSettings
             settings.KeySource ??= "";
             settings.AiFolders ??= [];
             settings.AiHiddenFolders ??= [];
+            settings.AiProviders ??= [];
             settings.AiEngine ??= "";
             settings.AiCustomCommand ??= "";
             settings.ScriptsPath ??= "";

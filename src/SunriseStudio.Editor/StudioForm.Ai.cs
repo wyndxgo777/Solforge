@@ -200,6 +200,13 @@ public sealed partial class StudioForm
             if (UiAuto.MenuItem("Publish context", "", ref publish)) aiPaused = !publish;
             if (UiAuto.MenuItem("Folders...")) openFolders = true;
             ImGui.Separator();
+            if (AiProvider(engine.Command).Preset is { } preset)
+            {
+                ImGui.TextDisabled("Provider: " + preset.Name);
+                ImGui.BeginDisabled(preset.Login.Length == 0 || missing || AiResolved(preset.Login.Split(' ')[0]) is null);
+                if (UiAuto.MenuItem("Sign in (" + (preset.Login.Length > 0 ? preset.Login : "none needed") + ")")) StartAiLogin(preset);
+                ImGui.EndDisabled();
+            }
             if (UiAuto.MenuItem("AI settings...")) preferencesOpen = true;
             ImGui.EndPopup();
         }
@@ -216,6 +223,61 @@ public sealed partial class StudioForm
         aiInstallNote = null;
         settings.AiEngine = AiEngines[aiEngine].Name;
         SaveSettings();
+    }
+
+    /** The engine's provider preset (null for agy and custom) and its saved choice. */
+    private (EngineProviders.Preset? Preset, EngineProviders.Choice Choice) AiProvider(string engine)
+    {
+        var choice = settings.AiProviders.GetValueOrDefault(engine) ?? new();
+        return (EngineProviders.Resolve(engine, choice.Provider), choice);
+    }
+
+    private EngineProviders.Choice AiProviderChoice(string engine)
+    {
+        if (!settings.AiProviders.TryGetValue(engine, out var choice)) settings.AiProviders[engine] = choice = new();
+        return choice;
+    }
+
+    /** Runs the provider's own sign-in command in the terminal; the CLI keeps the credentials, Solforge sees none. */
+    private void StartAiLogin(EngineProviders.Preset preset)
+    {
+        string[] parts = preset.Login.Split(' ', 2);
+        if (AiResolved(parts[0]) is not { } executable) return;
+        string folder = workspace.Project?.DirectoryPath ?? Environment.CurrentDirectory;
+        aiRunEngine = "";
+        aiTerminal.Start(EngineLaunch.CmdLine(executable, parts.Length > 1 ? parts[1] : ""), folder, 120, 32,
+            new Dictionary<string, string> { ["PATH"] = aiFreshPath });
+    }
+
+    /** Settings > AI: the provider combo, plus model and base URL when the preset uses them. */
+    private void DrawAiProviderRows(string engine, string label)
+    {
+        var (preset, choice) = AiProvider(engine);
+        if (preset is null) return;
+        ImGui.SetNextItemWidth(260 * scale);
+        if (UiAuto.BeginCombo(label + " provider", preset.Name))
+        {
+            foreach (var item in EngineProviders.For(engine))
+                if (UiAuto.Selectable(item.Name, item.Id == preset.Id)) { AiProviderChoice(engine).Provider = item.Id; SaveSettings(); }
+            UiAuto.EndCombo();
+        }
+        SettingNote(preset.Note + (preset.Login.Length > 0 ? $" Sign in: {preset.Login} (... menu > Sign in)." : ""));
+        if (preset.UsesModel)
+        {
+            string model = choice.Model;
+            ImGui.SetNextItemWidth(260 * scale);
+            if (UiAuto.InputTextWithHint(label + " model", preset.DefaultModel.Length > 0 ? preset.DefaultModel : "provider default", ref model, 128))
+                AiProviderChoice(engine).Model = model;
+            if (ImGui.IsItemDeactivatedAfterEdit()) SaveSettings();
+        }
+        if (preset.UsesBaseUrl)
+        {
+            string url = choice.BaseUrl;
+            ImGui.SetNextItemWidth(260 * scale);
+            if (UiAuto.InputTextWithHint(label + " base URL", "https://gateway.example/anthropic", ref url, 256))
+                AiProviderChoice(engine).BaseUrl = url;
+            if (ImGui.IsItemDeactivatedAfterEdit()) SaveSettings();
+        }
     }
 
     /** The saved engine and custom command, read once when the AI workspace first draws. */
@@ -358,12 +420,15 @@ public sealed partial class StudioForm
         // cmd /k keeps a prompt after the engine exits.
         if (engine.Command.Length == 0) { aiTerminal.Start($"cmd.exe /d /k {command}", folder, 120, 32, environment); return; }
         if (AiResolved(engine.Command) is not { } executable) return;
+        var (preset, choice) = AiProvider(engine.Command);
+        foreach (var (name, value) in EngineProviders.Environment(preset, choice)) environment[name] = value;
         string arguments = workspace.Project is null ? "" : engine.Command switch
         {
             "claude" => AiClaudeArguments(folder),
             "agy" => AiAgyArguments(folder),
             _ => ""
         };
+        arguments = EngineLaunch.JoinArguments(EngineProviders.Arguments(preset, choice), arguments);
         if (resume) arguments = EngineLaunch.JoinArguments(arguments, EngineLaunch.ResumeArguments(engine.Command, AiLastSession(engine.Command, executable, folder)));
         aiTerminal.Start(EngineLaunch.CmdLine(executable, arguments), folder, 120, 32, environment);
     }
