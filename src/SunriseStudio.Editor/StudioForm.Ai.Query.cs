@@ -101,7 +101,8 @@ public sealed partial class StudioForm
             ["itemCatalogLoaded"] = workspace.Investment is not null,
             ["skillsFolder"] = SkillSync.Folder,
             ["skills"] = new JsonArray(SkillSync.Names(SkillSync.Folder).Select(name => (JsonNode)name).ToArray()),
-            ["memory"] = AiMemoryBreakdown()
+            ["memory"] = AiMemoryBreakdown(),
+            ["automatic"] = AiAutomaticJson()
         };
     }
 

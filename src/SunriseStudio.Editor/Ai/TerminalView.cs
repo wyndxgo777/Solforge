@@ -26,6 +26,11 @@ internal sealed class TerminalView : IDisposable
     private readonly DoublePress interrupt = new();
     private int scroll;
     private bool restart;
+    /** What was typed on the engine's input line since the last Enter, while every key on it is known (see LineCommand). */
+    private readonly System.Text.StringBuilder line = new();
+    private bool lineKnown = true;
+    /** Backspaces still to send, one per frame, to clear a line LineCommand took (engines drop a burst of them). */
+    private int erase;
     private const string MenuId = "##ai-terminal-menu";
     /** Measured once per frame to get the font's fractional advance; CalcTextSize rounds one "M" up to a whole pixel. */
     private static readonly string Ruler = new('M', 256);
@@ -35,6 +40,12 @@ internal sealed class TerminalView : IDisposable
     public string? Failure { get; private set; }
     /** Ctrl+C twice ended the engine; its last screen stays for reading and copying until Restart or Start. */
     public bool Stopped { get; private set; }
+    /**
+     * Sees each typed line when Enter is pressed (only lines typed key by key; a paste, Tab, Esc, Ctrl+C or a cursor key
+     * makes the line unknown until the next Enter). Returning true keeps the Enter from the engine and erases the line
+     * there, so Solforge commands such as /automatic never reach Claude Code, Cline or agy.
+     */
+    public Func<string, bool>? LineCommand { get; set; }
 
     /** Starts the command in a folder with a screen size and environment. */
     public void Start(string commandLine, string folder, int columns, int rows, IReadOnlyDictionary<string, string>? environment = null)
@@ -107,6 +118,16 @@ internal sealed class TerminalView : IDisposable
         if (Terminal is not { } terminal || Stopped || text.Length == 0) return;
         terminal.Send(PasteText(text, terminal.Screen.BracketedPaste));
         scroll = 0;
+        lineKnown = false;
+    }
+
+    /** Sends Enter for text Solforge put on the input line itself (a paste it then submits), so the next typed line is known again. */
+    public void Submit()
+    {
+        if (Terminal is not { } terminal || Stopped) return;
+        terminal.Send("\r");
+        line.Clear();
+        lineKnown = true;
     }
 
     /**
@@ -295,6 +316,15 @@ internal sealed class TerminalView : IDisposable
             // Ctrl+Shift+C arrives as the same ^C character as Ctrl+C; Shift makes it Copy.
             if (c == 3 && io.KeyShift) { Copy(); continue; }
             if (Stopped) continue;
+            if (c == '\r' && lineKnown && line.Length > 0 && LineCommand?.Invoke(line.ToString()) == true)
+            {
+                erase += line.Length;
+                line.Clear();
+                selection.Clear();
+                scroll = 0;
+                continue;
+            }
+            TrackLine(c);
             if (c == 3)
             {
                 if (interrupt.Press(ImGui.GetTime())) { StopEngine(); return; }
@@ -312,6 +342,7 @@ internal sealed class TerminalView : IDisposable
             scroll = 0;
         }
         if (Stopped) return;
+        if (erase > 0) { terminal.Send("\x7f"); erase--; }
         string arrows = terminal.Screen.ApplicationCursor ? "\x1bO" : "\x1b[";
         (ImGuiKey Key, string Text)[] keys =
         [
@@ -320,8 +351,17 @@ internal sealed class TerminalView : IDisposable
             (ImGuiKey.Delete, "\x1b[3~"), (ImGuiKey.PageUp, "\x1b[5~"), (ImGuiKey.PageDown, "\x1b[6~"), (ImGuiKey.Insert, "\x1b[2~")
         ];
         foreach (var (key, text) in keys)
-            if (ImGui.IsKeyPressed(key)) { terminal.Send(text); scroll = 0; }
-        if (io.KeyShift && ImGui.IsKeyPressed(ImGuiKey.Tab)) terminal.Send("\x1b[Z");
+            if (ImGui.IsKeyPressed(key)) { terminal.Send(text); scroll = 0; lineKnown = false; }
+        if (io.KeyShift && ImGui.IsKeyPressed(ImGuiKey.Tab)) { terminal.Send("\x1b[Z"); lineKnown = false; }
+    }
+
+    /** Follows one typed character on the input line for LineCommand. */
+    private void TrackLine(char c)
+    {
+        if (c is '\r' or '\n') { line.Clear(); lineKnown = true; }
+        else if (c == '\b') { if (line.Length > 0) line.Length--; }
+        else if (c >= ' ' && c != '\x7f') line.Append(c);
+        else lineKnown = false;
     }
 
     /** Stops the session. */

@@ -85,6 +85,10 @@ public sealed class StudioSettings
     public bool AiSkipPermissions { get; set; } = true;
     /** AI workspace: Start/Restart resume the engine's last session for the folder (New session always starts fresh). */
     public bool AiResumeSessions { get; set; } = true;
+    /** AI workspace, /automatic: most continue nudges per goal, longest run in minutes, quiet seconds before a nudge (AutomaticOptions clamps them). */
+    public int AiAutomaticMaxNudges { get; set; } = 50;
+    public int AiAutomaticMaxMinutes { get; set; } = 240;
+    public int AiAutomaticIdleSeconds { get; set; } = 45;
     /** AI workspace: Claude Code also gets the ask_clinepass tool (solforge-mcp --clinepass) when cline is installed. */
     public bool AiAskClinePass { get; set; }
     /** AI workspace: the provider preset per engine command (claude, cline); never holds keys or tokens. */

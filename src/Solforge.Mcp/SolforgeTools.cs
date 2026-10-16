@@ -65,6 +65,8 @@ public interface ISolforgeHost
      */
     Task<JsonObject> RemoteAiAsync(RemoteAiRequest request, CancellationToken cancel) =>
         Task.FromResult(new JsonObject { ["error"] = "This Solforge has no remote AI hook." });
+    /** The /automatic watchdog (AutomaticWatchdog.cs) the automatic_* and goal_* tools steer; null when this host has none. */
+    AutomaticWatchdog? Automatic => null;
 }
 
 /** One remote AI terminal call: Text is pasted (when not empty), then Keys are sent in order, then Rows rows come back. */
@@ -96,7 +98,7 @@ public static partial class SolforgeTools
         "get_shader, list_animations, get_animation, list_audio and get_audio. Action tools need the user's approve click. " +
         "For how the game client works (functions, xrefs, strings, structs, vtables, tag class handlers in destiny2.exe) and for raw " +
         "tag data, unknown tag classes, localized text and JSON/CSV export, start with decomp_status and read the solforge-decomp skill; " +
-        "paged results return next_cursor, which you pass back as cursor. " + SelfServiceHint;
+        "paged results return next_cursor, which you pass back as cursor. " + SelfServiceHint + " " + AutomaticHint;
 
     /** Shared by the server instructions and the session file, so every engine knows it can do its own setup. */
     public const string SelfServiceHint =
@@ -340,7 +342,8 @@ public static partial class SolforgeTools
             .. UiTools(host, Read),
             .. PlayerTools(host, Read),
             .. GraphTools(host),
-            .. AssetTools(host, Read)
+            .. AssetTools(host, Read),
+            .. AutomaticModeTools(host)
         ];
     }
 

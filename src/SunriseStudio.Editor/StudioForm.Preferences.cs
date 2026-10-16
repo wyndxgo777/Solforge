@@ -113,6 +113,8 @@ public sealed partial class StudioForm
         AiServiceStatus(ref status);
         SettingNote(status + ". Off stops the server at once; running engines lose the Solforge tools until it is back on.");
         ImGui.Separator();
+        DrawAiAutomaticSettings();
+        ImGui.Separator();
         DrawAiFolders();
     }
 

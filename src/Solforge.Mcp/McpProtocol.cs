@@ -74,6 +74,8 @@ public sealed class McpDispatcher(IReadOnlyList<McpTool> tools, string version, 
 {
     public static readonly string[] ProtocolVersions = ["2025-06-18", "2025-03-26", "2024-11-05"];
     public IReadOnlyList<McpTool> Tools => tools;
+    /** Called with each tools/call name before it runs (automatic mode counts them as activity). */
+    public Action<string>? OnToolCall { get; set; }
 
     public async Task<string?> HandleAsync(string message, CancellationToken cancel)
     {
@@ -123,6 +125,7 @@ public sealed class McpDispatcher(IReadOnlyList<McpTool> tools, string version, 
                 if (tools.FirstOrDefault(tool => tool.Name == name) is not { } target)
                     return Failure(id, -32602, $"Unknown tool: {name}");
                 var arguments = parameters["arguments"] as JsonObject ?? new JsonObject();
+                try { OnToolCall?.Invoke(target.Name); } catch (Exception) { }
                 McpToolResult result;
                 try { result = await target.Handler(arguments, cancel).ConfigureAwait(false); }
                 catch (OperationCanceledException) { throw; }

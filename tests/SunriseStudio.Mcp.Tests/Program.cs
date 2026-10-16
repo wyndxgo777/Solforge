@@ -64,6 +64,8 @@ try
     checks.Add("deep data: decomp index (calls, data refs, tag classes, names, cache, grep, rename), struct inference and header structs, image strings and vtables, generic tag layouts and class schemas, cursor paging, CSV, and the decomp/data/export tools");
     await ClassChecks.Run(Path.Combine(scratch, "classes"), new FixtureHost(dataProject));
     checks.Add("class layer: MSVC RTTI (type descriptors, locators, hierarchy) in a fixture image, demangling, vtable runs split at referenced starts, Class::vfN owners, constructors, inferred fields, the class cache, and get_class/get_vtables/get_struct/decomp_status");
+    await AutomaticChecks.Run(Path.Combine(scratch, "automatic"), new FixtureHost(dataProject));
+    checks.Add("automatic mode: /automatic parsing, start prompt, idle nudge with progress and remaining, repeat and stuck nudges change tactic, prompt and busy screens wait, goal_complete, goal_blocked, stop, nudge and time limits, nesting guard, saved goal resume, and the automatic_*/goal_* tools with no approve click");
     Approvals();
     checks.Add("auto-allow: Claude Code, agy and Cline allow prompts match only with a one-time Yes/Allow highlighted at the bottom; No, scrollback, quotes, persistent rows and free text never do");
     foreach (string check in checks) Console.WriteLine("PASS " + check);
@@ -256,7 +258,7 @@ async Task StdioRoundTrip()
             "get_viewport_frame", "get_viewport_frames", "wait_for_viewport_change", "read_screen_text", "get_viewport_stream", "set_viewport_stream",
             "get_player_position", "wait_for_player_near",
             "list_graph_node_types", "list_graphs", "get_graph", "compile_graph", "create_graph", "edit_graph", "apply_graph",
-            "list_shaders", "get_shader", "list_animations", "get_animation", "list_audio", "get_audio"];
+            "list_shaders", "get_shader", "list_animations", "get_animation", "list_audio", "get_audio", .. SolforgeTools.AutomaticTools];
 
         string[] actions = ["select_object", "focus_camera", "highlight", "open_file", "apply_project_edit", "open_map", "open_asset",
             "set_viewport_rendering", "edit_placement", "edit_bounds", "revert_object_edit", "apply_item_edit", "apply_vendor_edit",
@@ -1374,6 +1376,7 @@ sealed class FixtureHost(string project) : ISolforgeHost
     public bool ApproveAll, AutoApprove;
     public List<string> AutoLog = [];
     public bool Paused { get; set; }
+    public AutomaticWatchdog? Automatic { get; set; }
     public static readonly byte[] Jpeg = [0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0xFF, 0xD9];
     public static readonly UiControl[] Controls =
     [

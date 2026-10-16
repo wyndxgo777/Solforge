@@ -125,3 +125,18 @@ Read-only metadata from the installed game. No map needs to be open, and these t
 | `get_audio` | An event, bank or stream gives its Wwise event id, related event id, linked bank (id, Wwise version, object counts by HIRC type, embedded media count), media (id, stream tag, name, size, embedded or streamed) and diagnostics. No audio is decoded. |
 
 The first `get_animation` call scans every animation definition once to find each clip's users, so it can be slow. Later calls use the cached result.
+
+## Automatic mode
+
+Keeps the AI working on one goal until it is done.
+
+- Seth types `/automatic <goal>` in the AI terminal (or in the remote page's AI chat). Solforge catches the line before the engine sees it, sends the goal with working instructions, and answers one-time allow prompts while it runs. `/automatic status` shows the state, and `/automatic stop` ends it.
+- When the engine's screen stays still for the idle time and there is no allow prompt, Solforge pastes a continue nudge. The nudge holds the goal, the last `goal_progress` and the remaining steps.
+- A nudge round counts as no progress when the screen is the same as at the last nudge, or when there was no Solforge tool call and no `goal_progress`. After 3 rounds like that, the nudge asks for a different tactic.
+- It stops on `goal_complete` (summary, evidence), `goal_blocked` (reason), `/automatic stop` or `automatic_stop`, or at the limits. The limits are in Settings > AI: max nudges (default 50), max duration (default 240 min) and idle seconds (default 45).
+- The AI can start this mode on itself with `automatic_start(goal)` for a long multi-step goal. External clients can also use `automatic_status` and `automatic_stop`.
+  - None of the automatic tools needs an approve click.
+  - Only one goal runs at a time. A second `automatic_start` is refused unless it passes `replace: true`. A typed `/automatic` always replaces.
+  - An engine can't type `/automatic` into its own input line, so it uses the tools.
+- The running goal is saved to `automatic-goal.json` beside the settings file. After a restart, the AI panel asks whether to resume it or discard it.
+- `get_editor_state` and the remote AI state both include `automatic`, and the stream page's Status tab shows it.

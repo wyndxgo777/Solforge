@@ -91,6 +91,7 @@ public sealed partial class StudioForm
         if (!aiKeyHooked)
         {
             KeyPress += (_, e) => aiTerminal.OnChar(e.KeyChar);
+            aiTerminal.LineCommand = AiAutomaticLine;
             FormClosed += (_, _) => { aiTerminal.Dispose(); StopAiService(); };
             aiKeyHooked = true;
         }
@@ -101,6 +102,7 @@ public sealed partial class StudioForm
         var engine = AiEngines[aiEngine];
         bool missing = engine.Command.Length > 0 && AiResolved(engine.Command) is null;
         DrawAiHeader(engine, missing);
+        DrawAiAutomaticStrip();
         DrawAiRequests();
         ImGui.Separator();
         // A missing engine shows how to install it instead of launching; a session still running stays in view.
@@ -361,7 +363,8 @@ public sealed partial class StudioForm
      */
     private void AutoAllowAi()
     {
-        if (!settings.AiAutoAllow || aiInstalling is not null || aiTerminal.Terminal is not { HasExited: false } terminal)
+        // Automatic mode answers one-time prompts too, so a long goal never sits at an allow dialog.
+        if (!(settings.AiAutoAllow || AiAutomatic.Active) || aiInstalling is not null || aiTerminal.Terminal is not { HasExited: false } terminal)
         {
             aiAllowSeen = null;
             aiAllowRevision = -1;

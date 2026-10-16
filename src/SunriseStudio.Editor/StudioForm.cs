@@ -122,7 +122,11 @@ public sealed partial class StudioForm : Form
         SetStyle(ControlStyles.Opaque | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
         if (options.Smoke) ShowInTaskbar = false;
         timer.Tick += (_, _) => TickFrame();
-        aiAllowTimer.Tick += (_, _) => { try { AutoAllowAi(); } catch (InvalidOperationException) { } catch (IOException) { } };
+        aiAllowTimer.Tick += (_, _) =>
+        {
+            try { AutoAllowAi(); } catch (InvalidOperationException) { } catch (IOException) { }
+            try { AutomaticTickAi(); } catch (InvalidOperationException) { } catch (IOException) { }
+        };
         workspace.BeforeAssetMutation += () =>
         {
             livePage.CancelPreparation();

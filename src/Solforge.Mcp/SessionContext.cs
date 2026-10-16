@@ -41,6 +41,10 @@ public static class SessionContext
             text.AppendLine("Action tools wait for the user's approve click in Solforge. Nothing writes game packages; edits go to the project.");
             text.AppendLine();
             text.AppendLine(SolforgeTools.SelfServiceHint);
+            text.AppendLine();
+            text.AppendLine("## Automatic mode");
+            text.AppendLine();
+            text.AppendLine(SolforgeTools.AutomaticHint);
         }
         return text.ToString();
     }
