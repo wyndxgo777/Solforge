@@ -406,6 +406,20 @@ public sealed partial class StudioForm : Form
             workspace.Run(() => workspace.OpenProject(project));
             return;
         }
+        if (!initialProjectOpened && options.Project is null && settings.AutoOpenLastProject)
+        {
+            initialProjectOpened = true;
+            string last = !string.IsNullOrWhiteSpace(settings.LastProjectPath) ? settings.LastProjectPath : StudioSettings.DefaultProjectPath;
+            if (File.Exists(last))
+            {
+                workspace.Run(() =>
+                {
+                    try { workspace.OpenProject(last); RememberProject(); }
+                    catch (Exception) { /* a broken saved project must not block startup */ }
+                });
+                return;
+            }
+        }
         if (!initialTagOpened && options.Map is { } map)
         {
             initialTagOpened = true;
