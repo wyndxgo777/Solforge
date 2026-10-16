@@ -61,6 +61,7 @@ public sealed class StaticCompoundShape
         if (count > 0 && NodeCount != 2 * count - 1) throw new InvalidDataException("Compound tree is not a full binary tree.");
     }
 
+    /** Parses the compound shape at the packfile's root object. */
     public static StaticCompoundShape Parse(HavokPackfile file) => new(file, file.RootOffset);
 
     /** A compound that is not the packfile root, such as one inside a shape array. */
@@ -92,6 +93,7 @@ public sealed class StaticCompoundShape
         && MathF.Abs(a.Y - b.Y) <= IdentityTolerance && MathF.Abs(a.Z - b.Z) <= IdentityTolerance
         && MathF.Abs(a.W - b.W) <= IdentityTolerance;
 
+    /** Copies the raw node array out of the file. */
     public byte[] ReadNodes() => File.Bytes.AsSpan(File.Absolute(NodeData), NodeCount * CompoundTree.NodeSize).ToArray();
 
     /** Each instance's leaf box, indexed by instance. */

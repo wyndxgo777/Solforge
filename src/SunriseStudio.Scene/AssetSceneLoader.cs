@@ -30,11 +30,16 @@ public sealed partial class AssetSceneLoader(PackageCatalog catalog)
     /** Decodes only the static instances whose bounds row meets this world box; null decodes all. */
     public (Vector3 Min, Vector3 Max)? Region { get; init; }
 
+    /** Loads a map tag as a scene. */
     public SceneDocument LoadMap(uint tag, CancellationToken token = default) => Load(tag, token);
+    /** Loads a bubble tag as a scene. */
     public SceneDocument LoadBubble(uint tag, CancellationToken token = default) => Load(tag, token);
+    /** Loads a single mesh or entity tag as a scene. */
     public SceneDocument LoadMesh(uint tag, CancellationToken token = default) => Load(tag, token);
+    /** Loads a scenario with the given state selection. */
     public SceneDocument LoadScenario(uint tag, SceneLoadOptions selection, CancellationToken token = default) => Load(tag, selection, token);
 
+    /** Loads any scene root with default options (all scenario states). */
     public SceneDocument Load(uint tag, CancellationToken token = default) => Load(tag, new SceneLoadOptions(), token);
 
     /** A loader owns one worker operation at a time. */

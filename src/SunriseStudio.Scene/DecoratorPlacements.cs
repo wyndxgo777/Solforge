@@ -3,6 +3,10 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Scene;
 
+/**
+ * Decorator part of AssetSceneLoader: expands decorator payloads (speed trees and ground decorators)
+ * into placed instances.
+ */
 public sealed partial class AssetSceneLoader
 {
     // Placement resource whose +0x10 names a class-0x80807164 decorator payload.

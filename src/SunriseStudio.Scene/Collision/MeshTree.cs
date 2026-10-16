@@ -24,6 +24,7 @@ public static class MeshTree
     // A top leaf holds a 15-bit section; a section leaf holds a 7-bit primitive.
     public const int MaxSections = 0x7FFF, MaxPrimitives = 128;
 
+    /** Size in bytes of one node of the given tree kind. */
     public static int NodeSize(MeshTreeKind kind) => kind == MeshTreeKind.Top ? TopNodeSize : SectionNodeSize;
 
     /**

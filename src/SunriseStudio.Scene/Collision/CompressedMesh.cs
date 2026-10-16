@@ -45,6 +45,7 @@ public readonly record struct CompressedMeshRun(uint Value, byte First, byte Cou
     public int Welding => (int)(Value >> 16);
 }
 
+/** Primitive kind from a section's primitive word. */
 public enum CompressedPrimitiveType { Empty, Triangle, Quad, Custom }
 
 /**
@@ -147,6 +148,7 @@ public sealed class CompressedMesh
     /** Shared vertex i: 21, 21 and 22 bits over the mesh domain, in double math. */
     public Vector3 SharedVertex(int index) => DecodeShared(SharedVertices[index]);
 
+    /** Decodes a shared vertex word to a position over the mesh domain. */
     public Vector3 DecodeShared(ulong v)
     {
         double extentX = (double)DomainMax.X - DomainMin.X, extentY = (double)DomainMax.Y - DomainMin.Y;
@@ -159,6 +161,7 @@ public sealed class CompressedMesh
     public Vector3 PackedVertex(CompressedMeshSection section, int k) =>
         DecodePacked(section.Codec, PackedVertices[section.FirstPackedVertex + k]);
 
+    /** Decodes a packed vertex word using the section codec. */
     public static Vector3 DecodePacked(float[] c, uint v) => new((float)(c[0] + (double)(v & 0x7FF) * c[3]),
         (float)(c[1] + (double)((v >> 11) & 0x7FF) * c[4]), (float)(c[2] + (double)(v >> 22) * c[5]));
 
@@ -170,8 +173,10 @@ public sealed class CompressedMesh
     public Vector3 Vertex(CompressedMeshSection section, int k) =>
         k < section.PackedCount ? PackedVertex(section, k) : SharedVertex(SharedNumber(section, k));
 
+    /** The primitive word p of the section. */
     public uint Primitive(CompressedMeshSection section, int p) => Primitives[section.FirstPrimitive + p];
 
+    /** Classifies a primitive word: empty, triangle, quad or custom (hull) primitive. */
     public static CompressedPrimitiveType TypeOf(uint primitive)
     {
         if (primitive == EmptyPrimitive) return CompressedPrimitiveType.Empty;

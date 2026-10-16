@@ -2,6 +2,7 @@ using System.Numerics;
 
 namespace SunriseStudio.Scene;
 
+/** Static-mesh part of AssetSceneLoader: decodes static meshes with their LOD, vertices and texcoords. */
 public sealed partial class AssetSceneLoader
 {
     /** The preview reads the pre-Beyond-Light static schema and validates every buffer range. */

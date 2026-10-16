@@ -3,6 +3,10 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Scene;
 
+/**
+ * Entity-mesh part of AssetSceneLoader: decodes entity models, their material variants and animation
+ * clip names.
+ */
 public sealed partial class AssetSceneLoader
 {
     private readonly Dictionary<(uint Model, uint Config), List<(uint[] Materials, MeshData[] Meshes)>> variantMeshes = [];

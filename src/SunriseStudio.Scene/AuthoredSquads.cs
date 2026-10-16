@@ -2,6 +2,10 @@ using System.Numerics;
 
 namespace SunriseStudio.Scene;
 
+/**
+ * Squad part of AssetSceneLoader: collects placement, squad and rule facts from config tags and joins
+ * them into squad info.
+ */
 public sealed partial class AssetSceneLoader
 {
     private sealed record PlacementFact(ulong Identity, uint Tag, int Offset, uint ClassTag,
@@ -14,6 +18,7 @@ public sealed partial class AssetSceneLoader
     private readonly List<RuleFact> authoredRules = [];
     // Squad config tag -> per member, the entity classes its candidate placements name.
     private readonly Dictionary<uint, List<uint[]>> squadMembers = [];
+    /** A slot-bearing descriptor at a byte offset, with its class id. */
     internal sealed record DescriptorFact(AuthoredSlotIdentity Slot, int Offset, uint ClassId);
 
     /** Packed references retain the object's registry key, slot type and global slot ordinal. */

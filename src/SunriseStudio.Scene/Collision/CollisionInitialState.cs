@@ -2,8 +2,10 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Scene.Collision;
 
+/** Which collision parts start enabled for an entity, or why that could not be resolved. */
 public sealed record CollisionInitialState(bool[]? EnabledParts, string? Unresolved)
 {
+    /** Whether the part starts enabled; null when unknown. */
     public bool? Enabled(int part) => EnabledParts is { } parts && (uint)part < parts.Length ? parts[part] : null;
 }
 

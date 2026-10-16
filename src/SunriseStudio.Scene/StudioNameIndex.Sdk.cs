@@ -5,6 +5,7 @@ using System.Text.Json;
 
 namespace SunriseStudio.Scene;
 
+/** SDK part of StudioNameIndex: names taken from installed SDK text. */
 public sealed partial class StudioNameIndex
 {
     /** Installed SDK text remains candidate evidence until the live package reader supplies a name. */

@@ -2,14 +2,20 @@ using System.Numerics;
 
 namespace SunriseStudio.Scene;
 
+/**
+ * A weapon an entity can carry, with the model tags it resolves to. This file holds the
+ * attachment-catalog records and reader.
+ */
 public sealed record AuthoredWeaponReference(uint ParentEntityTag, uint ConfigTag,
     int GroupIndex, int CandidateIndex, int SourceOffset, uint EntityTag,
     IReadOnlyList<uint> ModelTags);
 
+/** One weapon loadout row: group, eligibility bit, weight and whether it is the fallback. */
 public sealed record AuthoredWeaponLoadout(uint ConfigTag, int GroupIndex, int SourceOffset,
     int EligibilityBitIndex, float Weight, bool IsFallback,
     IReadOnlyList<AuthoredWeaponReference> Weapons);
 
+/** An authored attachment point of an entity config. */
 public sealed record AuthoredAttachmentPoint(uint EntityTag, uint ConfigTag,
     int PrimaryOffset, int SecondaryOffset, int RowIndex, int SourceOffset,
     int NodeIndex, uint EligibilityBitIndex, uint NameHash, string Name,
@@ -19,19 +25,23 @@ public sealed record AuthoredAttachmentPoint(uint EntityTag, uint ConfigTag,
         * Matrix4x4.CreateFromQuaternion(Rotation) * Matrix4x4.CreateTranslation(Translation);
 }
 
+/** The attachment points of one role (parent or child) read from a config. */
 public sealed record AuthoredAttachmentPointSet(uint EntityTag, uint ConfigTag,
     string Role, int PrimaryOffset, uint PrimaryClass, uint SecondaryClass,
     IReadOnlyList<AuthoredAttachmentPoint> Points);
 
+/** An entity's loadouts, weapon references and attachment points. */
 public sealed record EntityAttachmentCatalog(uint EntityTag,
     IReadOnlyList<AuthoredWeaponLoadout> Loadouts,
     IReadOnlyList<AuthoredAttachmentPointSet> ParentPoints,
     IReadOnlyList<AuthoredAttachmentPointSet> WeaponPoints,
     IReadOnlyList<string> RuntimeInputs, IReadOnlyList<string> Diagnostics);
 
+/** A weapon with the parent and child attachment points that join it to its owner. */
 public sealed record AttachmentPreviewSource(AuthoredWeaponReference Weapon,
     AuthoredAttachmentPoint ParentPoint, AuthoredAttachmentPoint ChildPoint);
 
+/** Attachment part of AssetSceneLoader: describes an entity's weapon loadouts and attachment points. */
 public sealed partial class AssetSceneLoader
 {
     /** Loadout alternatives remain explicit because native selection uses runtime bits and RNG. */

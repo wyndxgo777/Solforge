@@ -23,13 +23,16 @@ public static class VertexAttributeDecoding
         _ => 0
     };
 
+    /** Converts half-float bits to a float. */
     public static float Half(ushort bits) => (float)BitConverter.UInt16BitsToHalf(bits);
 
     /** SNORM maps -32768 and -32767 both to -1, as D3D does. */
     public static float Snorm16(short value) => Math.Max(value / 32767f, -1f);
 
+    /** Unsigned normalised 16-bit value to 0..1. */
     public static float Unorm16(ushort value) => value / 65535f;
 
+    /** Unsigned normalised 8-bit value to 0..1. */
     public static float Unorm8(byte value) => value / 255f;
 
     /** One element at the start of the span. */
@@ -137,6 +140,7 @@ public static class VertexAttributeDecoding
         return SafeNormalize(n, Vector3.UnitZ);
     }
 
+    /** Encodes a unit normal as two octahedral coordinates. */
     public static Vector2 OctahedralEncode(Vector3 normal)
     {
         var n = SafeNormalize(normal, Vector3.UnitZ);

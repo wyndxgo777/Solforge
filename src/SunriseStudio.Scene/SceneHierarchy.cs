@@ -1,5 +1,6 @@
 namespace SunriseStudio.Scene;
 
+/** Kind of hierarchy node. */
 public enum SceneHierarchyKind
 {
     Root, Bubble, Map, Mission, State, Container, SharedContainers,
@@ -47,6 +48,7 @@ public sealed partial class SceneHierarchy
         return result;
     }
 
+    /** Finds a node by id or by the id of its source object. */
     public SceneHierarchyNode? Find(string id) => byId.GetValueOrDefault(id)
         ?? byObjectId.GetValueOrDefault(id);
 
@@ -67,8 +69,11 @@ public sealed partial class SceneHierarchy
             if (byObjectId.TryGetValue(row.Id, out var node) && node.Representative?.Id == row.Id) node.Representative = row;
     }
 
+    /** False only when the object's node is hidden; objects without a node count as visible. */
     public bool IsVisible(object source) => Find(source)?.Visible ?? true;
+    /** True when the node with this id was hidden directly. */
     public bool IsHidden(string id) => hidden.Contains(id);
+    /** True when the node is hidden itself or through an ancestor. */
     public bool IsEffectivelyHidden(SceneHierarchyNode node) => !node.Visible;
 
     /** Clearing the view also removes unmatched hide IDs retained for undo. */
@@ -102,6 +107,7 @@ public sealed partial class SceneHierarchy
         return changed;
     }
 
+    /** The chain of nodes from the root to this node. */
     public IReadOnlyList<SceneHierarchyNode> PathTo(SceneHierarchyNode node)
     {
         var path = new List<SceneHierarchyNode>();

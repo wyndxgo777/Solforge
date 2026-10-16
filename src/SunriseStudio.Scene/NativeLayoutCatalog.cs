@@ -74,6 +74,7 @@ internal sealed class NativeLayoutCatalog
         }
     }
 
+    /** Looks up a vertex layout by id; false when unknown or declared inconsistently. */
     public bool TryGet(int id, out NativeInputElement[] elements, out uint source)
     {
         elements = [];

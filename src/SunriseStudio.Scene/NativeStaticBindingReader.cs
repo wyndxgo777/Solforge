@@ -2,6 +2,10 @@ using System.Numerics;
 
 namespace SunriseStudio.Scene;
 
+/**
+ * Static-binding part of AssetSceneLoader: reads the per-instance data and occlusion maps native
+ * static draws need.
+ */
 public sealed partial class AssetSceneLoader
 {
     private Dictionary<ulong, List<NativeOcclusionMapMatch>>? occlusionMaps;

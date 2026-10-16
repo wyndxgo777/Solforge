@@ -3,6 +3,10 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Scene;
 
+/**
+ * Scenario part of AssetSceneLoader: describes scenarios and walks their states, bubbles and authored
+ * objects.
+ */
 public sealed partial class AssetSceneLoader
 {
     private SceneLoadOptions options = new();

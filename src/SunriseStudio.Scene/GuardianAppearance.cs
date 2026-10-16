@@ -2,6 +2,7 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Scene;
 
+/** A guardian class and the body entity it selects. This file also builds a guardian's parts. */
 public sealed record GuardianClass(uint BodyTag, byte ClassByte, string Name)
 {
     public string DisplayName => $"{Name} guardian";
@@ -15,6 +16,7 @@ public static class GuardianClasses
     public const uint BodyClass = 0x80809C0F;
     public static IReadOnlyList<GuardianClass> All { get; } =
         [new(Titan, 0, "Titan"), new(Hunter, 1, "Hunter"), new(Warlock, 2, "Warlock")];
+    /** The class whose body entity is the tag, or null. */
     public static GuardianClass? ForBody(uint bodyTag) => All.FirstOrDefault(value => value.BodyTag == bodyTag);
 }
 
@@ -34,6 +36,7 @@ public sealed record GuardianRaceGender(int Row, uint NameHash, int Race, int Ge
     public bool Female => Gender == 1;
 }
 
+/** Kind of guardian part. */
 public enum GuardianPartKind { Body, Customisation, Armor, Weapon }
 
 /**
@@ -311,6 +314,7 @@ public sealed class GuardianAppearance
         }
     }
 
+    /** True for errors a bad item read raises; the part is skipped instead of failing the guardian. */
     internal static bool Recoverable(Exception error) => error is InvalidDataException or KeyNotFoundException
         or OverflowException or ArgumentException or IndexOutOfRangeException;
 }

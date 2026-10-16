@@ -5,6 +5,7 @@ namespace SunriseStudio.Scene;
 /** Node poses are supplied explicitly until each reflected pose-provider binding is established. */
 public static class AttachmentTransforms
 {
+    /** World transform of an attachment point, from its node and the owner's transform. */
     public static Matrix4x4 PointWorld(AuthoredAttachmentPoint point,
         IReadOnlyList<Matrix4x4> nodeObjectTransforms, Matrix4x4 ownerWorld)
     {
@@ -44,6 +45,10 @@ public static class AttachmentTransforms
     }
 }
 
+/**
+ * Attachment-preview part of AssetSceneLoader: builds a scene of a weapon fitted to its parent
+ * entity's attachment point.
+ */
 public sealed partial class AssetSceneLoader
 {
     /** Preview choices name authored records without inferring runtime selection. */

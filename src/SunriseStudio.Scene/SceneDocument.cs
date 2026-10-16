@@ -7,6 +7,7 @@ namespace SunriseStudio.Scene;
 /** Collision is drawn by its own overlay from decoded Havok shapes; no scene item carries it. */
 public enum SceneLayer { Geometry, Terrain, Skybox, Distant, Objects, Volumes, Transitions, Spawns, Squads, Effects, Lights, Collision }
 
+/** Vertex of a decoded scene mesh. */
 [StructLayout(LayoutKind.Sequential)]
 public struct SceneVertex(Vector3 position, Vector3 normal, Vector2 texCoord, Vector4 color)
 {
@@ -16,6 +17,7 @@ public struct SceneVertex(Vector3 position, Vector3 normal, Vector2 texCoord, Ve
     public Vector4 Color = color;
 }
 
+/** A decoded mesh: vertices, indices, material and part flags. */
 public sealed class MeshData
 {
     public uint TagHash { get; init; }
@@ -41,6 +43,7 @@ public sealed class MeshData
     public NativeMeshData? Native { get; init; }
 }
 
+/** A placed mesh: its mesh data, transform, name, layer and source rows. */
 public sealed class MeshInstance
 {
     private Matrix4x4 transform = Matrix4x4.Identity;
@@ -104,6 +107,7 @@ public sealed class MeshInstance
     }
 }
 
+/** A non-mesh scene object (placement, volume, light or similar): pose, name evidence and source rows. */
 public sealed class SceneMarker
 {
     private Vector3 position, extents = Vector3.One;
@@ -173,6 +177,7 @@ public sealed record SceneObjectChannel(int Index, uint NameHash, Vector4 Value,
     public const float ViewerDefault = 1;
 }
 
+/** A bubble in the scene. */
 public sealed record BubbleInfo(uint TagHash, uint NameHash, string Name);
 
 /** A placed class-0x80807086 atmosphere resource; Settings are its bytes +0x10 to +0xF0. */
@@ -181,6 +186,7 @@ public sealed record PlacedAtmosphere(uint BubbleHash, uint PlacementListTag, in
 /** A placed class-0x80806F61 time-of-day resource: +0x10 curve set tag, +0x14 day seconds, +0x18 start time. */
 public sealed record PlacedTimeOfDay(uint BubbleHash, uint PlacementListTag, uint CurveSetTag, float DaySeconds, float StartTime);
 
+/** A decoded scene: its instances, markers, bubbles, scenario states, authored objects and diagnostics. */
 public sealed class SceneDocument
 {
     public string Name { get; set; } = "";

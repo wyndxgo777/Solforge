@@ -2,13 +2,16 @@ using System.Numerics;
 
 namespace SunriseStudio.Scene;
 
+/** A map layer: its name, definition tag and containers. This file holds the layer records and loader part. */
 public sealed record MapLayerInfo(int Index, uint NameHash, string Name,
     SceneNameEvidence NameEvidence, uint DefinitionTag, int SourceOffset,
     IReadOnlyList<uint> ContainerTags);
 
+/** A container's visibility mask and the map-global indices it covers. */
 public sealed record MapContainerInfo(uint TagHash, ReadOnlyMemory<byte> Mask,
     IReadOnlyList<int> MapGlobalIndices);
 
+/** Layer part of AssetSceneLoader: describes map layers and walks the map containers. */
 public sealed partial class AssetSceneLoader
 {
     private readonly record struct SceneVisitKey(uint Tag, uint Bubble, Matrix4x4 Transform, uint Entry);

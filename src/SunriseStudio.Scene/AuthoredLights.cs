@@ -2,6 +2,10 @@ using System.Numerics;
 
 namespace SunriseStudio.Scene;
 
+/**
+ * Authored light parameter block: the TFX bytecode with its constants and defaults. This file holds
+ * the authored light records and their reader.
+ */
 public sealed record AuthoredLightParameters(
     uint TagHash,
     ReadOnlyMemory<byte> SourceData,
@@ -9,6 +13,7 @@ public sealed record AuthoredLightParameters(
     IReadOnlyList<Vector4> Constants,
     IReadOnlyList<Vector4> Defaults);
 
+/** One authored probe or volumetric light: its placement, materials, parameters and flags. */
 public sealed record AuthoredLightRow(
     int Index,
     int SourceOffset,
@@ -36,6 +41,7 @@ public sealed record AuthoredLightRow(
     public Matrix4x4 VolumeWorldTransform => VolumeTransform * Transform;
 }
 
+/** An authored light table: probe and volumetric rows plus the bounds tag. */
 public sealed record AuthoredLightTable(
     uint TagHash,
     string RendererName,
@@ -44,6 +50,7 @@ public sealed record AuthoredLightTable(
     uint BoundsTag,
     IReadOnlyList<AuthoredLightRow> Rows);
 
+/** A light table as placed in a bubble, with its placement transform and owner marker. */
 public sealed record PlacedLightTable(
     uint BubbleHash,
     uint PlacementSourceTag,
@@ -57,6 +64,7 @@ public sealed record PlacedLightTable(
     public IReadOnlyList<MapContainerInfo> MapContainers => OwnerMarker?.MapContainers ?? [];
 }
 
+/** Light part of AssetSceneLoader: reads placed light tables and their rows. */
 public sealed partial class AssetSceneLoader
 {
     private readonly Dictionary<uint, AuthoredLightTable> lightTables = [];

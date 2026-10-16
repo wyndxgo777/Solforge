@@ -3,6 +3,10 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Scene;
 
+/**
+ * Name part of AssetSceneLoader: collects inline names and resolves hashes to the best authored name
+ * for each object.
+ */
 public sealed partial class AssetSceneLoader
 {
     private readonly Dictionary<uint, HashSet<string>> inlineNames = [];

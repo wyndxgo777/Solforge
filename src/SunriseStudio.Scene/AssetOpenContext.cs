@@ -18,6 +18,7 @@ public sealed record AssetOpenContext(uint EntityTag = 0, uint ModelTag = 0, uin
     /** A guardian view; null for every other open. */
     public GuardianLoadout? Guardian { get; init; }
 
+    /** Builds the open context for a selected mesh instance or marker; null for any other object. */
     public static AssetOpenContext? ForObject(object? source) => source switch
     {
         MeshInstance mesh => new(mesh.ObjectClassTag != 0 ? mesh.ObjectClassTag
