@@ -244,6 +244,8 @@ async Task StdioRoundTrip()
             "open_map", "open_asset", "set_viewport_rendering", "edit_placement", "edit_bounds", "revert_object_edit",
             "apply_item_edit", "apply_vendor_edit", "start_creation", "replace_texture_pixels", "build_project",
             .. SolforgeTools.DecompToolNames, .. SolforgeTools.PackageDataToolNames,
+            "list_content_families", "list_content", "get_content", "validate_content", "get_subclass_layout", "check_subclass_build", "get_help",
+            "create_content", "update_content", "delete_content", "export_content",
             "list_ui_controls", "ui_invoke", "ui_set_value", "ui_set_checked", "ui_select",
             "get_viewport_frame", "get_viewport_frames", "wait_for_viewport_change", "get_viewport_stream", "set_viewport_stream",
             "get_player_position", "wait_for_player_near",
@@ -251,7 +253,7 @@ async Task StdioRoundTrip()
 
         string[] actions = ["select_object", "focus_camera", "highlight", "open_file", "apply_project_edit", "open_map", "open_asset",
             "set_viewport_rendering", "edit_placement", "edit_bounds", "revert_object_edit", "apply_item_edit", "apply_vendor_edit",
-            "start_creation", "replace_texture_pixels", "build_project", "rename_function", "ui_invoke", "ui_set_value", "ui_set_checked", "ui_select", "set_viewport_stream", "create_graph", "edit_graph", "apply_graph"];
+            "start_creation", "replace_texture_pixels", "build_project", "rename_function", "ui_invoke", "ui_set_value", "ui_set_checked", "ui_select", "set_viewport_stream", "create_content", "update_content", "delete_content", "export_content", "create_graph", "edit_graph", "apply_graph"];
         Expect(tools.Select(tool => tool?["name"]?.ToString()).SequenceEqual(expected), "tool names: " + string.Join(",", tools.Select(tool => tool?["name"])));
         foreach (var tool in tools)
         {
