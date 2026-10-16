@@ -118,8 +118,14 @@ public static class PlayerSources
 
     public static double Round(float value) => Math.Round(value, 2);
 
-    private static float? Number(JsonNode? node) =>
-        node is JsonValue value && value.TryGetValue(out double number) && double.IsFinite(number) ? (float)number : null;
+    /** Any JSON number, including whole numbers built in-process (a JsonValue<int> refuses TryGetValue<double>). */
+    private static float? Number(JsonNode? node)
+    {
+        if (node is not JsonValue value) return null;
+        double number = value.TryGetValue(out double d) ? d : value.TryGetValue(out float f) ? f : value.TryGetValue(out long l) ? l
+            : value.TryGetValue(out int i) ? i : double.NaN;
+        return double.IsFinite(number) ? (float)number : null;
+    }
 
     private static string Text(JsonNode? node) => node is JsonValue value && value.TryGetValue(out string? text) ? text : "";
 }

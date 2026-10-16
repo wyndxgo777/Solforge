@@ -277,7 +277,7 @@ async Task StdioRoundTrip()
         var open = JsonNode.Parse(documents["content"]![0]!["text"]!.ToString())!;
         Expect(open["asset"]?["tag"]?.ToString() == "0x80A1B2C3" && open["script"]?["path"]?.ToString() == "scripts/freeroam.lua"
             && open["changes"]?["count"]?.GetValue<int>() == 3, "get_open_documents: " + open.ToJsonString());
-        JsonNode Body(JsonNode result) => JsonNode.Parse(result["content"]![0]!["text"]!.ToString())!;
+        JsonNode Body(JsonNode result) { string text = result["content"]![0]!["text"]!.ToString(); try { return JsonNode.Parse(text)!; } catch (System.Text.Json.JsonException) { throw new InvalidOperationException("tool reply is not JSON: " + text); } }
         var slot = Body(await Call(20, "tools/call", new JsonObject { ["name"] = "get_mission_object",
             ["arguments"] = new JsonObject { ["id"] = "pf_event_multipoint.pf_placement[0].o_generator" } }));
         Expect(slot["slotId"]?.ToString() == "slot/80be5d9b/000014/0014/0004" && slot["prefab"]?.ToString() == "0x80BE5DA0"
