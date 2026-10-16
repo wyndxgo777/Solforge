@@ -310,7 +310,7 @@ public static partial class ExoticWeaponAuthoring
     }
 
     /** Cloned plug wrappers retain no inherited stats or sandbox effects. */
-    private static byte[] ClearContributions(InvestmentCatalog investment, uint tag, byte[] bytes)
+    internal static byte[] ClearContributions(InvestmentCatalog investment, uint tag, byte[] bytes)
     {
         while (investment.ReadItem(tag, bytes).Stats.LastOrDefault() is { } stat)
             bytes = investment.RemoveStat(tag, bytes, stat);
@@ -362,7 +362,7 @@ public static partial class ExoticWeaponAuthoring
     }
 
     /** A private catalog composes dependent plans without changing the editor's visible overlay. */
-    private sealed class PlanCatalog : IDisposable
+    internal sealed class PlanCatalog : IDisposable
     {
         private readonly ushort package;
         private readonly Dictionary<uint, PackageOverlayEntry> metadata;

@@ -56,12 +56,29 @@ public sealed partial class StudioForm
             // A loading or reading reply means the item is not open yet: stop and let the caller try again.
             if (!reply.StartsWith("Applied", StringComparison.Ordinal)) break;
         }
+        bool opsApplied = lines.Count == 0 || lines[^1].StartsWith("Applied", StringComparison.Ordinal);
         if (result.WorkflowFields.Count > 0)
             lines.Add("Set in the item's creation workflow (not apply_item_edit): "
                 + string.Join("; ", result.WorkflowFields.Select(pair => pair.Key + " = " + pair.Value)) + ".");
-        if (result.CustomPerks.Count > 0)
-            lines.Add($"{result.CustomPerks.Count} custom perk rule(s) compiled; packing them into perk tags is not supported yet.");
+        if (result.Definitions.Count > 0 && opsApplied)
+            lines.Add(AiInstallCustomPerks(result));
         return lines.Count == 0 ? "The graph has no edits." : string.Join("\n", lines);
+    }
+
+    /** Packs the graph's Custom Perks into new sandbox perks and plugs on the target weapon (Studio.md Phase 27). */
+    private string AiInstallCustomPerks(WeaponCompileResult result)
+    {
+        var data = workspace.Investment;
+        uint tag = data is not null && AiFindItem(data, result.Target) is { } item ? item.Tag : SolforgeTools.ParseHash(result.Target) ?? 0;
+        if (AiInvestmentReady(tag, vendor: false) is { } wait) return wait;
+        if (!workspace.CanEdit) return "Solforge is busy (" + workspace.Status + "); apply the graph again when get_editor_state says it is idle.";
+        if (workspace.CustomPerkPackage() is not { } package)
+            return "Custom perks need a project package; the default 0AA0 is installed. Create an item first so the project has its own package.";
+        workspace.Run(() => workspace.CreateCustomPerks(tag, result.Definitions, package));
+        if (workspace.Error.Length != 0) return "Custom perks not installed: " + workspace.Error;
+        return $"Packing {result.Definitions.Count} custom perk(s) ({string.Join(", ", result.Definitions.Select(perk => perk.Name))}) into package "
+            + $"{package:X4} in the background. get_editor_state shows 'Custom perks installed' when done; get_item then lists the new plug "
+            + "in its socket. Build the project, deploy the packages and build_data.bin, then get a fresh drop or /perk force the old copy.";
     }
 
     private string AiApplyMaterialGraph(GraphDocument document)

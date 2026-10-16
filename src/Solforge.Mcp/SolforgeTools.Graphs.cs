@@ -92,7 +92,7 @@ public static partial class SolforgeTools
             Schema(("path", "string", "Project-relative path ending .solgraph.json", true)),
             args => WithGraph(host, args, document => McpToolResult.Json(GraphCommands.Describe(document))));
         yield return Read("compile_graph", "Compile without applying: a material graph gives native constant and texture slot writes plus " +
-            "the preview; a weapon graph gives apply_item_edit ops and custom perk rules; a mission graph gives Lua. ok is false with errors.",
+            "the preview; a weapon graph gives apply_item_edit ops, custom perk rules and perkDefinitions (each perk's native sandbox program); a mission graph gives Lua. ok is false with errors.",
             Schema(("path", "string", "Project-relative path ending .solgraph.json", true)),
             args => WithGraph(host, args, document => McpToolResult.Json(GraphCommands.Compile(document))));
 
@@ -138,7 +138,7 @@ public static partial class SolforgeTools
                 { return Task.FromResult(McpToolResult.Error("Cannot edit the graph: " + exception.Message)); }
             });
         yield return Act("apply_graph", "Compile a graph and apply it through Solforge's pipelines: weapon graphs run their item edits on the " +
-            "target item (open it with open_asset first), material graphs import their constant and texture writes into the target " +
+            "target item (open it with open_asset first) and install each Custom Perk as a new sandbox perk + plug in a weapon socket, material graphs import their constant and texture writes into the target " +
             "material, mission graphs write the Lua to script (default: next to the graph, .lua). Each shows in Project changes with undo.",
             Schema(("path", "string", "Project-relative path ending .solgraph.json", true),
                 ("script", "string", "Mission graphs: project-relative .lua path to write", false)),

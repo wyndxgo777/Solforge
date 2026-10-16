@@ -138,12 +138,14 @@ weaponEditor.Connect(perk.Id, "perk", output, "perks");
 Expect(weapon.Links.Count(link => link.ToNode == output && link.ToPin == "perks") == 2, "multi input keeps every link");
 var custom = weaponEditor.AddNode(NodeLibrary.CustomPerk, 0, 400, new Dictionary<string, string> { ["name"] = "Sun Bite" });
 var onKill = weaponEditor.AddNode("perk.on_kill", 200, 400);
-var healthBelow = weaponEditor.AddNode("perk.health_below", 400, 400);
-var heal = weaponEditor.AddNode("perk.heal", 600, 400);
+var magazineGate = weaponEditor.AddNode("perk.magazine_percentage", 400, 400, new Dictionary<string, string> { ["percent"] = "50" });
+var damageBuff = weaponEditor.AddNode("perk.add_damage_scalar", 600, 400, new Dictionary<string, string> { ["scalar"] = "1.25", ["duration"] = "6" });
+var perkStat = weaponEditor.AddNode("item.stat", -200, 400, new Dictionary<string, string> { ["stat"] = "Handling", ["value"] = "10" });
+weaponEditor.Connect(perkStat.Id, "stat", custom.Id, "stats");
 weaponEditor.Connect(custom.Id, "perk", output, "perks");
 weaponEditor.Connect(custom.Id, "perk", onKill.Id, "perk");
-weaponEditor.Connect(onKill.Id, "then", healthBelow.Id, "exec");
-weaponEditor.Connect(healthBelow.Id, "then", heal.Id, "exec");
+weaponEditor.Connect(onKill.Id, "then", magazineGate.Id, "exec");
+weaponEditor.Connect(magazineGate.Id, "then", damageBuff.Id, "exec");
 var weaponResult = WeaponGraphCompiler.Compile(weapon);
 Expect(!GraphValidation.HasErrors(weaponResult.Diagnostics), "weapon compiles: " + string.Join("; ", weaponResult.Diagnostics));
 Expect(weaponResult.WorkflowFields.Any(pair => pair is { Key: "Name", Value: "Sol Fang" }) && !weaponResult.Ops.Any(op => op.Field == "Name"),
@@ -159,11 +161,49 @@ Expect(WeaponGraphCompiler.RarityNames.Select((rarity, tier) => SunriseStudio.Pa
     "rarity names match the investment tier table");
 Expect(weaponResult.Ops.Any(op => op is { Op: "add_stat", Stat: "Impact", Value: "45" }), "stat value folds and rounds");
 Expect(weaponResult.Ops.Any(op => op is { Op: "add_perk", Perk: "Aggressive Frame" }) && weaponResult.Ops.Any(op => op is { Op: "add_perk", Perk: "Rampage" }), "perks become add_perk");
-Expect(weaponResult.CustomPerks.Single() is { Perk: "Sun Bite", Event: "on_kill" } rule && rule.Conditions.Single().Type == "health_below"
-    && rule.Actions.Single().Type == "heal", "custom perk rule");
+Expect(weaponResult.CustomPerks.Single() is { Perk: "Sun Bite", Event: "on_kill" } rule && rule.Conditions.Single().Type == "magazine_percentage"
+    && rule.Actions.Single().Type == "add_damage_scalar", "custom perk rule");
+// Custom perk lowering (Phase 27): the rule becomes a native sandbox perk program.
+var sunBite = weaponResult.Definitions.Single();
+Expect(sunBite is { Name: "Sun Bite", Socket: -1 } && sunBite.Stats.Single() == ("Handling", 10), "custom perk keeps its plug stats");
+Expect(!GraphValidation.Validate(weapon).Any(item => item.NodeId == perkStat.Id && item.Severity == DiagnosticSeverity.Warning), "perk stats count as linked");
+Expect(sunBite.Native is { Ok: true, IsPassive: false } && sunBite.Native.Activation.Single() is { Primitive: "state-kill", StateProperty: PerkLowering.MagazineProperty } gate
+    && Near(gate.Values["maximum"], .5) && Near(gate.Values["minimum"], 0) && gate.InnerValues["this_weapon"] == 1, "magazine gate lowers to state-kill");
+Expect(sunBite.Native.Effects.Single() is { Primitive: "damage-multiplier" } buff && Near(buff.Values["bonus"], .25), "damage scalar lowers to a bonus");
+Expect(Near(sunBite.Native.Deactivation.Single().Values["seconds"], 6), "buff duration is the deactivation timer");
+Expect(WeaponGraphCompiler.ToJson(weaponResult)["perkDefinitions"]?.AsArray().Count == 1, "json lists perk definitions");
 Expect(weaponResult.Ops.First().ToArguments("0x80CC0001")["item"]?.ToString() == "0x80CC0001", "ops carry the item");
 var stray = weaponEditor.AddNode("item.perk", 0, 600, new Dictionary<string, string> { ["perk"] = "Outlaw" });
 Expect(GraphValidation.Validate(weapon).Any(item => item.NodeId == stray.Id && item.Severity == DiagnosticSeverity.Warning), "unlinked perk warns");
+
+// Custom perk lowering: precision, reload refill, Guardian kills and unsupported nodes.
+CustomPerkDefinition LabPerk(string name, params PerkRule[] rules)
+{
+    var lab = new CustomPerkDefinition(name, "", "", -1, [], rules, "n1");
+    return lab with { Native = PerkLowering.Lower(lab) };
+}
+PerkStep Step(string type, params (string Key, string Value)[] values) => new(type, values.ToDictionary(pair => pair.Key, pair => pair.Value));
+var precise = LabPerk("Headhunter", new PerkRule("Headhunter", "", "on_precision_hit", [], [Step("grant_super_energy", ("percent", "2"))]));
+Expect(precise.Native.Ok && precise.Native.Activation.Single() is { Primitive: "damage" } hit && hit.AnyLabels["source"].Single() == PerkLowering.PrecisionLabel
+    && precise.Native.Effects.Single() is { Primitive: "ability-energy" } energy && Near(energy.Values["amount"], .02) && energy.Values["slot"] == 1,
+    "precision hit filters on the precision label");
+Expect(Near(precise.Native.Deactivation.Single().Values["seconds"], PerkLowering.RearmSeconds), "instant perks re-arm");
+var reload = LabPerk("Quick Refill", new PerkRule("Quick Refill", "", "on_reload", [], [Step("refill_magazine", ("percent", "40"))]));
+Expect(reload.Native.Ok && reload.Native.Activation.Single().Primitive == "reload" && Near(reload.Native.Effects.Single().Values["this_fraction"], .4), "reload refill");
+var hunter = LabPerk("Duelist", new PerkRule("Duelist", "", "on_kill", [Step("target_type", ("target", "Guardian"))], [Step("spawn_orb", ("count", "2"))]));
+Expect(hunter.Native.Ok && hunter.Native.Activation.Single().AnyLabels["victim"].Single() == PerkLowering.PlayerLabel
+    && hunter.Native.Effects.Single().Values["count"] == 2, "Guardian kills filter the victim");
+var twoEvents = LabPerk("Twin", new PerkRule("Twin", "", "on_kill", [], [Step("spawn_orb")]), new PerkRule("Twin", "", "on_precision_kill", [], [Step("spawn_orb")]));
+Expect(twoEvents.Native.Ok && twoEvents.Native.Activation.Count == 2, "events sharing actions share one program");
+var mixed = LabPerk("Mixed", new PerkRule("Mixed", "", "on_kill", [], [Step("spawn_orb")]), new PerkRule("Mixed", "", "on_reload", [], [Step("refill_magazine")]));
+Expect(!mixed.Native.Ok, "events with different actions are refused");
+var lifeSteal = LabPerk("Life Steal", new PerkRule("Life Steal", "", "on_kill", [Step("health_below", ("percent", "50"))], [Step("heal")]));
+Expect(!lifeSteal.Native.Ok && lifeSteal.Native.Diagnostics.Count(item => item.Severity == DiagnosticSeverity.Error) == 2, "health and heal cannot be packed");
+var passive = LabPerk("Steady");
+Expect(!passive.Native.Ok, "a perk with no event and no stat is refused");
+var statsOnly = new CustomPerkDefinition("Steady", "", "", -1, [("Stability", 20)], [], "n2");
+Expect(PerkLowering.Lower(statsOnly) is { Ok: true, IsPassive: true }, "a stats-only perk packs as a plain plug");
+Expect(LabPerk("Huge", new PerkRule("Huge", "", "on_kill", [], [Step("add_damage_scalar", ("scalar", "50"))])).Native.Ok == false, "scalar range is checked");
 
 // Mission compile.
 var mission = GraphDocument.Create(GraphKind.Mission, "Sol Test");
