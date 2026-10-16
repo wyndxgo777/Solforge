@@ -112,6 +112,7 @@ public sealed partial class StudioForm
         {
             if (ImGui.MenuItem("Mission Graph")) focusMissionGraph = true;
             if (ImGui.MenuItem("Live")) focusLive = true;
+            if (ImGui.MenuItem("Local Server")) localServerOpen = true;
             if (ImGui.MenuItem("Items", "", false, workspace.Catalog is not null)) ShowItems();
             ImGui.Separator();
             if (ImGui.MenuItem("Frame selection", ShortcutInput.Text(ShortcutActions.FrameSelection3D), false,
@@ -273,6 +274,7 @@ public sealed partial class StudioForm
         if (noticesDialog) { ImGui.OpenPopup("Third-party notices"); noticesDialog = false; }
         DrawLocationDialog(); DrawProjectDialog(); DrawAddDialog(); DrawCacheDialog(); DrawBundleDialogs(); DrawModDialog();
         DrawShortcutsDialog(); DrawNoticesDialog(); DrawPreferences();
+        DrawLocalServer();
         DrawCreation();
     }
 

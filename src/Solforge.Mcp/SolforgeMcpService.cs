@@ -22,7 +22,10 @@ public sealed class SolforgeMcpService : IAsyncDisposable
 
     public static SolforgeMcpService Start(ISolforgeHost host, string version)
     {
-        var dispatcher = new McpDispatcher(SolforgeTools.Create(host), version, SolforgeTools.Instructions);
+        // Local server tools (LocalServer/LocalServerTools.cs) sit beside the editor tools; they never reach the VPS.
+        var localServer = LocalServer.LocalServerTools.Create(LocalServer.LocalServerManager.CreateDefault(), () => host.ProjectRoot, host.ApproveAsync);
+        var dispatcher = new McpDispatcher([.. SolforgeTools.Create(host), .. localServer], version,
+            SolforgeTools.Instructions + LocalServer.LocalServerTools.Instructions);
         var server = new McpHttpServer(dispatcher);
         server.Start();
         McpDiscovery.CleanStale();
