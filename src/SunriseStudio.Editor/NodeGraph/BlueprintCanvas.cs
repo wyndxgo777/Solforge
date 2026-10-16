@@ -35,8 +35,10 @@ internal sealed class BlueprintCanvas
     public bool ShowMinimap { get; set; } = true;
     public float Zoom => zoom;
 
+    /** Fits the view to all nodes on the next draw. */
     public void FrameAll() => fitRequested = true;
 
+    /** Shows a status message in the canvas. */
     public void Say(string text)
     {
         status = text;

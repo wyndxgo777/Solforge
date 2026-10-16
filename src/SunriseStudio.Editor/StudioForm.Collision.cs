@@ -7,6 +7,7 @@ using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
+/** StudioForm part: collision layer selection, inspector, export and import. */
 public sealed partial class StudioForm
 {
     // The view whose collision selection the inspector shows, and the rows joined to it.

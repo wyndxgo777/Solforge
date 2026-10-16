@@ -4,6 +4,7 @@ using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
+/** StudioForm part: the keyboard shortcut dialog with key capture and conflict marking. */
 public sealed partial class StudioForm
 {
     private static readonly (ShortcutSection Section, string Title, string Scope)[] ShortcutTabs =

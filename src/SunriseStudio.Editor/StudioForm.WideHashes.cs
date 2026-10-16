@@ -26,6 +26,7 @@ public sealed class WideHashAliasDraft
         values = new(baseline.Native.WideHashes ?? WideHashAliases.Empty);
     }
 
+    /** Adds a 16-digit hex wide hash to the draft; throws on bad or duplicate input. */
     public void Add(string text)
     {
         text = text.Trim();
@@ -37,8 +38,10 @@ public sealed class WideHashAliasDraft
         snapshot = null;
     }
 
+    /** Removes a wide hash from the draft. */
     public void Remove(ulong value) { if (values.Remove(value)) snapshot = null; }
 
+    /** Saves the aliases to the added asset; refuses when the project or asset changed. */
     public void Save(StudioWorkspace workspace)
     {
         if (!ReferenceEquals(workspace.Project, project)
@@ -48,12 +51,14 @@ public sealed class WideHashAliasDraft
     }
 }
 
+/** StudioForm part: the wide hash alias editor dialog. */
 public sealed partial class StudioForm
 {
     private WideHashAliasDraft? wideHashDraft;
     private string wideHashText = "", wideHashError = "";
     private bool openWideHashes;
 
+    /** Hex input field for one wide hash. */
     internal static bool WideHashInput(ref string value) => UiAuto.InputText("Wide hash", ref value, 19);
 
     private void BeginWideHashes(string id)

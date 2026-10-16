@@ -3,6 +3,7 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Editor;
 
+/** StudioWorkspace part: replaces a weapon's sounds. */
 public sealed partial class StudioWorkspace
 {
     /**

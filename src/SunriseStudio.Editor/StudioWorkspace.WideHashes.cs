@@ -3,6 +3,7 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Editor;
 
+/** StudioWorkspace part: wide hash aliases of added assets. */
 public sealed partial class StudioWorkspace
 {
     /** Alias edits share ordinary added-asset undo without replacing unchanged payload files. */

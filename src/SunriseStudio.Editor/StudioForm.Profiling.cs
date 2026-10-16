@@ -3,6 +3,7 @@ using System.Text.Json;
 
 namespace SunriseStudio.Editor;
 
+/** StudioForm part: per-frame prepare, draw and submit timings for the profiling capture. */
 public sealed partial class StudioForm
 {
     private sealed record FrameTiming(double PrepareMilliseconds, double DrawMilliseconds,

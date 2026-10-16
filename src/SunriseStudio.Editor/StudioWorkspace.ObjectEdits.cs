@@ -4,6 +4,7 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Editor;
 
+/** StudioWorkspace part: compiled object edits and their modified state. */
 public sealed partial class StudioWorkspace
 {
     private ObjectEditCompilation compiledObjects = ObjectEditCompilation.Empty;

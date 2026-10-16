@@ -7,6 +7,7 @@ using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
+/** StudioForm part: the selected world object's inspector and transform editing. */
 public sealed partial class StudioForm
 {
     private WorldObjectInspection? objectInspection;

@@ -2,6 +2,7 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Editor;
 
+/** StudioWorkspace part: asset additions with related edits in one undo step. */
 public sealed partial class StudioWorkspace
 {
     /** Creation and retargeting share one manifest publication and one reversible editor action. */

@@ -6,6 +6,7 @@ using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
+/** StudioWorkspace part: opens a weapon model and its animation clips. */
 public sealed partial class StudioWorkspace
 {
     /** The weapon scene owns its assembled art and full linked animation catalog. */

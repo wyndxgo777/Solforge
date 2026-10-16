@@ -8,6 +8,7 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Editor;
 
+/** StudioForm part: UI-thread side of the AI self-service tools (settings, project, close, build commands). */
 public sealed partial class StudioForm
 {
     /** Message for a refused switch while the Mission Graph holds an unsaved draft (the user decides; the AI never discards it). */

@@ -2,6 +2,7 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Editor;
 
+/** StudioWorkspace part: refreshes project lists after a mission script is saved. */
 public sealed partial class StudioWorkspace
 {
     /** Owned source changes refresh project lists without invalidating installed package data. */

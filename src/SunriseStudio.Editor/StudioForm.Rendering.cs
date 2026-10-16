@@ -12,6 +12,7 @@ public sealed partial class StudioForm
 {
     private long renderToggleFrame = -1, settingsShortcutFrame = -1;
 
+    /** Turns viewport rendering on or off and persists the choice. */
     public void SetViewportRendering(bool on)
     {
         if (settings.ViewportRendering == on) return;

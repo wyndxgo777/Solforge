@@ -7,6 +7,7 @@ using SunriseStudio.Scene.Collision;
 
 namespace SunriseStudio.Editor;
 
+/** StudioWorkspace part: collision export, import and part edits for the open scene. */
 public sealed partial class StudioWorkspace
 {
     /** Loads the scene's collision from the current project and writes it as separate geometry. */

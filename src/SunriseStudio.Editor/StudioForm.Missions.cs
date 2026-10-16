@@ -4,6 +4,7 @@ using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
+/** StudioForm part: mission state and map layer selection for the world view. */
 public sealed partial class StudioForm
 {
     private uint? configuredMission;

@@ -18,6 +18,7 @@ public sealed partial class StudioForm
         if (!options.Smoke && settings.Layout is null && !File.Exists(settingsPath)) ApplyLayoutPreset(StudioLayout.SolforgePreset);
     }
 
+    /** Replaces the layout with a named preset. */
     public void ApplyLayoutPreset(string name)
     {
         foreach (var popout in popouts.ToArray()) ClosePopout(popout.Panel);

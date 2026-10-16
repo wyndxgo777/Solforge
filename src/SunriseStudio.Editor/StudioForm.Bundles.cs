@@ -4,6 +4,7 @@ using SunriseStudio.Interchange;
 
 namespace SunriseStudio.Editor;
 
+/** StudioForm part: Blender bundle export, world scene export and bundle import dialogs. */
 public sealed partial class StudioForm
 {
     private bool importBundleDialog;

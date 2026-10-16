@@ -6,6 +6,7 @@ using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
+/** StudioWorkspace part: Blender asset bundle and world scene export/import and their last results. */
 public sealed partial class StudioWorkspace
 {
     public AssetBundleExportResult? LastAssetExport { get; private set; }
@@ -14,6 +15,7 @@ public sealed partial class StudioWorkspace
     public bool LastTransferWasExport { get; private set; }
     public WorldSceneExportResult? LastWorldExport { get; private set; }
 
+    /** Exports the loaded world as a Blender scene into the folder, on the worker. */
     public void ExportWorldScene(string folder)
     {
         RequireIdle();

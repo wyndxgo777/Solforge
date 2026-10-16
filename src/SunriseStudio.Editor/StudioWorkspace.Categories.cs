@@ -6,6 +6,7 @@ namespace SunriseStudio.Editor;
 /** Asset classes that creation pickers list; each has one cached row array. */
 public enum PickClass { Material, Texture, StaticMesh, InteractionConfig, CuiBitmap }
 
+/** StudioWorkspace part: category, class and display-owner indexes over the browser rows. */
 public sealed partial class StudioWorkspace
 {
     /** Row index of every row whose kind can change; positions in Assets. */
@@ -24,8 +25,10 @@ public sealed partial class StudioWorkspace
         new Dictionary<string, BrowserAsset[]>(StringComparer.Ordinal);
     public IReadOnlyDictionary<string, int> CategoryCounts { get; private set; } = new Dictionary<string, int>(StringComparer.Ordinal);
 
+    /** Rows of one category; empty for an unknown name. */
     public IReadOnlyList<BrowserAsset> CategoryRowsOf(string name) => CategoryRows.GetValueOrDefault(name) ?? [];
 
+    /** Rows of a picker class, such as materials or textures. */
     public IReadOnlyList<BrowserAsset> ClassRows(PickClass kind) => classRows.GetValueOrDefault(kind) ?? [];
 
     /** The category of a row, or of an item's display record; null for a normal asset. */
@@ -37,6 +40,7 @@ public sealed partial class StudioWorkspace
     /** True for an entry the open project adds; the set follows every overlay refresh. */
     public bool IsProjectTag(uint tag) => nativeAdditions.ContainsKey(tag);
 
+    /** The picker class an entry belongs to, or null. */
     internal static PickClass? ClassOf(PackageEntry entry) => entry switch
     {
         { Reference: 0x808071E8, Type: 8 or 16 } => PickClass.Material,

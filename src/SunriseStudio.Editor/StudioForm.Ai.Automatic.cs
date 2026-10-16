@@ -12,6 +12,7 @@ using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
+/** StudioForm part: /automatic goal mode glue for the AI terminal (see file header). */
 public sealed partial class StudioForm
 {
     private AutomaticWatchdog? aiAutomatic;

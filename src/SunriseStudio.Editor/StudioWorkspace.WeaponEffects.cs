@@ -6,6 +6,7 @@ using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
+/** StudioWorkspace part: opens a weapon's particle effects. */
 public sealed partial class StudioWorkspace
 {
     /** Particle navigation retains the clip event and the weapon's attachment provider. */

@@ -12,6 +12,7 @@ using Solforge.Mcp;
 
 namespace SunriseStudio.Editor;
 
+/** StudioForm part: the unified Graph panel and its AI hooks. */
 public sealed partial class StudioForm
 {
     private enum GraphModel { Mission, Node }

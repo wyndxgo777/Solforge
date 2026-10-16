@@ -5,10 +5,12 @@ using SunriseStudio.Projects;
 
 namespace SunriseStudio.Editor;
 
+/** StudioWorkspace part: mod metadata and the last install result. */
 public sealed partial class StudioWorkspace
 {
     public ModInstallResult? LastInstall { get; private set; }
 
+    /** Saves the mod details into the project and reselects the open asset so config bindings refresh. */
     public void SetModMetadata(ModMetadata? metadata)
     {
         RequireEditable();

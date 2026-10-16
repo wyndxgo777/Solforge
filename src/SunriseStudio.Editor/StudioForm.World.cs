@@ -6,6 +6,7 @@ using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
+/** StudioForm part: world, map and mission browsing, selection, isolation and visibility. */
 public sealed partial class StudioForm
 {
     private string mapSearch = "", missionSearch = "", hierarchySearch = "";

@@ -3,6 +3,7 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Editor;
 
+/** StudioWorkspace part: builds the asset browser rows, package list and the indexes over them. */
 public sealed partial class StudioWorkspace
 {
     private int installedBrowserCount;

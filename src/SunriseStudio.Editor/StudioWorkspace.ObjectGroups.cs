@@ -14,14 +14,18 @@ public sealed partial class StudioWorkspace
         return id;
     }
 
+    /** Replaces a group's members. */
     public void SetObjectGroupMembers(string id, IReadOnlyList<ObjectEditTarget> members) =>
         SaveGroup(RequireGroup(id) with { Members = members }, "Group members saved");
 
+    /** Replaces a group's collision parts. */
     public void SetObjectGroupCollisionParts(string id, IReadOnlyList<ProjectCollisionPart> parts) =>
         SaveGroup(RequireGroup(id) with { CollisionParts = parts }, "Group collision parts saved");
 
+    /** Renames a group. */
     public void RenameObjectGroup(string id, string name) => SaveGroup(RequireGroup(id) with { Name = name }, "Group renamed");
 
+    /** Deletes a group. */
     public void RemoveObjectGroup(string id)
     {
         RequireEditable();

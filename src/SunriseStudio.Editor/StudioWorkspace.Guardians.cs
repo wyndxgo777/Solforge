@@ -6,6 +6,7 @@ using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
+/** StudioWorkspace part: guardian assembler cache and guardian export options. */
 public sealed partial class StudioWorkspace
 {
     private readonly object guardianLock = new();

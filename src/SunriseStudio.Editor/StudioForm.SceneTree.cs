@@ -5,6 +5,7 @@ using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
+/** StudioForm part: the scene tree panel, authored and live nodes together. */
 public sealed partial class StudioForm
 {
     private SceneHierarchy? sceneTree;
@@ -73,6 +74,10 @@ public sealed partial class StudioForm
         treeRowsDirty = true;
     }
 
+    /**
+     * Hides or shows a scene tree node; live nodes are hidden locally and the selection is adjusted if it
+     * becomes hidden.
+     */
     public void SetSceneNodeHidden(string id, bool hidden)
     {
         if (liveInspection.Find(id) is not null)

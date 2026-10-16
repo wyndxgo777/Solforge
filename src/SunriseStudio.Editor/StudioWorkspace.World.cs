@@ -3,6 +3,7 @@ using SunriseStudio.Scene;
 
 namespace SunriseStudio.Editor;
 
+/** StudioWorkspace part: world loading, names and the maps and missions of the installation. */
 public sealed partial class StudioWorkspace
 {
     private CancellationTokenSource? operationCancellation;
@@ -41,22 +42,29 @@ public sealed partial class StudioWorkspace
         Volatile.Write(ref loadingProgress, new(stage, completed, total));
     }
 
+    /** Name for an entry: the index name, the catalog name, else its kind. */
     public string DisplayName(PackageEntry entry) => Names?.Describe(entry)
         ?? Catalog?.GetName(entry.TagHash) ?? FriendlyKind(entry);
+    /** Name for a tag: the index name, the catalog name, else "Asset" plus the tag. */
     public string DisplayName(uint tag) => Names?.Describe(tag)
         ?? Catalog?.GetName(tag) ?? $"Asset {tag:X8}";
+    /** The best known name of a tag, or null. */
     public string? ResolveName(uint tag) => Names?.Describe(tag) ?? Catalog?.GetName(tag);
+    /** The best known name of a hash, or null. */
     public string? ResolveHash(uint hash) => Names?.ResolveHash(hash) ?? Catalog?.GetName(hash);
     /** A clip keeps its "Clip N" label unless the index holds a real name for it. */
     public string? ResolveClipName(uint tag) => Names?.Lookup(tag) is { Confidence: not StudioNameConfidence.Fallback } info
         ? info.DisplayName : null;
 
+    /** Loads a map on the worker. */
     public void OpenMap(uint mapTag, WorldLoadOptions? options = null) =>
         LoadWorld(mapTag, null, options ?? new(), false);
 
+    /** Loads a map with one of its missions on the worker. */
     public void OpenMission(uint mapTag, uint missionTag, WorldLoadOptions? options = null) =>
         LoadWorld(mapTag, missionTag, options ?? new(), false);
 
+    /** Reloads the open world, optionally with new load options. */
     public void ReloadWorld(WorldLoadOptions? options = null) => ReloadWorld(options, "Reload requested.");
 
     private void ReloadWorld(WorldLoadOptions? options, string reason)
@@ -217,6 +225,7 @@ public sealed partial class StudioWorkspace
         Status = "Asset closed";
     }
 
+    /** Unloads the open world. */
     public void CloseWorld()
     {
         RequireIdle();
@@ -249,6 +258,7 @@ public sealed partial class StudioWorkspace
         worldTextures.Clear();
     }
 
+    /** Cancels any running shader preparation. */
     public void CancelShaderPreparation()
     {
         if (IsPreparingShaders) operationCancellation?.Cancel();

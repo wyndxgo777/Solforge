@@ -7,6 +7,7 @@ using System.Text.Json;
 
 namespace SunriseStudio.Editor;
 
+/** StudioWorkspace part: hands exotic weapon creation results and queued steps to the form. */
 public sealed partial class StudioWorkspace
 {
     public PreparedExoticWeapon? LastExoticWeapon { get; private set; }
