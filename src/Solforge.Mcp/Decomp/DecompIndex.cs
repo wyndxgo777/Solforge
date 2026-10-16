@@ -135,6 +135,7 @@ public sealed class DecompIndex
         string stamp = StampOf(root, files);
         var index = TryReadCache(root, cachePath, stamp, files) ?? Build(root, files, cancel);
         index.stamp = stamp;
+        index.cachePath = cachePath;
         if (index.fromCache) return index;
         try { WriteCache(index, cachePath, stamp); } catch (IOException) { } catch (UnauthorizedAccessException) { }
         return index;
@@ -369,8 +370,12 @@ public sealed class DecompIndex
         ReloadNames();
     }
 
-    public string? NameOf(uint rva) => names.TryGetValue(rva, out var entry) ? entry.Name : null;
-    public string? NameSource(uint rva) => names.TryGetValue(rva, out var entry) ? entry.Source : null;
+    public string? NameOf(uint rva) => names.TryGetValue(rva, out var entry) ? entry.Name
+        : virtualNames.TryGetValue(rva, out var owner) ? owner.Name : null;
+    public string? NameSource(uint rva) => names.TryGetValue(rva, out var entry) ? entry.Source
+        : virtualNames.ContainsKey(rva) ? "class" : null;
+    /** Virtual functions named Class::vfN by the class layer (only once Classes has loaded; user names win). */
+    public int VirtualNameCount => virtualNames.Count;
     public string Label(uint rva) => NameOf(rva) is { } name ? $"{name} (0x{rva:X8})" : $"FUN_{rva:X8}";
     public IEnumerable<KeyValuePair<uint, (string Name, string Source)>> Names => names;
 
@@ -402,6 +407,7 @@ public sealed class DecompIndex
             if (text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && TryHex(text.AsSpan(prefix.Length), out uint prefixed)) return prefixed;
         if (TryHex(text, out uint hex) && (text.StartsWith("0x", StringComparison.OrdinalIgnoreCase) || text.Length >= 5)) return hex;
         foreach (var (rva, entry) in names) if (string.Equals(entry.Name, text, StringComparison.OrdinalIgnoreCase)) return rva;
+        foreach (var (rva, owner) in virtualNames) if (string.Equals(owner.Name, text, StringComparison.OrdinalIgnoreCase)) return rva;
         return null;
     }
 
@@ -420,8 +426,9 @@ public sealed class DecompIndex
     {
         query = query.Trim();
         uint? rva = Resolve(query);
-        var named = names.Where(pair => pair.Value.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
-            .Select(pair => Get(pair.Key)).OfType<DecompFunction>().OrderBy(function => function.Rva);
+        var named = names.Where(pair => pair.Value.Name.Contains(query, StringComparison.OrdinalIgnoreCase)).Select(pair => pair.Key)
+            .Concat(virtualNames.Where(pair => !names.ContainsKey(pair.Key) && pair.Value.Name.Contains(query, StringComparison.OrdinalIgnoreCase)).Select(pair => pair.Key))
+            .Select(Get).OfType<DecompFunction>().OrderBy(function => function.Rva);
         var exact = new List<DecompFunction>();
         if (rva is { } at && Get(at) is { } hit) exact.Add(hit);
         string hex = query.StartsWith("0x", StringComparison.OrdinalIgnoreCase) ? query[2..] : query;
@@ -484,6 +491,44 @@ public sealed class DecompIndex
                 string path = Path.Combine(Root, "image", "destiny2_image.bin");
                 if (!File.Exists(path)) return null;
                 return image = BinaryImage.Open(path, Path.Combine(Root, "image", "image.json"), IsFunctionStart);
+            }
+        }
+    }
+
+    private string cachePath = "";
+    private ClassIndex? classes;
+    private bool classesTried;
+    private volatile Dictionary<uint, VirtualOwner> virtualNames = [];
+    private readonly object classLock = new();
+
+    /**
+     * The class layer: MSVC RTTI classes and the image's other vtables, virtual-function owners (Class::vfN names),
+     * constructors and fields inferred from this-pointer accesses. Built on first use from the image and cached beside the
+     * decomp index (keyed on the decomp stamp and the image file); null without image\destiny2_image.bin.
+     */
+    public ClassIndex? Classes
+    {
+        get
+        {
+            lock (classLock)
+            {
+                if (classesTried) return classes;
+                classesTried = true;
+                var file = new FileInfo(Path.Combine(Root, "image", "destiny2_image.bin"));
+                if (!file.Exists) return null;
+                string classStamp = $"{stamp}|classes:{ClassIndex.Version}|{file.Length}:{file.LastWriteTimeUtc.Ticks}";
+                string classCache = cachePath.Length > 0 ? Path.ChangeExtension(cachePath, null) + ".classes.bin" : "";
+                classes = classCache.Length > 0 ? ClassIndex.TryRead(classCache, classStamp) : null;
+                if (classes is null && Image is { } loaded)
+                {
+                    classes = ClassIndex.Build(loaded, this);
+                    if (classCache.Length > 0)
+                    {
+                        try { classes.Write(classCache, classStamp); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+                    }
+                }
+                if (classes is not null) virtualNames = classes.Virtuals.Where(pair => !pair.Value.Shared).ToDictionary(pair => pair.Key, pair => pair.Value);
+                return classes;
             }
         }
     }

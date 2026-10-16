@@ -59,6 +59,8 @@ try
     Directory.CreateDirectory(dataProject);
     await DecompChecks.Run(Path.Combine(scratch, "decomp"), new FixtureHost(dataProject));
     checks.Add("deep data: decomp index (calls, data refs, tag classes, names, cache, grep, rename), struct inference and header structs, image strings and vtables, generic tag layouts and class schemas, cursor paging, CSV, and the decomp/data/export tools");
+    await ClassChecks.Run(Path.Combine(scratch, "classes"), new FixtureHost(dataProject));
+    checks.Add("class layer: MSVC RTTI (type descriptors, locators, hierarchy) in a fixture image, demangling, vtable runs split at referenced starts, Class::vfN owners, constructors, inferred fields, the class cache, and get_class/get_vtables/get_struct/decomp_status");
     Approvals();
     checks.Add("auto-allow: Claude Code, agy and Cline allow prompts match only with a one-time Yes/Allow highlighted at the bottom; No, scrollback, quotes, persistent rows and free text never do");
     foreach (string check in checks) Console.WriteLine("PASS " + check);

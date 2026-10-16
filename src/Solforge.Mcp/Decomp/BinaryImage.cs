@@ -83,6 +83,12 @@ public sealed class BinaryImage
     private bool InCode(uint rva) => isFunctionStart(rva)
         || Sections.Any(section => section.Executable && rva >= section.Rva && rva < section.Rva + section.Size);
 
+    /** True when an RVA is a known function start or inside an executable section. */
+    public bool IsCode(uint rva) => InCode(rva);
+
+    /** The whole image (RVA = offset), for scanners such as the RTTI pass in ClassIndex. */
+    public ReadOnlySpan<byte> Bytes => bytes;
+
     public IReadOnlyList<ImageString> Strings { get { Scan(); return strings!; } }
     public IReadOnlyList<VTable> VTables { get { Scan(); return vtables!; } }
 
