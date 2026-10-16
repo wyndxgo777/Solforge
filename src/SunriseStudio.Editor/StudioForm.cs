@@ -602,17 +602,18 @@ public sealed partial class StudioForm : Form
     }
 
     // An installed mission script is editable with no project open, so the page decides for itself.
-    private bool CanUndoActive => missionGraphActive ? missionGraph.CanUndo : workspace.CanEdit && workspace.CanUndo;
-    private bool CanRedoActive => missionGraphActive ? missionGraph.CanRedo : workspace.CanEdit && workspace.CanRedo;
-    private bool CanSaveActive => missionGraphActive ? missionGraph.CanSave : workspace.CanEdit;
+    private bool CanUndoActive => nodeGraphActive ? nodeGraph.CanUndo : missionGraphActive ? missionGraph.CanUndo : workspace.CanEdit && workspace.CanUndo;
+    private bool CanRedoActive => nodeGraphActive ? nodeGraph.CanRedo : missionGraphActive ? missionGraph.CanRedo : workspace.CanEdit && workspace.CanRedo;
+    private bool CanSaveActive => nodeGraphActive ? nodeGraph.CanSave : missionGraphActive ? missionGraph.CanSave : workspace.CanEdit;
     private void UndoActive()
-    { if (CanUndoActive) workspace.Run(missionGraphActive ? missionGraph.Undo : workspace.Undo); }
+    { if (CanUndoActive) { if (nodeGraphActive) nodeGraph.Undo(); else workspace.Run(missionGraphActive ? missionGraph.Undo : workspace.Undo); } }
     private void RedoActive()
-    { if (CanRedoActive) workspace.Run(missionGraphActive ? missionGraph.Redo : workspace.Redo); }
+    { if (CanRedoActive) { if (nodeGraphActive) nodeGraph.Redo(); else workspace.Run(missionGraphActive ? missionGraph.Redo : workspace.Redo); } }
     private void SaveActiveDocument() => workspace.Run(() =>
     {
         if (!CanSaveActive) return;
-        if (missionGraphActive) missionGraph.SaveCurrent(workspace);
+        if (nodeGraphActive) nodeGraph.Save();
+        else if (missionGraphActive) missionGraph.SaveCurrent(workspace);
         else workspace.Project?.Save();
     });
 

@@ -305,7 +305,8 @@ public static partial class SolforgeTools
             .. DataTools(host),
             .. ContentTools(host, Read),
             .. UiTools(host, Read),
-            .. PlayerTools(host, Read)
+            .. PlayerTools(host, Read),
+            .. GraphTools(host)
         ];
     }
 

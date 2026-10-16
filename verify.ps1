@@ -89,6 +89,8 @@ Invoke-Dotnet 'Check failed: Solforge.Weapons.Tests' @(
     (Join-Path $PSScriptRoot 'tests/Solforge.Weapons.Tests/bin/Release/net9.0/Solforge.Weapons.Tests.dll'))
 Invoke-Dotnet 'Check failed: Solforge.Content.Tests' @(
     (Join-Path $PSScriptRoot 'tests/Solforge.Content.Tests/bin/Release/net9.0/Solforge.Content.Tests.dll'))
+Invoke-Dotnet 'Check failed: Solforge.Graphs.Tests' @(
+    (Join-Path $PSScriptRoot 'tests/Solforge.Graphs.Tests/bin/Release/net9.0/Solforge.Graphs.Tests.dll'))
 
 if ($Game) {
     $missionUi = Get-Check 'Missions.UiTests' 'net9.0-windows'

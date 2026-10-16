@@ -551,6 +551,7 @@ public sealed partial class StudioForm
                 return workspace.Error.Length > 0 ? workspace.Error : "Reverted.";
             }
             case "apply_item_edit": return AiApplyItemEdit(args);
+            case "apply_graph": return AiApplyGraph(args);
             case "apply_vendor_edit": return AiApplyVendorEdit(args);
             case "start_creation": return AiStartCreation(args);
             case "replace_texture_pixels":
