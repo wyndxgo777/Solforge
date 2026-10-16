@@ -201,8 +201,8 @@ foreach (string banned in new[] { "print(", "os.", "pcall", "__mode", "pairs(", 
 var contextCalls = System.Text.RegularExpressions.Regex.Matches(lua.Lua, @"context:([a-z_]+)\(|context:([a-z_]+)\{").Select(match => match.Groups[1].Success ? match.Groups[1].Value : match.Groups[2].Value).Distinct().ToList();
 Expect(contextCalls.Count > 0 && contextCalls.All(call => NodeLibrary.MissionContextFunctions.Contains(call)), "every context call is a bound function: " + string.Join(",", contextCalls));
 // Save and load keep the delay and compile the same.
-var reloaded = GraphDocument.FromJson(mission.ToJson());
-Expect(reloaded.Nodes.Single(node => node.Id == delay.Id).Get("seconds") == "5" && MissionGraphCompiler.Compile(reloaded).Lua == lua.Lua, "delay survives save and load");
+var reloadedMission = GraphDocument.FromJson(mission.ToJson());
+Expect(reloadedMission.Nodes.Single(node => node.Id == delay.Id).Get("seconds") == "5" && MissionGraphCompiler.Compile(reloadedMission).Lua == lua.Lua, "delay survives save and load");
 Expect(MissionGraphCompiler.Key("sf.v.", "a b!") == "sf.v.a_b_" && MissionGraphCompiler.Key("sf.d.", new string('x', 100)).Length == 63, "variable keys follow the server key rule");
 // Removed guesses report why.
 var oldGraph = GraphDocument.FromJson(mission.ToJson());
