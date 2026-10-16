@@ -117,7 +117,9 @@ static void SunriseDefaults()
         [OpenAiWorkspace] = [Key("A", Ctrl | Shift)],
         // The 3D viewport render switch and the Settings window.
         [ToggleViewportRendering] = [Key("R", Ctrl | Shift)],
-        [OpenSettings] = [Key(",", Ctrl)]
+        [OpenSettings] = [Key(",", Ctrl)],
+        // Help > Keybinds & Tips.
+        [OpenHelp] = [Key("F1")]
     };
     foreach (var action in ShortcutActions.All)
         Same(map.Bindings(action.Id), expected.GetValueOrDefault(action.Id) ?? [], $"Sunrise Studio {action.Id}");
