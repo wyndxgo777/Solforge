@@ -71,7 +71,10 @@ internal sealed class ConPtyTerminal : IDisposable
         var values = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (System.Collections.DictionaryEntry entry in Environment.GetEnvironmentVariables())
             if (entry.Key is string key && key.Length > 0) values[key] = entry.Value as string ?? "";
-        foreach (var (key, value) in overrides) values[key] = value;
+        // An empty override removes the variable (e.g. keeps an API key out of a subscription run).
+        foreach (var (key, value) in overrides)
+            if (value.Length == 0) values.Remove(key);
+            else values[key] = value;
         var text = new StringBuilder();
         foreach (var (key, value) in values) text.Append(key).Append('=').Append(value).Append('\0');
         return Marshal.StringToHGlobalUni(text.Append('\0').ToString());

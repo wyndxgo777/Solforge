@@ -24,6 +24,8 @@ try
     checks.Add("engine commands resolve on PATH + PATHEXT like cmd: .cmd beats npm's bare script, folders with spaces, missing is null");
     ClaudeLaunch();
     checks.Add("Claude launch: --mcp-config, --settings hook, --append-system-prompt and --add-dir survive argv parsing with spaced paths; agy gets the same --add-dir folders");
+    Providers();
+    checks.Add("providers: Cline 'Claude Code subscription' passes -P claude-code -m sonnet and strips Anthropic keys; ClinePass passes -P cline-pass; gateway sets only the base URL; agy has no presets");
     ResumeSessions();
     checks.Add("resume: claude --continue only when ~/.claude/projects/<folder> has a session; agy --conversation and cline --id pick the newest session for the same folder; none means a fresh start");
     ContextText();
@@ -565,6 +567,24 @@ void ClaudeLaunch()
     Expect(agy == $"--add-dir \"{game}\" --add-dir \"{ancestor}\"", "agy arguments: " + agy);
     Expect(Argv("agy.exe " + agy).Skip(1).SequenceEqual(["--add-dir", game, "--add-dir", ancestor]), "agy argv");
     Expect(EngineLaunch.AgyArguments([]).Length == 0, "agy without folders");
+}
+
+void Providers()
+{
+    var claudeCode = EngineProviders.Resolve("cline", EngineProviders.ClineClaudeCode)!;
+    Expect(EngineProviders.Arguments(claudeCode, null) == "-P claude-code -m sonnet", "cline claude-code args");
+    Expect(EngineProviders.Arguments(claudeCode, new() { Model = "opus" }) == "-P claude-code -m opus", "cline claude-code model");
+    var env = EngineProviders.Environment(claudeCode, null);
+    Expect(env.Count == 3 && env.Values.All(value => value.Length == 0) && env.ContainsKey("ANTHROPIC_API_KEY"), "subscription strips keys");
+    var pass = EngineProviders.Resolve("cline", EngineProviders.ClinePass)!;
+    Expect(EngineProviders.Arguments(pass, null) == "-P cline-pass" && EngineProviders.Environment(pass, null).Count == 0, "clinepass");
+    Expect(EngineProviders.Resolve("cline", "gone")!.Id == EngineProviders.ClineSaved
+        && EngineProviders.Arguments(EngineProviders.Resolve("cline", null), null).Length == 0, "cline default");
+    var gateway = EngineProviders.Resolve("claude", EngineProviders.ClaudeGateway)!;
+    var routed = EngineProviders.Environment(gateway, new() { BaseUrl = " https://gw.example/anthropic " });
+    Expect(routed.Count == 1 && routed["ANTHROPIC_BASE_URL"] == "https://gw.example/anthropic", "gateway base url");
+    Expect(EngineProviders.Environment(gateway, null).Count == 0 && EngineProviders.Arguments(gateway, null).Length == 0, "gateway unset");
+    Expect(EngineProviders.Resolve("agy", null) is null && EngineProviders.Resolve("claude", null)!.Id == EngineProviders.ClaudeSubscription, "defaults");
 }
 
 void ResumeSessions()

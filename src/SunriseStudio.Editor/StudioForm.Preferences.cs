@@ -89,6 +89,8 @@ public sealed partial class StudioForm
             UiAuto.EndCombo();
         }
         SettingNote("The engine the AI workspace starts. Applies to the next Start.");
+        DrawAiProviderRows("claude", "Claude Code");
+        DrawAiProviderRows("cline", "Cline");
         bool allow = settings.AiAutoAllow;
         if (UiAuto.Checkbox("Auto-allow one-time prompts", ref allow)) { settings.AiAutoAllow = allow; aiAllowSeen = null; SaveSettings(); }
         bool resume = settings.AiResumeSessions;
