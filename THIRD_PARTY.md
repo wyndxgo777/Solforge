@@ -23,6 +23,7 @@ Each license text is copied from the project's own license file.
 | Tsu | 2.2.2 | MIT | Copyright (c) 2016 GGG KILLER |
 | BCnEncoder.NET | 2.3.0 | MIT | Copyright 2020 Nomi Lakkala |
 | CommunityToolkit.HighPerformance | 8.4.0 | MIT | Copyright (c) .NET Foundation and Contributors |
+| QRCoder | 1.8.0 | MIT | Copyright (c) 2013-2025 Raffael Herrmann |
 
 Each library above is licensed under these terms, with its own copyright line:
 

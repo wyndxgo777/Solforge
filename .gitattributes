@@ -14,3 +14,5 @@
 *.ico binary
 *.bin binary
 *.ttf binary
+# The stream relay files run on Linux or are embedded into deploy.sh: LF everywhere.
+tools/stream-relay/** text eol=lf
