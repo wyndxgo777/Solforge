@@ -33,6 +33,7 @@ public sealed record MissionApiParameter(string Path, MissionApiValue Spec, LuaE
     public string Label => Spec.Name ?? Path[Math.Max(0, Path.LastIndexOf('['))..];
 }
 
+/** A problem found while checking an API call, with the path it was found at. */
 public sealed record MissionApiFinding(string Path, string Message);
 
 /** A call the schema types: its parameters as they stand in the source, and the checks the runtime makes. */
@@ -101,6 +102,7 @@ public sealed class MissionApiNode
             findings.Add(new("", $"Call {Member.Name} with '{Member.Separator}'."));
     }
 
+    /** Builds the node for a typed call; any other outcome throws. */
     public static MissionApiNode Build(MissionApiAnalysis analysis, MissionApiCall call) => call.Outcome == MissionApiOutcome.Typed
         ? new(analysis, call) : throw new InvalidOperationException("Only a typed call has parameters.");
 
@@ -349,6 +351,7 @@ public sealed class MissionApiNode
 /** Display names for API members. */
 public static class MissionApiText
 {
+    /** Display name: underscores become spaces and the first letter is capitalised. */
     public static string Friendly(string name)
     {
         string value = name.Replace('_', ' ');

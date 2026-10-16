@@ -224,12 +224,14 @@ public sealed partial class LuaScript
         "local", "nil", "not", "or", "repeat", "return", "then", "true", "until", "while"
     }.ToFrozenSet(StringComparer.Ordinal);
 
+    /** True for a valid Lua name (letter or underscore, then letters, digits and underscores). */
     public static bool IsIdentifier(string value) => value.Length > 0 && (char.IsLetter(value[0]) || value[0] == '_')
         && value.All(c => char.IsLetterOrDigit(c) || c == '_');
 
     /** An identifier that is not a reserved word. */
     public static bool IsName(string value) => IsIdentifier(value) && !Keywords.Contains(value);
 
+    /** Lua double-quoted string literal with backslash, quote and line-break escapes. */
     public static string Quote(string value) => "\"" + value.Replace("\\", "\\\\", StringComparison.Ordinal)
         .Replace("\"", "\\\"", StringComparison.Ordinal).Replace("\r", "\\r", StringComparison.Ordinal)
         .Replace("\n", "\\n", StringComparison.Ordinal).Replace("\t", "\\t", StringComparison.Ordinal) + "\"";

@@ -3,6 +3,7 @@ namespace SunriseStudio.Missions;
 /** Line, span and table-field edits over Lua source text. */
 internal static class LuaText
 {
+    /** Replaces a span of source with text. */
     public static string Edit(string source, LuaSpan span, string text) => source[..span.Start] + text + source[span.End..];
 
     /** The file's own line break: CRLF when the source has one, LF otherwise. */
@@ -12,6 +13,7 @@ internal static class LuaText
     public static string Lines(string source, string text) =>
         text.Replace("\r\n", "\n", StringComparison.Ordinal).Replace("\n", Newline(source), StringComparison.Ordinal);
 
+    /** Offset of the start of the line containing position. */
     public static int LineStart(string source, int position) => position == 0 ? 0 : source.LastIndexOf('\n', position - 1) + 1;
 
     /** The offset of the line break that ends the line, or the end of the source. */

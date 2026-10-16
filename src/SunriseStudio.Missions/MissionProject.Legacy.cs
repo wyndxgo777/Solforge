@@ -1,14 +1,19 @@
+/** File: Reads and migrates the older JSON mission assets of a project into Lua scripts. */
 using System.Text;
 using System.Text.Json;
 using SunriseStudio.Projects;
 
 namespace SunriseStudio.Missions;
 
+/** Node position in a legacy JSON mission. */
 public sealed record LegacyMissionPosition(float X, float Y);
+/** A legacy JSON mission: format, activity, embedded Lua source and node positions. */
 public sealed record LegacyMissionDocument(string Format, int Version, string Activity, string RelativePath,
     string Source, IReadOnlyDictionary<string, LegacyMissionPosition> Positions);
+/** A legacy asset read from the project. */
 public sealed record LegacyMissionScript(string AssetId, string Label, LegacyMissionDocument Document);
 
+/** Partial: legacy asset handling. */
 public static partial class MissionProject
 {
     private const string LegacyExtension = ".sunrise-mission.json";

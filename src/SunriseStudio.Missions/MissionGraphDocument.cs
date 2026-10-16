@@ -1,9 +1,17 @@
+/**
+ * File: Parsed flow and campaign graph of a mission script (groups, nodes, edges, diagnostics) with edits
+ * that rewrite only source spans.
+ */
 namespace SunriseStudio.Missions;
 
+/** Whether a graph group is a flow or a campaign. */
 public enum MissionGraphKind { Flow, Campaign }
+/** One step of a flow or campaign, with its table, entry field and dependencies. */
 public sealed record MissionGraphNode(string Key, string Id, string GroupKey, string Kind,
     LuaTable? Table, LuaField Entry, IReadOnlyList<string>? Dependencies);
+/** A link between two nodes: source, target and kind. */
 public sealed record MissionGraphEdge(string Source, string Target, string Kind);
+/** One flow or campaign table and the nodes it holds. */
 public sealed record MissionGraphGroup(string Key, string Title, MissionGraphKind Kind, string Collection,
     LuaTable Table, IReadOnlyList<MissionGraphNode> Nodes)
 {
@@ -16,6 +24,7 @@ public sealed record MissionGraphGroup(string Key, string Title, MissionGraphKin
     /** True when both groups come from the same flow.new or campaign.new table. */
     public bool SameGraph(MissionGraphGroup other) => Definition?.Span == other.Definition?.Span;
 }
+/** A validation message, optionally tied to a node. */
 public sealed record MissionGraphDiagnostic(string Message, string? Node = null);
 
 /** Graph changes replace source spans; unhandled Lua is never regenerated. */
@@ -95,8 +104,11 @@ public sealed partial class MissionGraphDocument
 
     /** A Lua syntax error throws, so an edit that breaks the script is refused. */
     public static MissionGraphDocument Parse(string source) => new(source);
+    /** Node by key; throws when missing. */
     public MissionGraphNode Node(string key) => Nodes.First(value => value.Key == key);
+    /** Group by key; throws when missing. */
     public MissionGraphGroup Group(string key) => Groups.First(value => value.Key == key);
+    /** The group a node belongs to. */
     public MissionGraphGroup GroupOf(string nodeKey) => Group(Node(nodeKey).GroupKey);
 
     /** Nodes of one collection in the same flow or campaign as group. */
@@ -136,6 +148,7 @@ public sealed partial class MissionGraphDocument
         return Edit(Node(key).Entry.Value, expression);
     }
 
+    /** Removes a named field from a node. */
     public MissionGraphDocument RemoveField(string key, string name)
     {
         var field = Field(key, name) ?? throw new InvalidDataException("Field does not exist.");
@@ -143,6 +156,7 @@ public sealed partial class MissionGraphDocument
         return Edit(field.Span, "");
     }
 
+    /** A node field by dotted path, or null. */
     public LuaField? Field(string key, string path)
     {
         var table = Node(key).Table; LuaField? field = null;
@@ -168,6 +182,7 @@ public sealed partial class MissionGraphDocument
         return Parse(LuaText.InsertField(Source, table, expression, entry: true));
     }
 
+    /** Replaces one item of a list field. */
     public MissionGraphDocument SetListValue(string key, string path, int index, string expression)
     {
         LuaText.CheckExpression(expression);
@@ -176,6 +191,7 @@ public sealed partial class MissionGraphDocument
         return Edit(item.Value, expression);
     }
 
+    /** Removes one item of a list field. */
     public MissionGraphDocument RemoveListValue(string key, string path, int index)
     {
         var item = Field(key, path)?.Table?.Fields.ElementAtOrDefault(index)
@@ -218,6 +234,7 @@ public sealed partial class MissionGraphDocument
         next.RequireValid(); return next;
     }
 
+    /** Deletes a node entry; throws while other steps still follow it. */
     public MissionGraphDocument RemoveNode(string key)
     {
         if (Edges.Any(edge => edge.Source == key && edge.Kind == "After"))
@@ -238,6 +255,7 @@ public sealed partial class MissionGraphDocument
         return Parse(changed);
     }
 
+    /** Throws listing the diagnostics when the document is not valid. */
     public void RequireValid()
     {
         if (Diagnostics.Count > 0) throw new InvalidDataException(string.Join("\n", Diagnostics.Select(value => value.Message)));

@@ -8,6 +8,7 @@ public static partial class MissionProject
 {
     public const string ScriptsFolder = "scripts";
 
+    /** Folder in the project that holds mission scripts. */
     public static string ScriptsRoot(StudioProject project) => Path.Combine(project.DirectoryPath, ScriptsFolder);
 
     /** Every `stem/stem.lua` in the project's scripts folder, in name order. */
@@ -83,9 +84,11 @@ public static partial class MissionProject
         finally { if (File.Exists(temporary)) File.Delete(temporary); }
     }
 
+    /** True when path is root or inside it. */
     internal static bool Within(string path, string root) => path.Equals(root, StringComparison.OrdinalIgnoreCase)
         || path.StartsWith(Path.TrimEndingDirectorySeparator(root) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
 
+    /** Throws when any part of the path is a symbolic link or junction. */
     internal static void RejectLinks(string path)
     {
         for (string? current = Path.GetFullPath(path); current is not null; current = Path.GetDirectoryName(current))

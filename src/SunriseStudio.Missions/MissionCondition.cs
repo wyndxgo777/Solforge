@@ -1,13 +1,21 @@
+/**
+ * File: Mission conditions (facts, all/any groups, custom Lua) parsed from and written back to flow source.
+ */
 namespace SunriseStudio.Missions;
 
+/** Base of mission conditions. */
 public abstract record MissionCondition;
+/** A single fact that must hold. */
 public sealed record MissionFactCondition(string Fact) : MissionCondition;
+/** A group where all (or any) children must hold. */
 public sealed record MissionConditionGroup(bool All, IReadOnlyList<MissionCondition> Children) : MissionCondition;
+/** A Lua predicate kept as its own source. */
 public sealed record MissionCustomCondition(string Source) : MissionCondition;
 
 /** Conditions use the installed flow.fact/all/any contract without executing predicates. */
 public static class MissionConditions
 {
+    /** Parses a condition expression; null for nil or empty. */
     public static MissionCondition? Read(string? expression, MissionScriptBindings bindings) =>
         expression is null || expression.Trim() == "nil" ? null : Parse(expression, bindings, 1);
 
@@ -62,12 +70,14 @@ public static class MissionConditions
         if (count is < 1 or > 64 || keyed) throw new InvalidDataException("Flow condition groups need 1 to 64 list entries.");
     }
 
+    /** Facts the condition refers to. */
     public static IReadOnlyList<string> Facts(MissionCondition? condition) => condition switch
     {
         MissionFactCondition fact => [fact.Fact], MissionConditionGroup group => group.Children.SelectMany(Facts).ToArray(),
         _ => []
     };
 
+    /** Writes the condition back as flow source. */
     public static string Write(MissionCondition condition) => Write(condition, 1);
 
     /** Writes the table form; a custom condition keeps its own source. */
@@ -84,6 +94,7 @@ public static class MissionConditions
         };
     }
 
+    /** One-line description for display. */
     public static string Summary(MissionCondition? condition) => condition switch
     {
         null => "Immediately", MissionFactCondition fact => fact.Fact.Replace('_', ' '),

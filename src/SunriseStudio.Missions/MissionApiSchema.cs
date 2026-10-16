@@ -56,15 +56,19 @@ public sealed record MissionApiMember(string Receiver, string Name, string Kind,
     public string? Group { get; init; }
 }
 
+/** An API receiver (a Lua object type) and where its entries come from. */
 public sealed record MissionApiReceiver(string Name, string LuaClass, bool Complete, string? Entries)
 {
     public IReadOnlyList<MissionApiMember> Members { get; init; } = [];
 }
 
+/** A game event: its callback name and payload fields. */
 public sealed record MissionApiEvent(string Name, string Callback, IReadOnlyList<MissionApiMember> Fields, string? Note);
 
+/** One entry of an API enum and its fields. */
 public sealed record MissionApiEnumEntry(string Name, IReadOnlyList<MissionApiValue> Fields, bool Closed);
 
+/** An API enum and its entries. */
 public sealed record MissionApiEnum(string Name, string LuaClass, IReadOnlyList<MissionApiEnumEntry> Entries);
 
 /** The table a mission script returns, and the parameters its callbacks receive. */
@@ -108,6 +112,7 @@ public sealed class MissionApiSchema
     /** The schema file of an installed generated SDK; it may not exist. */
     public static string InstalledPath(string sdkLuaRoot) => Path.Combine(sdkLuaRoot, "sunrise", "mission_api.json");
 
+    /** Loads mission_api.json; a file above the size limit or a malformed one throws. */
     public static MissionApiSchema Load(string path)
     {
         var info = new FileInfo(path);
@@ -161,10 +166,15 @@ public sealed class MissionApiSchema
         return new(receiverList, members, events, program, enums);
     }
 
+    /** Receiver by name, or null. */
     public MissionApiReceiver? Receiver(string name) => receivers.GetValueOrDefault(name);
+    /** Receiver by its Lua class, or null. */
     public MissionApiReceiver? ReceiverForClass(string luaClass) => Receivers.FirstOrDefault(value => value.LuaClass == luaClass);
+    /** Event by callback name, or null. */
     public MissionApiEvent? EventForCallback(string callback) => callbacks.GetValueOrDefault(callback);
+    /** Enum by name, or null. */
     public MissionApiEnum? Enum(string name) => Enums.FirstOrDefault(value => value.Name == name);
+    /** Entry names of an enum; empty when it is unknown. */
     public IReadOnlyList<string> EntryNames(string name) => Enum(name)?.Entries.Select(entry => entry.Name).ToArray() ?? [];
 
     /** The receiver whose entries are this enum, such as the collection a script reads it from; null when none. */
@@ -241,6 +251,7 @@ public sealed class MissionApiSchema
             };
         }
 
+        /** Reads one event from schema JSON. */
         public MissionApiEvent Event(JsonElement value)
         {
             string callback = Text(value, "callback");
@@ -248,6 +259,7 @@ public sealed class MissionApiSchema
                 Required(value, "fields").EnumerateArray().Select(field => Member(field, callback)).ToArray(), Optional(value, "note"));
         }
 
+        /** Reads one enum from schema JSON. */
         public MissionApiEnum EnumType(JsonElement value) =>
             new(Text(value, "name"), Text(value, "lua_class"), Required(value, "entries").EnumerateArray().Select(EnumEntry).ToArray());
 

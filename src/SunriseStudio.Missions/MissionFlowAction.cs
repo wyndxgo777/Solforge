@@ -5,6 +5,7 @@ public sealed record MissionFlowAction(MissionNodeTemplate Kind, MissionSdkRefer
     MissionSdkReference? Sensor = null, MissionSdkReference? Navpoint = null, MissionSdkReference? Scene = null,
     IReadOnlyList<MissionSdkReference>? Inputs = null);
 
+/** Partial: flow action editing for visual mission authoring. */
 public sealed partial class MissionVisualAuthoring
 {
     /** Only the exact supported callback forms become typed actions; other Lua remains untouched. */
@@ -93,6 +94,7 @@ public sealed partial class MissionVisualAuthoring
         _ => null
     };
 
+    /** Rewrites the step's run callback from a typed action; custom Lua callbacks are refused. */
     public MissionGraphDocument SetFlowAction(string node, MissionFlowAction action)
     {
         if (!graph.GroupOf(node).IsFlowSteps)

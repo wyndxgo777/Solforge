@@ -240,8 +240,10 @@ public static class MissionTemplates
     {
         private IEnumerable<string> Keys(string table) => references.Where(row => row.Table == table).Select(row => row.Key).Distinct();
 
+        /** First state key, else a placeholder. */
         public string State() => Keys("mission.states").FirstOrDefault() ?? Placeholder + "_STATE";
 
+        /** First slot key matching the filter, else a placeholder. */
         public string Slot(Func<string, bool> match, string what) => Keys("mission.Slot").FirstOrDefault(match) ?? Placeholder + "_" + what;
 
         /** Squads that also have a slot of the same key, as freeroam.unit and campaign.unit need. */
@@ -251,6 +253,7 @@ public static class MissionTemplates
             return Keys("mission.Squad").Where(slots.Contains).Take(count).ToList();
         }
 
+        /** Directive keys for a new node; missing ones repeat the last key or a placeholder. */
         public string[] Directives(int count)
         {
             var found = Keys("mission.Directive").Take(count).ToList();
