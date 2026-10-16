@@ -6,11 +6,13 @@ namespace SunriseStudio.Projects;
 
 /** Owned Lua source with a path relative to its scripts or SDK folder. */
 public sealed record ModScriptFile(string RelativePath, byte[] Data);
+/** Counts of what an install wrote and the build it came from. */
 public sealed record ModInstallResult(string ModDirectory, int PackageFiles, int PatchFiles, int ScriptFiles,
     ProjectBuildResult? Build)
 {
     public int SdkFiles { get; init; }
 }
+/** A mod fully written to a staging folder before it replaces the installed copy. */
 internal sealed record StagedMod(string StagingDirectory, string ModDirectory, int PackageFiles, int PatchFiles,
     int ScriptFiles, int SdkFiles = 0);
 
@@ -25,11 +27,13 @@ public sealed record ModFolderContents(byte[] Manifest, IReadOnlyDictionary<stri
 
 /** Restart holds the whole message when the running game cannot take the change. */
 public sealed record ModUpdatePlan(string? Restart, IReadOnlyList<ModScriptFile> Writes, IReadOnlyList<string> Deletes);
+/** Outcome of an update: files written and deleted, and the build used. */
 public sealed record ModUpdateResult(string ModId, string ModDirectory, int Written, int Deleted, ProjectBuildResult? Build);
 
 /** Installs a project as a Sunrise mod. It writes only below `bin/x64/Sunrise/mods` in the installation. */
 public static partial class ModInstaller
 {
+    /** Folder holding installed mods under a game root. */
     public static string ModsDirectory(string gameRoot) =>
         Path.Combine(Path.GetFullPath(gameRoot), "bin", "x64", "Sunrise", "mods");
 

@@ -34,6 +34,7 @@ public sealed class PackageIdAllocator
 
     public int Available => Capacity - count;
 
+    /** True when the id is taken, or is not in the range of new ids. */
     public bool IsUsed(ushort id) => !PackageWriter.IsNewPackageId(id) || used[id - First];
 
     /** The lowest free id; throws when every id of the range is taken. */

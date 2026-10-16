@@ -1,9 +1,11 @@
+/** File: Object edit model: which typed row is edited, how to compile it, and what a compile wrote. */
 using System.Globalization;
 using System.Text.Json.Serialization;
 using SunriseStudio.Packages;
 
 namespace SunriseStudio.Projects;
 
+/** What an object edit changes: a placement transform or trigger bounds. */
 public enum ObjectEditKind { PlacementTransform, TriggerBounds }
 
 /** The typed row an object edit targets. */
@@ -145,6 +147,10 @@ public interface IObjectEditCompiler
 /** Tags lists every tag the edit or its derived rules wrote. */
 public sealed record CompiledObjectEdit(ObjectEdit Edit, IReadOnlyList<uint> Tags);
 
+/**
+ * Settings for compiling object edits: build identity, ids that may not be reused, and staged native
+ * additions.
+ */
 public sealed record ObjectEditCompileOptions(string Identity, IReadOnlySet<ushort> ReservedPackageIds)
 {
     /** Include staged native additions that are not yet registered in the catalog. */

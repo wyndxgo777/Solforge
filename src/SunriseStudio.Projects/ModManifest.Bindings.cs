@@ -1,7 +1,9 @@
+/** File: Partial ModManifest: validation and JSON writing of compiled config bindings. */
 using System.Text.Json;
 
 namespace SunriseStudio.Projects;
 
+/** Partial: config binding handling. */
 public static partial class ModManifest
 {
     /** Throws when a compiled config site is malformed, undeclared or overlaps another site. */

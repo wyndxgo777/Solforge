@@ -1,8 +1,10 @@
+/** File: Partial ProjectBuilder: plans manifests for cloned root assets. */
 using System.Buffers.Binary;
 using SunriseStudio.Packages;
 
 namespace SunriseStudio.Projects;
 
+/** Partial: root manifest planning. */
 public static partial class ProjectBuilder
 {
     private sealed record RootManifestInput(AddedProjectAsset Asset, byte[] Data);

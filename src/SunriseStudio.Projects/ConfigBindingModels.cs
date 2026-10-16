@@ -9,6 +9,7 @@ public sealed record ConfigBindingSite(string Profile, int RowOffset, int OwnerI
     [JsonIgnore] public string Identity => $"{Profile}/{OwnerIndex}/{ComponentIndex}/{RowOffset}";
 }
 
+/** A place in an asset where a config setting could be bound: site, value type and offset. */
 public sealed record ConfigBindingCandidate(ConfigBindingSite Site, ModConfigType Type, int Offset);
 
 /** Original assets retain a base fingerprint; added assets retain their allocated project identity. */
@@ -23,6 +24,7 @@ public sealed record ModConfigSite(string Key, string Profile, uint Tag, uint Cl
     string SourceSha256, int Offset, ModConfigType Type, int? PropertyOffset = null,
     int? PoolOffset = null, int? BindingOffset = null);
 
+/** Result of compiling config bindings: the rewritten asset bytes and the bound sites. */
 public sealed record ConfigBindingCompilation(IReadOnlyDictionary<uint, byte[]> Assets,
     IReadOnlyList<ModConfigSite> Sites)
 {
@@ -37,6 +39,7 @@ public interface IConfigBindingCompiler
         IReadOnlyList<ModConfigEntry> settings, Func<uint, byte[]> readSource);
 }
 
+/** Limits on config binding sites and entries, mirroring the native startup baker. */
 public static class ConfigBindingLimits
 {
     // These bounds match the native startup baker's fixed admission limits.

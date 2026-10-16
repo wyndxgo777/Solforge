@@ -1,3 +1,4 @@
+/** File: Partial ProjectBuilder: plans and writes the .merge sidecar beside each built package. */
 using System.Buffers.Binary;
 using System.Security.Cryptography;
 using System.Text.Json;
@@ -5,6 +6,7 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Projects;
 
+/** Partial: sidecar writing. */
 public static partial class ProjectBuilder
 {
     static partial void WriteMergeSidecars(MergeSidecarRequest request) =>

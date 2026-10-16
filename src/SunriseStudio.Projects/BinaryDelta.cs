@@ -1,9 +1,15 @@
+/**
+ * File: Compact binary diff of an edited asset against its original (copy, xor and add operations) with
+ * create and apply.
+ */
 using System.Buffers.Binary;
 using System.Security.Cryptography;
 
 namespace SunriseStudio.Projects;
 
+/** What a delta operation does: copy base bytes, xor a mask over base bytes, or add literal bytes. */
 public enum DeltaKind { Copy, Xor, Add }
+/** One delta step: kind, offset and length in the base or result, plus literal data for adds. */
 public sealed record DeltaOperation(DeltaKind Kind, int Offset, int Length, byte[]? Data = null);
 
 /** Copy operations refer to the verified base; edits store XOR masks instead of base bytes. */
@@ -111,5 +117,6 @@ public sealed record BinaryDelta(int Version, string BaseSha256, int BaseLength,
         operations.Add(new(DeltaKind.Xor, offset, mask.Length, mask));
     }
 
+    /** Upper-case hex SHA-256 of the bytes. */
     public static string Hash(ReadOnlySpan<byte> bytes) => Convert.ToHexString(SHA256.HashData(bytes));
 }

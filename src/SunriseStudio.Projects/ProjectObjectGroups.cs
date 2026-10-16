@@ -5,6 +5,7 @@ public sealed partial class StudioProject
 {
     public IReadOnlyList<ProjectObjectGroup> ObjectGroups => manifest.ObjectGroups ?? [];
 
+    /** The group with this id, or null. */
     public ProjectObjectGroup? FindObjectGroup(string id) => ObjectGroups.FirstOrDefault(group => group.Id == id);
 
     /** Adds the group, or replaces the one with its id. The name is trimmed. */
@@ -20,6 +21,7 @@ public sealed partial class StudioProject
         ReplaceManifest(manifest with { ObjectGroups = groups.AsReadOnly() });
     }
 
+    /** Removes a group if present. */
     public void RemoveObjectGroup(string id)
     {
         RequireMutationAllowed();

@@ -1,8 +1,10 @@
+/** File: Partial StudioProject: coupled add/edit/restore operations that publish together or not at all. */
 using System.Text.Json;
 using SunriseStudio.Packages;
 
 namespace SunriseStudio.Projects;
 
+/** Partial: transactional operations. */
 public sealed partial class StudioProject
 {
     private bool transactionFactoryActive;
@@ -11,6 +13,7 @@ public sealed partial class StudioProject
         Func<IReadOnlyList<AddedProjectAsset>, ProjectAssetEdits>? editFactory = null, PackageCatalog? catalog = null)
         => CommitTransaction(additions, editFactory, null, catalog);
 
+    /** Snapshots an added asset and its current bytes so an undo can restore it. */
     public AddedAssetSnapshot CaptureAddedAsset(string id, PackageCatalog? catalog = null) =>
         new(AddedAssets.First(asset => asset.Id == id), ReadAddedAsset(id, catalog));
 

@@ -127,6 +127,7 @@ public sealed partial class StudioProject
         return new StudioProject(folder, data);
     }
 
+    /** True when the project edits this tag. */
     public bool ContainsEdit(uint tagHash) => Changes.Any(x => x.TagHash == tagHash);
 
     /** Catalog originals bypass the editor overlay to avoid recursive reconstruction. */
@@ -254,6 +255,7 @@ public sealed partial class StudioProject
         TryDeleteUnreferenced(asset.Path);
     }
 
+    /** Writes the manifest to disk. */
     public void Save()
     {
         ReplaceManifest(manifest);
@@ -330,6 +332,7 @@ public sealed partial class StudioProject
         JsonSerializer.Deserialize<BinaryDelta>(File.ReadAllBytes(ProjectPaths.Resolve(DirectoryPath, change.DeltaPath)),
             ProjectJson.Options) ?? throw new InvalidDataException("Delta is empty.");
 
+    /** Throws unless the text is a 64-digit hex SHA-256. */
     internal static void ValidateHash(string hash)
     {
         if (hash is null || hash.Length != 64 || !hash.All(Uri.IsHexDigit))
@@ -379,6 +382,7 @@ public sealed partial class StudioProject
             StringComparison.OrdinalIgnoreCase);
     }
 
+    /** Builds the project's packages; see ProjectBuilder.Build. */
     public ProjectBuildResult Build(PackageCatalog catalog, string? outputDirectory = null, bool invalidate = true) =>
         ProjectBuilder.Build(this, catalog, outputDirectory, invalidate);
 }

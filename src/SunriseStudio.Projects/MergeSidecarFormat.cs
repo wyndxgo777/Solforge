@@ -1,18 +1,31 @@
+/**
+ * File: Records of the .merge sidecar (targets, shapes, entries, ops, sites) and a bounds-checked reader for
+ * them.
+ */
 using System.Buffers.Binary;
 
 namespace SunriseStudio.Projects;
 
+/** How a sidecar entry is merged: opaque bytes, table, manifest or added entry. */
 internal enum SidecarEntryKind : byte { Opaque = 0, Table = 1, Manifest = 2, Added = 3 }
 
+/** A table the runtime merges: table and descriptor offsets plus stock and mod row counts. */
 internal sealed record SidecarTarget(uint Table, uint Descriptor, uint StockCount, uint ModCount);
+/** One field of a row shape: its offset, merge kind and reference. */
 internal sealed record SidecarShapeField(uint RowOffset, MergeFieldKind Kind, ushort Ref);
+/** Row layout of a merged table: stride and its fields. */
 internal sealed record SidecarShape(uint Stride, IReadOnlyList<SidecarShapeField> Fields);
+/** A byte range that differs from stock, with the original bytes. */
 internal sealed record SidecarDiff(uint Offset, byte[] Old);
+/** One merge operation on a table: key, parent, descriptor, shape and counts. */
 internal sealed record SidecarOp(MergeOpKind Kind, byte Flags, byte KeyWidth, uint KeyOffset, uint ParentOp, uint ParentRow,
     uint Descriptor, uint Shape, uint StockCount, uint ModCount, uint Limit, uint PairGroup);
+/** A pointer site inside an entry and the target it must follow. */
 internal sealed record SidecarSite(uint Offset, byte Width, byte Flags, ushort Target);
+/** Everything the sidecar says about one package entry. */
 internal sealed record SidecarEntry(uint Index, SidecarEntryKind Kind, uint StockSize, uint BuiltSize, byte[] StockSha256,
     IReadOnlyList<SidecarDiff> Diffs, IReadOnlyList<SidecarOp> Ops, IReadOnlyList<SidecarSite> Sites);
+/** A whole sidecar: package and patch ids, metadata digest, targets, shapes and entries. */
 internal sealed record SidecarFile(ushort PackageId, ushort PatchId, byte[] MetadataDigest, IReadOnlyList<SidecarTarget> Targets,
     IReadOnlyList<SidecarShape> Shapes, IReadOnlyList<SidecarEntry> Entries);
 
@@ -227,13 +240,18 @@ internal static class MergeSidecarFormat
         private readonly ReadOnlySpan<byte> bytes = bytes;
         private int position;
         public readonly bool AtEnd => position == bytes.Length;
+        /** Throws when fewer than count bytes remain. */
         public readonly void Need(long count)
         {
             if (count < 0 || position + count > bytes.Length) throw Bad("is truncated");
         }
+        /** Reads a u8 and advances. */
         public byte U8() { Need(1); return bytes[position++]; }
+        /** Reads a little-endian u16 and advances. */
         public ushort U16() { Need(2); var value = BinaryPrimitives.ReadUInt16LittleEndian(bytes[position..]); position += 2; return value; }
+        /** Reads a little-endian u32 and advances. */
         public uint U32() { Need(4); var value = BinaryPrimitives.ReadUInt32LittleEndian(bytes[position..]); position += 4; return value; }
+        /** Reads count bytes and advances. */
         public byte[] Bytes(int count) { Need(count); var value = bytes.Slice(position, count).ToArray(); position += count; return value; }
     }
 }

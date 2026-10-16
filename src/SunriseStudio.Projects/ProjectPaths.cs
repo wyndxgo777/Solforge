@@ -3,6 +3,7 @@ namespace SunriseStudio.Projects;
 /** Project paths cannot leave their root or traverse filesystem links. */
 internal static class ProjectPaths
 {
+    /** Joins a relative path to root, rejecting empty, rooted or escaping paths. */
     internal static string Resolve(string root, string relative)
     {
         if (string.IsNullOrWhiteSpace(relative) || Path.IsPathRooted(relative)
@@ -14,11 +15,13 @@ internal static class ProjectPaths
         return path;
     }
 
+    /** True when path is strictly inside root. */
     internal static bool IsWithin(string path, string root) =>
         Path.GetFullPath(path).StartsWith(Path.TrimEndingDirectorySeparator(Path.GetFullPath(root))
             + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
         || string.Equals(Path.GetFullPath(path), Path.GetFullPath(root), StringComparison.OrdinalIgnoreCase);
 
+    /** Throws when any part of the path is a symbolic link or junction. */
     internal static void RejectLinks(string path, string message = "Project paths cannot contain links or junctions.")
     {
         for (string? current = Path.GetFullPath(path); current is not null; current = Path.GetDirectoryName(current))

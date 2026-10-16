@@ -45,6 +45,10 @@ internal sealed record MergeArray(string Name, int Descriptor, MergeOpKind Kind,
 /** Every array of one installed table that the merge rebuilds. */
 internal sealed record MergeRecipe(uint Tag, string Name, IReadOnlyList<MergeArray> Arrays);
 
+/**
+ * How a merge step moves through data: follow a pointer, visit array rows, visit a pool range, or require a
+ * byte value.
+ */
 internal enum MergeStepKind { Pointer, Array, Pool, Equals }
 
 /**
