@@ -1,12 +1,17 @@
+/** File: Cues, meters and sync points that decide when a music transition may fire. */
 namespace SunriseStudio.Audio;
 
+/** A named cue at a position in milliseconds. */
 public sealed record AudioCue(uint Id, double PositionMs, string? Name = null);
+/** Beat, bar and grid lengths in frames. */
 public sealed record AudioMeterFrames(uint Beat, uint Bar, uint Grid, uint GridOffset);
+/** A frame offset from entry reached through a cue or meter, with the kind of sync. */
 public sealed record AudioSyncPoint(uint FrameFromEntry, uint Cue, int Kind, uint MeterOwner = 0)
 {
     public double SecondsFromEntry => (double)FrameFromEntry / AudioSynchronization.SampleRate;
 }
 
+/** Tempo and grid of a segment. */
 public sealed record AudioMeter(float Tempo, int BeatsPerBar, int BeatValue, double GridPeriodMs, double GridOffsetMs)
 {
     /** A bar multiplies the rounded beat length, rather than rounding its full duration. */
@@ -27,6 +32,7 @@ public static class AudioSynchronization
 {
     public const int SampleRate = 48000;
 
+    /** The meter in effect for a segment and the ancestor that owns it. */
     public static (uint Owner, AudioMeter Meter) Meter(AudioAnalysis analysis, uint segment)
     {
         var seen = new HashSet<uint>(); uint current = segment;
@@ -80,10 +86,13 @@ public static class AudioSynchronization
         throw new NotSupportedException("No matching synchronization point remains in the selected segment.");
     }
 
+    /** Display label for a sync kind. */
     public static string Label(int kind) => kind switch
     { 0 => "Immediate", 1 => "Next grid", 2 => "Next bar", 3 => "Next beat", 4 => "Next cue", 5 => "Next custom cue", 6 => "Entry cue", 7 => "Exit cue", _ => "Unsupported" };
 
+    /** Converts milliseconds to a whole number of output frames. */
     internal static uint MillisecondsToFrames(double milliseconds) => RoundFrames(SampleRate * milliseconds * .001);
+    /** Rounds a frame count, rejecting values that are negative or too large. */
     internal static uint RoundFrames(double value)
     {
         if (!double.IsFinite(value) || value < 0 || value > int.MaxValue - .5)

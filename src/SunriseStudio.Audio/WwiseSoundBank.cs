@@ -1,8 +1,12 @@
+/**
+ * File: Builds a version-113 sound bank from a template event, replacing each codec leaf with in-memory PCM.
+ */
 using System.Buffers.Binary;
 using System.Text;
 
 namespace SunriseStudio.Audio;
 
+/** A built sound bank with its bank, event and related-event ids. */
 public sealed record AuthoredSoundBank(byte[] Bytes, uint BankId, uint EventId, uint RelatedEventId);
 
 /** One sound or container of a version-113 bank: its links, its source and its fire-rate transition curves. */
@@ -416,9 +420,13 @@ public static class WwiseSoundBank
     private sealed class Reader(byte[] data)
     {
         public int At { get; private set; }
+        /** Reads a u8, throwing at end of data. */
         public byte U8() { Need(1); return data[At++]; }
+        /** Reads a little-endian u16. */
         public ushort U16() { Need(2); ushort value = BinaryPrimitives.ReadUInt16LittleEndian(data.AsSpan(At)); At += 2; return value; }
+        /** Reads a little-endian u32. */
         public uint U32() { Need(4); uint value = BinaryPrimitives.ReadUInt32LittleEndian(data.AsSpan(At)); At += 4; return value; }
+        /** Advances count bytes. */
         public void Skip(int count) { Need(count); At += count; }
         private void Need(int count)
         {

@@ -3,6 +3,7 @@ namespace SunriseStudio.Audio;
 /** Curve identifiers are stored in authored fade parameters, not chosen by the mixer. */
 public static class AudioCurves
 {
+    /** Fade curve value at progress 0..1; fade-outs mirror the curve index except the symmetric ones. */
     public static double Interpolate(int curve, double progress, bool fadeIn)
     {
         if (!double.IsFinite(progress)) throw new InvalidDataException("Music fade progress is not finite.");

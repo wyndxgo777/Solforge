@@ -1,6 +1,9 @@
+/** File: Clip automation curves (volume or gain over time) evaluated by frame. */
 namespace SunriseStudio.Audio;
 
+/** One automation key: time, value and curve shape. */
 public sealed record AudioAutomationPoint(float Seconds, float Value, int Curve);
+/** The automation points of one clip for one parameter type. */
 public sealed record AudioClipAutomation(uint ClipIndex, int Type, IReadOnlyList<AudioAutomationPoint> Points);
 
 /** Clip automation uses sample-rounded times relative to the trimmed clip start. */
@@ -45,5 +48,6 @@ public sealed class AudioAutomationCurve
         return AudioCurves.Evaluate(points[previous].Curve, progress, points[previous].Value, points[lower].Value);
     }
 
+    /** Gain multiplier at a frame; type 0 is stored as an offset from unity. */
     public float GainAt(float frame) => Type == 0 ? 1f + ValueAt(frame) : ValueAt(frame);
 }

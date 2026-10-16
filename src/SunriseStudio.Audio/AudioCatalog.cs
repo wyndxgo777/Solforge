@@ -1,13 +1,18 @@
+/** File: Reads audio-related package entries (events and sound banks) into documents with their media. */
 using System.Buffers.Binary;
 using System.Text;
 using SunriseStudio.Packages;
 
 namespace SunriseStudio.Audio;
 
+/** One media file: id, package tag, name and size, or embedded bytes. */
 public sealed record AudioMedia(uint Id, uint? Tag, string Name, int Size, byte[]? Embedded = null);
+/** One raw object of a sound bank: its type, id and bytes. */
 public sealed record AudioBankObject(byte Type, uint Id, byte[] Data);
+/** A parsed sound bank with its objects and embedded media. */
 public sealed record AudioBank(uint Tag, uint Id, uint Version, byte[] Bytes,
     IReadOnlyList<AudioBankObject> Objects, IReadOnlyList<AudioMedia> EmbeddedMedia);
+/** What one package tag resolved to: event or bank, its media and read diagnostics. */
 public sealed record AudioDocument(uint Tag, string Name, string Kind, uint? EventId, uint? RelatedEventId,
     AudioBank? Bank, IReadOnlyList<AudioMedia> Media, IReadOnlyList<string> Diagnostics);
 
@@ -15,6 +20,7 @@ public sealed record AudioDocument(uint Tag, string Name, string Kind, uint? Eve
 public sealed class AudioCatalog(PackageCatalog catalog, Func<uint, string?>? names = null)
 {
     public const uint EventClass = 0x80809802;
+    /** True when the package entry is an audio event or bank. */
     public static bool Supports(PackageEntry entry) => entry.Reference == EventClass
         || entry.Type == 26 && entry.SubType is 4 or 5 or 6;
 
@@ -86,9 +92,11 @@ public sealed class AudioCatalog(PackageCatalog catalog, Func<uint, string?>? na
             media.DistinctBy(value => (value.Id, value.Tag)).ToArray(), diagnostics);
     }
 
+    /** Bytes of a media file, embedded or read from the package. */
     public byte[] ReadMedia(AudioMedia media) => media.Embedded ?? catalog.Read(media.Tag
         ?? throw new InvalidDataException("Media has no package source."));
 
+    /** Reads every init bank, which carry shared buses and settings. */
     public IReadOnlyList<AudioBank> ReadInitBanks() => catalog.Entries.Where(entry => entry.Type == 26 && entry.SubType == 4)
         .Select(entry => ReadBank(entry.TagHash, catalog.Read(entry.TagHash))).ToArray();
 

@@ -11,6 +11,7 @@ public sealed record AudioSamples(int SampleRate, int Channels, float[] Samples)
     /** Bytes the same audio takes as PCM16, the unit of the working limits. */
     public long Pcm16Bytes => Samples.LongLength * 2;
 
+    /** Converts 16-bit PCM to float samples. */
     public static AudioSamples FromPcm(PcmWave wave)
     {
         if (wave.BitsPerSample != 16 || wave.Channels < 1 || wave.Samples.Length % wave.BlockAlign != 0)

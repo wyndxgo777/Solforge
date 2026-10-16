@@ -1,5 +1,7 @@
+/** File: Destination points of a transition (where the next segment starts) and their labels. */
 namespace SunriseStudio.Audio;
 
+/** Where in the destination segment a transition lands, with its random-choice position. */
 public sealed record AudioDestinationPoint(uint FrameFromEntry, uint Cue, int Kind, int ChoiceCount, int ChoiceIndex)
 {
     public double SecondsFromEntry => (double)FrameFromEntry / AudioSynchronization.SampleRate;
@@ -38,6 +40,7 @@ public static class AudioDestination
             selected.Id, kind, candidates.Count, index);
     }
 
+    /** Display label for a destination kind. */
     public static string Label(int kind) => kind switch
     { 0 => "Entry cue", 1 => "Same time", 2 => "Random cue", 3 => "Random custom cue", _ => "Unsupported" };
 }

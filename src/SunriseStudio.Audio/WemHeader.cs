@@ -1,7 +1,11 @@
+/**
+ * File: Parses the RIFF/WEM header of Wwise media and defines the exception for media Studio cannot decode.
+ */
 using System.Buffers.Binary;
 
 namespace SunriseStudio.Audio;
 
+/** Why a media file cannot be decoded. */
 public enum AudioUnsupportedReason { EmptyPlaceholder, NotPlayableMedia, BigEndian, Codec, Layout }
 
 /** Media Studio cannot decode; Message is the text the UI shows. InvalidDataException is sealed. */

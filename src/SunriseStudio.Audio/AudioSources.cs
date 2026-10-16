@@ -1,7 +1,9 @@
+/** File: Lists the codec sources of a version-113 bank's sounds and music tracks. */
 using System.Buffers.Binary;
 
 namespace SunriseStudio.Audio;
 
+/** A codec source: media id, whether it is external, and the owning object and plugin ids. */
 public sealed record AudioSource(uint MediaId, bool External, uint ObjectId, uint PluginId);
 
 /** Version 113 music tracks carry a counted source list before their clip timeline. */

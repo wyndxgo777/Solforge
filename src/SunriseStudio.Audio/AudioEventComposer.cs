@@ -1,9 +1,14 @@
+/**
+ * File: Builds a playable plan from a Wwise event (layers, sequences, random picks, silences) for preview
+ * and export.
+ */
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Text;
 
 namespace SunriseStudio.Audio;
 
+/** Whether a group plays its children together (Layer) or one after another (Sequence). */
 public enum AudioEventGroupKind { Layer, Sequence }
 
 /** One part of a composition; it starts DelaySeconds after its parent places it. */
@@ -15,6 +20,7 @@ public abstract record AudioEventNode(uint ObjectId, string Label, double DelayS
 public sealed record AudioEventSound(uint ObjectId, string Label, double DelaySeconds, uint Media, float GainDb, int Loops,
     float? Pan = null)
     : AudioEventNode(ObjectId, Label, DelaySeconds);
+/** A timed gap in a plan. */
 public sealed record AudioEventSilence(uint ObjectId, string Label, double DelaySeconds, double Seconds, int Loops)
     : AudioEventNode(ObjectId, Label, DelaySeconds);
 /** Transition modes are the random/sequence container's: 1 and 2 cross-fade, 3 adds a gap, 5 is a trigger rate. */
@@ -28,6 +34,7 @@ public sealed record AudioEventMusic(uint ObjectId, string Label, double DelaySe
 public sealed record AudioEventUnsupported(uint ObjectId, string Label, double DelaySeconds, string Reason)
     : AudioEventNode(ObjectId, Label, DelaySeconds);
 
+/** A composed event: the node tree plus notices about what was simplified. */
 public sealed record AudioEventPlan(AudioEventNode Root, IReadOnlyList<string> Notices)
 {
     /** Every media ID the plan plays, sounds and music clips alike. */
@@ -48,6 +55,7 @@ public sealed record AudioEventPlan(AudioEventNode Root, IReadOnlyList<string> N
     }
 }
 
+/** A named plan with its routing description. */
 public sealed record AudioEventComposition(string Name, string Routing, AudioEventPlan Plan);
 
 /** Walks an event's play actions into a plan per reachable choice, without the Wwise engine. */

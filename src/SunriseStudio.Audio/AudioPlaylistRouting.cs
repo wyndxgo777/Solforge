@@ -1,6 +1,9 @@
+/** File: Playlist route enumeration and the play history that drives sequence containers. */
 namespace SunriseStudio.Audio;
 
+/** One selectable playlist entry: segment or container. */
 public sealed record AudioPlaylistEntry(uint Id, string Name, uint Segment, bool Container);
+/** The items one play of a playlist walks, flagged when truncated. */
 public sealed record AudioPlaylistPath(uint Playlist, int PlayNumber, uint StartItem, IReadOnlyList<uint> Items, bool Truncated);
 
 /** Step cursors belong to one loaded bank and publish only after a completed preparation. */
@@ -9,7 +12,9 @@ public sealed class AudioPlaylistHistory
     private AudioAnalysis? source;
     private readonly Dictionary<(uint Playlist, uint Item), int> sequences = [];
     private readonly Dictionary<uint, int> plays = [];
+    /** How many times the playlist has been played in this history. */
     public int PlayCount(uint playlist) => plays.GetValueOrDefault(playlist);
+    /** Independent copy, so a render can fail without advancing the real history. */
     public AudioPlaylistHistory Copy()
     {
         var result = new AudioPlaylistHistory { source = source };
@@ -17,14 +22,17 @@ public sealed class AudioPlaylistHistory
         foreach (var pair in plays) result.plays.Add(pair.Key, pair.Value);
         return result;
     }
+    /** Forgets all sequence positions and play counts. */
     public void Reset() { source = null; sequences.Clear(); plays.Clear(); }
 
+    /** Ties the history to one loaded bank; another bank throws until Reset. */
     internal void Bind(AudioAnalysis analysis)
     {
         if (source is not null && !ReferenceEquals(source, analysis))
             throw new InvalidOperationException("Playlist history belongs to another loaded bank. Reset it first.");
         source = analysis;
     }
+    /** Next child of a sequence container (round robin), or the explicit child after bounds checks. */
     internal int Next(uint playlist, AudioPlaylistItem item, int? explicitChild = null)
     {
         if (item.Children.Count == 0) throw new InvalidDataException("Sequence container has no children.");
@@ -33,6 +41,7 @@ public sealed class AudioPlaylistHistory
         if ((uint)index >= item.Children.Count) throw new InvalidDataException("Playlist jump leaves its container.");
         sequences[key] = index; return index;
     }
+    /** Adopts a successful render's history and counts one more play of the playlist. */
     internal void Commit(AudioPlaylistHistory next, uint playlist)
     {
         source = next.source; sequences.Clear(); plays.Clear();
@@ -42,8 +51,10 @@ public sealed class AudioPlaylistHistory
     }
 }
 
+/** Enumerates and walks playlist routes. */
 public static class AudioPlaylistRouting
 {
+    /** The segments and containers of a playlist that can start a play. */
     public static IReadOnlyList<AudioPlaylistEntry> Entries(AudioAnalysis analysis, uint playlist)
     {
         if (!analysis.Playlists.TryGetValue(playlist, out var definition)) throw new InvalidDataException("Music playlist is missing.");

@@ -59,6 +59,7 @@ public sealed class WavePlayback : IDisposable
         }
     }
 
+    /** Loads a WAV from disk for playback. */
     public void Load(string path) => Load(PcmWave.Read(path));
 
     /** Takes the wave as is; the caller must not change its samples while it is loaded. */
@@ -74,6 +75,7 @@ public sealed class WavePlayback : IDisposable
         SetVolume(volume); start = 0;
     }
 
+    /** Starts or resumes playback. */
     public void Play()
     {
         if (Wave is null || device == IntPtr.Zero) return;
@@ -83,9 +85,12 @@ public sealed class WavePlayback : IDisposable
         Queue(start);
     }
 
+    /** Pauses playback. */
     public void Pause() { if (Playing) { Check(waveOutPause(device)); paused = true; } }
+    /** Stops playback and rewinds. */
     public void Stop() { if (device == IntPtr.Zero) return; ReleaseBuffer(); start = 0; }
 
+    /** Moves the play position to seconds. */
     public void Seek(double seconds)
     {
         if (Wave is null || !double.IsFinite(seconds)) return;
@@ -93,6 +98,7 @@ public sealed class WavePlayback : IDisposable
         if (resume && start < Duration) Queue(start);
     }
 
+    /** Sets playback volume (0..1). */
     public void SetVolume(float value)
     {
         volume = Math.Clamp(value, 0, 1);
@@ -129,6 +135,7 @@ public sealed class WavePlayback : IDisposable
         header = IntPtr.Zero; paused = playing = false;
     }
 
+    /** Stops playback and closes the output device. */
     public void Dispose()
     {
         ReleaseBuffer(); if (device != IntPtr.Zero) waveOutClose(device);

@@ -1,10 +1,19 @@
+/**
+ * File: Records for the analysed Wwise music graph (segments, playlists, transitions, routes, choices) that
+ * the timeline and composer consume.
+ */
 namespace SunriseStudio.Audio;
 
+/** One option of a switch or state group and the node it selects. */
 public sealed record AudioChoice(uint Value, string Name, uint Target);
+/** A switch or state group with its named choices. */
 public sealed record AudioChoiceGroup(uint Id, bool Switch, string Name, IReadOnlyList<AudioChoice> Choices);
+/** A game parameter (RTPC) with its range. */
 public sealed record AudioParameter(uint Id, string Name, float Minimum, float Maximum);
+/** Bus routing of one node: parent, output bus and volume, plus limits that stopped analysis. */
 public sealed record AudioRoute(uint Id, uint Parent, uint OutputBus, float VolumeDb, bool Bus,
     IReadOnlyList<string> Limits);
+/** One clip on a music track: source, lane, placement and trims in seconds. */
 public sealed record AudioClip(uint SourceId, uint Lane, double PlayAt, double BeginTrim, double EndTrim, double SourceDuration);
 /**
  * A music track.
@@ -14,19 +23,25 @@ public sealed record AudioClip(uint SourceId, uint Lane, double PlayAt, double B
 public sealed record AudioTrack(uint Id, string Name, uint Parent, float VolumeDb, int Type,
     IReadOnlyList<AudioClip> Clips, IReadOnlyList<string> Limits, IReadOnlyList<AudioClipAutomation>? Automation = null,
     float? Pan = null, bool Spatial = false);
+/** A music segment: timing, entry and exit points, its tracks and analysis limits. */
 public sealed record AudioSegment(uint Id, string Name, uint Parent, float VolumeDb, double Duration,
     double Entry, double Exit, IReadOnlyList<uint> Tracks, IReadOnlyList<string> Limits,
     IReadOnlyList<AudioCue>? Cues = null);
+/** One node of a playlist tree (segment or container) with loop, weight and shuffle settings. */
 public sealed record AudioPlaylistItem(uint Id, uint Segment, int Kind, int Loops,
     uint Weight, int AvoidRepeat, bool Shuffle, IReadOnlyList<AudioPlaylistItem> Children,
     int LoopMinimum = 0, int LoopMaximum = 0, bool UseWeights = false);
+/** One transition rule: source and destination sync, entry point and fade curves. */
 public sealed record AudioTransition(uint Source, uint Destination, int SourceSync, int DestinationEntry,
     double FadeOutMs, double FadeInMs, int FadeOutCurve, int FadeInCurve,
     double FadeOutOffsetMs, double FadeInOffsetMs, bool PostExit, bool PreEntry, uint BridgeSegment, uint JumpTo,
     AudioBridge? Bridge = null, uint SourceCue = 0, uint DestinationCue = 0, bool MatchCue = false);
+/** A bridge segment played between two segments, with its fades. */
 public sealed record AudioBridge(uint Segment, double FadeInMs, int FadeInCurve, double FadeInOffsetMs,
     double FadeOutMs, int FadeOutCurve, double FadeOutOffsetMs, bool PreEntry, bool PostExit);
+/** A music switch or playlist container and the transition rules it owns. */
 public sealed record AudioTransitionContainer(uint Id, string Name, IReadOnlyList<AudioTransition> Rules);
+/** A music playlist: its item tree and transitions. */
 public sealed record AudioPlaylist(uint Id, string Name, uint Parent, float VolumeDb,
     AudioPlaylistItem Root, IReadOnlyList<AudioTransition> Transitions, IReadOnlyList<string> Limits);
 
