@@ -59,8 +59,8 @@ public static partial class SolforgeTools
         yield return Query("get_editor_state", "Solforge's state in one call: installation and game build, project, open map and " +
             "mission, open asset, busy work and progress, last error, whether the 3D viewport renders (and why not), Live link, " +
             "Destiny 2 running, MCP and the skills folder. Works with nothing open.", McpJson.Schema());
-        yield return Query("get_project", "The open project: name, folder, mod details, counts of asset, object and script " +
-            "changes, and the game install it targets.", McpJson.Schema());
+        yield return Query("get_project", "The open project: name, folder, mod details (set_mod_details sets them), counts of " +
+            "asset, object and script changes, and the game install it targets.", McpJson.Schema());
         yield return Query("list_project_files", "Files in the project folder (relative paths, sizes), filtered and paged. " +
             "Read one with read_project_file.", Paged(("filter", "string", "Optional text the path must contain", false),
                 ("extension", "string", "Optional extension, e.g. .lua", false)));
@@ -70,7 +70,8 @@ public static partial class SolforgeTools
         yield return Query("get_build_status", "The last build and install: when, output folder, notes and errors, and whether " +
             "a build is running now.", McpJson.Schema());
         yield return Query("get_settings", "Solforge settings the playbooks need: game install, project, server mission scripts " +
-            "folder, Blender path, viewport rendering, low memory mode, texture budget, FPS caps and AI options.", McpJson.Schema());
+            "folder, Blender path, viewport rendering, low memory mode, texture budget, FPS caps, interface size and AI options. " +
+            "set_settings changes them (same names).", McpJson.Schema());
 
         // Maps, missions, packages and assets: no map needs to be open.
         yield return Query("list_maps", "Every map in the installed game with its tag and its zones (bubbles) by name. No map needs " +
@@ -90,7 +91,8 @@ public static partial class SolforgeTools
             "without a map. Every word must match, e.g. 'shard traveler' or 'kill volume edz'.",
             Paged(("query", "string", "Words to find", true), ("kind", "string", "Optional asset kind, e.g. Map, Static prop, Material", false)));
         yield return Query("list_mission_scripts", "Lua mission scripts in the project and the server scripts folder (Settings > " +
-            "Paths), filtered and paged; read them with read_project_file or open_file.",
+            "Paths; set_settings serverScripts sets it), filtered and paged; read them with read_project_file (server ones as " +
+            "scripts:<path>), open project ones with open_file.",
             Paged(("filter", "string", "Optional text the path must contain", false)));
 
         // The open map's objects.
@@ -208,8 +210,9 @@ public static partial class SolforgeTools
                     && Path.GetExtension(file).ToLowerInvariant() is ".png" or ".dds" ? null : "Give an absolute path to an existing .png or .dds file.",
             args => $"Replace pixels of texture {Arg(args, "tag")} with {Path.GetFileName(Arg(args, "path"))}");
         yield return act("build_project", "Build the project's packages; install=true also installs the mod (close the game " +
-            "first). Poll get_build_status for the result.",
+            "first; needs mod details, see set_mod_details). Poll get_build_status for the result.",
             McpJson.Schema(("install", "boolean", "Also install the mod (default false)", false)), _ => null,
             args => McpJson.Bool(args, "install", false) ? "Build and install the mod" : "Build the project packages");
+        foreach (var tool in SelfServiceTools(act)) yield return tool;
     }
 }

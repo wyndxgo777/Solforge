@@ -107,11 +107,17 @@ public sealed partial class StudioForm
     /** get_project: the open project facts. */
     private JsonObject AiProject()
     {
-        if (workspace.Project is not { } project) return AiError("No project is open (File > Open project).");
+        if (workspace.Project is not { } project) return AiError("No project is open; open_project or create_project opens one (File > Open project).");
         return new JsonObject
         {
             ["name"] = project.Name, ["folder"] = project.DirectoryPath,
-            ["mod"] = project.Mod is { } mod ? new JsonObject { ["id"] = mod.Id, ["name"] = mod.Name, ["version"] = mod.Version } : null,
+            ["mod"] = project.Mod is { } mod ? new JsonObject
+            {
+                ["id"] = mod.Id, ["name"] = mod.Name, ["version"] = mod.Version, ["description"] = mod.Description,
+                ["authors"] = mod.Authors is { } authors ? new JsonArray(authors.Select(author => (JsonNode)author).ToArray()) : null,
+                ["source"] = mod.Src, ["cheat"] = mod.Cheat
+            } : null,
+            ["modNote"] = project.Mod is null ? "No mod details; Build and install, Update running game and .solmod packing need them (set_mod_details)." : null,
             ["assetChanges"] = project.Changes.Count, ["objectEdits"] = project.ObjectEdits.Count, ["addedAssets"] = project.AddedAssets.Count,
             ["installation"] = workspace.Catalog?.GameRoot,
             ["missionScriptUnsaved"] = missionGraph.IsDirty
@@ -150,7 +156,7 @@ public sealed partial class StudioForm
         ["viewportRendering"] = settings.ViewportRendering, ["pauseWhileGameRuns"] = settings.PauseRenderWhenGameRunning,
         ["lowMemoryMode"] = settings.LowMemoryMode, ["lowMemoryWithGame"] = settings.LowMemoryWithGame, ["textureBudgetMiB"] = settings.TextureBudgetMiB,
         ["textureCacheMiB"] = settings.TextureCacheMiB,
-        ["fpsFocused"] = settings.FpsFocused, ["fpsBackground"] = settings.FpsBackground,
+        ["fpsFocused"] = settings.FpsFocused, ["fpsBackground"] = settings.FpsBackground, ["uiScale"] = Math.Round(settings.UiScale, 2),
         ["memory"] = AiMemory(),
         ["aiEngine"] = AiEngines[aiEngine].Name, ["aiAutoAllow"] = settings.AiAutoAllow, ["mcp"] = settings.AiMcpEnabled,
         ["aiFolders"] = new JsonArray(settings.AiFolders.Select(folder => (JsonNode)folder).ToArray())
@@ -304,9 +310,11 @@ public sealed partial class StudioForm
             .Where(file => Matches(filter, file.Relative)).OrderBy(file => file.Relative, StringComparer.OrdinalIgnoreCase);
         var page = McpPages.Page(files, Offset(args), Limit(args), file => new JsonObject
         {
-            ["root"] = file.Root, ["path"] = file.Root == "project" ? file.Relative : file.Path
+            ["root"] = file.Root, ["path"] = file.Root == "project" ? file.Relative : ProjectFiles.ScriptsPrefix + file.Relative,
+            ["fullPath"] = file.Root == "project" ? null : file.Path
         });
-        if (scripts is not { Length: > 0 }) page["note"] = "Set the server mission scripts folder in Settings > Paths to include them.";
+        if (scripts is not { Length: > 0 }) page["note"] = "No server mission scripts folder is set; set it with set_settings serverScripts (Settings > Paths).";
+        else if (!Directory.Exists(scripts)) page["note"] = $"The server mission scripts folder {scripts} is missing; fix it with set_settings serverScripts.";
         return page;
     }
 
@@ -612,12 +620,15 @@ public sealed partial class StudioForm
                 if (McpJson.Bool(args, "install", false))
                 {
                     if (destiny2Detected) return "Destiny 2 is running; close the game before installing.";
+                    // Checked here so the AI gets an answer instead of the Mod details dialog or a save prompt.
+                    if (workspace.Project?.Mod is null) return "The project has no mod details; set them with set_mod_details first.";
+                    if (missionGraph.IsDirty) return AiDraftOpen;
                     InstallMod();
                 }
                 else workspace.Run(() => workspace.Build());
                 return workspace.Error.Length > 0 ? workspace.Error : "Started; poll get_build_status.";
             default:
-                return null;
+                return RunAiSelfServiceAction(tool, args);
         }
     }
 

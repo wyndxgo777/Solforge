@@ -205,6 +205,16 @@ public sealed partial class StudioWorkspace
         }, blocking: !keepDocument, keepNotice: keepDocument);
     }
 
+    /** Closes the open asset; an open world stays (its scene is the world's, not the asset's). */
+    public void CloseDocument()
+    {
+        RequireIdle();
+        if (Document is null) return;
+        Document = null; DocumentRevision++;
+        if (World is null) { AdoptNative(null, null); NativeError = ""; SceneRevision++; }
+        Status = "Asset closed";
+    }
+
     public void CloseWorld()
     {
         RequireIdle();

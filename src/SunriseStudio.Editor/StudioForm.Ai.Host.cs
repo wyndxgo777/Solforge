@@ -672,6 +672,8 @@ public sealed partial class StudioForm
         public string? ProjectRoot => form.workspace.Project?.DirectoryPath;
         public IReadOnlyList<string> SdkRoots => ProjectRoot is { } root
             ? new[] { Path.Combine(root, "sdk"), Path.Combine(root, "docs") }.Where(Directory.Exists).ToArray() : [];
+        /** ISolforgeHost: Settings > Paths server mission scripts folder, read live so set_settings applies at once. */
+        public string? ServerScriptsRoot => form.settings.ScriptsPath is { Length: > 0 } scripts && Directory.Exists(scripts) ? scripts : null;
         public AttentionLog Attention => form.aiAttention;
 
         public IReadOnlyList<CodeRoot> CodeRoots => form.aiCodeRoots;

@@ -248,6 +248,7 @@ async Task StdioRoundTrip()
             "list_creation_types", "describe_creation",
             "open_map", "open_asset", "set_viewport_rendering", "edit_placement", "edit_bounds", "revert_object_edit",
             "apply_item_edit", "apply_vendor_edit", "start_creation", "replace_texture_pixels", "build_project",
+            "set_settings", "set_mod_details", "close_map", "close_asset", "open_project", "create_project", "close_project", "build_to_folder", "update_running_game", "reload_mission_scripts",
             .. SolforgeTools.DecompToolNames, .. SolforgeTools.PackageDataToolNames, .. SolforgeTools.MediaToolNames,
             "list_content_families", "list_content", "get_content", "validate_content", "get_subclass_layout", "check_subclass_build", "get_help",
             "create_content", "update_content", "delete_content", "export_content",
@@ -259,7 +260,7 @@ async Task StdioRoundTrip()
 
         string[] actions = ["select_object", "focus_camera", "highlight", "open_file", "apply_project_edit", "open_map", "open_asset",
             "set_viewport_rendering", "edit_placement", "edit_bounds", "revert_object_edit", "apply_item_edit", "apply_vendor_edit",
-            "start_creation", "replace_texture_pixels", "build_project", "rename_function", "ui_invoke", "ui_set_value", "ui_set_checked", "ui_select", "set_viewport_stream", "create_content", "update_content", "delete_content", "export_content", "create_graph", "edit_graph", "apply_graph"];
+            "start_creation", "replace_texture_pixels", "build_project", "set_settings", "set_mod_details", "close_map", "close_asset", "open_project", "create_project", "close_project", "build_to_folder", "update_running_game", "reload_mission_scripts", "rename_function", "ui_invoke", "ui_set_value", "ui_set_checked", "ui_select", "set_viewport_stream", "create_content", "update_content", "delete_content", "export_content", "create_graph", "edit_graph", "apply_graph"];
         Expect(tools.Select(tool => tool?["name"]?.ToString()).SequenceEqual(expected), "tool names: " + string.Join(",", tools.Select(tool => tool?["name"])));
         foreach (var tool in tools)
         {
@@ -1252,6 +1253,23 @@ void CodeRefsCheck()
     var found = CodeRefs.Locate(game, project, []);
     Expect(found.Select(root => root.Name).SequenceEqual(["sdk-missions", "server-scripts", "project"]) && found[0].ByMission
         && found[1].Folder.EndsWith("mission-scripts"), "locate: " + string.Join(", ", found.Select(root => root.Name + "=" + root.Folder)));
+    // Settings > Paths (set_settings serverScripts) wins over the guessed folder; scripts:<path> reads inside it only.
+    string chosen = Path.Combine(scratch, "layout", "chosen-scripts");
+    Directory.CreateDirectory(chosen);
+    File.WriteAllText(Path.Combine(chosen, "edz.lua"), "-- edz\n");
+    var picked = CodeRefs.Locate(game, project, [], chosen);
+    Expect(picked.Any(root => root.Name == "server-scripts" && root.Folder == Path.GetFullPath(chosen)), "locate prefers the settings folder");
+    Expect(ProjectFiles.Resolve(project, [], "scripts:edz.lua", chosen) == Path.Combine(chosen, "edz.lua")
+        && ProjectFiles.Resolve(project, [], "scripts:../x.lua", chosen) is null && ProjectFiles.Resolve(project, [], "scripts:edz.lua") is null,
+        "scripts: prefix");
+    Expect(ProjectFiles.EditablePath(project, "scripts:edz.lua", out _) is null, "scripts: is read-only");
+    Expect(SolforgeTools.SettingsProblem(new JsonObject { ["serverScripts"] = chosen, ["fpsFocused"] = 60, ["uiScale"] = 1.2 }) is null,
+        "valid settings");
+    Expect(SolforgeTools.SettingsProblem(new JsonObject { ["serverScripts"] = Path.Combine(chosen, "missing") }) is { } missing
+        && missing.Contains("No folder"), "missing folder refused");
+    Expect(SolforgeTools.SettingsProblem(new JsonObject { ["fpsFocused"] = 999 }) is not null, "range refused");
+    Expect(SolforgeTools.SettingsProblem(new JsonObject { ["aiAutoAllow"] = true }) is { } ai && ai.Contains("Settings > AI"), "AI settings stay the user's");
+    Expect(SolforgeTools.SettingsProblem(new JsonObject { ["lowMemoryMode"] = "yes" }) is not null, "type refused");
 }
 
 void ReferenceCheck()

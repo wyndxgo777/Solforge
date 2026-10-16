@@ -53,14 +53,16 @@ public sealed partial class StudioForm
     {
         if (aiHost is null) return;
         string key = (workspace.Catalog?.GameRoot ?? settings.SunrisePath) + "|" + workspace.Project?.DirectoryPath + "|"
-            + missionGraph.ScriptPath + "|" + string.Join(";", settings.AiFolders);
+            + missionGraph.ScriptPath + "|" + settings.ScriptsPath + "|" + string.Join(";", settings.AiFolders);
         if (key != aiCodeRootsKey)
         {
             aiCodeRootsKey = key;
             string? game = workspace.Catalog?.GameRoot ?? settings.SunrisePath, project = workspace.Project?.DirectoryPath;
             string?[] folders = [missionGraph.ScriptPath is { } script ? Path.GetDirectoryName(script) : null, .. settings.AiFolders];
+            string? scripts = settings.ScriptsPath.Length > 0 ? settings.ScriptsPath : null;
             aiReferenceStarts = [project, game, .. folders];
-            _ = Task.Run(() => aiCodeRoots = CodeRefs.Locate(game, project, folders));
+            // The key holds the scripts folder, so set_settings serverScripts re-locates the code roots on the next publish.
+            _ = Task.Run(() => aiCodeRoots = CodeRefs.Locate(game, project, folders, scripts));
         }
         if (aiPaused) return;
         if (inspectionWorld is null) return;
