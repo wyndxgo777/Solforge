@@ -316,8 +316,8 @@ async Task StdioRoundTrip()
         {
             var tool = tools.First(row => row?["name"]?.ToString() == name)!;
             Expect(tool["inputSchema"]?["properties"]?["offset"] is not null && tool["annotations"]?["readOnlyHint"]?.GetValue<bool>() != false, name + " is a paged read");
-            var page = Body(await Call(63, "tools/call", new JsonObject { ["name"] = name, ["arguments"] = new JsonObject { ["limit"] = 5 } }));
-            Expect(page["rows"] is JsonArray && host.Queries.Contains(name), name + " reaches the host");
+            var listed = Body(await Call(63, "tools/call", new JsonObject { ["name"] = name, ["arguments"] = new JsonObject { ["limit"] = 5 } }));
+            Expect(listed["rows"] is JsonArray && host.Queries.Contains(name), name + " reaches the host");
         }
         int asked = host.Approvals;
         var badBounds = await Call(32, "tools/call", new JsonObject { ["name"] = "edit_bounds", ["arguments"] = new JsonObject { ["id"] = "w:9", ["minimum"] = new JsonArray(1, 2) } });
