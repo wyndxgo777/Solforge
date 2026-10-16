@@ -146,7 +146,17 @@ weaponEditor.Connect(onKill.Id, "then", healthBelow.Id, "exec");
 weaponEditor.Connect(healthBelow.Id, "then", heal.Id, "exec");
 var weaponResult = WeaponGraphCompiler.Compile(weapon);
 Expect(!GraphValidation.HasErrors(weaponResult.Diagnostics), "weapon compiles: " + string.Join("; ", weaponResult.Diagnostics));
-Expect(weaponResult.Ops.Any(op => op is { Op: "set_field", Field: "Name", Value: "Sol Fang" }), "name becomes set_field");
+Expect(weaponResult.WorkflowFields.Any(pair => pair is { Key: "Name", Value: "Sol Fang" }) && !weaponResult.Ops.Any(op => op.Field == "Name"),
+    "name goes to the item workflow, not set_field");
+var rarityNode = weaponEditor.AddNode("item.rarity", 0, 500, new Dictionary<string, string> { ["rarity"] = "Exotic" });
+weaponEditor.Connect(rarityNode.Id, "field", output, "fields");
+var visualsNode = weaponEditor.AddNode("item.visuals", 0, 550, new Dictionary<string, string> { ["icon"] = "0x80AA0001" });
+weaponEditor.Connect(visualsNode.Id, "field", output, "fields");
+var withRarity = WeaponGraphCompiler.Compile(weapon);
+Expect(withRarity.Ops.Any(op => op is { Op: "set_field", Field: "Rarity", Value: "5" }), "rarity is the tier byte");
+Expect(withRarity.WorkflowFields.Any(pair => pair is { Key: "Icon from item", Value: "0x80AA0001" }), "icon goes to the workflow");
+Expect(WeaponGraphCompiler.RarityNames.Select((rarity, tier) => SunriseStudio.Packages.InvestmentItemKinds.TierName((byte)tier) == rarity).All(same => same),
+    "rarity names match the investment tier table");
 Expect(weaponResult.Ops.Any(op => op is { Op: "add_stat", Stat: "Impact", Value: "45" }), "stat value folds and rounds");
 Expect(weaponResult.Ops.Any(op => op is { Op: "add_perk", Perk: "Aggressive Frame" }) && weaponResult.Ops.Any(op => op is { Op: "add_perk", Perk: "Rampage" }), "perks become add_perk");
 Expect(weaponResult.CustomPerks.Single() is { Perk: "Sun Bite", Event: "on_kill" } rule && rule.Conditions.Single().Type == "health_below"
@@ -159,7 +169,7 @@ Expect(GraphValidation.Validate(weapon).Any(item => item.NodeId == stray.Id && i
 var mission = GraphDocument.Create(GraphKind.Mission, "Sol Test");
 var missionEditor = new GraphEditor(mission);
 string start = mission.Nodes[0].Id;
-var objective = missionEditor.AddNode("mission.set_objective", 250, 0, new Dictionary<string, string> { ["text"] = "Defeat the \"Wardens\"" });
+var objective = missionEditor.AddNode("mission.set_directive", 250, 0, new Dictionary<string, string> { ["module"] = "EDZ_FREEROAM", ["directive"] = "Defeat the \"Wardens\"" });
 var delay = missionEditor.AddNode("flow.delay", 500, 0, new Dictionary<string, string> { ["seconds"] = "5" });
 var signal = missionEditor.AddNode("flow.send_signal", 750, 0, new Dictionary<string, string> { ["signal"] = "BossVulnerable" });
 var onBoss = missionEditor.AddNode("mission.on_signal", 0, 200, new Dictionary<string, string> { ["signal"] = "BossVulnerable" });
@@ -175,9 +185,34 @@ missionEditor.Connect(branch.Id, "false", log.Id, "exec");
 var lua = MissionGraphCompiler.Compile(mission);
 Expect(!GraphValidation.HasErrors(lua.Diagnostics), "mission compiles: " + string.Join("; ", lua.Diagnostics));
 Expect(lua.Handlers.Contains("on_start") && lua.Handlers.Contains("on_event_timer_elapsed"), "handlers include start and the delay tick");
-Expect(lua.Lua.Contains("sf.call(context, \"set_objective\", \"Defeat the \\\"Wardens\\\"\")"), "objective call quoted");
+Expect(lua.Lua.Contains("mission_modules.EDZ_FREEROAM = require(missions.EDZ_FREEROAM)")
+    && lua.Lua.Contains("mission_modules.EDZ_FREEROAM.Directive[\"Defeat the \\\"Wardens\\\"\"]")
+    && lua.Lua.Contains("context:slot(directive.sensor):set_directive{directive = directive}"), "objective is a directive on its sensor");
 Expect(lua.Lua.Contains("sf.signal(context, state, event, \"BossVulnerable\")") && lua.Lua.Contains("signal_handlers[\"BossVulnerable\"]"), "signals wired");
-Expect(lua.Lua.Contains("if (sf.vars(state)[\"boss_seen\"] == true) then") && lua.Lua.Contains("else"), "branch with flag");
+Expect(lua.Lua.Contains("if (state:variable(\"sf.f.boss_seen\") == true) then") && lua.Lua.Contains("else"), "branch with flag");
+// Delay is a named server timer; timer_elapsed dispatches by its name, so a reload resumes it.
+string delayKey = MissionGraphCompiler.Key("sf.d.", delay.Id);
+Expect(lua.Lua.Contains($"context:start_timer(\"{delayKey}\", sf.ms(5))") && lua.Lua.Contains($"delays[\"{delayKey}\"] = \"{delay.Id}\"")
+    && lua.Lua.Contains("local id = delays[event.timer_name]"), "delay uses start_timer and timer_name dispatch");
+Expect(lua.Lua.Contains("context:log(string.sub(tostring(\"boss\"), 1, 400))"), "log goes to context:log");
+// Only what the server sandbox and context bind.
+foreach (string banned in new[] { "print(", "os.", "pcall", "__mode", "pairs(", "setmetatable", "sf.call", "get_time", "set_objective" })
+    Expect(!lua.Lua.Replace("ipairs(", "").Contains(banned), "generated Lua avoids " + banned);
+var contextCalls = System.Text.RegularExpressions.Regex.Matches(lua.Lua, @"context:([a-z_]+)\(|context:([a-z_]+)\{").Select(match => match.Groups[1].Success ? match.Groups[1].Value : match.Groups[2].Value).Distinct().ToList();
+Expect(contextCalls.Count > 0 && contextCalls.All(call => NodeLibrary.MissionContextFunctions.Contains(call)), "every context call is a bound function: " + string.Join(",", contextCalls));
+// Save and load keep the delay and compile the same.
+var reloaded = GraphDocument.FromJson(mission.ToJson());
+Expect(reloaded.Nodes.Single(node => node.Id == delay.Id).Get("seconds") == "5" && MissionGraphCompiler.Compile(reloaded).Lua == lua.Lua, "delay survives save and load");
+Expect(MissionGraphCompiler.Key("sf.v.", "a b!") == "sf.v.a_b_" && MissionGraphCompiler.Key("sf.d.", new string('x', 100)).Length == 63, "variable keys follow the server key rule");
+// Removed guesses report why.
+var oldGraph = GraphDocument.FromJson(mission.ToJson());
+oldGraph.Nodes.Add(new GraphNode { Id = "old1", Type = "mission.set_objective" });
+Expect(GraphValidation.Validate(oldGraph).Any(item => item.NodeId == "old1" && item.Message.Contains("directive")), "removed node explains the replacement");
+var badCall = missionEditor.AddNode("mission.call", 900, 0, new Dictionary<string, string> { ["function"] = "spawn_squad" });
+missionEditor.Connect(signal.Id, "then", badCall.Id, "exec");
+Expect(GraphValidation.Validate(mission).Any(item => item.NodeId == badCall.Id && item.Severity == DiagnosticSeverity.Error), "unbound SDK function is an error");
+missionEditor.Document.Nodes.Single(node => node.Id == badCall.Id).Properties["function"] = "set_phase";
+Expect(MissionGraphCompiler.Compile(mission).Lua.Contains($"values[\"{badCall.Id}.result\"] = context:set_phase()"), "bound SDK function is called directly");
 Expect(lua.Lua.TrimEnd().EndsWith('}'), "module returns the handler table");
 var orphan = missionEditor.AddNode("mission.log", 0, 600);
 Expect(GraphValidation.Validate(mission).Any(item => item.NodeId == orphan.Id && item.Message.StartsWith("Never runs")), "unreachable action warns");

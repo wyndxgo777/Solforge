@@ -430,6 +430,13 @@ static void PlayerSourceChecks()
     var walking = PlayerSources.ParseRecorder("{\"t\":1,\"utc\":\"2026-10-15T18:31:49.044Z\",\"ui\":{\"in_world\":true},\"loc\":{\"activity\":\"The EDZ\",\"bubble\":\"Trostland\",\"slice\":\"3 x\"},\"pos\":[10,20,5],\"cam\":[10.5,20,6.7],\"yaw\":90,\"pitch\":0}", when);
     Expect(walking is { Source: "recorder", Activity: "The EDZ", Bubble: "Trostland" } && walking.Position == new Vector3(10, 20, 5) && walking.Yaw == 90
         && walking.Time.Year == 2026, "recorder pos");
+    // A real snapshot (EDZ Trostland, third person, 2026-10-15 recorder): the camera orbits ~3 m off the body; pos is right.
+    var thirdPerson = PlayerSources.ParseRecorder("{\"ui\":{\"in_world\":true},\"player\":{\"pos_valid\":true},\"pos\":[556.48,61.84,78.26],\"cam\":[553.6,62.9,78.9],\"yaw\":12}", when);
+    Expect(thirdPerson is not null && Vector3.Distance(thirdPerson.Position, new Vector3(556.48f, 61.84f, 78.26f)) < 1e-3f, "a third-person camera does not replace pos");
+    var invalid = PlayerSources.ParseRecorder("{\"player\":{\"pos_valid\":false},\"pos\":[5,5,5],\"cam\":[6,5,6.7]}", when);
+    Expect(invalid is not null && Vector3.Distance(invalid.Position, new Vector3(6, 5, 5)) < 1e-3f, "an invalid pos uses the camera");
+    Expect(PlayerSources.IsScenario("edz_freeroam:scenario_client", "EDZ_Freeroam") && !PlayerSources.IsScenario("edz_freeroam", "unknown")
+        && !PlayerSources.IsScenario(null, "edz_freeroam"), "recorder activity matches scenario named tags");
     var frozen = PlayerSources.ParseRecorder("{\"ui\":{\"in_world\":true},\"pos\":[0,0,0],\"cam\":[100,50,11.7],\"yaw\":0}", when);
     Expect(frozen is not null && Vector3.Distance(frozen.Position, new Vector3(100, 50, 10)) < 1e-3f && frozen.Time == when, "a frozen pos gives way to the camera, lowered to the feet");
     var stale = PlayerSources.ParseRecorder("{\"pos\":[1,1,1],\"pos_stale_ms\":900,\"cam\":[1,1,2.7]}", when);
@@ -449,7 +456,7 @@ static void PlayerSourceChecks()
     finally { Directory.Delete(root, true); }
     var coop = PlayerSources.ParseCoop("{\"ok\":true,\"players\":[{\"id\":1,\"name\":\"wyndxgo\",\"room\":\"0x1234ABCD\",\"x\":1.5,\"y\":2,\"z\":3}," +
         "{\"id\":2,\"name\":\"loading\",\"room\":\"0x00000000\",\"x\":0,\"y\":0,\"z\":0}]}", when);
-    Expect(coop.Count == 1 && coop[0] is { Source: "server", Player: "wyndxgo", ActivityHash: 0x1234ABCD } && coop[0].Position == new Vector3(1.5f, 2, 3), "server /coop rows");
+    Expect(coop.Count == 1 && coop[0] is { Source: "server", Player: "wyndxgo", Room: "0x1234ABCD" } && coop[0].Position == new Vector3(1.5f, 2, 3), "server /coop rows");
     Expect(MathF.Abs(PlayerSources.YawFromForward(new Vector3(0, 1, 0)) - 90) < 1e-3f && Vector3.Distance(PlayerSources.Facing(180), new Vector3(-1, 0, 0)) < 1e-3f, "yaw and facing");
     var trail = new PlayerTrail(capacity: 3, spacing: 1, teleport: 50);
     trail.Add(Vector3.Zero); trail.Add(new Vector3(.5f, 0, 0)); trail.Add(new Vector3(2, 0, 0)); trail.Add(new Vector3(4, 0, 0)); trail.Add(new Vector3(6, 0, 0));

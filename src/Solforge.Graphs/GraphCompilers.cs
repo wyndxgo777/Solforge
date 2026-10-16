@@ -40,8 +40,16 @@ public sealed record PerkStep(string Type, IReadOnlyDictionary<string, string> V
 /** A custom perk behaviour (Studio.md Phase 26): event, conditions that must hold, then actions in order. */
 public sealed record PerkRule(string Perk, string Description, string Event, IReadOnlyList<PerkStep> Conditions, IReadOnlyList<PerkStep> Actions);
 
+/**
+ * Ops are apply_item_edit calls; set_field reaches only the editable investment detail fields
+ * (InvestmentDetails.ReadItem: Maximum stack, Inventory bucket, Rarity). Name, Description and the icon live
+ * in the display row the item creation workflow writes (ItemWorkflow labels), so they are WorkflowFields.
+ */
 public sealed record WeaponCompileResult(string Target, IReadOnlyList<ItemEditOp> Ops, IReadOnlyList<PerkRule> CustomPerks,
-    IReadOnlyList<GraphDiagnostic> Diagnostics);
+    IReadOnlyList<GraphDiagnostic> Diagnostics)
+{
+    public IReadOnlyList<KeyValuePair<string, string>> WorkflowFields { get; init; } = [];
+}
 
 public static class MaterialGraphCompiler
 {
@@ -119,19 +127,29 @@ public static class WeaponGraphCompiler
         if (flat.OfType(NodeLibrary.WeaponOutput).FirstOrDefault() is not { } output) return new("", ops, rules, diagnostics);
         string target = output.Get("target").Trim();
 
+        var workflow = new List<KeyValuePair<string, string>>();
         foreach (var (pin, field) in new[] { ("name", "Name"), ("description", "Description") })
             if (evaluator.Linked(output, pin) || output.Properties.ContainsKey(pin))
-                ops.Add(new("set_field", field, evaluator.Input(output, pin).Text ?? evaluator.Input(output, pin).ToString(), NodeId: output.Id));
+                workflow.Add(new(field, evaluator.Input(output, pin).Text ?? evaluator.Input(output, pin).ToString()));
         foreach (var (node, pin) in flat.Sources(output.Id, "fields"))
             switch (node.Type)
             {
                 case "item.field":
-                    ops.Add(new("set_field", node.Get("field").Trim(), evaluator.Input(node, "value").ToString(), NodeId: node.Id)); break;
+                {
+                    string field = node.Get("field").Trim();
+                    if (!EditableFields.Contains(field, StringComparer.OrdinalIgnoreCase))
+                        diagnostics.Add(new(DiagnosticSeverity.Warning, $"apply_item_edit sets only {string.Join(", ", EditableFields)}; '{field}' will be refused.", node.Id));
+                    ops.Add(new("set_field", field, evaluator.Input(node, "value").ToString(), NodeId: node.Id)); break;
+                }
                 case "item.rarity":
-                    ops.Add(new("set_field", "Rarity", node.Get("rarity", "Legendary"), NodeId: node.Id)); break;
+                {
+                    string rarity = node.Get("rarity", "Legendary");
+                    int index = Array.IndexOf(RarityNames, rarity);
+                    if (index < 0) { diagnostics.Add(new(DiagnosticSeverity.Error, $"Unknown rarity '{rarity}'.", node.Id)); break; }
+                    ops.Add(new("set_field", "Rarity", index.ToString(CultureInfo.InvariantCulture), NodeId: node.Id)); break;
+                }
                 case "item.visuals":
-                    foreach (var (key, field) in new[] { ("icon", "Icon"), ("screenshot", "Screenshot"), ("watermark", "Watermark") })
-                        if (node.Get(key).Trim() is { Length: > 0 } tag) ops.Add(new("set_field", field, tag, NodeId: node.Id));
+                    if (node.Get("icon").Trim() is { Length: > 0 } icon) workflow.Add(new("Icon from item", icon));
                     break;
                 default:
                     diagnostics.Add(new(DiagnosticSeverity.Warning, $"Fields takes field nodes; {node.Type} pin {pin} is ignored.", node.Id)); break;
@@ -158,8 +176,14 @@ public static class WeaponGraphCompiler
                         $"Custom perk '{node.Get("name")}' compiles to rule descriptors; installing it as a new perk tag is Phase 27 (not yet).", node.Id));
                     break;
             }
-        return new(target, ops, rules, diagnostics);
+        return new(target, ops, rules, diagnostics) { WorkflowFields = workflow };
     }
+
+    /** InvestmentDetails.ReadItem's editable fields: what apply_item_edit set_field accepts. */
+    public static readonly string[] EditableFields = ["Maximum stack", "Inventory bucket", "Rarity"];
+
+    /** Tier bytes at investment +186 by index (InvestmentItemKinds.TierName): 0 None ... 5 Exotic. */
+    public static readonly string[] RarityNames = ["None", "Common", "Uncommon", "Rare", "Legendary", "Exotic"];
 
     private static IEnumerable<PerkRule> CustomPerkRules(FlatGraph flat, GraphEvaluator evaluator, GraphNode perk, List<GraphDiagnostic> diagnostics)
     {
@@ -192,6 +216,7 @@ public static class WeaponGraphCompiler
     {
         ["target"] = result.Target,
         ["ops"] = new JsonArray(result.Ops.Select(op => (JsonNode)op.ToArguments(result.Target)).ToArray()),
+        ["workflowFields"] = new JsonObject(result.WorkflowFields.Select(pair => new KeyValuePair<string, JsonNode?>(pair.Key, pair.Value))),
         ["customPerks"] = new JsonArray(result.CustomPerks.Select(rule => (JsonNode)new JsonObject
         {
             ["perk"] = rule.Perk, ["description"] = rule.Description, ["event"] = rule.Event,

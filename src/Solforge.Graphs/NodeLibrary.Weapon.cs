@@ -54,13 +54,12 @@ public static partial class NodeLibrary
         yield return Node("item.field", "Set Field", "Fields", kind, "Sets an editable item field (get_item lists them).",
             [In("value", "Value", PinType.String), Out("field", "", PinType.Field)],
             [Prop("field", "Field", PropertyKind.Text, "", "Field name from get_item")], "property set");
-        yield return Node("item.visuals", "Visuals", "Visuals", kind, "Icon, screenshot and watermark tags; empty ones are left alone.",
+        yield return Node("item.visuals", "Visuals", "Visuals", kind,
+            "Icon: an item whose icon to share (the item workflow's Icon from item); empty leaves it alone.",
+            [Out("field", "", PinType.Field)], [Prop("icon", "Icon from item", PropertyKind.Tag)], "icon image look model");
+        yield return Node("item.rarity", "Rarity", "Fields", kind, "Sets the tier byte (investment +186): Common 1 to Exotic 5.",
             [Out("field", "", PinType.Field)],
-            [Prop("icon", "Icon", PropertyKind.Tag), Prop("screenshot", "Screenshot", PropertyKind.Tag),
-             Prop("watermark", "Watermark", PropertyKind.Tag)], "icon image look model");
-        yield return Node("item.rarity", "Rarity", "Fields", kind, "Sets the tier type name.",
-            [Out("field", "", PinType.Field)],
-            [Prop("rarity", "Rarity", PropertyKind.Choice, "Legendary", "", "Common", "Uncommon", "Rare", "Legendary", "Exotic")], "tier exotic legendary");
+            [Prop("rarity", "Rarity", PropertyKind.Choice, "Legendary", "", "None", "Common", "Uncommon", "Rare", "Legendary", "Exotic")], "tier exotic legendary");
 
         // Custom perk behaviour (Phase 26): Custom Perk -> event -> conditions -> actions.
         yield return Node(CustomPerk, "Custom Perk", "Perk Behavior", kind, "A new perk; link it to Weapon Output and to its events.",

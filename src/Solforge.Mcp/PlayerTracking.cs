@@ -14,8 +14,8 @@ public sealed record PlayerFix(string Source, Vector3 Position, float? Yaw, Date
 {
     /** The Live link's map definition tag. */
     public uint? MapDefinition { get; init; }
-    /** The server's room: the activity hash. */
-    public uint? ActivityHash { get; init; }
+    /** The server /coop room: FNV-1a of a custom room text or of the slice-set index; it names no activity or map. */
+    public string Room { get; init; } = "";
     public string Activity { get; init; } = "";
     public string Bubble { get; init; } = "";
     public string Slice { get; init; } = "";
@@ -25,8 +25,10 @@ public sealed record PlayerFix(string Source, Vector3 Position, float? Yaw, Date
 /** Parsers for the player sources Solforge falls back to when the Live link is not attached. */
 public static class PlayerSources
 {
-    /** The recorder's camera sits about this far above the player's feet. */
+    /** Fallback only: the first-person camera is taken to sit this far above the feet (not measured). */
     public const float CameraHeight = 1.7f;
+    /** A third-person camera stays within a few metres of the body; farther means pos is frozen. */
+    public const float ThirdPersonReach = 8f;
 
     public static float YawFromForward(Vector3 forward) => MathF.Atan2(forward.Y, forward.X) * 180 / MathF.PI;
 
@@ -42,9 +44,24 @@ public static class PlayerSources
     }
 
     /**
-     * One recorder snapshot line. pos freezes at spawn or drops out after a load or respawn, so cam (lowered to the
-     * feet) wins whenever pos is missing, marked stale or more than 3 m from it. Menus, loads and marks give null.
+     * One recorder snapshot line. pos is player::position::snapshot(), the physics body position, the same map
+     * space as /coop x,y,z, package placements (combatant spawn= vs plr_dist= in the client log trilaterate to one
+     * point within 0.01 m) and Solforge's Z-up world. pos wins; cam (lowered to the feet) is used only when pos is
+     * missing, stale, flagged invalid, or farther than a third-person camera can be (an old client froze pos at
+     * spawn). Menus, loads and marks give null.
      */
+    /**
+     * The recorder's loc.activity is the scenario's named-tag name (DestinationSelection.packageName); the client
+     * drops a ":scenario_client" suffix. True when a package named tag is that scenario.
+     */
+    public static bool IsScenario(string? namedTag, string activity)
+    {
+        if (string.IsNullOrEmpty(namedTag) || activity.Length == 0 || activity == "unknown") return false;
+        const string suffix = ":scenario_client";
+        string name = namedTag.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) ? namedTag[..^suffix.Length] : namedTag;
+        return string.Equals(name, activity, StringComparison.OrdinalIgnoreCase);
+    }
+
     public static PlayerFix? ParseRecorder(string line, DateTimeOffset fallbackTime)
     {
         JsonObject? snap;
@@ -54,7 +71,8 @@ public static class PlayerSources
         if (snap["ui"]?["in_world"] is JsonValue world && world.TryGetValue(out bool inWorld) && !inWorld) return null;
         Vector3? pos = Vector(snap["pos"]), cam = Vector(snap["cam"]);
         Vector3 at;
-        if (cam is { } c && (pos is not { } p0 || snap["pos_stale_ms"] is not null || MathF.Abs(p0.X - c.X) + MathF.Abs(p0.Y - c.Y) > 3))
+        bool invalid = snap["player"]?["pos_valid"] is JsonValue valid && valid.TryGetValue(out bool ok) && !ok;
+        if (cam is { } c && (pos is not { } p0 || invalid || Number(snap["pos_stale_ms"]) is > 0 || Vector3.Distance(p0, c) > ThirdPersonReach))
             at = c - new Vector3(0, 0, CameraHeight);
         else if (pos is { } p) at = p;
         else return null;
@@ -89,7 +107,7 @@ public static class PlayerSources
         return null;
     }
 
-    /** The server admin's /coop page: every joined player with name, room (activity hash) and position. */
+    /** The server admin's /coop page: every joined player with name, room (not a map identity) and position. */
     public static IReadOnlyList<PlayerFix> ParseCoop(string json, DateTimeOffset time)
     {
         var rows = new List<PlayerFix>();
@@ -103,7 +121,7 @@ public static class PlayerSources
             if (x == 0 && y == 0 && z == 0) continue;
             rows.Add(new PlayerFix("server", new Vector3(x, y, z), null, time)
             {
-                Player = Text(row["name"]), ActivityHash = SolforgeTools.ParseHash(Text(row["room"])) is { } room and not 0 ? room : null
+                Player = Text(row["name"]), Room = Text(row["room"])
             });
         }
         return rows;

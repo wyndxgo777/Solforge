@@ -5,5 +5,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Solforge.Graphs/Solforge.Graphs.csproj" />
+    <ProjectReference Include="../../src/SunriseStudio.Packages/SunriseStudio.Packages.csproj" />
   </ItemGroup>
 </Project>
