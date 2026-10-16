@@ -76,8 +76,8 @@ public sealed partial class NativeSceneRenderer
             for (int slot = 0; dirty != 0; slot++, dirty >>= 1) if ((dirty & 1) != 0) Capture(inputs, ref state, slot);
             int index = groupStates.Count;
             groupStates.Add(state);
-            materialJobs.Add(new(group, Request(material.Source.Execution.Vertex, material.VertexShare, material, index),
-                Request(material.Source.Execution.Pixel, material.PixelShare, material, index)));
+            materialJobs.Add(new(group, Request(material.Execution.Vertex, material.VertexShare, material, index),
+                Request(material.Execution.Pixel, material.PixelShare, material, index)));
             material.LastTime = seconds;
             material.LastExposureEv = exposureEv;
         }
@@ -141,8 +141,8 @@ public sealed partial class NativeSceneRenderer
             var material = job.Group.Material;
             try
             {
-                Bind(material, material.Source.Execution.Vertex, job.Vertex);
-                Bind(material, material.Source.Execution.Pixel, job.Pixel);
+                Bind(material, material.Execution.Vertex, job.Vertex);
+                Bind(material, material.Execution.Pixel, job.Pixel);
                 evaluations++;
             }
             catch (Exception error) when (Recoverable(error) || error is InvalidOperationException)

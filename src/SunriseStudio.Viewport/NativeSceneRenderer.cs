@@ -44,6 +44,13 @@ public sealed partial class NativeSceneRenderer : IDisposable
         public int ExternVersion { get; set; } = -1;
         public TfxEvaluation? ExternVertex { get; set; }
         public TfxEvaluation? ExternPixel { get; set; }
+        // A live override's copy of the execution with its constants written; null draws Source.Execution.
+        public MaterialExecutionData? OverrideExecution { get; set; }
+        /** The execution TFX runs: the authored one unless a live override replaced its constants. */
+        public MaterialExecutionData Execution => OverrideExecution ?? Source.Execution;
+        // The views a live texture override replaced and the shares it turned off, to put back when it clears.
+        public Dictionary<NativeBindingKey, ID3D11ShaderResourceView>? ReplacedResources { get; set; }
+        public (TfxShare Vertex, TfxShare Pixel)? SuspendedShares { get; set; }
     }
     /** Scope 8 rows depend only on the type, the mesh and the frame's wind, so one buffer serves them all. */
     private sealed class DecoratorScope(NativeConstantBuffer buffer, NativeDecoratorPart part)
@@ -524,6 +531,8 @@ public sealed partial class NativeSceneRenderer : IDisposable
                 if (source.Kind == NativeMeshKind.Terrain)
                     material.Bindings.Resources[new(GameShaderStage.Pixel, 14)] = dyePlaceholder.View;
                 materials.Add(materialKey, material);
+                // A material created after a live override arrived (a runtime prototype) draws it too.
+                if (appliedOverrides.Count != 0) ApplyLiveOverride(material, null);
             }
             if (!pipelines.TryGetValue(source.PipelineKey, out var pipeline))
             {
@@ -828,15 +837,7 @@ public sealed partial class NativeSceneRenderer : IDisposable
             if (program.Dependencies.Any(d => d is { Extern: 1, Element: 7 or 8 })) material.UsesExposure = true;
             if (ReferenceEquals(stage, source.Execution.Vertex)) material.VertexShare = ShareOf(stage, program);
             else material.PixelShare = ShareOf(stage, program);
-            var inputs = NativeScenePlan.MaterialInputs(0, Plan.Parameters, null, Plan.AtmosphereSlots, timeOfDay: TimeOfDay);
-            NativeGearDye.Apply(inputs, source.GearDyeBit);
-            inputs.ObjectChannels = source.ObjectChannels;
-            if (decorator is not null)
-            {
-                NativeDecorators.ApplyExtern72(inputs, decorator.Payload.Extern72);
-                if (decorator.Type.Ground) NativeDecorators.ApplyExtern47(inputs, Vector4.Zero);
-            }
-            var evaluation = TfxEvaluator.Evaluate(stage, inputs);
+            var evaluation = TfxEvaluator.Evaluate(stage, CreationInputs(source, decorator));
             evaluation.RequireComplete();
             material.Bindings.MaterialEvaluations[stage.Stage] = evaluation;
             if (evaluation.Constants.Length != 0)
@@ -874,6 +875,20 @@ public sealed partial class NativeSceneRenderer : IDisposable
                 .Any(evaluation => evaluation.ResourceBindings.Values.Contains(NativeScenePlan.PreDecalNormals));
         }
         return material;
+    }
+
+    /** The inputs a material's first evaluation reads: time zero, no camera, its dye bit, channels and decorator rows. */
+    private TfxInputs CreationInputs(NativeSceneMaterial source, NativeDecoratorPart? decorator)
+    {
+        var inputs = NativeScenePlan.MaterialInputs(0, Plan.Parameters, null, Plan.AtmosphereSlots, timeOfDay: TimeOfDay);
+        NativeGearDye.Apply(inputs, source.GearDyeBit);
+        inputs.ObjectChannels = source.ObjectChannels;
+        if (decorator is not null)
+        {
+            NativeDecorators.ApplyExtern72(inputs, decorator.Payload.Extern72);
+            if (decorator.Type.Ground) NativeDecorators.ApplyExtern47(inputs, Vector4.Zero);
+        }
+        return inputs;
     }
 
     // Scope 13 binds extern 39 resource 5, the fog, at pixel t16.
@@ -988,8 +1003,8 @@ public sealed partial class NativeSceneRenderer : IDisposable
         // The inputs are shared by every material, so each sets its own bit and channel table.
         NativeGearDye.Apply(inputs, material.Source.GearDyeBit);
         inputs.ObjectChannels = material.Source.ObjectChannels;
-        UpdateStage(material, material.Source.Execution.Vertex, material.VertexShare, inputs);
-        UpdateStage(material, material.Source.Execution.Pixel, material.PixelShare, inputs);
+        UpdateStage(material, material.Execution.Vertex, material.VertexShare, inputs);
+        UpdateStage(material, material.Execution.Pixel, material.PixelShare, inputs);
         material.LastTime = seconds;
         material.LastExposureEv = exposureEv;
         return true;
@@ -1128,6 +1143,7 @@ public sealed partial class NativeSceneRenderer : IDisposable
     public void Render(ViewerCamera camera, double simulationSeconds, List<int> visible, Vector4 background)
     {
         ObjectDisposedException.ThrowIf(disposed, this);
+        SyncMaterialOverrides();
         bool warmExposure = exposureWarmupRequested || Plan.AssetPreview && float.IsNaN(viewerLog);
         exposureWarmupRequested = false;
         float aspectRatio = (float)Targets.Width / Targets.Height;
@@ -2117,5 +2133,6 @@ public sealed partial class NativeSceneRenderer : IDisposable
         screenUv?.Dispose(); refraction?.Dispose(); forwardColor?.Dispose();
         for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
         owned.Clear();
+        DisposeLiveOverrides();
     }
 }
