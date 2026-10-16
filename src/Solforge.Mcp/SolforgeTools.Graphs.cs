@@ -9,14 +9,17 @@ namespace Solforge.Mcp;
 
 /**
  * Node graph tools (material, weapon/item and mission graphs; *.solgraph.json in the project). Reads and edits work
- * on the files directly with Solforge.Graphs, so any MCP client drives them the same way; the Node Graph panel
+ * on the files directly with Solforge.Graphs, so any MCP client drives them the same way; the Graph panel's node model
  * reloads a graph it has open and unchanged. apply_graph hands the compiled result to the editor's existing
  * pipelines: item edits (apply_item_edit), material bundle import, or the project file write for mission Lua.
  */
 public static partial class SolforgeTools
 {
     public static readonly string[] GraphToolNames =
-        ["list_graph_node_types", "list_graphs", "get_graph", "compile_graph", "create_graph", "edit_graph", "apply_graph"];
+        ["list_graph_node_types", "list_graphs", "get_graph", "compile_graph", "create_graph", "edit_graph", "apply_graph", "create_mission_script"];
+
+    /** create_mission_script's activity ids, also accepted by create_graph(kind=mission, activity=...). */
+    private const string ActivityIds = "story, strike, patrol, public_event, lost_sector, raid, encounter, pvp, quest or custom";
 
     /** Resolves the graph file path argument inside the project; on failure returns null and sets reason. */
     private static string? GraphPath(ISolforgeHost host, JsonObject args, out string? reason)
@@ -108,22 +111,58 @@ public static partial class SolforgeTools
             Schema(("path", "string", "Project-relative path ending .solgraph.json", true)),
             args => WithGraph(host, args, document => McpToolResult.Json(GraphCommands.Compile(document))));
 
+        yield return Act("create_mission_script", "Create a new server mission script for any activity type from its template, saved " +
+            "into the project's scripts (it shows in Project changes and the build) and opened in the Graph panel (graph_kind mission_script): " +
+            "nodes for campaign steps and encounters, the Lua, and Checks that list CHANGE_ME placeholders and Slot/Squad/Directive names the " +
+            "map's mission does not have. activity: " + ActivityIds + ". Story, strike, raid, encounter and quest use lib.campaign; patrol, " +
+            "public_event and lost_sector use lib.freeroam; pvp uses lib.mission_lib timers; custom is the bare runtime table.",
+            Schema(("activity", "string", ActivityIds, true), ("mission", "string", "missions.lua key (e.g. STRIKE_HYMN) or the map name; its SDK names fill the template", true),
+                ("name", "string", "Script name; the file is scripts/<stem>/<stem>.lua", true),
+                ("in_project", "boolean", "Save into the project (default true); false writes the installed scripts", false)),
+            args => McpJson.String(args, "activity") is null || McpJson.String(args, "mission") is null || McpJson.String(args, "name") is null
+                ? "Give activity, mission and name." : null,
+            args => $"Create a {McpJson.String(args, "activity")} mission script {McpJson.String(args, "name")} for {McpJson.String(args, "mission")}",
+            async (args, cancel) => McpToolResult.Text(await host.RunActionAsync("create_mission_script", args, cancel).ConfigureAwait(false)));
+
         yield return Act("create_graph", "Create a graph file with its output node (Material Output, Weapon Output or Mission Start). " +
-            "Then add nodes with edit_graph (list_graph_node_types for types).",
-            Schema(("path", "string", "Project-relative path ending .solgraph.json", true), ("kind", "string", "material, weapon or mission", true),
-                ("name", "string", "Display name", false), ("target", "string", "Material or item tag (0x...) the graph edits", false)),
-            args => NeedPath(args) ?? (GraphCommands.ParseKind(McpJson.String(args, "kind")) == GraphKind.None ? "kind must be material, weapon or mission." : null),
-            args => $"Create {McpJson.String(args, "kind")} graph {McpJson.String(args, "path")}",
-            (args, _) =>
+            "Then add nodes with edit_graph (list_graph_node_types for types). With kind mission and an activity (" + ActivityIds + ") and " +
+            "mission/map it creates a server mission script from that activity's template instead (as create_mission_script; no path needed).",
+            Schema(("path", "string", "Project-relative path ending .solgraph.json (not needed with activity)", false), ("kind", "string", "material, weapon or mission", true),
+                ("name", "string", "Display name", false), ("target", "string", "Material or item tag (0x...) the graph edits", false),
+                ("activity", "string", "Mission kind only: " + ActivityIds, false),
+                ("map", "string", "With activity: the missions.lua key or map name (also accepted as 'mission')", false)),
+            args => McpJson.String(args, "activity") is not null
+                ? GraphCommands.ParseKind(McpJson.String(args, "kind")) != GraphKind.Mission ? "activity needs kind mission."
+                    : (McpJson.String(args, "map") ?? McpJson.String(args, "mission")) is null ? "Give map (the mission key or map name) with activity." : null
+                : NeedPath(args) ?? (GraphCommands.ParseKind(McpJson.String(args, "kind")) == GraphKind.None ? "kind must be material, weapon or mission." : null),
+            args => McpJson.String(args, "activity") is { } activity
+                ? $"Create a {activity} mission script for {McpJson.String(args, "map") ?? McpJson.String(args, "mission")}"
+                : $"Create {McpJson.String(args, "kind")} graph {McpJson.String(args, "path")}",
+            async (args, cancel) =>
+            {
+                if (McpJson.String(args, "activity") is { } activity)
+                {
+                    string mission = McpJson.String(args, "map") ?? McpJson.String(args, "mission")!;
+                    var create = new JsonObject
+                    {
+                        ["activity"] = activity, ["mission"] = mission,
+                        ["name"] = McpJson.String(args, "name") ?? mission.ToLowerInvariant() + "_" + activity.ToLowerInvariant(),
+                        ["in_project"] = true
+                    };
+                    return McpToolResult.Text(await host.RunActionAsync("create_mission_script", create, cancel).ConfigureAwait(false));
+                }
+                return CreateNodeGraph(args);
+            });
+        McpToolResult CreateNodeGraph(JsonObject args)
             {
                 string path = GraphPath(host, args, out string? ignored)!;
-                if (File.Exists(path)) return Task.FromResult(McpToolResult.Error("That graph exists; use edit_graph."));
+                if (File.Exists(path)) return McpToolResult.Error("That graph exists; use edit_graph.");
                 var kind = GraphCommands.ParseKind(McpJson.String(args, "kind"));
                 var document = GraphDocument.Create(kind, McpJson.String(args, "name") ?? Path.GetFileName(path)[..^GraphDocument.Extension.Length],
                     McpJson.String(args, "target") ?? "");
                 document.Save(path);
-                return Task.FromResult(McpToolResult.Json(GraphCommands.Describe(document)));
-            });
+                return McpToolResult.Json(GraphCommands.Describe(document));
+            }
         yield return Act("edit_graph", "Apply edit ops to a graph in order, saved as one change. Ops: add_node {type, x, y, properties, ref}, " +
             "connect {from, fromPin, to, toPin} (mismatched data types get a conversion node; a single input drops its old link), " +
             "disconnect {from, fromPin, to, toPin}, remove {ids}, set_property {node, key, value} (an input pin's id sets its unlinked value), " +

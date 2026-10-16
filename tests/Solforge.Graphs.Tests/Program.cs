@@ -299,6 +299,56 @@ liveColor.X += 80;
 Expect(MaterialLivePreview.Signature(MaterialGraphCompiler.Compile(scripted.Document)) == liveSignature, "moving a node sends nothing new");
 Expect(MaterialLivePreview.Signature(draftedCompile) != liveSignature, "a new value changes the signature");
 
+// Unified Graph panel: nodes <-> source two-way sync (GraphSourceSync) and the model kinds (GraphModels).
+var syncGraph = new GraphEditor(GraphDocument.Create(GraphKind.Weapon, "Sync", "0x1"));
+var sync = new GraphSourceSync { Delay = .5 };
+sync.Reset(syncGraph.Document.ToJson());
+Expect(!sync.HasDraft && sync.Error.Length == 0, "a reset sync has no draft");
+syncGraph.AddNode("const.float", 10, 10);
+sync.Sync(syncGraph.Document.ToJson());
+Expect(sync.Draft == syncGraph.Document.ToJson() && !sync.HasDraft, "a node edit updates the source view");
+void ApplyWeapon(string text) => syncGraph.Replace(GraphModels.ParseNodeSource(text, GraphKind.Weapon), "Edit source");
+string goodSource = sync.Draft.Replace("\"name\": \"Sync\"", "\"name\": \"Renamed\"");
+Expect(goodSource != sync.Draft, "fixture renames the graph in source");
+sync.Edit(goodSource, 1.0);
+Expect(!sync.TryApply(ApplyWeapon, 1.2) && syncGraph.Document.Name == "Sync", "a live apply waits for the pause");
+Expect(sync.TryApply(ApplyWeapon, 1.6) && syncGraph.Document.Name == "Renamed" && !sync.HasDraft, "a paused source edit reaches the nodes");
+Expect(syncGraph.CanUndo, "a source edit is an undo step");
+int nodesBefore = syncGraph.Document.Nodes.Count;
+string broken = sync.Draft[..(sync.Draft.Length / 2)];
+sync.Edit(broken, 2.0);
+Expect(!sync.TryApply(ApplyWeapon, 3.0, force: true), "bad source does not apply");
+Expect(sync.Error.Length > 0 && sync.Draft == broken && syncGraph.Document.Nodes.Count == nodesBefore && syncGraph.Document.Name == "Renamed",
+    "bad source keeps the draft and the graph and reports an error");
+Expect(!sync.Due(9.0), "a failed draft is not retried until it changes");
+syncGraph.AddNode("const.float", 40, 40);
+sync.Sync(syncGraph.Document.ToJson());
+Expect(sync.Draft == broken && sync.Stale && sync.Error.Length > 0, "a node edit never clobbers a pending draft");
+sync.Revert();
+Expect(sync.Draft == syncGraph.Document.ToJson() && sync.Error.Length == 0 && !sync.Stale, "revert takes the nodes again");
+string material = GraphDocument.Create(GraphKind.Material, "M").ToJson();
+sync.Edit(material, 10.0);
+Expect(!sync.TryApply(ApplyWeapon, 11.0, force: true) && sync.Error.Contains("kind", StringComparison.OrdinalIgnoreCase)
+    && syncGraph.Document.Kind == GraphKind.Weapon, "source cannot change the graph kind");
+sync.Live = false;
+sync.Edit(sync.Applied, 12.0);
+Expect(!sync.HasDraft && sync.Error.Length == 0, "typing back to the model text drops the error");
+Expect(GraphModels.NodeGraph(GraphKind.Weapon) == "node_graph:weapon" && GraphModels.NodeGraph(GraphKind.Material) == "node_graph:material"
+    && GraphModels.NodeGraph(GraphKind.Mission) == "node_graph:mission", "graph_kind names");
+Expect(GraphModels.ForPath("scripts/a/a.lua") == GraphModels.MissionScript && GraphModels.ForPath("graphs/x.solgraph.json")!.StartsWith(GraphModels.NodeGraphPrefix)
+    && GraphModels.ForPath("notes.txt") is null, "files pick their graph model");
+Expect(GraphModels.SourceLabel(GraphKind.Mission) == "Lua" && GraphModels.SourceLabel(GraphKind.Weapon) == "Source", "source tab labels");
+var missionNodes = GraphDocument.Create(GraphKind.Mission, "Compiled");
+Expect(GraphModels.Compiled(missionNodes) == MissionGraphCompiler.Compile(missionNodes).Lua, "a mission node graph shows its compiled Lua");
+Expect(GraphModels.Compiled(GraphDocument.Create(GraphKind.Weapon, "W")).Contains("\"ok\""), "other node graphs show the compile JSON");
+// Mission script source through the same sync: bad Lua is refused and kept.
+var missionSync = new GraphSourceSync();
+var script = GraphModels.ParseMissionSource("return {}\n");
+missionSync.Reset(script.Source);
+missionSync.Edit("return {\n", 0);
+Expect(!missionSync.TryApply(text => script = GraphModels.ParseMissionSource(text), 5, force: true) && script.Source == "return {}\n"
+    && missionSync.Error.Length > 0 && missionSync.Draft == "return {\n", "bad mission Lua stays in the source view");
+
 Console.WriteLine($"Solforge.Graphs checks: {passed} passed, {failures.Count} failed.");
 foreach (string failure in failures) Console.WriteLine("FAIL: " + failure);
 return failures.Count == 0 ? 0 : 1;

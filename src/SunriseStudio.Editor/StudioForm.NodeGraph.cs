@@ -14,22 +14,14 @@ using SunriseStudio.Formats;
 
 namespace SunriseStudio.Editor;
 
-/** The Node Graph panel: material, weapon/item and mission graphs (*.solgraph.json) on the Blueprint canvas. */
+/** The node graph model of the unified Graph panel: material, weapon/item and mission graphs (*.solgraph.json) on the Blueprint canvas. */
 public sealed partial class StudioForm
 {
     /** The node graph panel instance. */
     private readonly NodeGraphPanel nodeGraph = new();
     private bool nodeGraphActive;
 
-    /** Draws the node graph panel in its region. */
-    private void DrawNodeGraphPanel(Vector2 position, Vector2 size)
-    {
-        BeginPanel("Node graph area", position, size);
-        if (ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows)) { nodeGraphActive = true; missionGraphActive = false; }
-        nodeGraph.Draw(workspace.Project?.DirectoryPath, AiApplyGraph, (path, content) =>
-            RunAiAction("apply_project_edit", new JsonObject { ["path"] = path, ["content"] = content }));
-        ImGui.End();
-    }
+    // The node graph model draws inside the unified Graph panel (StudioForm.Graph.cs).
 
     /**
      * apply_graph: compiles a material or weapon graph and runs it through the existing pipelines. Weapon graphs
@@ -154,6 +146,25 @@ internal sealed class NodeGraphPanel
     private double nextScan;
     private List<string> files = [];
     private string lastRoot = "";
+    /** The source tab: the graph's own .solgraph.json text, two-way with the nodes (the same sync as mission Lua). */
+    private readonly GraphSourceSync source = new();
+    // The compiled view (Lua for mission graphs, the compile JSON otherwise), rebuilt per revision.
+    private string compiled = "";
+    private int compiledRevision = -1;
+    private bool showCompiled;
+
+    /** The mission page's code editor, reused for this model's source and compiled views; null falls back to a plain field. */
+    public MissionGraphPage? Code { get; set; }
+    /** The open graph file, or null. */
+    public string? FilePath => path;
+    /** The open graph's kind, or null with no graph open. */
+    public GraphKind? Kind => editor?.Document.Kind;
+    /** Unsaved node edits or an unapplied source draft. */
+    public bool IsDirty => editor?.Dirty == true || source.HasDraft;
+    /** Problems the Checks tab lists for the open graph. */
+    public int ProblemCount => editor is null ? 0 : diagnostics.Count + (source.Error.Length > 0 ? 1 : 0);
+    /** Opens a *.solgraph.json (the unified Graph panel, open_file). */
+    public void OpenFile(string file) => Open(file);
 
     /**
      * Live material preview; StudioForm sets it once the renderer exists. It stays while the graph is open, also with
@@ -191,6 +202,9 @@ internal sealed class NodeGraphPanel
             stamp = File.GetLastWriteTimeUtc(file);
             validated = -1;
             output = "";
+            source.Reset(next.Document.ToJson());
+            compiledRevision = -1;
+            showCompiled = next.Document.Kind == GraphKind.Mission;
             canvas.FrameAll();
         }
         catch (Exception exception) when (exception is IOException or InvalidDataException or JsonException) { canvas.Say("Cannot open: " + exception.Message); }
@@ -206,6 +220,7 @@ internal sealed class NodeGraphPanel
             editor.Dirty = false;
             stamp = File.GetLastWriteTimeUtc(path);
             drafts.Clear();
+            source.Reset(editor.Document.ToJson());
             Live?.Hold(editor.Revision);
             canvas.Say("Reverted to the saved graph.");
         }
@@ -223,6 +238,9 @@ internal sealed class NodeGraphPanel
         preview = null;
         diagnostics = [];
         validated = -1;
+        source.Reset("");
+        compiled = "";
+        compiledRevision = -1;
     }
 
     /** An MCP edit_graph call rewrites the file: take it when there are no unsaved changes here. */
@@ -265,16 +283,97 @@ internal sealed class NodeGraphPanel
             canvas.Problems = diagnostics.Where(problem => problem.NodeId is not null && problem.Scope == scope)
                 .GroupBy(problem => problem.NodeId!).ToDictionary(group => group.Key, group => group.ToList());
             preview = editor.Document.Kind == GraphKind.Material ? MaterialGraphCompiler.Compile(editor.Document).Preview : null;
+            // Nodes to source: a pending draft is kept (and marked stale), never overwritten.
+            source.Sync(editor.Document.ToJson());
         }
         Live?.Update(editor.Document, editor.Revision, drafts, ImGui.GetTime());
-        float details = MathF.Min(300, ImGui.GetContentRegionAvail().X * .35f);
-        ImGui.BeginChild("##graph-canvas", new Vector2(-details - 6, 0));
-        canvas.Draw(editor);
-        ImGui.EndChild();
+        GraphEditor open = editor;
+        // Unified Graph: the mission model's Nodes / source / Checks views (GraphViews).
+        GraphViews.Tabs("node-graph-views", () =>
+        {
+            float details = MathF.Min(300, ImGui.GetContentRegionAvail().X * .35f);
+            ImGui.BeginChild("##graph-canvas", new Vector2(-details - 6, 0));
+            canvas.Draw(open);
+            ImGui.EndChild();
+            ImGui.SameLine();
+            ImGui.BeginChild("##graph-details", new Vector2(details, 0));
+            DrawDetails(open);
+            ImGui.EndChild();
+        }, GraphModels.SourceLabel(open.Document.Kind), () => DrawSource(open), ProblemCount, () => DrawChecks(open));
+    }
+
+    /** The source tab: the editable graph JSON, or the compiled Lua / ops read-only. */
+    private void DrawSource(GraphEditor open)
+    {
+        double now = ImGui.GetTime();
+        // Drags move nodes without a new revision; while this tab shows, keep the text current.
+        source.Sync(open.Document.ToJson());
+        ImGui.BeginDisabled(!source.HasDraft);
+        if (ImGui.Button("Apply##graph-source")) ApplySource(open, force: true);
         ImGui.SameLine();
-        ImGui.BeginChild("##graph-details", new Vector2(details, 0));
-        DrawDetails(editor);
-        ImGui.EndChild();
+        if (ImGui.Button("Revert##graph-source")) source.Revert();
+        ImGui.EndDisabled();
+        ImGui.SameLine();
+        bool live = source.Live;
+        if (ImGui.Checkbox("Live##graph-source", ref live)) source.Live = live;
+        if (ImGui.IsItemHovered()) ImGui.SetTooltip("Apply source edits to the nodes after a short pause. Text that does not parse stays here and shows in Checks.");
+        ImGui.SameLine();
+        ImGui.Checkbox(open.Document.Kind == GraphKind.Mission ? "Compiled Lua" : "Compiled", ref showCompiled);
+        if (ImGui.IsItemHovered()) ImGui.SetTooltip("What Apply writes: the generated Lua for a mission graph, item edits or material writes otherwise. Read-only.");
+        if (source.Error.Length > 0) GraphViews.Problem("Not applied: " + source.Error);
+        else if (source.Stale) ImGui.TextDisabled("The nodes changed since this edit; Apply replaces them with it, Revert takes the nodes.");
+        if (showCompiled)
+        {
+            if (compiledRevision != open.Revision)
+            {
+                compiledRevision = open.Revision;
+                try { compiled = GraphModels.Compiled(open.Document); }
+                catch (Exception exception) when (GraphSourceSync.Parsing(exception)) { compiled = "-- Does not compile: " + exception.Message; }
+            }
+            string view = compiled;
+            if (Code is { } code) code.CodeText("graph-compiled", ref view, new Vector2(-1, -1), false, open.Document.Kind == GraphKind.Mission);
+            else ImGui.InputTextMultiline("##graph-compiled", ref view, 1 << 20, new Vector2(-1, -1), ImGuiInputTextFlags.ReadOnly);
+            return;
+        }
+        string text = source.Draft;
+        bool changed = Code is { } editorView
+            ? editorView.CodeText("graph-source", ref text, new Vector2(-1, -1), true, false)
+            : ImGui.InputTextMultiline("##graph-source", ref text, 1 << 20, new Vector2(-1, -1), ImGuiInputTextFlags.AllowTabInput);
+        if (changed) source.Edit(text, now);
+        if (source.Due(now)) ApplySource(open, force: false);
+    }
+
+    /** Source to nodes as one undo step; text that does not parse (or changes the kind) leaves the graph alone. */
+    private void ApplySource(GraphEditor open, bool force)
+    {
+        var kind = open.Document.Kind;
+        if (source.TryApply(text => open.Replace(GraphModels.ParseNodeSource(text, kind), "Edit source"), ImGui.GetTime(), force))
+        {
+            open.Dirty = true;
+            drafts.Clear();
+        }
+    }
+
+    /** The Checks tab: validation problems (click one to select its node) and a source draft that did not apply. */
+    private void DrawChecks(GraphEditor graph)
+    {
+        if (ProblemCount == 0) { ImGui.TextDisabled("No problems found"); return; }
+        if (source.Error.Length > 0) GraphViews.Problem("Source not applied (the nodes keep the last good graph): " + source.Error);
+        foreach (var problem in diagnostics.Take(200))
+        {
+            var color = problem.Severity switch
+            {
+                DiagnosticSeverity.Error => new Vector4(1, .4f, .4f, 1), DiagnosticSeverity.Warning => new Vector4(1, .78f, .35f, 1), _ => StudioTheme.Muted
+            };
+            ImGui.PushStyleColor(ImGuiCol.Text, color);
+            if (ImGui.Selectable($"{problem.Message}##check-{problem.GetHashCode()}") && problem.NodeId is { } id)
+            {
+                if (graph.Scope?.Id != problem.Scope) graph.Enter(problem.Scope);
+                graph.Selection.Clear();
+                graph.Selection.Add(id);
+            }
+            ImGui.PopStyleColor();
+        }
     }
 
     /** Draws the toolbar: file, undo/redo, validation and apply. */
@@ -421,22 +520,7 @@ internal sealed class NodeGraphPanel
         }
         else if (selected.Count > 1) ImGui.TextDisabled($"{selected.Count} nodes selected. Right-click to align, distribute or collapse to a function.");
 
-        ImGui.SeparatorText($"Problems ({diagnostics.Count})");
-        foreach (var problem in diagnostics.Take(40))
-        {
-            var color = problem.Severity switch
-            {
-                DiagnosticSeverity.Error => new Vector4(1, .4f, .4f, 1), DiagnosticSeverity.Warning => new Vector4(1, .78f, .35f, 1), _ => StudioTheme.Muted
-            };
-            ImGui.PushStyleColor(ImGuiCol.Text, color);
-            if (ImGui.Selectable($"{problem.Message}##{problem.GetHashCode()}") && problem.NodeId is { } id)
-            {
-                if (graph.Scope?.Id != problem.Scope) graph.Enter(problem.Scope);
-                graph.Selection.Clear();
-                graph.Selection.Add(id);
-            }
-            ImGui.PopStyleColor();
-        }
+        if (diagnostics.Count > 0) ImGui.TextDisabled($"{diagnostics.Count} problem(s): see Checks.");
         if (output.Length > 0)
         {
             ImGui.SeparatorText("Output");

@@ -33,6 +33,8 @@ public sealed partial class MissionScriptCatalog
     private readonly List<MissionScriptEntry> scripts = [];
     public IReadOnlyList<MissionSdkActivity> Activities { get; }
     private readonly IReadOnlyList<MissionSdkActivity> missionModules;
+    /** The missions.lua rows (key and SDK module) a new script can require, one per installed mission. */
+    public IReadOnlyList<MissionSdkActivity> Missions => missionModules;
     private (DateTime Stamp, MissionApiSchema? Schema, string Status)? api;
     /** Rows per module file and table list, newest last; a regenerated module misses the cache. */
     private readonly List<(string Key, string Stamp, MissionSdkReference[] Rows)> referenceCache = [];

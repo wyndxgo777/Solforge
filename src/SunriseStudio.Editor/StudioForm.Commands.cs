@@ -463,7 +463,7 @@ public sealed partial class StudioForm
     private void DrawViewMenu()
     {
         if (!UiAuto.BeginMenu("View")) return;
-        if (UiAuto.MenuItem("Mission Graph")) focusMissionGraph = true;
+        if (UiAuto.MenuItem("Graph")) focusMissionGraph = true;
         if (UiAuto.MenuItem("Live")) focusLive = true;
         if (UiAuto.MenuItem("Local Server")) focusLocalServer = true;
         if (UiAuto.MenuItem("Items", "", false, workspace.Catalog is not null)) ShowItems();

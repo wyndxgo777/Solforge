@@ -67,7 +67,34 @@ internal static class LayoutChecks
         var reopened = restored.Show(StudioPanelKind.Workspace);
         Check(reopened.Panel == StudioPanelKind.Workspace && restored.Panels.Count <= StudioLayout.MaximumPanels,
             "Showing a hidden editor failed in a full layout.");
-        Console.WriteLine("editor_layout persistence=pass swap=pass split=pass join=pass bounds=pass corrupt=pass");
+        // Unified Graph panel: the old Mission Graph and Node Graph ids map to it; saved layouts migrate without loss.
+        foreach (var name in StudioLayout.PresetNames)
+        {
+            var preset = StudioLayout.Preset(name);
+            Check(preset.Panels.All(node => node.Panel is not (StudioPanelKind.MissionGraph or StudioPanelKind.NodeGraph)),
+                $"Preset {name} still names an old graph panel.");
+            Check(preset.Find(StudioPanelKind.MissionGraph) == preset.Find(StudioPanelKind.Graph)
+                && preset.Find(StudioPanelKind.NodeGraph) == preset.Find(StudioPanelKind.Graph), $"Old graph ids do not find {name}'s Graph panel.");
+        }
+        Check(StudioLayout.Preset(StudioLayout.SolforgePreset).Find(StudioPanelKind.Graph) is not null, "The default layout lost the Graph panel.");
+        var both = StudioLayout.Restore(JsonDocument.Parse("""{"Id":1,"Panel":"Empty","Axis":"Rows","Ratio":0.6,"First":{"Id":2,"Panel":"Workspace","Axis":"Columns","Ratio":0.5},"Second":{"Id":3,"Panel":"Empty","Axis":"Columns","Ratio":0.5,"First":{"Id":4,"Panel":"MissionGraph","Axis":"Columns","Ratio":0.5,"Collapsed":true},"Second":{"Id":5,"Panel":"NodeGraph","Axis":"Columns","Ratio":0.5}}}""").RootElement);
+        Check(both.Panels.Count == 3 && both.Find(StudioPanelKind.Workspace) is not null && both.Find(4)!.Panel == StudioPanelKind.Graph
+            && both.Find(4)!.Collapsed == true && both.Find(5)!.Panel == StudioPanelKind.Empty,
+            "A layout with both old graph panels did not migrate to one Graph panel.");
+        Check(!both.Save().GetRawText().Contains("MissionGraph") && !both.Save().GetRawText().Contains("NodeGraph")
+            && StudioLayout.Restore(both.Save()).Save().GetRawText() == both.Save().GetRawText(), "A migrated layout does not save as Graph.");
+        var nodeOnly = StudioLayout.Restore(JsonDocument.Parse("""{"Id":1,"Panel":"Empty","Axis":"Rows","Ratio":0.6,"First":{"Id":2,"Panel":"Workspace","Axis":"Columns","Ratio":0.5},"Second":{"Id":3,"Panel":"NodeGraph","Axis":"Columns","Ratio":0.5}}""").RootElement);
+        Check(nodeOnly.Panels.Count == 2 && nodeOnly.Find(3)!.Panel == StudioPanelKind.Graph, "An old Node Graph area did not become the Graph panel.");
+        nodeOnly.SetPanel(2, StudioPanelKind.MissionGraph);
+        Check(nodeOnly.Find(2)!.Panel == StudioPanelKind.Graph && nodeOnly.Find(3)!.Panel == StudioPanelKind.Workspace,
+            "Choosing an old graph id did not swap in the one Graph panel.");
+        Check(nodeOnly.Show(StudioPanelKind.NodeGraph).Id == 2 && nodeOnly.Panels.Count == 2, "Showing an old graph id opened a second Graph panel.");
+        Check(StudioLayout.Pickable.Contains(StudioPanelKind.Graph) && !StudioLayout.Pickable.Contains(StudioPanelKind.MissionGraph)
+            && !StudioLayout.Pickable.Contains(StudioPanelKind.NodeGraph), "The panel picker still lists the old graph panels.");
+        Check(StudioLayout.Canonical(StudioPanelKind.MissionGraph) == StudioPanelKind.Graph && StudioLayout.Canonical(StudioPanelKind.AI) == StudioPanelKind.AI,
+            "Old graph ids do not map to Graph.");
+        Check(StudioLayoutNode.Collapsible(StudioPanelKind.Graph), "The Graph panel no longer folds while empty.");
+        Console.WriteLine("editor_layout persistence=pass swap=pass split=pass join=pass bounds=pass corrupt=pass graph=pass");
     }
 
     internal static void Ui(string root, string output)

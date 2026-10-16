@@ -137,11 +137,13 @@ public static partial class SolforgeTools
         [
             Read("get_context", "What the user is looking at now: hovered and selected objects (with slot id, slot name, type, " +
                 "position and owning prefab for mission objects), camera position and zone, open editor and file, active map and " +
-                "mission, pinned objects, and a short list of open documents.", Schema(),
+                "mission, pinned objects, a short list of open documents, and graph_kind: the model the Graph panel shows " +
+                "(mission_script, node_graph:material, node_graph:weapon, node_graph:mission, or null).", Schema(),
                 (_, _) => Task.FromResult(McpToolResult.Text(host.ContextJson))),
             Read("get_open_documents", "Everything Solforge has open right now: map and mission, the open asset (tag, type, package, " +
                 "name) with its inspector values, the selected objects' property values, the open mission script, the open tag " +
-                "diff, the project change list and the build and notice status.", Schema(),
+                "diff, the project change list and the build and notice status; graph_kind and graph (path, unsaved, problems, " +
+                "which tools edit it) for the Graph panel's active model.", Schema(),
                 async (_, cancel) => McpToolResult.Json(await host.GetOpenDocumentsAsync(cancel).ConfigureAwait(false))),
             Read("find_object", "Fuzzy-resolve a spoken name ('static mesh 7489', 'last city crater', '[182]', 'o_generator', " +
                 "'pf_event_multipoint', a tag, prefab or registry hash, a slot id) against viewport labels, the Object tree, the open " +
@@ -318,7 +320,7 @@ public static partial class SolforgeTools
                 },
                 args => args["ids"] is JsonArray { Count: > 0 } ? null : "Give ids to highlight.",
                 args => $"Highlight {(args["ids"] as JsonArray)?.Count ?? 0} object(s)"),
-            Act("open_file", "Open a project file in Solforge (Lua scripts open in the Mission Graph).",
+            Act("open_file", "Open a project file in Solforge (Lua scripts and *.solgraph.json graphs open in the Graph panel).",
                 Schema(("path", "string", "Project-relative path", true), ("line", "integer", "Optional line", false)),
                 args => ProjectFiles.Resolve(host.ProjectRoot, host.SdkRoots, McpJson.String(args, "path") ?? "") is { } path && File.Exists(path)
                     ? null : "No such project file.",

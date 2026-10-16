@@ -218,6 +218,8 @@ public sealed partial class StudioForm
             ["mission"] = workspace.World?.MissionTag is { } mission ? $"0x{mission:X8}" : null,
             ["openFile"] = missionGraph.ScriptPath is { } script && workspace.Project is { } open
                 ? Path.GetRelativePath(open.DirectoryPath, script).Replace('\\', '/') : null,
+            // Which model the unified Graph panel shows: mission_script, node_graph:material|weapon|mission, or null.
+            ["graph_kind"] = AiGraphKind(),
             ["hovered"] = view?.HoveredObject is { } hovered ? WithSlot(Item(AiId(hovered), AiLabel(hovered)), hovered) : null,
         };
         var selected = new JsonArray();
@@ -276,6 +278,7 @@ public sealed partial class StudioForm
         if (workspace.Document is { } document)
             open["asset"] = $"{document.Name} 0x{document.Entry.TagHash:X8} ({document.Entry.PackageName})";
         if (missionGraph.ScriptPath is { } script) open["script"] = AiShownPath(script) + (missionGraph.IsDirty ? " (unsaved)" : "");
+        if (AiGraphKind() is { } graphKind) open["graph_kind"] = graphKind;
         if (tagDiff is { } diff) open["tagDiff"] = $"0x{diff.TagHash:X8}, {diff.ChangedBytes} bytes differ";
         if (workspace.Project is { } project)
             open["changes"] = project.Changes.Count + project.AddedAssets.Count + project.ObjectEdits.Count + project.ConfigBindings.Count;
@@ -333,6 +336,8 @@ public sealed partial class StudioForm
         open["selection"] = selection;
         if (missionGraph.ScriptPath is { } script)
             open["script"] = new JsonObject { ["path"] = AiShownPath(script), ["fullPath"] = script, ["unsaved"] = missionGraph.IsDirty };
+        open["graph_kind"] = AiGraphKind();
+        if (AiGraphSummary() is { } graph) open["graph"] = graph;
         if (tagDiff is { } diff)
             open["tagDiff"] = new JsonObject
             {
@@ -626,7 +631,15 @@ public sealed partial class StudioForm
                 {
                     missionGraph.OpenScript(path, workspace);
                     focusMissionGraph = true;
-                    return $"Opened {shown} in the Mission Graph.";
+                    return $"Opened {shown} in the Graph panel (graph_kind mission_script).";
+                }
+                if (path.EndsWith(Solforge.Graphs.GraphDocument.Extension, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (nodeGraph.IsDirty && !string.Equals(nodeGraph.FilePath, path, StringComparison.OrdinalIgnoreCase))
+                        return "The Graph panel's node graph has unsaved changes; ask the user to save or revert it first.";
+                    nodeGraph.OpenFile(path);
+                    focusMissionGraph = true;
+                    return $"Opened {shown} in the Graph panel (graph_kind {AiGraphKind() ?? "none"}).";
                 }
                 Process.Start(new ProcessStartInfo(path) { UseShellExecute = true })?.Dispose();
                 return $"Opened {shown}.";
