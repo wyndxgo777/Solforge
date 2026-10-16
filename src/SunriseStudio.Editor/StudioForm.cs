@@ -28,6 +28,8 @@ public sealed partial class StudioForm : Form
     private bool guiFrameActive;
     private AssetViewport? viewport;
     private AssetViewport? assetViewport;
+    // Live material overrides from the node graph; every viewport draws them, nothing writes them to a tag.
+    private readonly MaterialOverrideSet liveMaterials = new();
     private double lastFrame;
     private bool drawing, nativeDialog, setup, settingsDialog, projectDialog, closed;
     private bool initialProjectOpened, initialTagOpened;
@@ -186,6 +188,9 @@ public sealed partial class StudioForm : Form
             assetViewport = new AssetViewport(renderer)
                 { UseGameShaders = settings.GameShaders, ShowGameShaderToggle = false, FullDetail = settings.FullDetail };
             viewport.EffectControls = assetViewport.EffectControls = effectControls;
+            viewport.MaterialOverrides = assetViewport.MaterialOverrides = liveMaterials;
+            nodeGraph.Live = new NodeGraphLivePreview(liveMaterials, renderer, () => workspace.Catalog,
+                () => new[] { viewport, assetViewport }.OfType<AssetViewport>().ToArray());
             viewport.ObjectName = source => ProjectName(source) ?? sceneTree?.Find(source)?.Name ?? SceneObjectName(source);
             assetViewport.ObjectName = SceneObjectName;
             viewport.ShowCursor = settings.ShowAssetCursor;
@@ -901,6 +906,8 @@ public sealed partial class StudioForm : Form
         popouts.Clear();
         livePage.Dispose();
         foreach (var page in pages.Pages.OfType<IDisposable>()) page.Dispose();
+        nodeGraph.Live?.Dispose();
+        liveMaterials.Clear();
         assetViewport?.Dispose(); viewport?.Dispose(); workspace.Dispose();
         loadingLogo?.Dispose(); toolbarLogo?.Dispose(); backdrop?.Dispose(); gui?.Dispose(); renderer?.Dispose(); studioIcon.Dispose();
         if (!options.Smoke)

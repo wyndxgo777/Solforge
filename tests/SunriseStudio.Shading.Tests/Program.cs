@@ -12,6 +12,7 @@ string? Option(string name) => args.Contains(name) ? args[Array.IndexOf(args, na
 var states = new NativeRenderStateCatalog();
 Check(states.Resolve(0, 0, 0x81818181, NativeDepthTable.Alternate).Selection == new NativeStateSelection(1, 1, 1, 1),
     "Sky lighting forced states changed.");
+MaterialOverrideChecks.Run();
 if (Option("--game-root") is not { } game)
 {
     Console.WriteLine("shading states=pass installed=not_requested");

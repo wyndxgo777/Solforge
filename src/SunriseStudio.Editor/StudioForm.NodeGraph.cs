@@ -122,6 +122,13 @@ internal sealed class NodeGraphPanel
     private readonly Dictionary<string, string> drafts = new(StringComparer.Ordinal);
     private double nextScan;
     private List<string> files = [];
+    private string lastRoot = "";
+
+    /**
+     * Live material preview; StudioForm sets it once the renderer exists. It stays while the graph is open, also with
+     * the panel hidden behind the viewport; Revert, Close, another graph or another project put the material back.
+     */
+    public NodeGraphLivePreview? Live { get; set; }
 
     public bool CanUndo => editor?.CanUndo == true;
     public bool CanRedo => editor?.CanRedo == true;
@@ -141,7 +148,10 @@ internal sealed class NodeGraphPanel
     {
         try
         {
-            editor = new GraphEditor(GraphDocument.Load(file));
+            var next = new GraphEditor(GraphDocument.Load(file));
+            Live?.Clear();
+            drafts.Clear();
+            editor = next;
             path = file;
             stamp = File.GetLastWriteTimeUtc(file);
             validated = -1;
@@ -149,6 +159,35 @@ internal sealed class NodeGraphPanel
             canvas.FrameAll();
         }
         catch (Exception exception) when (exception is IOException or InvalidDataException or JsonException) { canvas.Say("Cannot open: " + exception.Message); }
+    }
+
+    /** Drops unsaved changes: the saved graph comes back and the viewports show the authored material until the next edit. */
+    private void Revert()
+    {
+        if (editor is null || path is null || !File.Exists(path)) return;
+        try
+        {
+            editor.Replace(GraphDocument.Load(path), "Revert");
+            editor.Dirty = false;
+            stamp = File.GetLastWriteTimeUtc(path);
+            drafts.Clear();
+            Live?.Hold(editor.Revision);
+            canvas.Say("Reverted to the saved graph.");
+        }
+        catch (Exception exception) when (exception is IOException or InvalidDataException or JsonException) { canvas.Say("Cannot revert: " + exception.Message); }
+    }
+
+    /** Closes the graph (unsaved changes are dropped) and puts the viewports back on the authored material. */
+    private void Close()
+    {
+        Live?.Clear();
+        editor = null;
+        path = null;
+        drafts.Clear();
+        output = "";
+        preview = null;
+        diagnostics = [];
+        validated = -1;
     }
 
     /** An MCP edit_graph call rewrites the file: take it when there are no unsaved changes here. */
@@ -165,6 +204,12 @@ internal sealed class NodeGraphPanel
     public void Draw(string? projectRoot, Func<JsonObject, string> applyGraph, Func<string, string, string> writeFile)
     {
         root = projectRoot ?? "";
+        // A graph belongs to its project: another project (or none) closes it.
+        if (root != lastRoot)
+        {
+            if (lastRoot.Length > 0) Close();
+            lastRoot = root;
+        }
         if (ImGui.GetTime() > nextScan)
         {
             nextScan = ImGui.GetTime() + 2;
@@ -185,6 +230,7 @@ internal sealed class NodeGraphPanel
                 .GroupBy(problem => problem.NodeId!).ToDictionary(group => group.Key, group => group.ToList());
             preview = editor.Document.Kind == GraphKind.Material ? MaterialGraphCompiler.Compile(editor.Document).Preview : null;
         }
+        Live?.Update(editor.Document, editor.Revision, drafts, ImGui.GetTime());
         float details = MathF.Min(300, ImGui.GetContentRegionAvail().X * .35f);
         ImGui.BeginChild("##graph-canvas", new Vector2(-details - 6, 0));
         canvas.Draw(editor);
@@ -233,6 +279,23 @@ internal sealed class NodeGraphPanel
         ImGui.SameLine();
         if (ImGui.Button("Save")) Save();
         ImGui.SameLine();
+        ImGui.BeginDisabled(!editor.Dirty || path is null);
+        if (ImGui.Button("Revert")) Revert();
+        ImGui.EndDisabled();
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip("Drop unsaved changes and the live preview; the viewport shows the material as it is.");
+        ImGui.SameLine();
+        ImGui.BeginDisabled(editor.Dirty);
+        bool close = ImGui.Button("Close");
+        ImGui.EndDisabled();
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip(editor.Dirty ? "Save or Revert first." : "Close the graph; the viewport shows the material as it is.");
+        if (close)
+        {
+            Close();
+            return;
+        }
+        ImGui.SameLine();
         ImGui.BeginDisabled(!editor.CanUndo);
         if (ImGui.Button("Undo")) editor.Undo();
         ImGui.EndDisabled();
@@ -269,26 +332,34 @@ internal sealed class NodeGraphPanel
         if (preview is { } swatch)
         {
             ImGui.SeparatorText("Preview");
-            var draw = ImGui.GetWindowDrawList();
-            var at = ImGui.GetCursorScreenPos();
-            float radius = 46;
-            var center = at + new Vector2(radius + 4, radius + 4);
-            var color = new Vector4((float)swatch.BaseColor[0], (float)swatch.BaseColor[1], (float)swatch.BaseColor[2], (float)swatch.Opacity);
-            var emissive = new Vector4((float)swatch.Emissive[0], (float)swatch.Emissive[1], (float)swatch.Emissive[2], 0);
-            // A shaded ball: base colour with a soft key light, a roughness-sized highlight and emissive on top.
-            for (int ring = 12; ring >= 1; ring--)
+            if (Live is { } live)
             {
-                float t = ring / 12f;
-                var shade = Vector4.Clamp(color * (.35f + .65f * (1 - t * t)) + emissive, Vector4.Zero, Vector4.One) with { W = color.W };
-                draw.AddCircleFilled(center - new Vector2(radius * .25f, radius * .25f) * (1 - t), radius * t, ImGui.GetColorU32(shade), 48);
+                bool on = live.Enabled;
+                if (ImGui.Checkbox("Live", ref on))
+                {
+                    live.Enabled = on;
+                    if (!on) live.Clear();
+                }
+                if (ImGui.IsItemHovered())
+                    ImGui.SetTooltip("Show the graph in the viewports as you edit. Nothing is written until Apply.");
+                ImGui.SameLine();
+                uint? picked = live.SelectedMaterial();
+                ImGui.BeginDisabled(picked is null);
+                if (ImGui.Button("From selection") && picked is { } tag) SetTarget(graph, tag);
+                ImGui.EndDisabled();
+                if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+                    ImGui.SetTooltip(picked is { } chosen ? $"Edit the selected part's material, 0x{chosen:X8}." : "Select a part in the viewport first.");
             }
-            float highlight = radius * (.12f + .45f * (float)swatch.Roughness);
-            var spec = Vector4.Lerp(Vector4.One, color, (float)swatch.Metalness) with { W = (float)(.55 * (1 - swatch.Roughness)) };
-            draw.AddCircleFilled(center - new Vector2(radius * .38f, radius * .38f), highlight, ImGui.GetColorU32(spec), 32);
-            ImGui.Dummy(new Vector2(radius * 2 + 8, radius * 2 + 8));
-            ImGui.SameLine();
-            ImGui.TextDisabled($"rough {swatch.Roughness:0.##}\nmetal {swatch.Metalness:0.##}\nopacity {swatch.Opacity:0.##}");
-            ImGui.TextDisabled("Apply writes it to the material in the project; the viewport shows it then.");
+            float width = ImGui.GetContentRegionAvail().X;
+            if (Live is not { Enabled: true } livePreview || !livePreview.DrawPreviewMesh(new Vector2(width, MathF.Min(width * .75f, 220))))
+                DrawSwatch(swatch);
+            string summary = Live?.Summary() ?? "Apply writes it to the material in the project; the viewport shows it then.";
+            if (summary.Length > 0)
+            {
+                ImGui.PushTextWrapPos(0);
+                ImGui.TextDisabled(summary);
+                ImGui.PopTextWrapPos();
+            }
         }
 
         var selected = graph.Selection.Select(graph.Node).OfType<GraphNode>().ToList();
@@ -335,6 +406,39 @@ internal sealed class NodeGraphPanel
         }
         ImGui.SeparatorText("Keys");
         ImGui.TextDisabled("Tab / right-click: add node\nDrag a pin into space: add linked node\nDouble-click wire: reroute\nC: comment  Ctrl+C/V/D: copy, paste, duplicate\nShift+W/A/S/D: align  Shift+H/V: distribute\nAlt+click pin: break links  Home: frame all");
+    }
+
+    /** The preview pins as a shaded ball, when there is no preview mesh. */
+    private static void DrawSwatch(MaterialPreview swatch)
+    {
+        var draw = ImGui.GetWindowDrawList();
+        var at = ImGui.GetCursorScreenPos();
+        float radius = 46;
+        var center = at + new Vector2(radius + 4, radius + 4);
+        var color = new Vector4((float)swatch.BaseColor[0], (float)swatch.BaseColor[1], (float)swatch.BaseColor[2], (float)swatch.Opacity);
+        var emissive = new Vector4((float)swatch.Emissive[0], (float)swatch.Emissive[1], (float)swatch.Emissive[2], 0);
+        // A shaded ball: base colour with a soft key light, a roughness-sized highlight and emissive on top.
+        for (int ring = 12; ring >= 1; ring--)
+        {
+            float t = ring / 12f;
+            var shade = Vector4.Clamp(color * (.35f + .65f * (1 - t * t)) + emissive, Vector4.Zero, Vector4.One) with { W = color.W };
+            draw.AddCircleFilled(center - new Vector2(radius * .25f, radius * .25f) * (1 - t), radius * t, ImGui.GetColorU32(shade), 48);
+        }
+        float highlight = radius * (.12f + .45f * (float)swatch.Roughness);
+        var spec = Vector4.Lerp(Vector4.One, color, (float)swatch.Metalness) with { W = (float)(.55 * (1 - swatch.Roughness)) };
+        draw.AddCircleFilled(center - new Vector2(radius * .38f, radius * .38f), highlight, ImGui.GetColorU32(spec), 32);
+        ImGui.Dummy(new Vector2(radius * 2 + 8, radius * 2 + 8));
+        ImGui.SameLine();
+        ImGui.TextDisabled($"rough {swatch.Roughness:0.##}\nmetal {swatch.Metalness:0.##}\nopacity {swatch.Opacity:0.##}");
+    }
+
+    /** Points Material Output at a material, as an undoable edit. */
+    private static void SetTarget(GraphEditor graph, uint tag)
+    {
+        if (graph.Scope is not null) graph.Enter(null);
+        string value = $"0x{tag:X8}";
+        if (graph.Nodes.FirstOrDefault(node => node.Type == NodeLibrary.MaterialOutput) is { } output) graph.SetProperty(output.Id, "target", value);
+        else graph.AddNode(NodeLibrary.MaterialOutput, 0, 0, new Dictionary<string, string> { ["target"] = value });
     }
 
     private void DrawProperty(GraphEditor graph, GraphNode node, string key, string name, PropertyKind kind, string fallback, IReadOnlyList<string>? choices)

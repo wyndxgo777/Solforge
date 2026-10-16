@@ -171,6 +171,15 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
     public int MeshCount => meshes.Count;
     public bool NativeSceneReady => nativeScene is not null;
     public NativeSceneRenderer? NativeRenderer => nativeScene;
+    private MaterialOverrideSet? materialOverrides;
+    /** Live material overrides (node graph preview) that every native scene of this viewport draws; null draws none. */
+    public MaterialOverrideSet? MaterialOverrides
+    {
+        get => materialOverrides;
+        set { materialOverrides = value; if (nativeScene is not null) nativeScene.MaterialOverrides = value; }
+    }
+    /** False hides the toolbar row, for a small embedded preview. */
+    public bool ShowToolbar { get; set; } = true;
     /** Each scene starts at its authored time of day; a value set here holds across scenes. */
     public float TimeOfDay { get => timeOfDay; set { timeOfDay = value; timeOfDayChosen = true; } }
     public int NativeFallbackPartCount { get; private set; }
@@ -267,6 +276,7 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
         LivePrototypeRevision++;
         nativeScene?.Dispose();
         nativeScene = next;
+        next.MaterialOverrides = materialOverrides;
         next.DrawForwardEffects = DrawEffectsNative;
         // Casters follow the colour parts' filters, including the backdrop bubble: bubbles can share world space.
         next.ShadowCasterFilter = item => Visibility.IsCasterVisible(item) && Backdrop.IsVisible(item);
@@ -598,7 +608,7 @@ public sealed partial class AssetViewport(Dx11Renderer renderer) : IDisposable
         var start = ImGui.GetCursorPosY();
         bool rendering = IsRendering;
         if (rendering) Animation?.Tick(ImGui.GetIO().DeltaTime);
-        DrawToolbar();
+        if (ShowToolbar) DrawToolbar();
         if (rendering) Animation?.DrawImGui();
         size.Y = MathF.Max(1, size.Y - (ImGui.GetCursorPosY() - start));
         var origin = ImGui.GetCursorScreenPos();

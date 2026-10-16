@@ -199,6 +199,29 @@ Expect((bool?)scriptedCompile["ok"] == true && Near((double)scriptedCompile["con
 Expect(GraphCommands.Describe(scripted.Document)["nodes"]!.AsArray().Count == 3, "describe lists nodes");
 Expect(GraphCommands.NodeTypes(GraphKind.Weapon, "perk", null, true).Count > 3, "node type listing");
 
+// Live material preview: the debounce, fields still being typed and what a compile writes.
+var debounce = new LiveDebounce(.05, .1);
+Expect(!debounce.Update("a", 0) && !debounce.Update("a", .04) && debounce.Update("a", .06) && debounce.Sent == "a", "debounce waits until the value is still");
+Expect(!debounce.Update("a", .5), "debounce does not send the same value twice");
+Expect(!debounce.Update("b", 1) && !debounce.Update("c", 1.04) && !debounce.Update("d", 1.08) && debounce.Update("e", 1.11) && debounce.Sent == "e",
+    "debounce still sends during a long drag");
+debounce.Reset();
+Expect(debounce.Sent is null && !debounce.Update("e", 2) && debounce.Update("e", 2.1), "reset sends the same value again");
+var liveColor = scripted.Document.Nodes.First(node => node.Type == "const.color");
+var liveDrafts = new Dictionary<string, string> { [liveColor.Id + "/value"] = "#FF0000FF", ["missing/value"] = "1", ["no-slash"] = "2" };
+var drafted = MaterialLivePreview.WithDrafts(scripted.Document, liveDrafts);
+var draftedCompile = MaterialGraphCompiler.Compile(drafted);
+Expect(!ReferenceEquals(drafted, scripted.Document) && liveColor.Get("value") == "#00FF00FF", "drafts leave the graph unchanged");
+Expect(!GraphValidation.HasErrors(draftedCompile.Diagnostics) && Near(draftedCompile.Constants[0].Values[0], 1) && Near(draftedCompile.Constants[0].Values[1], 0),
+    "drafts reach the live compile");
+Expect(ReferenceEquals(MaterialLivePreview.WithDrafts(scripted.Document, new Dictionary<string, string>()), scripted.Document), "no drafts, no copy");
+Expect(MaterialLivePreview.DraftKey(new Dictionary<string, string> { ["b"] = "1", ["a"] = "2" })
+    == MaterialLivePreview.DraftKey(new Dictionary<string, string> { ["a"] = "2", ["b"] = "1" }), "draft key ignores order");
+string liveSignature = MaterialLivePreview.Signature(MaterialGraphCompiler.Compile(scripted.Document));
+liveColor.X += 80;
+Expect(MaterialLivePreview.Signature(MaterialGraphCompiler.Compile(scripted.Document)) == liveSignature, "moving a node sends nothing new");
+Expect(MaterialLivePreview.Signature(draftedCompile) != liveSignature, "a new value changes the signature");
+
 Console.WriteLine($"Solforge.Graphs checks: {passed} passed, {failures.Count} failed.");
 foreach (string failure in failures) Console.WriteLine("FAIL: " + failure);
 return failures.Count == 0 ? 0 : 1;
