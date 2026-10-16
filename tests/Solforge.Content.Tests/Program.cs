@@ -66,7 +66,7 @@ pool.Hunter["0x00000002"] = 1;
 pool.EnemyKill.Add(new() { Id = "moon_kills", Activity = "patrol", Bubble = "anchor", Chance = .1 });
 Check(!pool.Validate().HasErrors, "loot pool validates: " + string.Join("; ", pool.Validate()));
 string lua = ContentExport.LootPoolsModule([pool]);
-Check(lua.Contains("pools") && lua.Contains("moon_extra") && lua.Contains("['0x00000001']") && lua.Contains("enemy_kill") && lua.Contains("chance"),
+Check(lua.Contains("pools") && lua.Contains("moon_extra") && lua.Contains("[\"0x00000001\"]") && lua.Contains("enemy_kill") && lua.Contains("chance"),
     "loot_pools.lua carries pools and kill rules:\n" + lua);
 var files = ContentExport.Build([pool, subclass]);
 Check(files.Select(file => file.RelativePath).Order(StringComparer.Ordinal)
