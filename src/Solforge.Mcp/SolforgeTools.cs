@@ -71,7 +71,7 @@ public static partial class SolforgeTools
         "solforge-new-weapon, solforge-new-armor, solforge-map-bounds, solforge-patrol-content, solforge-new-enemy and " +
         "solforge-new-mission; read the matching one first. Solforge's own UI: list_ui_controls, then ui_invoke, ui_set_value, " +
         "ui_set_checked or ui_select. The live view: get_viewport_frame, get_viewport_frames, wait_for_viewport_change (each with " +
-        "text for models without vision). Where the player is in game: get_player_position (map, zone, xyz, yaw, nearest " +
+        "text for models without vision; ocr: true or read_screen_text reads the words on screen). Where the player is in game: get_player_position (map, zone, xyz, yaw, nearest " +
         "objects and slots) and wait_for_player_near. Shader, animation clip and audio metadata (no map needed): list_shaders, " +
         "get_shader, list_animations, get_animation, list_audio and get_audio. Action tools need the user's approve click. " +
         "For how the game client works (functions, xrefs, strings, structs, vtables, tag class handlers in destiny2.exe) and for raw " +

@@ -11,4 +11,8 @@
     <ProjectReference Include="../Solforge.Content/Solforge.Content.csproj" />
     <ProjectReference Include="../Solforge.Graphs/Solforge.Graphs.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- Screen OCR helper (Windows.Media.Ocr through Windows PowerShell 5.1); ScreenOcr writes it to %TEMP% and runs it. -->
+    <EmbeddedResource Include="ScreenOcr.ps1" LogicalName="Solforge.Mcp.ScreenOcr.ps1" />
+  </ItemGroup>
 </Project>

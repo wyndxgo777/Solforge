@@ -6,4 +6,7 @@
   <ItemGroup>
     <ProjectReference Include="../../src/Solforge.Mcp/Solforge.Mcp.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="ocr-sample.png" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

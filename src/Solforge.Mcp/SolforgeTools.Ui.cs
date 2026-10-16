@@ -89,6 +89,7 @@ public static partial class SolforgeTools
             McpJson.Schema(("since", "integer", "Frame id you already have; same id returns text only", false),
                 ("image", "boolean", "Include the JPEG (default true)", false),
                 ("describe", "boolean", "Include the labelled objects on screen (default true)", false),
+                ("ocr", "boolean", "Also read the text on screen with Windows OCR (lines with [x, y, w, h] boxes in frame pixels; about 0.3-1 s). read_screen_text reads a region or the full-size screenshot", false),
                 ("width", "integer", "Capture width in pixels for later frames (160-1920, default 960)", false),
                 ("quality", "integer", "JPEG quality for later frames (20-95, default 70)", false),
                 ("fps", "integer", "Capture rate (1-30, default 8)", false)),
@@ -99,8 +100,10 @@ public static partial class SolforgeTools
                 var frame = feed.Latest ?? await feed.WaitForChangeAsync(0, TimeSpan.FromSeconds(3), cancel).ConfigureAwait(false);
                 if (frame is null) return NoFrames(feed);
                 bool same = args["since"] is JsonValue && McpJson.Int(args, "since", -1) == frame.Id;
-                return FrameResult(host, [frame], same ? "unchanged since your frame" : null, McpJson.Bool(args, "image", true) && !same,
+                var result = FrameResult(host, [frame], same ? "unchanged since your frame" : null, McpJson.Bool(args, "image", true) && !same,
                     McpJson.Bool(args, "describe", true));
+                if (McpJson.Bool(args, "ocr", false)) await AddScreenText(result, frame, cancel).ConfigureAwait(false);
+                return result;
             });
         yield return read("get_viewport_frames", "Frames captured after a frame id, oldest first (the ring keeps the last 32 " +
             "changes): watch an animation or a camera move between calls. Each frame comes with its id, time and change text.",
@@ -121,7 +124,8 @@ public static partial class SolforgeTools
             "while the user moves the camera.",
             McpJson.Schema(("since", "integer", "Frame id to compare with (default: the latest now)", false),
                 ("timeout", "number", "Seconds to wait (default 10, max 60)", false),
-                ("image", "boolean", "Include the JPEG (default true)", false), ("describe", "boolean", "Include on-screen objects (default true)", false)),
+                ("image", "boolean", "Include the JPEG (default true)", false), ("describe", "boolean", "Include on-screen objects (default true)", false),
+                ("ocr", "boolean", "Also read the text on screen with Windows OCR (lines with [x, y, w, h] boxes in frame pixels; about 0.3-1 s). read_screen_text reads a region or the full-size screenshot", false)),
             async (args, cancel) =>
             {
                 var feed = host.Viewport;
@@ -132,7 +136,59 @@ public static partial class SolforgeTools
                 if (frame is null)
                     return McpToolResult.Json(new JsonObject { ["changed"] = false, ["since"] = since, ["latest"] = feed.Latest?.Id, ["status"] = feed.Status,
                         ["lastCaptureMs"] = feed.LastCapture is { } at ? (long?)(DateTimeOffset.UtcNow - at).TotalMilliseconds : null });
-                return FrameResult(host, [frame], null, McpJson.Bool(args, "image", true), McpJson.Bool(args, "describe", true));
+                var changed = FrameResult(host, [frame], null, McpJson.Bool(args, "image", true), McpJson.Bool(args, "describe", true));
+                if (McpJson.Bool(args, "ocr", false)) await AddScreenText(changed, frame, cancel).ConfigureAwait(false);
+                return changed;
+            });
+        var regionSchema = McpJson.Schema(
+            ("source", "string", "'frame' (default): the live viewport frame (fast, capture width, 960 by default); 'screenshot': the full-size viewport PNG, better for small text", false),
+            ("frame", "integer", "A frame id still in the ring (get_viewport_frames) instead of the latest", false),
+            ("region", "array", "Optional [x, y, width, height] in image pixels to read only that part (HUD corner, a panel, a button)", false),
+            ("contains", "string", "Keep only lines containing this text (case-insensitive): where is 'Launch'?", false),
+            ("words", "boolean", "Include each word with its own box (default false: lines only)", false),
+            ("scale", "number", "Upscale before OCR (default auto: 2x for images or regions up to 1280 px, else 1x)", false),
+            ("lang", "string", "OCR language tag, e.g. 'en-US' (default: the Windows user languages, else en-US)", false));
+        regionSchema["properties"]!["region"]!["items"] = new JsonObject { ["type"] = "number" };
+        yield return read("read_screen_text", "Read the text on screen (OCR with Windows.Media.Ocr, built into Windows; no GPU, " +
+            "no download): every line with its [x, y, width, height] box in image pixels, optionally only a region or only lines " +
+            "containing some text. Reads the live viewport frame by default or the full-size screenshot (source='screenshot'). " +
+            "Destiny's letter-spaced labels can come back split ('N ESS U S'); read a tight region or try scale 2-3 for small HUD text.",
+            regionSchema,
+            async (args, cancel) =>
+            {
+                var region = ScreenOcr.ParseRegion(args["region"], out string? bad);
+                if (bad is not null) return McpToolResult.Error(bad);
+                byte[]? image;
+                var source = new JsonObject();
+                if (string.Equals(McpJson.String(args, "source"), "screenshot", StringComparison.OrdinalIgnoreCase))
+                {
+                    image = await host.ScreenshotAsync(null, false, cancel).ConfigureAwait(false);
+                    if (image is null) return McpToolResult.Error("No viewport screenshot (is a map open and the viewport on?).");
+                    source["source"] = "screenshot";
+                }
+                else
+                {
+                    var feed = host.Viewport;
+                    feed.Want();
+                    ViewportFrame? frame;
+                    if (args["frame"] is JsonValue)
+                    {
+                        long id = McpJson.Int(args, "frame", 0);
+                        frame = feed.Since(id - 1, 1).FirstOrDefault(item => item.Id == id);
+                        if (frame is null) return McpToolResult.Error($"Frame {id} is no longer in the ring; latest is {feed.Latest?.Id}.");
+                    }
+                    else frame = feed.Latest ?? await feed.WaitForChangeAsync(0, TimeSpan.FromSeconds(3), cancel).ConfigureAwait(false);
+                    if (frame is null) return NoFrames(feed);
+                    image = frame.Jpeg;
+                    source["source"] = "frame";
+                    source["frame"] = frame.Id;
+                }
+                double scale = args["scale"] is JsonValue value && value.TryGetValue(out double number) ? number : 0;
+                var reply = await ScreenOcr.Shared.ReadAsync(image, region, scale, McpJson.String(args, "lang"), cancel).ConfigureAwait(false);
+                if (!ScreenOcr.Ok(reply)) return McpToolResult.Error(reply["error"]?.ToString() ?? "Screen OCR failed.");
+                var summary = ScreenOcr.Summarize(reply, McpJson.Bool(args, "words", false), McpJson.String(args, "contains"));
+                foreach (var (key, node) in source) summary[key] = node?.DeepClone();
+                return McpToolResult.Json(summary);
             });
         yield return read("get_viewport_stream", "Where to watch the live viewport in a browser: the local URL (this PC only) " +
             "and, when set_viewport_stream turned it on, the relay URL (sign-in with an allowed Project Sol account), plus " +
@@ -174,6 +230,15 @@ public static partial class SolforgeTools
         if (args["width"] is JsonValue) feed.MaxWidth = Math.Min(McpJson.Int(args, "width", feed.MaxWidth), feed.Relay is { Running: true } ? FrameRelay.MaxWidth : 1920);
         if (args["quality"] is JsonValue) feed.Quality = McpJson.Int(args, "quality", feed.Quality);
         if (args["fps"] is JsonValue) feed.Fps = McpJson.Int(args, "fps", feed.Fps);
+    }
+
+    /** The ocr option of the frame tools: OCR text as one more text block; a failure is a note, never a tool error. */
+    private static async Task AddScreenText(McpToolResult result, ViewportFrame frame, CancellationToken cancel)
+    {
+        var reply = await ScreenOcr.Shared.ReadAsync(frame.Jpeg, null, 0, null, cancel).ConfigureAwait(false);
+        var summary = ScreenOcr.Summarize(reply, false, null);
+        summary["frame"] = frame.Id;
+        result.Texts.Add(new JsonObject { ["screenText"] = summary }.ToJsonString(McpJson.Indented));
     }
 
     private static McpToolResult NoFrames(ViewportFeed feed) => McpToolResult.Error(
