@@ -2,6 +2,7 @@ using System.Buffers.Binary;
 using SunriseStudio.Audio;
 using SunriseStudio.Packages;
 
+/** Checks segment cues, inherited meters and beat/cue synchronization, so music transitions land on the exact frame the native engine would use. */
 internal static class CueChecks
 {
     /** Segment 10 inherits its meter from switch 100 through switch 90; a null meter leaves it unauthored. */
@@ -12,6 +13,7 @@ internal static class CueChecks
         .Track(1, 10, TestMusic.Clip(7, 9000))
         .Build();
 
+    /** Runs the checks that use generated fixtures instead of installed game content. */
     public static void Synthetic(string directory)
     {
         var analysis = Fixture(new(137, 7, 8, 375.125, 61.5)); var source = analysis.Segments[10];
@@ -58,6 +60,7 @@ internal static class CueChecks
         Console.WriteLine("audio_cues synthetic=pass meter=rounded_inherited markers=ordered boundary_rules=checked pcm_frames=exact");
     }
 
+    /** Runs the same kind of checks against the real packages of the owned installation. */
     public static async Task Owned(PackageCatalog catalog, string directory, string? output)
     {
         using var session = new AudioSession(catalog, 0x80BBEC39, cacheDirectory: Path.Combine(directory, "cue-cache"));

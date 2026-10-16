@@ -7,6 +7,7 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Creation.Tests;
 
+/** Checks the sandbox perk icon workflow: separate item and perk icon links, replacement, undo/redo and reopen. */
 internal static class SandboxPerkIconWorkflowChecks
 {
     /** Catalyst artwork and perk symbols stay separate through repeated edits and Undo. */

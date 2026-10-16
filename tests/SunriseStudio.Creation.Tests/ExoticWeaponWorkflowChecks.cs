@@ -12,6 +12,7 @@ using System.Numerics;
 
 namespace SunriseStudio.Creation.Tests;
 
+/** End-to-end check of the exotic weapon creation workflow against an installation: file picker, ammo supply bonuses and the resulting project. */
 internal static class ExoticWeaponWorkflowChecks
 {
     /** One creation publishes every link and removes the donor's exotic effects. */

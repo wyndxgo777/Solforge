@@ -4,6 +4,7 @@ using SunriseStudio.Packages;
 /** Clips authored on another body play at the rig's size, and clips from a larger rig still apply. */
 internal static class RetargetChecks
 {
+    /** Runs the same kind of checks against the real packages of the owned installation. */
     internal static void Owned(PackageCatalog catalog)
     {
         // Legionary and Centurion share clips; their tables scale them by 1.35 and 1.25.

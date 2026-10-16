@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 
+/** Builds synthetic native animation clip blobs (dense layout, explicit control maps) so authoring round-trip tests need no installation. */
 internal static class NativeClipFixture
 {
     /** Fixtures use existing dense layouts and explicit control maps. */

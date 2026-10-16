@@ -6,6 +6,7 @@ using SunriseStudio.Scene;
 using SunriseStudio.Scene.Collision;
 using static Checks;
 
+/** Checks which collision placements are admitted on import (valid transforms and rotated/scaled frames) and that unchanged instances produce no edit. */
 internal static class ImportAdmissionChecks
 {
     private const uint OwnerTag = 0x80A00000, CompoundTag = OwnerTag + 1, ShapeTag = OwnerTag + 2;

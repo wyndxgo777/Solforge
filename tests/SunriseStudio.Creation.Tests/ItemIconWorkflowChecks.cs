@@ -7,6 +7,7 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Creation.Tests;
 
+/** Checks the item icon workflow: size validation before publication, owned container reuse and undo/redo of icon assignment. */
 internal static class ItemIconWorkflowChecks
 {
     /** Repeated PNG assignments keep one item-hash row and preserve the installed icon chain. */

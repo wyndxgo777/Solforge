@@ -12,6 +12,7 @@ internal static class AddChecks
     private const uint LeviathanCompound = 0x80EDC2D0, LeviathanOwner = 0x80EDC2D1;
     private const ushort ShapePackage = 0x0C10;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(PackageCatalog catalog, string gameRoot)
     {
         Rewrite(catalog, [Package(LeviathanCompound), 0x03D5]);

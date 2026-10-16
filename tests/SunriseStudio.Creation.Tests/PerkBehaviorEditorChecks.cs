@@ -4,6 +4,7 @@ using SunriseStudio.Formats;
 
 namespace SunriseStudio.Creation.Tests;
 
+/** Checks the perk behavior editor: blank and scratch graphs, and that edited values survive native compilation. */
 internal static class PerkBehaviorEditorChecks
 {
     /** Draft edits obey native phase kinds, preserve undo and compile without a source perk. */

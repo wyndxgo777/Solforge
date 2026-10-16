@@ -7,6 +7,7 @@ internal static class HierarchyChecks
     private const uint Bus = 800, Segment = 1000, Track = 1100, MusicSwitch = 1200, Playlist = 1300, State = 1400;
     private const uint StateGroup = 8000, StateValue = 8001, SwitchGroup = 7000, Parameter = 42;
 
+    /** Runs the checks that use generated fixtures instead of installed game content. */
     public static void Synthetic()
     {
         var hierarchy = WwiseHierarchy.Read([TestHirc.Bank(113, 900, Objects())]);
@@ -108,13 +109,21 @@ internal static class HierarchyChecks
 internal sealed class HircBytes
 {
     private readonly List<byte> data = [];
+    /** Appends one byte. */
     public HircBytes U8(int value) { data.Add((byte)value); return this; }
+    /** Appends a little-endian 16-bit value. */
     public HircBytes U16(int value) { data.AddRange(BitConverter.GetBytes((ushort)value)); return this; }
+    /** Appends a little-endian 32-bit value. */
     public HircBytes U32(uint value) { data.AddRange(BitConverter.GetBytes(value)); return this; }
+    /** Appends a little-endian signed 32-bit value. */
     public HircBytes S32(int value) { data.AddRange(BitConverter.GetBytes(value)); return this; }
+    /** Appends a 32-bit float. */
     public HircBytes F32(float value) { data.AddRange(BitConverter.GetBytes(value)); return this; }
+    /** Appends a 64-bit float. */
     public HircBytes F64(double value) { data.AddRange(BitConverter.GetBytes(value)); return this; }
+    /** Appends the bytes unchanged. */
     public HircBytes Raw(byte[] value) { data.AddRange(value); return this; }
+    /** Returns the bytes built so far. */
     public byte[] ToArray() => [.. data];
 }
 
@@ -123,12 +132,16 @@ internal static class TestHirc
 {
     public const uint Vorbis = 0x00040001;
 
+    /** An RTPC curve: parameter, scaling and (x, y, shape) points. */
     public sealed record Curve(uint Id, byte Parameter, byte Scaling, (float X, float Y, uint Shape)[] Points);
 
+    /** Reinterprets a float as the raw 32-bit property value. */
     public static uint F(float value) => BitConverter.SingleToUInt32Bits(value);
 
+    /** Encodes a count-prefixed list of ids. */
     public static byte[] Ids(params uint[] ids) => [.. BitConverter.GetBytes(ids.Length), .. ids.SelectMany(BitConverter.GetBytes)];
 
+    /** Encodes a property block of (id, raw value) pairs. */
     public static byte[] Props(params (byte Id, uint Raw)[] props)
     {
         var bytes = new HircBytes().U8(props.Length);
@@ -174,6 +187,7 @@ internal static class TestHirc
         return [.. bytes.ToArray(), .. Curves(curves ?? [])];
     }
 
+    /** Encodes RTPC curves. */
     public static byte[] Curves(Curve[] curves)
     {
         var bytes = new HircBytes().U16(curves.Length);
@@ -193,6 +207,7 @@ internal static class TestHirc
         return bytes.ToArray();
     }
 
+    /** Builds the bytes of a sound object. */
     public static byte[] Sound(uint plugin, uint media, uint parent, uint bus = 0, (byte Id, uint Raw)[]? props = null,
         uint[]? effects = null, (uint Group, (uint State, uint Instance)[] States)[]? states = null, Curve[]? curves = null,
         (byte Id, uint Minimum, uint Maximum)[]? ranged = null, byte positioning = 0) =>
@@ -205,6 +220,7 @@ internal static class TestHirc
             .. delayRange is { } range ? Ranged((WwiseHierarchy.DelayProp, unchecked((uint)range.Minimum), (uint)range.Maximum)) : Ranged(),
             4, .. BitConverter.GetBytes(900u)];
 
+    /** Builds the bytes of a random or sequence container. */
     public static byte[] RandomSequence(uint parent, bool sequence, bool continuous, ushort loops, byte transitionMode,
         float transitionMs, uint[] items, (byte Id, uint Raw)[]? props = null)
     {
@@ -215,6 +231,7 @@ internal static class TestHirc
         return bytes.ToArray();
     }
 
+    /** Builds the bytes of a switch container. */
     public static byte[] Switch(uint parent, byte groupType, uint group, (uint Value, uint[] Nodes)[] values)
     {
         var children = values.SelectMany(value => value.Nodes).Distinct().ToArray();
@@ -230,6 +247,7 @@ internal static class TestHirc
         new HircBytes().Raw(Node(0, parent)).Raw(Ids(children)).U32(1).U32(1).U16(0).U32(0).U8(0)
             .U32(1).U32(children[0]).U32(2).F32(0).F32(0).U32(4).F32(1).F32(0).U32(4).ToArray();
 
+    /** Builds the bytes of a bus with the given volume. */
     public static byte[] Bus(uint output, float volumeDb) =>
         new HircBytes().U32(output).Raw(Props((WwiseHierarchy.BusVolumeProp, F(volumeDb))))
             .Raw(new byte[1 + 1 + 2 + 4 + 1 + 8]).U32(0).U8(0).Raw(new byte[4 + 1 + 1]).U16(0).U32(0).ToArray();
@@ -277,6 +295,7 @@ internal static class TestHirc
         new HircBytes().U32(plugin).U32((uint)(parameters.Length * 4)).Raw(parameters.SelectMany(BitConverter.GetBytes).ToArray())
             .U8(0).U16(0).U16(0).ToArray();
 
+    /** Wraps the object records into a parsed sound bank. */
     public static AudioBank Bank(uint version, uint id, IEnumerable<(byte Type, uint Id, byte[] Data)> objects)
     {
         using var stream = new MemoryStream();

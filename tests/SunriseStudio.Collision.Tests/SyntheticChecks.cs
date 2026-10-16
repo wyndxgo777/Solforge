@@ -6,6 +6,7 @@ using static Checks;
 /** Tree codec, refit and flag checks on built data. */
 internal static class SyntheticChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run()
     {
         var parent = new CompoundBox(0, 0, 0, 226, 226, 226);

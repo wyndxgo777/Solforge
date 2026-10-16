@@ -7,6 +7,7 @@ using SunriseStudio.Packages;
 
 namespace SunriseStudio.Creation.Tests;
 
+/** Checks the socket workflows (plugs and weapon catalysts): each must create its own item identity and install into the project. */
 internal static class ItemSocketWorkflowChecks
 {
     /** Creating a weapon may socket its own new plug without editing the installed base. */

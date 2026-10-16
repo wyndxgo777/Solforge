@@ -4,6 +4,7 @@ using SunriseStudio.Audio;
 /** The managed WEM decoder: PCM round trips, downmix values and refusals, with no game data. */
 internal static class DecoderChecks
 {
+    /** Runs the checks that use generated fixtures instead of installed game content. */
     public static void Synthetic()
     {
         foreach (ushort channels in new ushort[] { 1, 2 })

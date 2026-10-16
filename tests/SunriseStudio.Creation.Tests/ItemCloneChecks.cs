@@ -6,6 +6,7 @@ namespace SunriseStudio.Creation.Tests;
 /** Index rows grow without moving other data, and display edits touch only their own bytes. */
 internal static class ItemCloneChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run()
     {
         Check(InvestmentItemClone.Fnv1("") == EmptyHash && InvestmentItemClone.Fnv1("a") == 0x050C5D7E, "Clone hash is not FNV-1.");

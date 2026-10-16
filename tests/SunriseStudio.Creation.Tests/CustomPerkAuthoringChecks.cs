@@ -7,6 +7,7 @@ namespace SunriseStudio.Creation.Tests;
 /** Node graph Custom Perks (Studio.md Phase 27) lower to native programs that compile and decompile intact. */
 internal static class CustomPerkAuthoringChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run()
     {
         var labels = PerkLabelTable.Installed;

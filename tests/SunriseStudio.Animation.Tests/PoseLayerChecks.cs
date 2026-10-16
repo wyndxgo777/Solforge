@@ -5,6 +5,7 @@ using SunriseStudio.Packages;
 /** Pose-space selection, aim frames and blend-entry merging. */
 static class PoseLayerChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     public static void Run()
     {
         // Two triangles over a unit square; input inside the first picks its three corners.

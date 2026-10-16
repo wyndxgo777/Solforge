@@ -25,6 +25,7 @@ internal static class CollisionPartChecks
         }).ToArray();
     }
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(PackageCatalog catalog)
     {
         var scene = new AssetSceneLoader(catalog).Load(SabreMap);

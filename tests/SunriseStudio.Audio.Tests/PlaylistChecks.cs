@@ -2,6 +2,7 @@ using System.Buffers.Binary;
 using SunriseStudio.Audio;
 using SunriseStudio.Packages;
 
+/** Checks music playlist step history, step selection, reset and rejected timelines so playlists advance and render like the native engine. */
 internal static class PlaylistChecks
 {
     /** A step container over segments 21 to 23, alone or nested between segments 20 and 24. */
@@ -17,6 +18,7 @@ internal static class PlaylistChecks
         return music.Build();
     }
 
+    /** Runs the checks that use generated fixtures instead of installed game content. */
     public static void Synthetic(string directory)
     {
         var analysis = Fixture(); var history = new AudioPlaylistHistory();
@@ -66,6 +68,7 @@ internal static class PlaylistChecks
         Console.WriteLine("audio_playlist synthetic=pass history=retained jumps=parent_resume failure=rollback infinite=bounded pcm=selected_source");
     }
 
+    /** Runs the same kind of checks against the real packages of the owned installation. */
     public static async Task Owned(PackageCatalog catalog, string directory, string? output)
     {
         using var session = new AudioSession(catalog, 0x80BBEC39, cacheDirectory: Path.Combine(directory, "playlist-cache"));

@@ -13,6 +13,7 @@ internal static class OcclusionChecks
     private const uint Table = 0x80EDC202, FineTome = 0x80EDC2C2, CoarseTome = 0x80EDC2C3;
     private const int Row = 2112;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(PackageCatalog catalog)
     {
         if (!catalog.TryGetEntry(Table, out _)) { Console.WriteLine("SKIP occlusion-rule table=80EDC202 absent"); return; }

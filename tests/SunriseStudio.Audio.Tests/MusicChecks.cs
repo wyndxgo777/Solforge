@@ -2,6 +2,7 @@ using System.Buffers.Binary;
 using SunriseStudio.Audio;
 using SunriseStudio.Packages;
 
+/** Checks music track source lookup, entry/exit markers, PCM overlap mixing and choice identity, which the transition renderer depends on. */
 internal static class MusicChecks
 {
     /** A two-segment owned fixture makes overlapping samples independently predictable. */
@@ -111,6 +112,7 @@ internal sealed class TestMusic
         clip.Pan is { } x ? (channel == 0 ? MathF.Sqrt(1 - x) : MathF.Sqrt(x))
             : sourceChannels == 1 ? AudioTimeline.MonoToStereoGain : 1;
 
+    /** Adds a music switch container with an optional meter and transition rules. */
     public TestMusic Switch(uint id, uint parent, AudioMeter? meter = null, params AudioTransition[] rules)
     {
         Route(id, parent);
@@ -119,6 +121,7 @@ internal sealed class TestMusic
         return this;
     }
 
+    /** Adds a music playlist container. */
     public TestMusic Playlist(uint id, uint parent, AudioPlaylistItem root, params AudioTransition[] rules)
     {
         Route(id, parent);
@@ -135,8 +138,10 @@ internal sealed class TestMusic
         return this;
     }
 
+    /** Adds a music track with its clips. */
     public TestMusic Track(uint id, uint parent, params AudioClip[] clips) => Track(id, parent, clips, []);
 
+    /** Adds a music track with its clips. */
     public TestMusic Track(uint id, uint parent, AudioClip[] clips, AudioClipAutomation[] automation)
     {
         Route(id, parent);
@@ -150,9 +155,11 @@ internal sealed class TestMusic
         Tracks = tracks, Segments = segments, Playlists = playlists, TransitionContainers = containers, Routes = routes, Meters = meters
     };
 
+    /** Makes a clip with play-at and trim times in milliseconds. */
     public static AudioClip Clip(uint source, double durationMs, double playAtMs = 0, double beginTrimMs = 0, double endTrimMs = 0) =>
         new(source, 0, playAtMs, beginTrimMs, endTrimMs, durationMs);
 
+    /** Makes a playlist item for a segment. */
     public static AudioPlaylistItem Item(uint id, uint segment, int kind, int loops = 1, params AudioPlaylistItem[] children) =>
         new(id, segment, kind, loops, 1, 0, false, children);
 

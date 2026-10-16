@@ -12,6 +12,7 @@ internal static class UsmChecks
     // FNV-1a of ffmpeg's s16le output for Synthetic(): 96 stereo frames, clamped both ways, stopped by the 0x8001 end frame.
     private const uint GoldenHash = 0xB103A5B0;
 
+    /** Runs the checks that use generated fixtures instead of installed game content. */
     internal static void Synthetic(string temporary)
     {
         byte[] adx = Adx();

@@ -14,6 +14,7 @@ internal static class LayerUpdateChecks
     private const uint LeviathanMap = 0x80EDC19B, LeviathanCompound = 0x80EDC2D0, LeviathanOwner = 0x80EDC2D1;
     private const ushort LeviathanPackage = 0x36E;
 
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(PackageCatalog catalog)
     {
         var lists = new StaticCollisionReader(catalog).MapObjectLists(LeviathanMap);
@@ -160,6 +161,7 @@ internal static class LayerUpdateChecks
         return lines;
     }
 
+    /** Describes where two string lists first differ. */
     internal static string Difference(List<string> a, List<string> b)
     {
         if (a.Count != b.Count) return $" line count {a.Count} vs {b.Count}";

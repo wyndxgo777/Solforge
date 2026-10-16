@@ -1,3 +1,4 @@
+// Console test runner for the asset surface: material execution data, display names and shader texture slots must survive reading without guessing.
 using System.Buffers.Binary;
 using System.Numerics;
 using SunriseStudio.Packages;

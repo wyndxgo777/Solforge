@@ -6,6 +6,7 @@ using SunriseStudio.Projects;
 /** Phase counters locate repeated source reads without changing the rule implementations. */
 internal static class IsolationProfileChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(PackageCatalog catalog, string capture)
     {
         ObjectEditCompiler.PrepareInstallation(catalog);
@@ -24,11 +25,14 @@ internal static class IsolationProfileChecks
 
     private sealed class TrackingCompiler(ObjectEditCompiler inner, ReadProfile profile) : IObjectEditCompiler
     {
+        /** Compiles through the wrapped compiler while profiling the raw reads. */
         public ObjectEditCompilation Compile(IReadOnlyList<ObjectEdit> edits, Func<uint, byte[]> readRaw, PackageCatalog catalog) =>
             inner.Compile(edits, tag => profile.Read(tag, readRaw, catalog), catalog);
+        /** Compiles through the wrapped compiler while profiling the raw reads. */
         public ObjectEditCompilation Compile(IReadOnlyList<ObjectEdit> edits, Func<uint, byte[]> readRaw,
             PackageCatalog catalog, ObjectEditCompileOptions options) => inner.Compile(edits,
                 tag => profile.Read(tag, readRaw, catalog), catalog, options);
+        /** Forwards to the wrapped compiler. */
         public ObjectEdit? Normalize(ObjectEdit edit, Func<uint, byte[]> readRaw, PackageCatalog catalog) =>
             inner.Normalize(edit, readRaw, catalog);
     }
@@ -37,6 +41,7 @@ internal static class IsolationProfileChecks
     {
         internal string Phase = "rows";
         private readonly Dictionary<(string Phase, uint Class), (long Count, long Bytes, long Ticks)> reads = [];
+        /** Reads a tag through the callback and records the read in the profile. */
         internal byte[] Read(uint tag, Func<uint, byte[]> read, PackageCatalog catalog)
         {
             long start = Stopwatch.GetTimestamp();
@@ -47,6 +52,7 @@ internal static class IsolationProfileChecks
             reads[key] = (previous.Count + 1, previous.Bytes + bytes.Length, previous.Ticks + ticks);
             return bytes;
         }
+        /** Writes the recorded read profile to the console. */
         internal void Print()
         {
             foreach (var (key, value) in reads.OrderByDescending(pair => pair.Value.Ticks).Take(12))
@@ -59,6 +65,7 @@ internal static class IsolationProfileChecks
     {
         public ObjectEditLayout Layout => inner.Layout;
         public IReadOnlyCollection<ObjectEditLayout> Layouts => inner.Layouts;
+        /** Rule stub used to time an isolation pass. */
         public void Apply(ObjectEditContext context, IReadOnlyList<ObjectEdit> edits)
         {
             var before = context.Catalog.ReadStatistics;

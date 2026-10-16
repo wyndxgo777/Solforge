@@ -5,6 +5,7 @@ using SunriseStudio.Formats;
 using SunriseStudio.Packages;
 using SunriseStudio.Scene;
 
+/** Diagnostic tool, not a pass/fail test: decodes and previews every requested clip tag from an installation and writes a JSON audit so broken clips can be found by package identity. */
 internal static class AssetAudit
 {
     /** Each clip keeps its decode and editor-preview failure beside its package identity. */

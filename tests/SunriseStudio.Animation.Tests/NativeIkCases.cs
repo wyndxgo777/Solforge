@@ -3,6 +3,7 @@ using System.Text.Json;
 using SunriseStudio.Animation;
 using SunriseStudio.Packages;
 
+/** Diagnostic tool that dumps native IK solver inputs for fixed installed rigs so the managed solver can be compared against native output offline. */
 internal static class NativeIkCases
 {
     /** Native and managed solvers receive the same pre-solve transforms; pole cases add the authored pole. */

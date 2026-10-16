@@ -6,6 +6,7 @@ using static Checks;
 /** Hull, mesh tree, encoder, writer and vertex move checks on built data. */
 internal static class MeshSyntheticChecks
 {
+    /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run()
     {
         Hulls();
@@ -206,6 +207,7 @@ internal static class MeshSyntheticChecks
         return step / 2 + 4 * magnitude * Math.Pow(2, -23);
     }
 
+    /** Largest per-axis difference between two vectors. */
     internal static double MaxAxis(Vector3 a, Vector3 b) =>
         Math.Max(Math.Abs(a.X - b.X), Math.Max(Math.Abs(a.Y - b.Y), Math.Abs(a.Z - b.Z)));
 }
