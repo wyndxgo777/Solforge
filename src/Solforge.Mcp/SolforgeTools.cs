@@ -350,7 +350,8 @@ public static partial class SolforgeTools
             .. AssetTools(host, Read),
             .. AutomaticModeTools(host),
             .. CommandTools(host),
-            .. InsightTools(host, Read)
+            .. InsightTools(host, Read),
+            .. MissionHostTools(host, Read)
         ];
     }
 

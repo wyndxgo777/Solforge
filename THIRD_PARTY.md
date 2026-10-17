@@ -24,6 +24,8 @@ Each license text is copied from the project's own license file.
 | BCnEncoder.NET | 2.3.0 | MIT | Copyright 2020 Nomi Lakkala |
 | CommunityToolkit.HighPerformance | 8.4.0 | MIT | Copyright (c) .NET Foundation and Contributors |
 | QRCoder | 1.8.0 | MIT | Copyright (c) 2013-2025 Raffael Herrmann |
+| KeraLua | 1.4.10 | MIT | Copyright (c) 2019 Vinicius Jarina |
+| Lua (lua54.dll, inside KeraLua) | 5.4 | MIT | Copyright (c) 1994-2026 Lua.org, PUC-Rio |
 
 Each library above is licensed under these terms, with its own copyright line:
 
