@@ -10,6 +10,8 @@
     <!-- Content documents (subclasses, loot pools...): the content tools read and write them in the project folder. -->
     <ProjectReference Include="../Solforge.Content/Solforge.Content.csproj" />
     <ProjectReference Include="../Solforge.Graphs/Solforge.Graphs.csproj" />
+    <!-- Tag schema registry and decoders behind the game table tools. -->
+    <ProjectReference Include="../SunriseStudio.Packages/SunriseStudio.Packages.csproj" />
   </ItemGroup>
   <ItemGroup>
     <!-- Screen OCR helper (Windows.Media.Ocr through Windows PowerShell 5.1); ScreenOcr writes it to %TEMP% and runs it. -->
