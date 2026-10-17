@@ -13,10 +13,15 @@ namespace Solforge.Mcp.LocalServer;
 /** A slice of the server log: lines, the next read offset, whether the log restarted, and its size. */
 public sealed record LogChunk(IReadOnlyList<string> Lines, long Next, bool Reset, long Size);
 /** Outcome of a server action with its output. */
-public sealed record ActionResult(bool Ok, string Message, string Output = "")
+public sealed record ActionResult(bool Ok, string Message, string Output = "", JsonObject? Report = null)
 {
-    /** JSON form with output clipped to 6000 characters. */
-    public JsonObject ToJson() => new() { ["ok"] = Ok, ["message"] = Message, ["output"] = LocalServerParse.Clip(Output, 6000) };
+    /** JSON form with output clipped to 6000 characters; deploys add a structured report. */
+    public JsonObject ToJson()
+    {
+        var json = new JsonObject { ["ok"] = Ok, ["message"] = Message, ["output"] = LocalServerParse.Clip(Output, 6000) };
+        if (Report is not null) json["report"] = Report.DeepClone();
+        return json;
+    }
 }
 
 /**
@@ -181,16 +186,71 @@ public sealed partial class LocalServerManager(IWslShell shell, LocalServerOptio
 
     // --- deploy -----------------------------------------------------------------------------------
 
-    /** Copies the plan's files into the server under a new backup id, optionally restarting it. */
+    /** Loads (compiles) every deployed .lua file in a Lua interpreter in WSL; the server is not started or touched. */
+    public async Task<ScriptCheck> CheckScriptsAsync(DeployPlan plan, CancellationToken cancel = default)
+    {
+        if (Guard() is { } problem) return ScriptCheck.Unavailable(problem);
+        var files = plan.Files.Select(file => file.Target).Where(t => t.EndsWith(".lua", StringComparison.OrdinalIgnoreCase)).ToArray();
+        if (files.Length == 0) return new ScriptCheck(true, "none", 0, [], []);
+        var result = await shell.RunAsync(DeployPlanner.CheckScriptsScript(files, Options), Options.CommandTimeout, cancel).ConfigureAwait(false);
+        return DeployPlanner.ParseScriptCheck(result.Output, result.TimedOut ? "script check timed out" : (result.Error + result.Output).Trim());
+    }
+
+    /** Running, BAP UDP, web and admin all answering. */
+    public static bool IsHealthy(LocalServerStatus status) => status.Running && status.BapUdp && status.Web && status.Admin;
+
+    /** Waits up to HealthWait for the server to be healthy, returning the last status. */
+    private async Task<LocalServerStatus> WaitHealthyAsync(CancellationToken cancel)
+    {
+        var until = DateTime.UtcNow + Options.HealthWait;
+        while (true)
+        {
+            var status = await StatusAsync(cancel).ConfigureAwait(false);
+            if (IsHealthy(status) || DateTime.UtcNow >= until) return status;
+            await Task.Delay((int)Math.Clamp(Options.HealthWait.TotalMilliseconds / 5, 1, 1000), cancel).ConfigureAwait(false);
+        }
+    }
+
+    /**
+     * Copies the plan's files into the server under a new backup id, loads every deployed Lua script to find errors now,
+     * and optionally restarts the server and checks it came back healthy. The report says what happened at each step.
+     */
     public async Task<ActionResult> DeployAsync(DeployPlan plan, bool restart, CancellationToken cancel = default)
     {
         if (plan.Files.Count == 0) return new ActionResult(false, "Nothing to deploy: " + string.Join("; ", plan.Notes));
         string id = DeployPlanner.NewBackupId(DateTime.UtcNow) + "-" + Guid.NewGuid().ToString("N")[..4];
-        var result = await Exclusive(DeployPlanner.DeployScript(plan, Options, id), $"Deployed {plan.Files.Count} file(s), backup {id}", cancel,
+        var copy = await Exclusive(DeployPlanner.DeployScript(plan, Options, id), $"Deployed {plan.Files.Count} file(s), backup {id}", cancel,
             TimeSpan.FromMinutes(5)).ConfigureAwait(false);
-        if (!result.Ok || !restart) return result;
-        var again = await RestartAsync(cancel).ConfigureAwait(false);
-        return new ActionResult(again.Ok, result.Message + "; " + again.Message, result.Output + "\n" + again.Output);
+        var report = new JsonObject { ["copied"] = copy.Ok ? plan.Files.Count : 0, ["backup"] = id, ["copy_ok"] = copy.Ok };
+        if (!copy.Ok) return copy with { Report = report };
+
+        var scripts = await CheckScriptsAsync(plan, cancel).ConfigureAwait(false);
+        report["scripts"] = scripts.ToJson();
+        var parts = new List<string> { copy.Message, scripts.Summary };
+        string output = copy.Output + "\n" + string.Join("\n", scripts.Errors.Concat(scripts.Warnings.Select(w => "warning: " + w)));
+        bool ok = !scripts.HasErrors;
+
+        if (restart)
+        {
+            var again = await RestartAsync(cancel).ConfigureAwait(false);
+            var status = again.Ok ? await WaitHealthyAsync(cancel).ConfigureAwait(false) : await StatusAsync(cancel).ConfigureAwait(false);
+            bool healthy = again.Ok && IsHealthy(status);
+            var ports = status.Sockets.Select(s => $"{s.Protocol} {s.Port}").Distinct().ToArray();
+            report["restart"] = new JsonObject
+            {
+                ["requested"] = true, ["ok"] = again.Ok, ["healthy"] = healthy, ["pid"] = status.Pid,
+                ["bap_udp"] = status.BapUdp, ["web"] = status.Web, ["admin"] = status.Admin,
+                ["ports"] = new JsonArray(ports.Select(p => (JsonNode)p).ToArray()),
+            };
+            string state = $"BAP UDP {(status.BapUdp ? "up" : "down")}, web {(status.Web ? "up" : "down")}, admin {(status.Admin ? "up" : "down")}";
+            parts.Add(healthy ? $"restart OK: server healthy, pid {status.Pid}, ports {string.Join(", ", ports)}"
+                : "restart FAILED: " + (again.Ok ? $"server not healthy ({(status.Running ? "pid " + status.Pid : "not running")}, {state})" : again.Message));
+            output += "\n" + again.Output;
+            ok &= healthy;
+        }
+        else parts.Add("server not restarted");
+        report["ok"] = ok;
+        return new ActionResult(ok, string.Join("; ", parts), output.Trim(), report);
     }
 
     /**

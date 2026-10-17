@@ -20,6 +20,8 @@ try
     Scripts(); checks.Add("scripts: backup tar before any copy, rollback only removes relative created files, backup ids validated, no VPS path");
     await Manager(); checks.Add("manager: status via fake shell, admin allow-list (no /stop), form-encoded commands, config JSON validated before writing");
     await Tools(); checks.Add("MCP tools: 15 local_server_* tools with object schemas; declined approval never runs; quick actions map to server commands");
+    await DeployReports(); checks.Add("deploy report: copied, scripts loaded/errors (or not checked), restart healthy with pid and ports, failures flip ok");
+    WslNoise(); checks.Add("wsl noise: Failed to translate lines (also UTF-16 NUL-padded) removed, real output kept");
     Subsystems(); checks.Add("subsystems: every Demonware/Bungie role mapped to a port check; all down when stopped");
     BashSyntax(checks);
     foreach (string check in checks) Console.WriteLine("ok " + check);
@@ -288,7 +290,7 @@ void BashSyntax(List<string> done)
     var plan = DeployPlanner.Plan(Path.Combine(scratch, "project"));
     string[] scripts = [manager.StatusScript(), manager.StartScript(), manager.StopScript(), manager.LogScript(-1, 10), manager.LogScript(5, 10),
         manager.SelftestScript(), manager.WriteConfigScript("config/settings.json", "{}", "20261015-000000"), manager.AdminScript("sol/command", new Dictionary<string, string> { ["line"] = "who" }, true),
-        DeployPlanner.DeployScript(plan, options, "20261015-000000"), DeployPlanner.RollbackScript(options, "20261015-000000"), DeployPlanner.ListBackupsScript(options)];
+        DeployPlanner.DeployScript(plan, options, "20261015-000000"), DeployPlanner.RollbackScript(options, "20261015-000000"), DeployPlanner.ListBackupsScript(options), DeployPlanner.CheckScriptsScript(["scripts/a b/main.lua", "sdk/x.lua"], options)];
     foreach (string script in scripts)
     {
         var start = new ProcessStartInfo(bash, "-n") { RedirectStandardInput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true };
@@ -313,4 +315,60 @@ sealed class FakeShell : IWslShell
         Scripts.Add(script);
         return Task.FromResult(Reply(script));
     }
+}
+
+static void WslNoise()
+{
+    const string noise = "wsl: Failed to translate 'E:\solforge-p47b\.dotnet\.dotnet\tools'";
+    Expect(Shell.StripWslNoise(noise + "\nSTARTED=12\n") == "STARTED=12\n", "noise line removed");
+    Expect(Shell.StripWslNoise(noise + "\r\n" + noise + "\r\nok") == "ok", "CRLF and repeated lines removed");
+    Expect(Shell.StripWslNoise(string.Concat((noise + "\n").Select(c => c + "\0"))) == "", "UTF-16 padded line removed");
+    Expect(Shell.StripWslNoise("PID=1\nFailed to translate in my log\n") == "PID=1\nFailed to translate in my log\n", "other text untouched");
+}
+
+static async Task DeployReports()
+{
+    string project = Path.Combine(scratch, "project");
+    var plan = DeployPlanner.Plan(project);
+    var options = new LocalServerOptions { HealthWait = TimeSpan.FromMilliseconds(20) };
+    const string stopped = "PID=\n---SOCKETS\n---ADMIN\n---PLAYERS\n---CENSUS\n---END\n";
+    ShellResult Answer(string script, string check, string status) =>
+        script.Contains("SOLFORGE_PLAN", StringComparison.Ordinal) ? new ShellResult(0, "DEPLOYED=4 EXISTED=0 CREATED=4", "", false)
+        : script.Contains("LUATOOL", StringComparison.Ordinal) || script.Contains("LUAUNAVAILABLE", StringComparison.Ordinal) ? new ShellResult(0, check, "", false)
+        : script.Contains("PID=$pid", StringComparison.Ordinal) ? new ShellResult(0, status, "", false)
+        : new ShellResult(0, script.Contains("setsid", StringComparison.Ordinal) ? "STARTED=15662" : "STOPPED=1", "", false);
+    const string good = "LUATOOL=lua5.4\nLUAWARN\tscripts/a.lua\trequire 'x' not found in scripts/ or sdk/\nLUASUMMARY\t2\t0\n";
+
+    var shell = new FakeShell { Reply = s => Answer(s, good, StatusSample) };
+    var manager = new LocalServerManager(shell, options);
+    var ok = await manager.DeployAsync(plan, true);
+    Expect(ok.Ok && ok.Message.Contains("scripts OK: 2 loaded, 0 errors", StringComparison.Ordinal), "good deploy: " + ok.Message);
+    Expect(ok.Message.Contains("restart OK: server healthy, pid 15662, ports", StringComparison.Ordinal) && ok.Message.Contains("30974", StringComparison.Ordinal), "restart health: " + ok.Message);
+    var report = ok.ToJson()["report"]!;
+    Expect(report["copied"]!.GetValue<int>() == plan.Files.Count && report["scripts"]!["loaded"]!.GetValue<int>() == 2
+        && report["restart"]!["healthy"]!.GetValue<bool>() && report["restart"]!["pid"]!.GetValue<int>() == 15662, "report json");
+    Expect(shell.Scripts.Any(s => s.Contains("LUATOOL", StringComparison.Ordinal) && s.Contains("scripts/edz_freeroam/main.lua\n", StringComparison.Ordinal)), "check runs on the deployed lua files");
+    int check = shell.Scripts.FindIndex(s => s.Contains("LUATOOL", StringComparison.Ordinal)), start = shell.Scripts.FindIndex(s => s.Contains("setsid", StringComparison.Ordinal));
+    Expect(check >= 0 && start > check, "scripts are checked before the restart");
+
+    shell.Scripts.Clear();
+    var noRestart = await manager.DeployAsync(plan, false);
+    Expect(noRestart.Ok && noRestart.Message.Contains("server not restarted", StringComparison.Ordinal) && !shell.Scripts.Any(s => s.Contains("setsid", StringComparison.Ordinal)), "no restart asked: server untouched");
+
+    var broken = new FakeShell { Reply = s => Answer(s, "LUATOOL=lua5.4\nLUAERR\tscripts/edz_freeroam/main.lua\t[string]:3: unexpected symbol near 'end'\nLUASUMMARY\t1\t1\n", StatusSample) };
+    var bad = await new LocalServerManager(broken, options).DeployAsync(plan, false);
+    Expect(!bad.Ok && bad.Message.Contains("scripts FAILED", StringComparison.Ordinal) && bad.Message.Contains("main.lua", StringComparison.Ordinal)
+        && bad.Output.Contains("unexpected symbol", StringComparison.Ordinal) && bad.ToJson()["report"]!["scripts"]!["error_count"]!.GetValue<int>() == 1, "script error reported now");
+
+    var none = new FakeShell { Reply = s => Answer(s, "LUAUNAVAILABLE\n", StatusSample) };
+    var unchecked1 = await new LocalServerManager(none, options).DeployAsync(plan, false);
+    Expect(unchecked1.Ok && unchecked1.Message.Contains("scripts NOT CHECKED", StringComparison.Ordinal), "no Lua in WSL is said, not hidden");
+
+    var down = new FakeShell { Reply = s => Answer(s, good, stopped) };
+    var failed = await new LocalServerManager(down, options).DeployAsync(plan, true);
+    Expect(!failed.Ok && failed.Message.Contains("restart FAILED", StringComparison.Ordinal) && failed.Message.Contains("not running", StringComparison.Ordinal)
+        && !failed.ToJson()["report"]!["restart"]!["healthy"]!.GetValue<bool>(), "unhealthy restart fails the deploy: " + failed.Message);
+
+    Expect(DeployPlanner.ParseScriptCheck("garbage", "wsl died").Why.Contains("wsl died", StringComparison.Ordinal), "unparseable check output");
+    try { DeployPlanner.CheckScriptsScript(["scripts/../x.lua"], options); Expect(false, "dotdot accepted"); } catch (InvalidDataException) { }
 }
