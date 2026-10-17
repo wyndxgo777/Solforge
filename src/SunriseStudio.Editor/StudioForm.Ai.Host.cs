@@ -128,28 +128,73 @@ public sealed partial class StudioForm
         if (aiService is null || workspace.Project is null) return;
         aiService.Publish(folder);
         aiConfiguredProject = folder;
-        if (SolforgeMcpService.FindShim() is { } shim)
+        if (AiMcpServers(folder) is { } servers)
         {
-            try { aiService.WriteClientConfigs(folder, shim); }
+            try { aiService.WriteClientConfigs(folder, servers[0].Command, servers); }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
             { aiServiceError = "config: " + exception.Message; }
+            CheckAiMcp(servers);
         }
-        else aiServiceError = "solforge-mcp.exe not found beside Solforge";
+        else
+        {
+            aiServiceError = "solforge-mcp.exe not found beside Solforge";
+            aiMcpWarning = "MCP: solforge-mcp.exe is not beside Solforge.exe, so solforge, gemini and clinepass will not connect. Publish Solforge again.";
+        }
         WatchAiProject(folder);
+    }
+
+    /**
+     * The Sol MCP set for an engine start (solforge, gemini, clinepass, then the workspace's sol-testkit, tiger-mcp and
+     * other .mcp.json servers), all run from a copy of the published shim that a publish cannot replace or kill.
+     * Null when there is no shim.
+     */
+    private IReadOnlyList<SolMcpServers.Server>? AiMcpServers(string folder)
+    {
+        if (SolforgeMcpService.FindShim() is not { } published) return null;
+        string shim = SolMcpServers.RunCopy(published, Path.Combine(McpDiscovery.Folder, "bin"));
+        // ask_gemini only when agy is installed: it runs the user's own agy login, never a copied token.
+        return SolMcpServers.Collect(folder, shim, gemini: AiResolved("agy") is not null,
+            clinePass: settings.AiAskClinePass && AiResolved("cline") is not null);
+    }
+
+    /** Shown in the AI panel: MCP servers whose exe, script or folder is missing, or a shim that does not answer. */
+    private volatile string? aiMcpWarning;
+    private int aiMcpCheck;
+
+    /** Checks every server's files and that solforge-mcp answers initialize, off the UI thread. */
+    private void CheckAiMcp(IReadOnlyList<SolMcpServers.Server> servers)
+    {
+        int run = Interlocked.Increment(ref aiMcpCheck);
+        aiMcpWarning = null;
+        string path = aiFreshPath.Length > 0 ? aiFreshPath : EngineCommands.FreshPath();
+        _ = Task.Run(async () =>
+        {
+            var problems = SolMcpServers.CheckFiles(servers, path).ToList();
+            var solforge = servers[0];
+            if (File.Exists(solforge.Command)
+                && await SolMcpServers.Probe(solforge.Command, solforge.Args, TimeSpan.FromSeconds(15)) is { } error)
+                problems.Add($"{solforge.Name}: {error}");
+            if (run != Volatile.Read(ref aiMcpCheck)) return;
+            aiMcpWarning = problems.Count == 0 ? null
+                : "MCP servers that will not connect (fix the path or republish Solforge, then Start again):
+  " + string.Join("
+  ", problems);
+        });
+    }
+
+    /** Draws the MCP warning, if any, above the AI terminal. */
+    private void DrawAiMcpWarning()
+    {
+        if (aiMcpWarning is { } warning) AiNote(SolTheme.Sun, warning);
     }
 
     /** Claude Code's own MCP config, prompt hook, system prompt and --add-dir folders (EngineLaunch). */
     private string AiClaudeArguments(string folder)
     {
         EngineLaunch.ClaudeFiles? files = null;
-        if (SolforgeMcpService.FindShim() is { } shim)
+        if (AiMcpServers(folder) is { } servers)
         {
-            // ask_gemini only when agy is installed: it runs the user's own agy login, never a copied token.
-            try
-            {
-                files = EngineLaunch.WriteClaudeFiles(folder, shim, gemini: AiResolved("agy") is not null,
-                    clinePass: settings.AiAskClinePass && AiResolved("cline") is not null);
-            }
+            try { files = EngineLaunch.WriteClaudeFiles(folder, servers[0].Command, servers: servers); }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             { aiServiceError = "config: " + exception.Message; }
         }

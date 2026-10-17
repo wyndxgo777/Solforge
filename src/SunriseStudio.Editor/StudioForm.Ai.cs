@@ -116,6 +116,7 @@ public sealed partial class StudioForm
         ImGui.BeginChild("ai-terminal-area", Vector2.Zero, ImGuiChildFlags.None,
             card && aiTerminal.Terminal is null ? ImGuiWindowFlags.None : ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
         if (aiInstallNote is { } note) AiNote(note.Ok ? SolTheme.Ok : SolTheme.Sun, note.Text);
+        DrawAiMcpWarning();
         if (card && aiTerminal.Terminal is { HasExited: false })
             AiNote(SolTheme.Sun, $"{engine.Name} is not installed. Stop the running session to install it.");
         else if (card) DrawAiInstallCard(engine);
