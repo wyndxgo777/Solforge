@@ -60,6 +60,7 @@ public sealed partial class StudioForm
                 "list_creation_types" => AiCreationTypes(McpJson.String(args, "filter")),
                 "get_help" => await OnUi(() => AiHelp(args)).WaitAsync(cancel),
                 "get_player_position" => await AiPlayerPositionAsync(args, cancel),
+                "check_mission_script" or "simulate_mission" => await AiMissionHostAsync(tool, args, cancel),
                 "describe_creation" => await OnUi(() => AiDescribeCreation(McpJson.String(args, "key") ?? "", McpJson.String(args, "mode") ?? "")).WaitAsync(cancel),
                 _ => AiError("Unknown tool.")
             };

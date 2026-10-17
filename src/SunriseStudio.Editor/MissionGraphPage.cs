@@ -196,6 +196,7 @@ public sealed partial class MissionGraphPage
     /** Every problem, one per line; without a schema it also says API calls were not checked. */
     private void DrawChecks(IReadOnlyList<string> calls, string sdk, int problems)
     {
+        DrawHost();
         if (problems == 0)
         {
             ImGui.TextDisabled(apiSchema is null ? "No problems found; API calls not checked" : "No problems found");

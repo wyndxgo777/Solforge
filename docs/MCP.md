@@ -110,6 +110,8 @@ In the viewport, the player shows as an orange ring with a facing arrow and a br
 
 - `open_map` takes a map, a mission, or both. A mission alone opens on its own map, and a map alone lists its missions.
 - `list_missions` shows only the open map's missions unless you give `map` or `all=true`.
+- `check_mission_script` {path} checks a Lua mission script without the game: syntax, every mission key and hash it names, Slot constants against the open mission's objects, and the script library's `check()`. Problems carry line numbers. It is the Graph panel's **Checks > Check script** button.
+- `simulate_mission` {path, mode} walks a campaign script step by step through a fake game host. The modes are `play`, `skip`, `cutscene_never_loads` and `rejoin`. It returns the step trace, stalls, script errors and missing mocks. It is the **Checks > Simulate** button.
 
 ## Shaders, animations and audio
 

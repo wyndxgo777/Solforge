@@ -345,7 +345,8 @@ public static partial class SolforgeTools
             .. PlayerTools(host, Read),
             .. GraphTools(host),
             .. AssetTools(host, Read),
-            .. AutomaticModeTools(host)
+            .. AutomaticModeTools(host),
+            .. MissionHostTools(host, Read)
         ];
     }
 
