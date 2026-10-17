@@ -253,7 +253,7 @@ async Task StdioRoundTrip()
             "open_map", "open_asset", "set_viewport_rendering", "edit_placement", "edit_bounds", "revert_object_edit",
             "apply_item_edit", "apply_vendor_edit", "start_creation", "replace_texture_pixels", "build_project",
             "set_settings", "set_mod_details", "close_map", "close_asset", "open_project", "create_project", "close_project", "build_to_folder", "update_running_game", "reload_mission_scripts",
-            .. SolforgeTools.DecompToolNames, .. SolforgeTools.PackageDataToolNames, .. SolforgeTools.MediaToolNames,
+            .. SolforgeTools.DecompToolNames, .. SolforgeTools.PackageDataToolNames, .. SolforgeTools.SchemaToolNames, .. SolforgeTools.MediaToolNames,
             "list_content_families", "list_content", "get_content", "validate_content", "get_subclass_layout", "check_subclass_build", "get_help",
             "create_content", "update_content", "delete_content", "export_content",
             "list_ui_controls", "ui_invoke", "ui_set_value", "ui_set_checked", "ui_select",

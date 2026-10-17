@@ -168,8 +168,6 @@ public static class TagSchemaReader
             case "bool8" when raw > 1:
                 issues.Add(new(path, value.Offset, $"boolean byte is {raw}", true)); break;
         }
-        if (field.Classes is { Count: > 0 } && field.Type is "tag" or "relptr_tag" && !allowed && raw is not (0 or 0xFFFFFFFF))
-            issues.Add(new(path, value.Offset, $"{value.Text} should be a tag of class {string.Join("/", field.Classes.Select(type => $"0x{type:X8}"))} (checked by the caller with the catalog)", false));
         if (allowed || value.Number is not { } n || field.Type == "array") return;
         if (field.Min is { } min && n < min) issues.Add(new(path, value.Offset, $"{value.Text} is below the minimum {min.ToString(CultureInfo.InvariantCulture)}", true));
         if (field.Max is { } max && n > max) issues.Add(new(path, value.Offset, $"{value.Text} is above the maximum {max.ToString(CultureInfo.InvariantCulture)}", true));

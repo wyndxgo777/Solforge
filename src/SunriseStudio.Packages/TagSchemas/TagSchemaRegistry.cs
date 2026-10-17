@@ -25,7 +25,7 @@ public sealed class TagSchemaRegistry
     private TagSchemaRegistry(IEnumerable<TagSchema> schemas, List<string> problems)
     {
         byId = new(StringComparer.OrdinalIgnoreCase);
-        byClass = [];
+        byClass = new();
         foreach (var schema in schemas)
         {
             if (byId.TryGetValue(schema.Id, out var earlier) && earlier.Class is { } old && byClass.GetValueOrDefault(old) == earlier) byClass.Remove(old);
