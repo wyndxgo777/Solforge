@@ -27,25 +27,41 @@ public static class ContentFamilies
     public const string Subclass = "subclass", Ability = "ability", DamageType = "damage_type", LootPool = "loot_pool",
         Enemy = "enemy", Activity = "activity", Artifact = "artifact";
 
+    /** Where the custom data module lands in an export (ContentExport.CustomDataPath). */
+    private const string CustomData = "server/scripts/sol_custom_data.lua";
+
     public static IReadOnlyList<ContentFamily> All { get; } =
     [
-        new(Subclass, "Subclasses", typeof(SubclassDefinition), RuntimeSupport.Partial, "server/data/subclass_nodes.tsv + server/scripts/sol_content.lua",
+        new(Subclass, "Subclasses", typeof(SubclassDefinition), RuntimeSupport.Partial, "server/data/subclass_nodes.tsv + " + CustomData,
             "Node and path names and descriptions are live (the server reads subclass_nodes.tsv). Selection limits and rules mirror the " +
-            "server's. New nodes, supers, aspects and fragments are authoring only until the server reads sol_content.lua; a new subclass item " +
-            "comes from Clone subclass (start_creation key subclass)."),
-        new(Ability, "Abilities", typeof(AbilityDefinition), RuntimeSupport.AuthoringOnly, "server/scripts/sol_content.lua",
-            "Supers, grenades, melees, class abilities, movement, aspects and fragments as data; sandbox perk indices reference real perks."),
-        new(DamageType, "Damage types", typeof(DamageTypeDefinition), RuntimeSupport.AuthoringOnly, "server/scripts/sol_content.lua",
-            "Kinetic, arc, solar and void are built in; custom types are data for enemies and abilities."),
+            "server's (6 nodes: super + 5 perks, 2 per path, for every subclass). New nodes, supers, aspects and fragments are authoring " +
+            "only: 86657 talent grids come from the client's ability_buckets.bin. A new subclass item comes from Clone subclass " +
+            "(start_creation key subclass)."),
+        new(Ability, "Abilities", typeof(AbilityDefinition), RuntimeSupport.Partial, CustomData,
+            "Live: sandbox_perks join the character's sandbox perk bank while plug_hash is selected or plugged (the server builds the " +
+            "character record). Authoring only: cooldown, charges, duration, damage, radius and stats are sandbox values the client " +
+            "(physics host) simulates; the server serves them on GET /api/content but no client writer applies them yet."),
+        new(DamageType, "Damage types", typeof(DamageTypeDefinition), RuntimeSupport.AuthoringOnly, CustomData,
+            "Authoring only: damage and shield resolution (matching_shield_multiplier, against) run on the physics host, the client; " +
+            "the server only senses damage fractions and has nothing to scale. Values are served on GET /api/content; custom types " +
+            "stay valid references for enemies and abilities."),
         new(LootPool, "Loot pools", typeof(LootPoolDefinition), RuntimeSupport.Live, "server/scripts/loot_pools.lua",
             "The server's loot_pools settings module (server/loot/loot_pools.h): pools layer over the built-in ones by id, and enemy_kill rules " +
             "pay drops per activity, bubble or region. Copy the file to Sunrise\\scripts beside the server."),
-        new(Enemy, "Enemies", typeof(EnemyDefinition), RuntimeSupport.AuthoringOnly, "server/scripts/sol_content.lua",
-            "Combatant tuning (health, shields, resistances, loot) as data for mission scripts; spawning stays in mission Lua."),
-        new(Activity, "Activities", typeof(ActivityDefinition), RuntimeSupport.AuthoringOnly, "server/scripts/sol_content.lua",
-            "Objective chains, fireteam limits, checkpoints and rewards, validated for unreachable steps; the mission script runs them."),
-        new(Artifact, "Seasonal artifact", typeof(ArtifactDefinition), RuntimeSupport.AuthoringOnly, "server/scripts/sol_content.lua",
-            "Columns of mods with unlock thresholds (Studio.md Phase 38)."),
+        new(Enemy, "Enemies", typeof(EnemyDefinition), RuntimeSupport.Partial, CustomData,
+            "Live: squads bind the enemy to map squads (id or slot name, '*' prefix, optional activity); the server places squads, so " +
+            "their member counts (or count_scale) apply to script placements, and each death in a bound squad rolls loot_pool at " +
+            "loot_chance for everyone in the activity. Authoring only: health, shields, damage_scale, resistances and level are " +
+            "simulated by the physics host (the client); served on GET /api/content. Spawning stays in mission Lua."),
+        new(Activity, "Activities", typeof(ActivityDefinition), RuntimeSupport.Partial, CustomData,
+            "Live: fireteam_min/max are enforced at launch into packages starting with mission_tag (or map_tag), and rewards (loot " +
+            "pools, items) are paid to everyone when the program bound to mission_tag reports activity_complete. Tag hashes cannot " +
+            "bind: use package names. Authoring only: the objective chain and encounters are validated data the mission script runs " +
+            "(require(\"sol_custom_data\")); the server has no generic objective runner."),
+        new(Artifact, "Seasonal artifact", typeof(ArtifactDefinition), RuntimeSupport.Live, CustomData,
+            "The first artifact (by id) replaces the native purchase rules: only perks with a plug_hash can be bought, at most " +
+            "max_unlocks, and a column opens after unlock_after earlier mods; the Sol client hides rows not on it. A perk's " +
+            "sandbox_perks join the perk bank while its mod is plugged. Names and descriptions shown are the mod item's own."),
     ];
 
     /** Finds a family by id (case-insensitive); null when unknown. */
@@ -61,6 +77,8 @@ public static class ContentFamilies
         ("Talent-grid nodes in packages", "86657 subclass talent grids are read by the server from ability_buckets.bin, which the client writes; Solforge does not write grids."),
         ("Vendor rotations and reward timers", "Vendor sale rows are editable (apply_vendor_edit); rotation schedules are server state with no settings module."),
         ("Quests and bounties", "Quest steps are investment items plus server pursuit state (sol_pursuits); no structured quest document yet."),
-        ("Seasonal artifact in game", "No artifact UI or progression reader in 86657 or the server yet; the document is authoring only."),
+        ("Combat tuning (health, damage, elements, ability timings)", "Simulated by the physics host (the client); the server " +
+            "serves the values on GET /api/content but no client writer applies them yet."),
+        ("Artifact perk names and art", "The artifact screen shows each mod item's own strings and icon; new mod items need item cloning."),
     ];
 }

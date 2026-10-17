@@ -230,13 +230,13 @@
       "id": "36",
       "title": "Activity, Strike & Raid Director",
       "status": "partial",
-      "notes": "Solforge.Content activity documents (content/activity): type, destination, map/mission tags, fireteam caps, objective graph with reachability and completion checks, encounters, rewards (loot pools + items); Window > Content editors + MCP content tools. No server reader yet (exports to sol_content.lua)."
+      "notes": "Solforge.Content activity documents (content/activity): type, destination, map/mission tags, fireteam caps, objective graph with reachability and completion checks, encounters, rewards (loot pools + items); Window > Content editors + MCP content tools. Exports to sol_custom_data.lua; the server enforces fireteam limits and pays rewards, the objective chain stays mission-script data."
     },
     {
       "id": "37",
       "title": "Combatant, AI & Encounter Builder",
       "status": "partial",
-      "notes": "Solforge.Content enemy documents: race, rank incl. champions, base tag, health/shields/resistances, abilities, loot pool cross-reference; authoring only until the server reads sol_content.lua."
+      "notes": "Solforge.Content enemy documents: race, rank incl. champions, base tag, health/shields/resistances, abilities, loot pool cross-reference; exported to sol_custom_data.lua: squad bindings (member counts) and per-kill loot_pool drops are live on the server; health, shields and resistances stay client-side."
     },
     {
       "id": "38",

@@ -95,11 +95,15 @@ public sealed record ExportedFile(string RelativePath, string Text);
 
 /**
  * Builds the server-side files from a project's content: server/scripts/loot_pools.lua (live),
- * server/data/subclass_nodes.tsv (live names) and server/scripts/sol_content.lua (every document as
- * plain data, for mission scripts and future server readers).
+ * server/data/subclass_nodes.tsv (live names) and server/scripts/sol_custom_data.lua (every document as
+ * plain data: the server's custom data reader, server/activity/authored_content, and mission scripts read it).
+ * Not sol_content: that name is the server's content-access gate (sol-server src/sol_content.h).
  */
 public static class ContentExport
 {
+    /** The custom data module, relative to the export folder; the server reads Sunrise\scripts\sol_custom_data.lua. */
+    public const string CustomDataPath = "server/scripts/sol_custom_data.lua";
+
     /** Builds the export files (path and text) for a set of documents. */
     public static IReadOnlyList<ExportedFile> Build(IReadOnlyList<ContentDocument> documents)
     {
@@ -123,9 +127,10 @@ public static class ContentExport
                 if (members.Count > 0) all[family.Id] = members;
             }
             all["schema"] = ContentDocument.CurrentSchema;
-            files.Add(new("server/scripts/sol_content.lua", LuaData.Module(all,
-                "Project Sol content written by Solforge (content/<family>/<id>.json). Plain data: no code runs.\n" +
-                "Families marked authoring-only in Solforge have no server reader yet; mission scripts may read this table.")));
+            files.Add(new(CustomDataPath, LuaData.Module(all,
+                "Project Sol custom data written by Solforge (content/<family>/<id>.json). Plain data: no code runs.\n" +
+                "Copy to Sunrise\\scripts\\sol_custom_data.lua beside the server; it is re-read when it changes (/content status).\n" +
+                "Live parts per family: Solforge list_content_families. Mission scripts may require(\"sol_custom_data\").")));
         }
         return files;
     }
