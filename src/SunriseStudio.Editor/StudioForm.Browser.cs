@@ -349,6 +349,7 @@ public sealed partial class StudioForm
                     if (clone.Available && (!workspace.IsProjectTag(row.Entry.TagHash) || clone.ClonesProject))
                         CreationMenuItem("Clone", clone, () => StartCreation(clone, row.Entry.TagHash, row.Name));
                     if (UiAuto.MenuItem("Copy tag")) ImGui.SetClipboardText($"{row.Entry.TagHash:X8}");
+                    if (workspace.Investment?.FindItem(row.Entry.TagHash) is not null && UiAuto.MenuItem("Where is this used...")) BeginItemSources(row.Entry.TagHash);
                     ImGui.EndPopup();
                 }
                 ImGui.PopID();

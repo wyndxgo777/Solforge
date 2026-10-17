@@ -58,6 +58,7 @@ public sealed partial class StudioForm
                 "search_items" or "get_item" or "search_perks" or "list_vendors" or "get_vendor" => await AiInvestmentAsync(tool, args, cancel),
                 "list_shaders" or "get_shader" or "list_animations" or "get_animation" or "list_audio" or "get_audio" => await AiAssetAsync(tool, args, cancel),
                 "list_creation_types" => AiCreationTypes(McpJson.String(args, "filter")),
+                "compare_with_base" or "get_item_sources" => await AiItemSourceQueryAsync(tool, args, cancel),
                 "get_help" => await OnUi(() => AiHelp(args)).WaitAsync(cancel),
                 "list_commands" => await OnUi(AiCommandStates).WaitAsync(cancel),
                 "get_player_position" => await AiPlayerPositionAsync(args, cancel),
@@ -607,6 +608,7 @@ public sealed partial class StudioForm
             case "apply_graph": return AiApplyGraph(args);
             case "create_mission_script": return AiCreateMissionScript(args);
             case "apply_vendor_edit": return AiApplyVendorEdit(args);
+            case "revert_to_base": return AiRevertToBase(args);
             case "start_creation": return AiStartCreation(args);
             case "replace_texture_pixels":
             {

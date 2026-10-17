@@ -118,7 +118,7 @@ public static partial class SolforgeTools
     {
         McpTool Read(string name, string description, JsonObject schema, Func<JsonObject, CancellationToken, Task<McpToolResult>> run) =>
             new(name, description, schema, false, async (args, cancel) =>
-                host.Paused && name is not ("read_project_file" or "search_project" or "search_reference" or "read_reference") && !CatalogTools.Contains(name) && !ContentReadTools.Contains(name) && !AssetReadTools.Contains(name)
+                host.Paused && name is not ("read_project_file" or "search_project" or "search_reference" or "read_reference") && !CatalogTools.Contains(name) && !ContentReadTools.Contains(name) && !AssetReadTools.Contains(name) && !ItemSourceReadTools.Contains(name)
                     ? McpToolResult.Error("The user paused context publishing in Solforge's AI workspace.")
                     : await run(args, cancel).ConfigureAwait(false));
         McpTool Act(string name, string description, JsonObject schema, Func<JsonObject, string?> validate, Func<JsonObject, string> summary) =>
@@ -352,7 +352,8 @@ public static partial class SolforgeTools
             .. AutomaticModeTools(host),
             .. CommandTools(host),
             .. InsightTools(host, Read),
-            .. MissionHostTools(host, Read)
+            .. MissionHostTools(host, Read),
+            .. ItemSourceTools(host, Read, Act)
         ];
     }
 

@@ -268,11 +268,11 @@ async Task StdioRoundTrip()
             "list_graph_node_types", "list_graphs", "get_graph", "compile_graph", "create_mission_script", "create_graph", "edit_graph", "apply_graph",
             "list_mission_lib_calls", "insert_mission_lib_call",
             "list_shaders", "get_shader", "list_animations", "get_animation", "list_audio", "get_audio", .. SolforgeTools.AutomaticTools,
-            .. SolforgeTools.CommandToolNames, "mission_coverage", .. SolforgeTools.MissionHostToolNames];
+            .. SolforgeTools.CommandToolNames, "mission_coverage", .. SolforgeTools.MissionHostToolNames, .. SolforgeTools.ItemSourceToolNames];
 
         string[] actions = ["select_object", "focus_camera", "highlight", "open_file", "apply_project_edit", "open_map", "open_asset",
             "set_viewport_rendering", "edit_placement", "edit_bounds", "revert_object_edit", "apply_item_edit", "apply_vendor_edit",
-            "start_creation", "replace_texture_pixels", "build_project", "set_settings", "set_mod_details", "close_map", "close_asset", "open_project", "create_project", "close_project", "build_to_folder", "update_running_game", "reload_mission_scripts", "rename_function", "ui_invoke", "ui_set_value", "ui_set_checked", "ui_select", "set_viewport_stream", "create_content", "update_content", "delete_content", "export_content", "create_mission_script", "create_graph", "edit_graph", "apply_graph", "insert_mission_lib_call", .. SolforgeTools.CommandToolNames.Where(name => name != "list_commands")];
+            "start_creation", "replace_texture_pixels", "build_project", "set_settings", "set_mod_details", "close_map", "close_asset", "open_project", "create_project", "close_project", "build_to_folder", "update_running_game", "reload_mission_scripts", "rename_function", "ui_invoke", "ui_set_value", "ui_set_checked", "ui_select", "set_viewport_stream", "create_content", "update_content", "delete_content", "export_content", "create_mission_script", "create_graph", "edit_graph", "apply_graph", "insert_mission_lib_call", "revert_to_base", .. SolforgeTools.CommandToolNames.Where(name => name != "list_commands")];
         Expect(tools.Select(tool => tool?["name"]?.ToString()).SequenceEqual(expected), "tool names: " + string.Join(",", tools.Select(tool => tool?["name"])));
         foreach (var tool in tools)
         {
@@ -344,6 +344,17 @@ async Task StdioRoundTrip()
             ["arguments"] = new JsonObject { ["id"] = "w:9", ["position"] = new JsonArray(1, 2, 3) } });
         Expect(move["isError"]?.GetValue<bool>() == true && host.Approvals == asked + 1 && host.LastSummary?.Contains("[1,2,3]") == true,
             "edit_placement waits for approval: " + host.LastSummary);
+        // T1.4/T1.5: compare_with_base and get_item_sources are host reads; revert_to_base checks its hash, then waits for approval.
+        var compared = await Call(34, "tools/call", new JsonObject { ["name"] = "compare_with_base", ["arguments"] = new JsonObject { ["hash"] = "0x80A1B2C3", ["field"] = "0x40+8" } });
+        var sources = await Call(35, "tools/call", new JsonObject { ["name"] = "get_item_sources", ["arguments"] = new JsonObject { ["item"] = "Ace of Spades", ["kind"] = "vendor" } });
+        Expect(compared["isError"]?.GetValue<bool>() != true && sources["isError"]?.GetValue<bool>() != true
+            && host.Queries.Contains("compare_with_base") && host.Queries.Contains("get_item_sources"), "compare_with_base and get_item_sources reach the host");
+        Expect(tools.First(row => row?["name"]?.ToString() == "get_item_sources")!["inputSchema"]?["properties"]?["offset"] is not null, "get_item_sources is paged");
+        asked = host.Approvals;
+        var badRevert = await Call(36, "tools/call", new JsonObject { ["name"] = "revert_to_base", ["arguments"] = new JsonObject { ["hash"] = "speaker" } });
+        Expect(badRevert["isError"]?.GetValue<bool>() == true && host.Approvals == asked, "revert_to_base validates its hash before asking");
+        await Call(37, "tools/call", new JsonObject { ["name"] = "revert_to_base", ["arguments"] = new JsonObject { ["hash"] = "0x80A1B2C3", ["field"] = "0x40+8" } });
+        Expect(host.Approvals == asked + 1 && host.LastSummary?.Contains("0x40+8") == true, "revert_to_base waits for approval: " + host.LastSummary);
         // UI control and live viewport tools.
         var controls = Body(await Call(40, "tools/call", new JsonObject { ["name"] = "list_ui_controls", ["arguments"] = new JsonObject { ["query"] = "grid" } }));
         Expect(controls["rows"]?[0]?["id"]?.ToString() == "main:00000003" && controls["rows"]?[0]?["checked"]?.GetValue<bool>() == true

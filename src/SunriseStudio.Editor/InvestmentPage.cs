@@ -131,6 +131,8 @@ public sealed partial class InvestmentPage : IPreparedStudioPage
         if (item.Description.Length != 0) ImGui.TextWrapped(item.Description);
         ImGui.Spacing();
         if (item.DisplayTag != 0 && UiAuto.SmallButton("Display strings")) context.Workspace.Select(item.DisplayTag);
+        if (item.DisplayTag != 0) ImGui.SameLine();
+        if (UiAuto.SmallButton("Where is this used...")) RequestWhereUsed(item.Tag);
         ImGui.SeparatorText("ITEM");
         foreach (var field in detail.Fields) Field(context, field, field.Offset == 186 ? item.Rarity : null);
         if (detail.Stats.Count != 0 || context.Workspace.CanEdit)
