@@ -93,7 +93,7 @@ public sealed partial class StudioForm
         {
             ImGui.PushID(unchecked((int)bubble.NameHash));
             string bubbleName = BubbleTitle(bubble.NameHash, bubble.Name);
-            if (ImGui.TreeNodeEx(bubbleName, ImGuiTreeNodeFlags.DefaultOpen))
+            if (UiAuto.TreeNodeEx(bubbleName, ImGuiTreeNodeFlags.DefaultOpen))
             {
                 bool visible = !hiddenBubbles.Contains(bubble.NameHash);
                 if (UiAuto.Checkbox("Visible", ref visible))
@@ -122,7 +122,7 @@ public sealed partial class StudioForm
                 {
                     ImGui.PushID(state.Ordinal);
                     var objects = missionRows.GetValueOrDefault(new(world.MissionTag!.Value, bubble.NameHash, state.Ordinal), []);
-                    if (ImGui.TreeNodeEx($"{StateTitle(state)} ({objects.Length:N0})###state"))
+                    if (UiAuto.TreeNodeEx($"{StateTitle(state)} ({objects.Length:N0})###state"))
                     {
                         var stateKey = new WorldStateKey(world.MissionTag!.Value, state.BubbleNameHash, state.Ordinal);
                         var stateRow = missionStates.GetValueOrDefault(stateKey);
@@ -130,7 +130,7 @@ public sealed partial class StudioForm
                         ImGui.SameLine();
                         if (UiAuto.SmallButton("Open source")) OpenObjectAsset(state.EntryTag);
                         foreach (var group in missionGroups.GetValueOrDefault(stateKey, []))
-                            if (ImGui.TreeNodeEx($"{group.Name} ({group.Rows.Length:N0})###{group.Name}"))
+                            if (UiAuto.TreeNodeEx($"{group.Name} ({group.Rows.Length:N0})###{group.Name}"))
                             {
                                 DrawMissionObjects(group.Rows);
                                 ImGui.TreePop();
@@ -140,14 +140,14 @@ public sealed partial class StudioForm
                     ImGui.PopID();
                 }
                 var shared = sharedMissionRows.GetValueOrDefault(bubble.NameHash, []);
-                if (shared.Length != 0 && ImGui.TreeNodeEx($"Shared content ({shared.Length:N0})###shared-content"))
+                if (shared.Length != 0 && UiAuto.TreeNodeEx($"Shared content ({shared.Length:N0})###shared-content"))
                 { DrawMissionObjects(shared); ImGui.TreePop(); }
                 ImGui.TreePop();
             }
             ImGui.PopID();
         }
         var unplaced = unplacedMissionRows;
-        if (unplaced.Length != 0 && ImGui.TreeNodeEx($"Shared mission objects ({unplaced.Length:N0})###shared-mission-objects"))
+        if (unplaced.Length != 0 && UiAuto.TreeNodeEx($"Shared mission objects ({unplaced.Length:N0})###shared-mission-objects"))
         { DrawMissionObjects(unplaced); ImGui.TreePop(); }
         ImGui.EndChild();
     }
@@ -195,7 +195,7 @@ public sealed partial class StudioForm
         ImGui.TextUnformatted($"{world.Scene.LightTables.Sum(table => table.Table.Rows.Count):N0} lights");
         DrawWorldRenderSettings();
         DrawMapLayers();
-        if (workspace.Names is { } names && ImGui.CollapsingHeader("Names"))
+        if (workspace.Names is { } names && UiAuto.CollapsingHeader("Names"))
         {
             var coverage = names.Coverage;
             ImGui.TextUnformatted($"{coverage.NamedTags:N0} named assets / {coverage.NamedHashes:N0} named hashes");
@@ -203,10 +203,10 @@ public sealed partial class StudioForm
             ImGui.TextDisabled(coverage.Stage);
             foreach (string diagnostic in names.Diagnostics.Take(30)) ImGui.TextWrapped(diagnostic);
         }
-        if (ImGui.CollapsingHeader("Load report"))
+        if (UiAuto.CollapsingHeader("Load report"))
             foreach (string diagnostic in world.Scene.Diagnostics.Take(100)) ImGui.TextWrapped(diagnostic);
         DrawCollisionReport(viewport!);
-        if (ImGui.CollapsingHeader("Shader report"))
+        if (UiAuto.CollapsingHeader("Shader report"))
         {
             ImGui.TextUnformatted($"{viewport!.NativePartCount:N0} native parts / {viewport.NativeFallbackPartCount:N0} visible fallback parts");
             if (viewport.NativeError is { } error) ImGui.TextWrapped(error);
@@ -218,7 +218,7 @@ public sealed partial class StudioForm
     /** Time of day, backdrop, exposure and the active lighting mode. */
     private void DrawWorldRenderSettings()
     {
-        if (!ImGui.CollapsingHeader("Environment", ImGuiTreeNodeFlags.DefaultOpen)) return;
+        if (!UiAuto.CollapsingHeader("Environment", ImGuiTreeNodeFlags.DefaultOpen)) return;
         float time = viewport!.TimeOfDay;
         if (UiAuto.SliderFloat("Time of day", ref time, 0, 1)) viewport.TimeOfDay = time;
         int backdrop = (int)viewport.Backdrop.Mode;
@@ -259,7 +259,7 @@ public sealed partial class StudioForm
     private void DrawMapLayers()
     {
         if (workspace.World is not { } world || world.MapScene.MapLayers.Count == 0
-            || !ImGui.CollapsingHeader("Authored map layers")) return;
+            || !UiAuto.CollapsingHeader("Authored map layers")) return;
         if (configuredLayerMap != world.Map.Tag || !ReferenceEquals(configuredLayerOptions, world.Options))
         {
             configuredLayerMap = world.Map.Tag;

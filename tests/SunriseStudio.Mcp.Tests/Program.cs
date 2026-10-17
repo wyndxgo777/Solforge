@@ -70,6 +70,8 @@ try
     checks.Add("Sol MCP set: solforge, gemini and clinepass run the current shim; .mcp.json servers above the project and sol-testkit/tiger-mcp from the user's configs are carried; Claude's --mcp-config holds them all; agy and Cline merges keep the user's own servers and refresh old shim entries; run copy of solforge-mcp; missing exe/script checks and the initialize probe");
     await MultiAgentChecks.Run();
     checks.Add("multi-agent: sessions from initialize clientInfo and the shim pid header, dead and idle sessions dropped, open_map/close_map refuse another session's recent map unless force (expiry, same session, UI change, mission-only claim), builds and deploys say who started them, map=<tag> reads answer from a background view without touching the UI map, get_sessions");
+    await CommandChecks.Run(Path.Combine(scratch, "commands"), new FixtureHost(dataProject));
+    checks.Add("command coverage: list_commands (catalog, query, paused), run_command, show_panel, set_viewport_options, set_camera, export_asset, import_asset, project_change and arm_file_dialog validate before one approve click; catalog and get_help tool map name only real tools; header controls open with ui_invoke/ui_set_checked");
     Approvals();
     checks.Add("auto-allow: Claude Code, agy and Cline allow prompts match only with a one-time Yes/Allow highlighted at the bottom; No, scrollback, quotes, persistent rows and free text never do");
     foreach (string check in checks) Console.WriteLine("PASS " + check);

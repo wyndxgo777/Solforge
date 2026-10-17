@@ -70,6 +70,17 @@ Each engine runs on its own official client and its own sign-in. Claude Code use
 - `ui_invoke`, `ui_set_value`, `ui_set_checked` and `ui_select` act on a control by `id` or by visible label (`query`, narrowed by `window` and `kind`). A query that matches several controls equally is refused and lists them.
 - Every action needs the approval click.
 - The AI workspace and Settings > AI are never listed and cannot be driven.
+- Collapsing headers and tree nodes are kind `header`: `ui_invoke` opens one, `ui_set_checked` opens or closes it. Icon buttons are listed under their tooltip. Colour fields are `text` controls holding `r, g, b, a` (0-1); `ui_set_value` also takes `#RRGGBB[AA]`.
+
+## Commands, panels and file pickers
+
+- `list_commands` lists every menu command and toolbar toggle by a stable id (`file.*`, `edit.*`, `assets.*`, `build.*`, `view.*`, `toolbar.*`, `window.*`, `nav.*`, `help.*`): menu path, input, the dedicated tool to prefer, and whether it is enabled now. It needs no approval and works while paused.
+- `run_command` runs one. A command that opens a native file or folder picker takes `path` instead; exports still refuse paths inside the project or the install.
+- `show_panel` opens a panel, editor window or dialog so `list_ui_controls` can see its controls.
+- `set_viewport_options` sets wireframe, grid, game shaders, full detail, quality, lighting, projection, view presets, axis gizmo and statistics. `set_camera` places the camera (`eye` + `look_at`), re-centres it (`look_at`), turns it (`yaw`, `pitch` in degrees) or zooms it (`distance`).
+- `export_asset` and `import_asset` cover the Assets menu by `kind`. `project_change` reverts, removes, compares or exports Project changes rows.
+- `arm_file_dialog` answers the next picker that a `ui_invoke` opens (Browse buttons, audio, weapon and mission page imports and exports).
+- `get_help` with `section: tools` maps every menu, panel and dialog to its tools. The full table is `08-docs\McpCoverage.md`.
 
 ## Live viewport
 

@@ -83,7 +83,7 @@ public sealed class ClientTestkitSection
     {
         ImGui.TextUnformatted("Installed client");
         ImGui.SameLine();
-        if (ImGui.SmallButton("Recheck##build")) RefreshBuild();
+        if (UiAuto.SmallButton("Recheck##build")) RefreshBuild();
         var report = build;
         if (report is null) { ImGui.TextDisabled(buildBusy ? "reading the DLL and hashing build outputs..." : "no result yet"); return; }
         ImGui.TextDisabled(report.Dll);
@@ -124,12 +124,12 @@ public sealed class ClientTestkitSection
             ImGui.TextDisabled($"instances {current.Instances}, handshake {current.HandshakeDetail ?? "not run"}, pad port {(current.PadUp ? "up" : "off")}, live port {(current.LiveUp ? "up" : "off")}");
             foreach (var row in current.Processes) ImGui.TextDisabled($"pid {row.Pid} {row.Name}");
         }
-        if (ImGui.Button("Check##testkit")) RefreshHealth();
+        if (UiAuto.Button("Check##testkit")) RefreshHealth();
         ImGui.SameLine();
         ImGui.BeginDisabled(restartBusy);
-        if (ImGui.Button("Restart (end it, client reconnects)")) Restart("kill");
+        if (UiAuto.Button("Restart (end it, client reconnects)")) Restart("kill");
         ImGui.SameLine();
-        if (ImGui.Button("Start HTTP")) Restart("http");
+        if (UiAuto.Button("Start HTTP")) Restart("http");
         ImGui.EndDisabled();
         if (message.Length > 0) ImGui.TextWrapped(message);
         ImGui.TextDisabled("Launched by the MCP client from .mcp.json (py -3 sol_testkit_mcp.py, stdio). A restart cuts this session's testkit tools until /mcp reconnects.");

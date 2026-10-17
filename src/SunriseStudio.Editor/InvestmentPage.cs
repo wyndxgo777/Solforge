@@ -139,7 +139,7 @@ public sealed partial class InvestmentPage : IPreparedStudioPage
             AddRowButton(context, false);
             var zero = detail.Stats.Where(stat => stat.Value == 0).ToArray();
             foreach (var stat in detail.Stats.Where(stat => stat.Value != 0)) StatRow(context, detail, stat);
-            if (zero.Length != 0 && ImGui.TreeNode($"Zero stats ({zero.Length})###zero-stats"))
+            if (zero.Length != 0 && UiAuto.TreeNode($"Zero stats ({zero.Length})###zero-stats"))
             {
                 foreach (var stat in zero) StatRow(context, detail, stat);
                 ImGui.TreePop();
@@ -219,7 +219,7 @@ public sealed partial class InvestmentPage : IPreparedStudioPage
         foreach (var sale in vendor.Sales)
         {
             ImGui.PushID(sale.Index);
-            if (ImGui.TreeNode($"{sale.Name}##sale{sale.Index}"))
+            if (UiAuto.TreeNode($"{sale.Name}##sale{sale.Index}"))
             {
                 DrawSaleActions(context, sale);
                 Field(context, sale.ItemField); Field(context, sale.CategoryField);
@@ -318,7 +318,7 @@ public sealed partial class InvestmentPage : IPreparedStudioPage
 
     private static void Report(string title, IReadOnlyList<string> errors)
     {
-        if (errors.Count == 0 || !ImGui.CollapsingHeader($"{title} ({errors.Count})###{title}")) return;
+        if (errors.Count == 0 || !UiAuto.CollapsingHeader($"{title} ({errors.Count})###{title}")) return;
         StudioUi.Facts(title, errors);
     }
     private static InvestmentStatCurve? DisplayCurve(InvestmentItemDetail detail, InvestmentStat stat) =>

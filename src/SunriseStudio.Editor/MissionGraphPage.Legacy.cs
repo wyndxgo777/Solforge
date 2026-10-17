@@ -25,9 +25,12 @@ public sealed partial class MissionGraphPage
             {
                 if (UiAuto.MenuItem("Export original Lua"))
                 {
-                    using var dialog = new FolderBrowserDialog { Description = "Recover legacy Lua source", UseDescriptionForTitle = true };
-                    if (dialog.ShowDialog() == DialogResult.OK) Try(() =>
-                        Note("Exported " + MissionProject.ExportLegacy(project, asset.Id, dialog.SelectedPath, workspace.Catalog!.GameRoot)));
+                    if (AiFileDialog.Pick(() =>
+                        {
+                            using var dialog = new FolderBrowserDialog { Description = "Recover legacy Lua source", UseDescriptionForTitle = true };
+                            return dialog.ShowDialog() == DialogResult.OK ? dialog.SelectedPath : null;
+                        }, folder: true) is { } folder) Try(() =>
+                        Note("Exported " + MissionProject.ExportLegacy(project, asset.Id, folder, workspace.Catalog!.GameRoot)));
                 }
                 ImGui.EndPopup();
             }

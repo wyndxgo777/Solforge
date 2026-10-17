@@ -432,7 +432,7 @@ internal sealed class BlueprintCanvas
         {
             if (focusQuery) { ImGui.SetKeyboardFocusHere(); focusQuery = false; }
             ImGui.SetNextItemWidth(320);
-            if (ImGui.InputTextWithHint("##add-query", "Search nodes", ref query, 128)) menuIndex = 0;
+            if (UiAuto.InputTextWithHint("##add-query", "Search nodes", ref query, 128)) menuIndex = 0;
             if (menuPin is { } pin) ImGui.TextDisabled($"Linking from {PinTypes.Label(pin.Type)} {(pin.Output ? "output" : "input")}");
             var results = editor.Search(query, menuPin?.Type, menuPin?.Output ?? true);
             if (ImGui.IsKeyPressed(ImGuiKey.DownArrow)) menuIndex = Math.Min(menuIndex + 1, Math.Max(0, results.Count - 1));
@@ -451,7 +451,7 @@ internal sealed class BlueprintCanvas
                 bool chosen = i == menuIndex;
                 string label = $"{result.Type.Title}{(result.NeedsConversion ? "  (converts)" : "")}";
                 if (query.Length > 0) label += $"  [{result.Type.Category}]";
-                if (ImGui.Selectable($"{label}##{result.Type.Id}", chosen) || chosen && enter)
+                if (UiAuto.Selectable($"{label}##{result.Type.Id}", chosen) || chosen && enter)
                 {
                     var at = menuWorld;
                     if (menuPin is { Output: false }) at.X -= GraphLayout.Width + 60;
@@ -473,34 +473,34 @@ internal sealed class BlueprintCanvas
         {
             var node = editor.Node(contextNode);
             int count = editor.Selection.Count;
-            if (ImGui.MenuItem("Delete", "Del")) editor.Remove(editor.Selection.ToList());
-            if (ImGui.MenuItem("Duplicate", "Ctrl+D")) editor.Duplicate();
-            if (ImGui.MenuItem("Copy", "Ctrl+C")) ImGui.SetClipboardText(editor.Copy());
-            if (ImGui.MenuItem("Fold / unfold", "double-click")) editor.ToggleCollapsed(editor.Selection.ToList());
-            if (ImGui.MenuItem("Comment selection", "C", false, editor.Scope is null)) editor.AddComment(0, 0);
+            if (UiAuto.MenuItem("Delete", "Del")) editor.Remove(editor.Selection.ToList());
+            if (UiAuto.MenuItem("Duplicate", "Ctrl+D")) editor.Duplicate();
+            if (UiAuto.MenuItem("Copy", "Ctrl+C")) ImGui.SetClipboardText(editor.Copy());
+            if (UiAuto.MenuItem("Fold / unfold", "double-click")) editor.ToggleCollapsed(editor.Selection.ToList());
+            if (UiAuto.MenuItem("Comment selection", "C", false, editor.Scope is null)) editor.AddComment(0, 0);
             ImGui.Separator();
-            if (ImGui.MenuItem("Collapse to function", "", false, editor.Scope is null && count > 0))
+            if (UiAuto.MenuItem("Collapse to function", "", false, editor.Scope is null && count > 0))
             {
                 try { editor.CollapseToFunction("Function " + (editor.Document.Functions.Count + 1)); }
                 catch (InvalidOperationException exception) { Say(exception.Message); }
             }
             if (node is { Type: NodeLibrary.FunctionCall })
             {
-                if (ImGui.MenuItem("Open function")) { editor.Enter(node.Get("function")); FrameAll(); }
-                if (ImGui.MenuItem("Expand function here")) editor.ExpandFunctionCall(node.Id);
+                if (UiAuto.MenuItem("Open function")) { editor.Enter(node.Get("function")); FrameAll(); }
+                if (UiAuto.MenuItem("Expand function here")) editor.ExpandFunctionCall(node.Id);
             }
-            if (ImGui.BeginMenu("Align", count > 1))
+            if (UiAuto.BeginMenu("Align", count > 1))
             {
                 foreach (var (align, label, keys) in new[]
                 {
                     (AlignMode.Left, "Left", "Shift+A"), (AlignMode.Right, "Right", "Shift+D"), (AlignMode.Top, "Top", "Shift+W"),
                     (AlignMode.Bottom, "Bottom", "Shift+S"), (AlignMode.CenterHorizontal, "Centre horizontally", ""), (AlignMode.CenterVertical, "Centre vertically", "")
                 })
-                    if (ImGui.MenuItem(label, keys)) editor.Align(align);
+                    if (UiAuto.MenuItem(label, keys)) editor.Align(align);
                 ImGui.Separator();
-                if (ImGui.MenuItem("Distribute horizontally", "Shift+H", false, count > 2)) editor.Distribute(true);
-                if (ImGui.MenuItem("Distribute vertically", "Shift+V", false, count > 2)) editor.Distribute(false);
-                ImGui.EndMenu();
+                if (UiAuto.MenuItem("Distribute horizontally", "Shift+H", false, count > 2)) editor.Distribute(true);
+                if (UiAuto.MenuItem("Distribute vertically", "Shift+V", false, count > 2)) editor.Distribute(false);
+                UiAuto.EndMenu();
             }
             ImGui.EndPopup();
         }
@@ -509,8 +509,8 @@ internal sealed class BlueprintCanvas
         {
             if (contextLink is { } link)
             {
-                if (ImGui.MenuItem("Delete link")) editor.Disconnect(link);
-                if (ImGui.MenuItem("Add reroute"))
+                if (UiAuto.MenuItem("Delete link")) editor.Disconnect(link);
+                if (UiAuto.MenuItem("Add reroute"))
                 {
                     var at = World(ImGui.GetWindowPos());
                     editor.InsertReroute(link, at.X, at.Y);

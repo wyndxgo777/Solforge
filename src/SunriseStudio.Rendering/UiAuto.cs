@@ -15,7 +15,7 @@ namespace SunriseStudio.Rendering;
  * Code drawn between PushBlocked and PopBlocked (the AI workspace and AI settings) is never listed or driven.
  * Everything here runs on the UI thread except Snapshot, Enqueue and Touch.
  */
-public static class UiAuto
+public static partial class UiAuto
 {
     /** Kind of command a client can send to a control. */
     public enum Op { Invoke, SetValue, SetChecked, Select }

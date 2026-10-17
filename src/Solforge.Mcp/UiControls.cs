@@ -19,15 +19,15 @@ public sealed record UiCommand(string ControlId, UiOperation Operation, string? 
 /** Search, resolution and operation checks for the ui_* tools; pure, so the checks run without Solforge. */
 public static class UiControls
 {
-    public static readonly string[] Kinds = ["button", "menu", "menu_item", "selectable", "checkbox", "radio", "tab", "text", "combo", "slider", "number"];
+    public static readonly string[] Kinds = ["button", "menu", "menu_item", "selectable", "checkbox", "radio", "tab", "text", "combo", "slider", "number", "header"];
 
     /** The operations each kind takes. */
     public static bool Allows(string kind, UiOperation operation) => operation switch
     {
-        UiOperation.Invoke => kind is "button" or "menu" or "menu_item" or "selectable" or "checkbox" or "radio" or "tab" or "combo",
+        UiOperation.Invoke => kind is "button" or "menu" or "menu_item" or "selectable" or "checkbox" or "radio" or "tab" or "combo" or "header",
         UiOperation.SetValue => kind is "text" or "slider" or "number" or "combo",
-        UiOperation.SetChecked => kind is "checkbox" or "menu_item",
-        UiOperation.Select => kind is "combo" or "tab" or "selectable" or "radio",
+        UiOperation.SetChecked => kind is "checkbox" or "menu_item" or "header",
+        UiOperation.Select => kind is "combo" or "tab" or "selectable" or "radio" or "header",
         _ => false
     };
 

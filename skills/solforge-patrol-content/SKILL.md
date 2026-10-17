@@ -35,6 +35,7 @@ Goal: edit the freeroam Lua for a destination. These are server mission scripts,
 
 ## UI fallback
 Any Solforge control can be driven with `list_ui_controls` then `ui_invoke` / `ui_set_value` / `ui_set_checked` / `ui_select` (approve click each).
+Menus, toolbar toggles and file pickers: `list_commands` then `run_command` (give `path` instead of a picker), `show_panel` before `list_ui_controls`, `export_asset` / `import_asset`, `set_viewport_options` / `set_camera`, `project_change`, `arm_file_dialog`; `get_help` with section `tools` names the tool for any menu, panel or dialog.
 Mission Graph > Installed scripts / Mod scripts opens the Lua editor; World window pages (States, Squads, Objects/Triggers) for key lookup.
 
 ## Verify

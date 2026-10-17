@@ -34,6 +34,7 @@ Goal: a new weapon item (clone of an existing one, or a new exotic) that builds,
 
 ## UI fallback
 Any Solforge control can be driven with `list_ui_controls` then `ui_invoke` / `ui_set_value` / `ui_set_checked` / `ui_select` (approve click each).
+Menus, toolbar toggles and file pickers: `list_commands` then `run_command` (give `path` instead of a picker), `show_panel` before `list_ui_controls`, `export_asset` / `import_asset`, `set_viewport_options` / `set_camera`, `project_change`, `arm_file_dialog`; `get_help` with section `tools` names the tool for any menu, panel or dialog.
 Weapons > Clone / New dialog; Investment tab for fields, stats, perks; Edit workflow for icon/tuning; Build > Build and install.
 
 ## Verify

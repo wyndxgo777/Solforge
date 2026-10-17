@@ -17,7 +17,7 @@ public sealed partial class AudioPage
     /** Picks a transition container, source and destination, then renders the change between them. */
     private void DrawTransitions(AudioAnalysis analysis)
     {
-        if (analysis.TransitionContainers.Count == 0 || !ImGui.TreeNode("Transition audition")) return;
+        if (analysis.TransitionContainers.Count == 0 || !UiAuto.TreeNode("Transition audition")) return;
         if (!analysis.TransitionContainers.ContainsKey(transitionContainer))
             transitionContainer = analysis.TransitionContainers.Values.OrderByDescending(value => value.Rules.Count).First().Id;
         ImGui.SetNextItemWidth(310);
@@ -66,7 +66,7 @@ public sealed partial class AudioPage
                 ImGui.TextDisabled($"{meter.Tempo:0.###} BPM  |  {meter.BeatsPerBar}/{meter.BeatValue}");
             }
             catch (NotSupportedException) { }
-            if (source.Cues is { Count: > 2 } && ImGui.TreeNode("Source cues"))
+            if (source.Cues is { Count: > 2 } && UiAuto.TreeNode("Source cues"))
             {
                 foreach (var cue in source.Cues.Skip(1).SkipLast(1))
                     ImGui.TextUnformatted($"{(cue.PositionMs - source.Entry) / 1000:0.000} s  |  {cue.Name ?? (cue.Id == 0 ? "Custom cue" : $"Cue {cue.Id}")}");

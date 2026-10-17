@@ -23,7 +23,7 @@ public sealed partial class MissionGraphPage
             if (draftId is null) Change(Apply); else ChangeLua(Apply, draftId);
         }
         // Custom Lua already shows its editor; a typed condition keeps its code one click away.
-        else if (condition is not MissionCustomCondition && ImGui.TreeNode("Lua"))
+        else if (condition is not MissionCustomCondition && UiAuto.TreeNode("Lua"))
         { changed = FieldLua(node.Key, field); ImGui.TreePop(); }
         ImGui.PopID();
         return changed;

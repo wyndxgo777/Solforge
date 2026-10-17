@@ -32,7 +32,7 @@ public sealed partial class StudioForm
 
     private void DrawContentEditorsMenuItem()
     {
-        if (ImGui.MenuItem("Content editors", "", contentOpen)) contentOpen = !contentOpen;
+        if (UiAuto.MenuItem("Content editors", "", contentOpen)) contentOpen = !contentOpen;
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Subclasses, abilities, damage types, loot pools, enemies, activities and the seasonal artifact");
     }
 
@@ -63,7 +63,7 @@ public sealed partial class StudioForm
     {
         string[] titles = ContentFamilies.All.Select(family => family.Title).ToArray();
         ImGui.SetNextItemWidth(-1);
-        if (ImGui.Combo("##content-family", ref contentFamily, titles, titles.Length)) SelectContent(null, null);
+        if (UiAuto.Combo("##content-family", ref contentFamily, titles, titles.Length)) SelectContent(null, null);
         var family = ContentFamilies.All[Math.Clamp(contentFamily, 0, titles.Length - 1)];
         var (label, color) = family.Support switch
         {
@@ -75,17 +75,17 @@ public sealed partial class StudioForm
         if (ImGui.IsItemHovered()) { ImGui.BeginTooltip(); ImGui.PushTextWrapPos(420 * scale); ImGui.TextUnformatted(family.Notes); ImGui.PopTextWrapPos(); ImGui.EndTooltip(); }
         ImGui.Separator();
         foreach (var (_, id, _) in store.List(family.Id))
-            if (ImGui.Selectable(id, id == contentId && contentDocument?.Family == family.Id)) SelectContent(store, (family.Id, id));
+            if (UiAuto.Selectable(id, id == contentId && contentDocument?.Family == family.Id)) SelectContent(store, (family.Id, id));
         ImGui.Separator();
         ImGui.TextDisabled("New " + family.Title.ToLowerInvariant());
-        ImGui.SetNextItemWidth(-1); ImGui.InputTextWithHint("##content-new-name", "Name", ref contentNewName, 96);
-        ImGui.SetNextItemWidth(-1); ImGui.InputTextWithHint("##content-new-id", "id (blank: from the name)", ref contentNewId, 64);
+        ImGui.SetNextItemWidth(-1); UiAuto.InputTextWithHint("##content-new-name", "Name", ref contentNewName, 96);
+        ImGui.SetNextItemWidth(-1); UiAuto.InputTextWithHint("##content-new-id", "id (blank: from the name)", ref contentNewId, 64);
         if (family.Id is ContentFamilies.Subclass or ContentFamilies.Ability)
         {
-            ImGui.SetNextItemWidth(-1); ImGui.Combo("##content-new-class", ref contentNewClass, GuardianClassNames, GuardianClassNames.Length);
-            ImGui.SetNextItemWidth(-1); ImGui.InputTextWithHint("##content-new-element", "element (arc, solar, void...)", ref contentNewElement, 32);
+            ImGui.SetNextItemWidth(-1); UiAuto.Combo("##content-new-class", ref contentNewClass, GuardianClassNames, GuardianClassNames.Length);
+            ImGui.SetNextItemWidth(-1); UiAuto.InputTextWithHint("##content-new-element", "element (arc, solar, void...)", ref contentNewElement, 32);
         }
-        if (ImGui.Button("Create", new(-1, 0)) && contentNewName.Trim().Length > 0)
+        if (UiAuto.Button("Create", new(-1, 0)) && contentNewName.Trim().Length > 0)
         {
             string id = contentNewId.Trim().Length > 0 ? contentNewId.Trim() : SubclassInterop.Slug(contentNewName);
             if (store.Exists(family.Id, id)) contentStatus = $"{family.Id} '{id}' already exists.";
@@ -99,7 +99,7 @@ public sealed partial class StudioForm
                 contentStatus = $"Created {family.Id} '{id}'.";
             }
         }
-        if (ImGui.Button("Export all to build\\server", new(-1, 0))) ExportContent(store);
+        if (UiAuto.Button("Export all to build\\server", new(-1, 0))) ExportContent(store);
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("loot_pools.lua and sol_content.lua (server/scripts), subclass_nodes.tsv (server/data)");
     }
 
@@ -138,27 +138,27 @@ public sealed partial class StudioForm
         if (contentDocument is not { } document) { ImGui.TextDisabled("Pick a document or create one."); return; }
         ImGui.TextColored(StudioTheme.Accent, $"{document.Family} / {document.Id}");
         ImGui.SameLine();
-        if (ImGui.Button(contentDirty ? "Save*" : "Save")) SaveContent(store, document);
+        if (UiAuto.Button(contentDirty ? "Save*" : "Save")) SaveContent(store, document);
         ImGui.SameLine();
-        if (ImGui.Button("Validate")) contentIssues = store.ValidateAll(document.Family, document.Id).Select(row => row.Issue).ToList();
+        if (UiAuto.Button("Validate")) contentIssues = store.ValidateAll(document.Family, document.Id).Select(row => row.Issue).ToList();
         ImGui.SameLine();
-        if (ImGui.Button("Revert")) SelectContent(store, (document.Family, document.Id));
+        if (UiAuto.Button("Revert")) SelectContent(store, (document.Family, document.Id));
         ImGui.SameLine();
-        if (ImGui.Button("Delete") && ImGui.GetIO().KeyShift) { store.Delete(document.Family, document.Id); SelectContent(null, null); contentStatus = "Deleted."; return; }
+        if (UiAuto.Button("Delete") && ImGui.GetIO().KeyShift) { store.Delete(document.Family, document.Id); SelectContent(null, null); contentStatus = "Deleted."; return; }
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Shift+click to delete the file");
         float issuesHeight = Math.Min(contentIssues.Count, 6) * ImGui.GetTextLineHeightWithSpacing() + ImGui.GetFrameHeightWithSpacing();
         if (ImGui.BeginTabBar("content-tabs"))
         {
-            if (document is SubclassDefinition subclass && ImGui.BeginTabItem("Subclass"))
+            if (document is SubclassDefinition subclass && UiAuto.BeginTabItem("Subclass"))
             {
                 if (ImGui.BeginChild("subclass-editor", new(0, -issuesHeight))) DrawSubclassEditor(subclass);
                 ImGui.EndChild();
-                ImGui.EndTabItem();
+                UiAuto.EndTabItem();
             }
-            if (ImGui.BeginTabItem("JSON"))
+            if (UiAuto.BeginTabItem("JSON"))
             {
-                if (ImGui.InputTextMultiline("##content-json", ref contentDraft, 1 << 20, new(-1, -issuesHeight - ImGui.GetFrameHeightWithSpacing()))) contentDirty = true;
-                if (ImGui.Button("Apply JSON"))
+                if (UiAuto.InputTextMultiline("##content-json", ref contentDraft, 1 << 20, new(-1, -issuesHeight - ImGui.GetFrameHeightWithSpacing()))) contentDirty = true;
+                if (UiAuto.Button("Apply JSON"))
                 {
                     try
                     {
@@ -168,7 +168,7 @@ public sealed partial class StudioForm
                     }
                     catch (JsonException error) { contentStatus = "JSON: " + error.Message; }
                 }
-                ImGui.EndTabItem();
+                UiAuto.EndTabItem();
             }
             ImGui.EndTabBar();
         }
@@ -192,24 +192,24 @@ public sealed partial class StudioForm
     {
         bool changed = false;
         string name = subclass.Name, description = subclass.Description, element = subclass.Element, item = subclass.ItemHash ?? "", baseItem = subclass.BaseItemHash ?? "";
-        if (ImGui.InputText("Name", ref name, 96)) { subclass.Name = name; changed = true; }
-        if (ImGui.InputTextMultiline("Description", ref description, 2048, new(0, 3 * ImGui.GetTextLineHeightWithSpacing()))) { subclass.Description = description; changed = true; }
+        if (UiAuto.InputText("Name", ref name, 96)) { subclass.Name = name; changed = true; }
+        if (UiAuto.InputTextMultiline("Description", ref description, 2048, new(0, 3 * ImGui.GetTextLineHeightWithSpacing()))) { subclass.Description = description; changed = true; }
         int classIndex = Math.Clamp((int)subclass.Class, 0, 2);
         ImGui.SetNextItemWidth(160 * scale);
-        if (ImGui.Combo("Class", ref classIndex, GuardianClassNames, GuardianClassNames.Length)) { subclass.Class = (GuardianClass)classIndex; changed = true; }
+        if (UiAuto.Combo("Class", ref classIndex, GuardianClassNames, GuardianClassNames.Length)) { subclass.Class = (GuardianClass)classIndex; changed = true; }
         ImGui.SameLine(); ImGui.SetNextItemWidth(140 * scale);
-        if (ImGui.InputText("Element", ref element, 32)) { subclass.Element = element.Trim().ToLowerInvariant(); changed = true; }
+        if (UiAuto.InputText("Element", ref element, 32)) { subclass.Element = element.Trim().ToLowerInvariant(); changed = true; }
         ImGui.SetNextItemWidth(160 * scale);
-        if (ImGui.InputText("Item hash", ref item, 16)) { subclass.ItemHash = item.Trim().Length > 0 ? item.Trim() : null; changed = true; }
+        if (UiAuto.InputText("Item hash", ref item, 16)) { subclass.ItemHash = item.Trim().Length > 0 ? item.Trim() : null; changed = true; }
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("The subclass item (Clone subclass makes one); keys subclass_nodes.tsv rows");
         ImGui.SameLine(); ImGui.SetNextItemWidth(160 * scale);
-        if (ImGui.InputText("Base item", ref baseItem, 16)) { subclass.BaseItemHash = baseItem.Trim().Length > 0 ? baseItem.Trim() : null; changed = true; }
+        if (UiAuto.InputText("Base item", ref baseItem, 16)) { subclass.BaseItemHash = baseItem.Trim().Length > 0 ? baseItem.Trim() : null; changed = true; }
         var limits = subclass.Limits;
         int nodes = limits.SelectableNodes, perks = limits.Perks, perTree = limits.PerTree, aspects = limits.Aspects;
-        ImGui.SetNextItemWidth(90 * scale); if (ImGui.InputInt("Nodes", ref nodes)) { limits.SelectableNodes = nodes; changed = true; }
-        ImGui.SameLine(); ImGui.SetNextItemWidth(90 * scale); if (ImGui.InputInt("Perks", ref perks)) { limits.Perks = perks; changed = true; }
-        ImGui.SameLine(); ImGui.SetNextItemWidth(90 * scale); if (ImGui.InputInt("Per path", ref perTree)) { limits.PerTree = perTree; changed = true; }
-        ImGui.SameLine(); ImGui.SetNextItemWidth(90 * scale); if (ImGui.InputInt("Aspects", ref aspects)) { limits.Aspects = aspects; changed = true; }
+        ImGui.SetNextItemWidth(90 * scale); if (UiAuto.InputInt("Nodes", ref nodes)) { limits.SelectableNodes = nodes; changed = true; }
+        ImGui.SameLine(); ImGui.SetNextItemWidth(90 * scale); if (UiAuto.InputInt("Perks", ref perks)) { limits.Perks = perks; changed = true; }
+        ImGui.SameLine(); ImGui.SetNextItemWidth(90 * scale); if (UiAuto.InputInt("Per path", ref perTree)) { limits.PerTree = perTree; changed = true; }
+        ImGui.SameLine(); ImGui.SetNextItemWidth(90 * scale); if (UiAuto.InputInt("Aspects", ref aspects)) { limits.Aspects = aspects; changed = true; }
         ImGui.TextDisabled($"Server today: {SubclassLimits.ServerNodes} nodes, {SubclassLimits.ServerPerks} perks, {SubclassLimits.ServerPerTree} per path. Names and descriptions are live via subclass_nodes.tsv.");
 
         foreach (var column in subclass.Columns)
@@ -219,11 +219,11 @@ public sealed partial class StudioForm
             string treeName = tree.Name;
             ImGui.PushID("tree-name-" + tree.Index);
             ImGui.SetNextItemWidth(260 * scale);
-            if (ImGui.InputText($"Path {tree.Index} name", ref treeName, 96)) { tree.Name = treeName; changed = true; }
+            if (UiAuto.InputText($"Path {tree.Index} name", ref treeName, 96)) { tree.Name = treeName; changed = true; }
             ImGui.PopID();
             changed |= DrawNodeGroup($"Path {tree.Index}: {tree.Name}", "tree-" + tree.Index, tree.Nodes, SubclassRole.Perk, subclass);
         }
-        if (subclass.Trees.Count < 3 && ImGui.Button("Add path"))
+        if (subclass.Trees.Count < 3 && UiAuto.Button("Add path"))
         {
             int index = Enumerable.Range(1, 3).First(i => subclass.Trees.All(tree => tree.Index != i));
             subclass.Trees.Add(new() { Index = index, Name = $"Path {index}" });
@@ -231,7 +231,7 @@ public sealed partial class StudioForm
         }
         changed |= DrawNodeGroup("Aspects (Abilities 3.0)", "aspects", subclass.Aspects, SubclassRole.Aspect, subclass);
         changed |= DrawNodeGroup("Fragments (Abilities 3.0)", "fragments", subclass.Fragments, SubclassRole.Fragment, subclass);
-        if (subclass.Aspects.Count == 0 && subclass.Fragments.Count == 0 && ImGui.Button("Add Abilities 3.0 starter aspects and fragments"))
+        if (subclass.Aspects.Count == 0 && subclass.Fragments.Count == 0 && UiAuto.Button("Add Abilities 3.0 starter aspects and fragments"))
         { SubclassTemplates.AddAbilities3(subclass); changed = true; }
         if (subclass.DefaultBuild is { } build)
         {
@@ -246,7 +246,7 @@ public sealed partial class StudioForm
     {
         bool changed = false;
         ImGui.PushID(id);
-        if (ImGui.CollapsingHeader($"{title} ({nodes.Count})###{id}", ImGuiTreeNodeFlags.DefaultOpen))
+        if (UiAuto.CollapsingHeader($"{title} ({nodes.Count})###{id}", ImGuiTreeNodeFlags.DefaultOpen))
         {
             if (nodes.Count > 0 && ImGui.BeginTable("nodes", 6, ImGuiTableFlags.RowBg | ImGuiTableFlags.SizingStretchProp))
             {
@@ -263,25 +263,25 @@ public sealed partial class StudioForm
                     ImGui.PushID(i);
                     ImGui.TableNextRow();
                     ImGui.TableNextColumn(); ImGui.SetNextItemWidth(-1);
-                    string nodeId = node.Id; if (ImGui.InputText("##id", ref nodeId, 64)) { node.Id = nodeId.Trim(); changed = true; }
+                    string nodeId = node.Id; if (UiAuto.InputText("##id", ref nodeId, 64)) { node.Id = nodeId.Trim(); changed = true; }
                     ImGui.TableNextColumn(); ImGui.SetNextItemWidth(-1);
-                    string nodeName = node.Name; if (ImGui.InputText("##name", ref nodeName, 96)) { node.Name = nodeName; changed = true; }
+                    string nodeName = node.Name; if (UiAuto.InputText("##name", ref nodeName, 96)) { node.Name = nodeName; changed = true; }
                     ImGui.TableNextColumn(); ImGui.SetNextItemWidth(-1);
                     int role = (int)node.Role;
-                    if (ImGui.Combo("##role", ref role, SubclassRoleNames, SubclassRoleNames.Length)) { node.Role = (SubclassRole)role; changed = true; }
+                    if (UiAuto.Combo("##role", ref role, SubclassRoleNames, SubclassRoleNames.Length)) { node.Role = (SubclassRole)role; changed = true; }
                     ImGui.TableNextColumn(); ImGui.SetNextItemWidth(-1);
                     int entry = node.Entry ?? -1;
-                    if (ImGui.InputInt("##entry", ref entry, 0)) { node.Entry = entry < 0 ? null : entry; changed = true; }
+                    if (UiAuto.InputInt("##entry", ref entry, 0)) { node.Entry = entry < 0 ? null : entry; changed = true; }
                     if (ImGui.IsItemHovered()) ImGui.SetTooltip(node.Entry is { } e ? $"Shipped slot: {SubclassLayout.SlotOf(e)}" : "-1: a new node with no game entry");
                     ImGui.TableNextColumn(); ImGui.SetNextItemWidth(-1);
-                    string text = node.Description; if (ImGui.InputText("##description", ref text, 1024)) { node.Description = text; changed = true; }
+                    string text = node.Description; if (UiAuto.InputText("##description", ref text, 1024)) { node.Description = text; changed = true; }
                     ImGui.TableNextColumn();
-                    if (ImGui.SmallButton("x")) { nodes.RemoveAt(i); changed = true; ImGui.PopID(); break; }
+                    if (UiAuto.SmallButton("x")) { nodes.RemoveAt(i); changed = true; ImGui.PopID(); break; }
                     ImGui.PopID();
                 }
                 ImGui.EndTable();
             }
-            if (ImGui.SmallButton("Add node"))
+            if (UiAuto.SmallButton("Add node"))
             {
                 int n = nodes.Count + 1;
                 string baseId = id + "-" + n;

@@ -68,7 +68,7 @@ public sealed class CreationDialog
         ImGui.BeginChild("##creation-fields", new Vector2(0, -footer), ImGuiChildFlags.None);
         ImGui.PushTextWrapPos(0);
         var limits = workflow.Limits;
-        if (limits.Count != 0 && ImGui.CollapsingHeader($"Limits ({limits.Count})###limits"))
+        if (limits.Count != 0 && UiAuto.CollapsingHeader($"Limits ({limits.Count})###limits"))
             foreach (string limit in limits) ImGui.BulletText(limit);
         bool any = false;
         foreach (var field in workflow.Fields.Where(field => field.Visible && field.Required))

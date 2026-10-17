@@ -33,3 +33,5 @@ Layers > Show Volumes / Collision; select object; Inspector > World placement > 
 
 ## Verify
 `get_placement`/`get_object` show the new values; `list_project_changes` has one Object row per edit; in game the route is reachable. If the area is unloaded or void, report that the map cannot be extended and why.
+
+Menus, toolbar toggles and file pickers: `list_commands` then `run_command` (give `path` instead of a picker), `show_panel` before `list_ui_controls`, `export_asset` / `import_asset`, `set_viewport_options` / `set_camera`, `project_change`, `arm_file_dialog`; `get_help` with section `tools` names the tool for any menu, panel or dialog.

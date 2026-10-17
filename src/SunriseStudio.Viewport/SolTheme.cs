@@ -414,7 +414,7 @@ public static unsafe class SolTheme
         ImGui.PushStyleColor(ImGuiCol.HeaderActive, Surface2);
         ImGui.PushStyleColor(ImGuiCol.Text, Sun);
         // The visible text is drawn tracked below; the whole original label stays in the id, so ids stay unique.
-        bool open = ImGui.CollapsingHeader("##" + label, flags);
+        bool open = UiAuto.CollapsingHeader("##" + label, flags);
         ImGui.PopStyleColor(4);
         var min = ImGui.GetItemRectMin();
         var max = ImGui.GetItemRectMax();
@@ -438,7 +438,7 @@ public static unsafe class SolTheme
         float tracking = ImGui.GetFontSize() * .1f;
         float textWidth = TrackedWidth(shown, tracking);
         if (size.X <= 0) size.X = textWidth + 32 * Scale;
-        bool clicked = ImGui.InvisibleButton(label, Vector2.Max(size, Vector2.One));
+        bool clicked = UiAuto.InvisibleButton(label, Vector2.Max(size, Vector2.One));
         bool hovered = ImGui.IsItemHovered(), held = ImGui.IsItemActive();
         var min = ImGui.GetItemRectMin();
         var max = ImGui.GetItemRectMax();

@@ -587,7 +587,7 @@ public sealed partial class StudioForm
         UiAuto.InputText("##install", ref location, 4096);
         ImGui.SameLine();
         if (UiAuto.Button("Browse")) PickFolder("Sunrise installation", path => location = path);
-        if (ImGui.CollapsingHeader("Package key source"))
+        if (UiAuto.CollapsingHeader("Package key source"))
         {
             ImGui.SetNextItemWidth(465 * scale);
             UiAuto.InputTextWithHint("##keySource", "Automatic", ref keySource, 4096);
@@ -767,6 +767,7 @@ public sealed partial class StudioForm
     /** Shows a folder picker and calls back with the chosen folder. */
     private void PickFolder(string title, Action<string> selected)
     {
+        if (AiFileDialog.Take(folder: true) is { } chosen) { workspace.Run(() => selected(chosen)); return; }
         nativeDialog = true;
         try
         {
@@ -779,6 +780,12 @@ public sealed partial class StudioForm
     /** Shows an open-file picker and calls back with the chosen file. */
     private void PickFile(string filter, Action<string> selected)
     {
+        if (AiFileDialog.Take() is { } chosen)
+        {
+            // A missing file does nothing (run_command checked it; an armed ui_invoke path may be stale).
+            if (File.Exists(chosen)) workspace.Run(() => selected(chosen));
+            return;
+        }
         nativeDialog = true;
         try
         {
@@ -791,6 +798,11 @@ public sealed partial class StudioForm
     /** Shows a save-file picker and calls back with the chosen path. */
     private void SaveFile(string filter, string name, Action<string> save)
     {
+        if (AiFileDialog.Take() is { } chosen)
+        {
+            workspace.Run(() => { EnsureExternalExport(chosen); save(chosen); });
+            return;
+        }
         nativeDialog = true;
         try
         {
