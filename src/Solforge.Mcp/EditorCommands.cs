@@ -158,7 +158,7 @@ public static class EditorCommands
             case CommandInput.Toggle when args["on"] is not JsonValue on || !on.TryGetValue(out bool _):
                 return $"{command.Id} needs on: true or false.";
             case CommandInput.Choice when string.IsNullOrWhiteSpace(value):
-                return $"{command.Id} needs value" + (command.Options is { Count: > 0 } options ? ": " + string.Join(", ", options) + "." : ".");
+                return $"{command.Id} needs value" + (command.Options is { Count: > 0 } needed ? ": " + string.Join(", ", needed) + "." : ".");
             case CommandInput.Choice when command.Options is { Count: > 0 } options && !options.Contains(value!.Trim(), StringComparer.OrdinalIgnoreCase):
                 return $"{command.Id}: '{value}' is not one of {string.Join(", ", options)}.";
         }

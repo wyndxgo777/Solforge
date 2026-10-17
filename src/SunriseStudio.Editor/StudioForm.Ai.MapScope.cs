@@ -5,6 +5,7 @@ using Solforge.Mcp;
 using SunriseStudio.Authoring;
 using SunriseStudio.Packages;
 using SunriseStudio.Scene;
+using SunriseStudio.Viewport;
 
 namespace SunriseStudio.Editor;
 
