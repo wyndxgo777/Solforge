@@ -32,6 +32,8 @@ All addresses are RVAs (offsets from the image start), for example `0xE2DBE0`. `
 - `list_tag_classes unlabelled=true` lists the classes SolForge has no decoder for.
 - `infer_tag_schema class=` gives a per-offset layout across many tags (tag refs, strings, floats, arrays, stable or varying).
 - `dump_tag hash=` decodes one tag generically: root fields and typed arrays (marker 0x80809FBD) with their element classes and strides.
+- Known classes have a schema in the tag schema registry (`list_tag_schemas`, `get_tag_schema schema=`): named fields, each confirmed or guessed with its source. `dump_tag` and `get_tag` add them under `named`. `validate_tag` checks bytes against the schema. `search_tags_by_field class= field= value=` finds tags by a field value (`table[].record->.internal_name` walks arrays and pointers).
+- Game tables: `list_activities`, `get_activity`, `get_loot_table` (client reward lists; drop tables are server-side) and `get_dialog_table`.
 - `read_tag_bytes` gives a hex dump. Pass `original=true` for the shipped bytes instead of project edits.
 - `get_string hash=` and `search_strings query=` read localized text. The first call loads every bank.
 

@@ -35,7 +35,16 @@ Project facts (TFM, references, sizes) are in ARCHITECTURE.md; this file is abou
 - Solforge (Phase 07): `TagHeaders` (§5.4 hash <-> package id + entry index, the §5.2 record parse
   `PackageFile` now uses), `PackageCatalog.TryLocate`, `TagDependencyGraph` (DAG that rejects cycle edges,
   topological order, bounded `Build` walk), all in `SunriseStudio.Packages`.
-- Gaps: a generic class-hash -> struct schema registry and field-level validation.
+- Solforge (Phase 07): tag schema registry (`Packages/TagSchemas`): class hash -> struct schema JSON in
+  `TagSchemas/schemas/*.json` (embedded; `SOLFORGE_TAG_SCHEMAS` adds a folder), each field with type, range,
+  array element class/stride/max count, pointer target and a source plus confirmed/guessed status;
+  `TagSchemaReader` decodes, validates (types, ranges, array marker/count/class/bounds) and walks field
+  paths. `InvestmentCatalog` reads its offsets from it. MCP: list_tag_schemas, get_tag_schema,
+  validate_tag, search_tags_by_field; dump_tag/get_tag add `named` fields. Read-only decoders on top:
+  activities, client reward lists, dialog tables (list_activities, get_activity, get_loot_table,
+  get_dialog_table; Data explorer > Game tables). Checks: `Solforge.TagSchemas.Tests`.
+- Gaps: no writers for the activity, reward or dialog tables; director tags and server-side loot tables
+  are not decoded; most per-field meanings past the arrays are still marked guessed.
 
 ## Viewport and rendering (`SunriseStudio.Rendering`, `SunriseStudio.Viewport`, Phases 10, 13)
 - (Exists) `Dx11Renderer` (Vortice D3D11, WARP fallback), `ImGuiController`, `GpuMesh`/`GpuTexture`,

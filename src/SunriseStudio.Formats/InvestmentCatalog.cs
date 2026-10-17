@@ -146,13 +146,13 @@ public sealed partial class InvestmentCatalog
             {
                 RequireClass(catalog, definition.Tag, ItemClass);
                 var data = new TagReader(catalog.Read(definition.Tag));
-                if (!data.Has(180, 8)) throw new InvalidDataException("Item fixed fields are truncated.");
-                maximum = data.I32(180); bucket = data.U8(184); tier = data.U8(186); instanced = data.U8(187) != 0;
+                if (!data.Has(MaximumOffset, 8)) throw new InvalidDataException("Item fixed fields are truncated.");
+                maximum = data.I32(MaximumOffset); bucket = data.U8(BucketOffset); tier = data.U8(TierOffset); instanced = data.U8(InstancedOffset) != 0;
                 if (displayTag != 0)
                 {
                     RequireClass(catalog, displayTag, DisplayClass);
                     var display = new TagReader(catalog.Read(displayTag));
-                    name = Text(display, 132); type = Text(display, 144); description = Text(display, 152);
+                    name = Text(display, ItemNameOffset); type = Text(display, ItemTypeOffset); description = Text(display, ItemDescriptionOffset);
                 }
             }
             catch (Exception error) when (Recoverable(error)) { diagnostics.Add($"Item {i}: {error.Message}"); }
@@ -183,10 +183,10 @@ public sealed partial class InvestmentCatalog
                 {
                     RequireClass(catalog, display, VendorDisplayClass);
                     var data = new TagReader(catalog.Read(display));
-                    if (!data.Has(64, 8)) throw new InvalidDataException("Vendor display name is truncated.");
-                    ushort bank = data.U16(64);
+                    if (!data.Has(VendorNameOffset, 8)) throw new InvalidDataException("Vendor display name is truncated.");
+                    ushort bank = data.U16(VendorNameOffset);
                     string text = bank <= short.MaxValue && bank < banks.Length
-                        ? strings.Get(banks[bank], data.U32(68))?.Trim() ?? "" : "";
+                        ? strings.Get(banks[bank], data.U32(VendorNameOffset + 4))?.Trim() ?? "" : "";
                     if (text.Length != 0)
                     { name = text.Split('\n')[0]; labelSource = "Authored vendor display name"; }
                 }
@@ -211,10 +211,10 @@ public sealed partial class InvestmentCatalog
     private static (uint Hash, uint Tag)[] ReadIndex(PackageCatalog catalog, uint tag, bool optional = false)
     {
         if (optional && !catalog.ContainsTag(tag)) return [];
-        var data = new TagReader(catalog.Read(tag)); var array = data.Array(8, stride: 24);
+        var data = new TagReader(catalog.Read(tag)); var array = data.Array(8, stride: IndexRowStride);
         if (array.Count > ushort.MaxValue) throw new InvalidDataException("Investment index exceeds its native range.");
         return Enumerable.Range(0, array.Count).Select(index =>
-        { int p = array.Data + index * 24; return (data.U32(p), data.U32(p + 16)); }).ToArray();
+        { int p = array.Data + index * IndexRowStride; return (data.U32(p + IndexHashOffset), data.U32(p + IndexTagOffset)); }).ToArray();
     }
 
     private static void RequireClass(PackageCatalog catalog, uint tag, uint expected)

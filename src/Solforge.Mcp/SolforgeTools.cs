@@ -238,7 +238,7 @@ public static partial class SolforgeTools
             Read("get_tag", "Raw read-only inspection of a tag by hash (hex like 0x80A1B2C3 or decimal).",
                 Schema(("hash", "string", "Tag hash", true)),
                 async (args, cancel) => ParseHash(McpJson.String(args, "hash")) is not { } hash ? McpToolResult.Error("Give a tag hash such as 0x80A1B2C3.")
-                    : await host.GetTagAsync(hash, cancel).ConfigureAwait(false) is { } tag ? McpToolResult.Json(tag) : McpToolResult.Error("No such tag in the loaded packages.")),
+                    : await host.GetTagAsync(hash, cancel).ConfigureAwait(false) is { } tag ? McpToolResult.Json(WithSchemaFields(host, hash, tag)) : McpToolResult.Error("No such tag in the loaded packages.")),
             Read("get_package_entry", "Read-only package entry by tag hash or 'package/index'.",
                 Schema(("id", "string", "Tag hash, or package name and entry index as 'name/index'", true)),
                 async (args, cancel) => await host.GetPackageEntryAsync(McpJson.String(args, "id") ?? "", cancel).ConfigureAwait(false) is { } entry
@@ -342,6 +342,7 @@ public static partial class SolforgeTools
                     : $"Edit {McpJson.String(args, "path")}: replace {Quote(McpJson.String(args, "find"))} with {Quote(McpJson.String(args, "replace"))}"),
             .. ProjectTools(host, Read, Act),
             .. DataTools(host),
+            .. SchemaTools(host),
             .. MediaTools(host),
             .. ContentTools(host, Read),
             .. UiTools(host, Read),

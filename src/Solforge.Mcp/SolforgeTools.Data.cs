@@ -483,7 +483,8 @@ public static partial class SolforgeTools
 
         yield return Pkg("dump_tag", "Decode any tag without a dedicated decoder: its root struct field by field (tag references with " +
             "class and name, localized strings, class hashes, floats, ints) and its typed arrays (count, element class, stride) with the " +
-            "first elements decoded the same way. Works for every class, including ones Solforge has no editor for.",
+            "first elements decoded the same way. Works for every class, including ones Solforge has no editor for. Classes in the tag " +
+            "schema registry also get 'named': their fields by name with confirmed/guessed status and a validation summary.",
             McpJson.Schema(("hash", "string", "Tag hash", true), ("depth", "integer", "Array nesting to expand (default 2, max 4)", false),
                 ("elements", "integer", "Elements decoded per array (default 3, max 20)", false), ("original", "boolean", "Shipped bytes", false)),
             (data, args, _) =>
@@ -492,6 +493,7 @@ public static partial class SolforgeTools
                     return Task.FromResult(McpToolResult.Error("Unknown tag."));
                 var result = TagLayout.Describe(bytes, data, Math.Clamp(McpJson.Int(args, "depth", 2), 0, 4), Math.Clamp(McpJson.Int(args, "elements", 3), 1, 20));
                 result["tag"] = data.Tag(hash) is { } tag ? TagRow(tag) : Hex(hash);
+                if (data.Tag(hash) is { } known && SchemaView(bytes, known.Class, data.StringIfLoaded) is { } named) result["named"] = named;
                 return Task.FromResult(McpToolResult.Json(result));
             });
 

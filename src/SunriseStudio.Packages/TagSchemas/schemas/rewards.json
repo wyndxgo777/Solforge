@@ -1,0 +1,38 @@
+{
+  "comment": "Reward lists the client ships (activity reward sets, progression reward_items). Real loot tables are evaluated on the server; 0x808077D1 and 0x80805A72 are empty in this client build.",
+  "schemas": [
+    {"class": "0x80805E3E", "name": "Activity reward set", "family": "rewards", "size": 16, "provenance": "reflection 0x3A1CA60 (16 bytes)", "decoders": ["RewardTables"], "fields": [
+      {"name": "groups", "offset": 0, "type": "array", "status": "confirmed", "source": "reflection member 0xAE9BFE56 (type 0x80805E3F); data: elements 0x80805E40", "element_class": "0x80805E40", "element": "0x80805E40", "stride": 24}
+    ]},
+    {"class": "0x80805E40", "name": "Activity reward group", "family": "rewards", "size": 24, "provenance": "reflection 0x39F1C48 (24 bytes, member \"reward_items\")", "decoders": ["RewardTables"], "fields": [
+      {"name": "unknown_00", "offset": 0, "type": "u16", "status": "guessed", "source": "data: 0xFFFF in every sample"},
+      {"name": "unknown_04", "offset": 4, "type": "hash", "status": "guessed", "source": "data: 0x811C9DC5 (empty FNV-1) in every sample"},
+      {"name": "reward_items", "offset": 8, "type": "array", "status": "confirmed", "source": "reflection 0x39F1C48 member \"reward_items\" (type 0x80805E41)", "element_class": "0x80805E42", "element": "0x80805E42", "stride": 8}
+    ]},
+    {"class": "0x80805E42", "name": "Activity reward item", "family": "rewards", "size": 8, "provenance": "reflection 0x39D49D0 (8 bytes); data", "decoders": ["RewardTables"], "fields": [
+      {"name": "item_index", "offset": 0, "type": "u16", "status": "confirmed", "source": "data: every value is a row of the item index 0x81327CCB (1234 = 2127149322, 93 = 73143230)", "max": 65534},
+      {"name": "padding", "offset": 2, "type": "u16", "status": "guessed", "source": "data: always 0"},
+      {"name": "quantity", "offset": 4, "type": "u32", "status": "guessed", "source": "data: 0 in every activity sample; same slot as the progression reward quantity"}
+    ]},
+    {"class": "0x80807CD9", "name": "Progression table (0x8131933C)", "family": "rewards", "size": 24, "provenance": "reflection 0x3A41450 (24 bytes, member \"table\")", "decoders": ["RewardTables"], "fields": [
+      {"name": "file_size", "offset": 0, "type": "size64", "status": "confirmed", "source": "Tiger tag header: u64 byte size of the tag (PackageCatalog)"},
+      {"name": "table", "offset": 8, "type": "array", "status": "confirmed", "source": "reflection member \"table\"; data: 88 rows of 0x80807CDD", "element_class": "0x80807CDD", "element": "0x80807CDD", "stride": 88}
+    ]},
+    {"class": "0x80807CDD", "name": "Progression definition", "family": "rewards", "size": 88, "provenance": "reflection 0x394F340 (88 bytes, members \"steps\" and \"reward_items\"); probably DestinyProgressionDefinition", "decoders": ["RewardTables"], "fields": [
+      {"name": "hash", "offset": 0, "type": "hash", "status": "guessed", "source": "data: unique per row"},
+      {"name": "steps", "offset": 24, "type": "array", "status": "confirmed", "source": "reflection 0x80807CDD record 0x394F340 (member 0x667004BE \"steps\", type 0x80807CE0)"},
+      {"name": "m_5364F514", "offset": 40, "type": "array", "status": "confirmed", "source": "reflection 0x80807CDD record 0x394F340 (member 0x5364F514, type 0x80807CDF)"},
+      {"name": "m_D5C45CFA", "offset": 56, "type": "relptr", "status": "confirmed", "source": "reflection 0x80807CDD record 0x394F340 (member 0xD5C45CFA, type 0x80807CDE)"},
+      {"name": "reward_items", "offset": 72, "type": "array", "status": "confirmed", "source": "reflection member \"reward_items\" (type 0x80802FF6); data: elements 0x80802FF7", "element_class": "0x80802FF7", "element": "0x80802FF7", "stride": 56}
+    ]},
+    {"class": "0x80802FF7", "name": "Progression reward item", "family": "rewards", "size": 56, "provenance": "reflection 0x3806AB0 (56 bytes); data", "decoders": ["RewardTables"], "fields": [
+      {"name": "rewarded_at_level", "offset": 0, "type": "i32", "status": "guessed", "source": "data: small increasing values per progression", "min": 0},
+      {"name": "item_index", "offset": 4, "type": "u32", "status": "confirmed", "source": "data: rows of the item index 0x81327CCB (0x7B = Glimmer 3159615086)", "max": 65534},
+      {"name": "quantity", "offset": 8, "type": "i32", "status": "confirmed", "source": "data: 5000 for Glimmer rows", "min": 0},
+      {"name": "unknown_10", "offset": 16, "type": "u16", "status": "guessed", "source": "data: 1 or 0xFFFF"},
+      {"name": "sequence", "offset": 20, "type": "u32", "status": "guessed", "source": "data: sequential id"},
+      {"name": "m_F0871BCE", "offset": 24, "type": "array", "status": "confirmed", "source": "reflection 0x80802FF7 record 0x3806AB0 (member 0xF0871BCE, type 0x80807C04)"},
+      {"name": "m_7380D7C0", "offset": 40, "type": "array", "status": "confirmed", "source": "reflection 0x80802FF7 record 0x3806AB0 (member 0x7380D7C0, type 0x8080305D)"}
+    ]}
+  ]
+}
