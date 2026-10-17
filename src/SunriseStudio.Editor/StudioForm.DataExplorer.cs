@@ -75,6 +75,7 @@ public sealed partial class StudioForm
             if (ImGui.BeginTabItem("Functions")) { DrawDataFunctions(); ImGui.EndTabItem(); }
             if (ImGui.BeginTabItem("Strings")) { DrawDataStrings(); ImGui.EndTabItem(); }
             if (ImGui.BeginTabItem("Tag data")) { DrawDataTags(); ImGui.EndTabItem(); }
+            if (ImGui.BeginTabItem("Game tables")) { DrawDataGameTables(); ImGui.EndTabItem(); }
             if (ImGui.BeginTabItem("Tool console")) { DrawDataConsole(); ImGui.EndTabItem(); }
             ImGui.EndTabBar();
         }
