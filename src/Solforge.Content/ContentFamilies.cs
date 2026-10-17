@@ -57,7 +57,7 @@ public static class ContentFamilies
         ("Ability behaviour (projectiles, damage, timings)", "Lives in sandbox perk and tag data with no verified writer; abilities only reference existing sandbox perks."),
         ("Damage type visuals", "Element colours and effects are client tags; custom damage types reuse a built-in element's effects."),
         ("Enemy archetypes and AI", "Combatant tags are inspect-only (ComponentsPage damage parts); new archetypes need the combatant tag writer (Phase 37)."),
-        ("Activity definitions in packages", "Activity and director tags are not decoded; activities run from mission scripts and the server's activity table."),
+        ("Activity definitions in packages", "Activity, reward and dialog tables decode read-only (list_activities, get_activity, get_loot_table, get_dialog_table; Data explorer > Game tables) but have no writer; director tags are not decoded; activities run from mission scripts and the server's activity table."),
         ("Talent-grid nodes in packages", "86657 subclass talent grids are read by the server from ability_buckets.bin, which the client writes; Solforge does not write grids."),
         ("Vendor rotations and reward timers", "Vendor sale rows are editable (apply_vendor_edit); rotation schedules are server state with no settings module."),
         ("Quests and bounties", "Quest steps are investment items plus server pursuit state (sol_pursuits); no structured quest document yet."),

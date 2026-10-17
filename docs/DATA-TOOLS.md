@@ -34,6 +34,12 @@ The index is cached at `%LOCALAPPDATA%\Solforge\decomp\index-*.bin` and rebuilt 
 | list_tag_classes / list_tags_of_class | classes with counts and labels; the tags of one class |
 | read_tag_bytes / dump_tag | hex dump; generic decode of root fields and typed arrays |
 | infer_tag_schema | per-offset layout for a class, built from many samples |
+| list_tag_schemas / get_tag_schema | the tag schema registry: classes with named fields, each field's type, source and confirmed/guessed status |
+| validate_tag | a tag (or up to 1000 tags of a class) checked against its schema: types, ranges, typed arrays, element classes, bounds |
+| search_tags_by_field | tags of a class whose field matches (eq/ne/lt/le/gt/ge/contains); paths walk arrays (`name[]`) and pointers (`name->`) |
+| list_activities / get_activity | activity definition table 0x81327CF0 with display names (0x81327D35), reward set and per-activity root tag |
+| get_loot_table | client reward lists: activity reward sets and progression reward_items (0x8131933C), with item hashes and names |
+| get_dialog_table | a dialog table (0x80808D54): events, groups, variants and spoken lines with text |
 | export_data | runs any read tool over all pages and writes JSON or CSV to `<project>\exports` |
 | havok_packfile | a Havok 2012 packfile (26/7): root, kind, class counts, imports, every collision shape decoded, cloth collidables, notes |
 | export_collision_obj | the collision a packfile places by itself, as OBJ under `exports\collision` |
@@ -42,13 +48,18 @@ The index is cached at `%LOCALAPPDATA%\Solforge\decomp\index-*.bin` and rebuilt 
 | video_info | a CRI USM cutscene (type 27): video, ADX audio tracks and subtitle streams |
 | export_video | USM demux under `exports\video`: MPEG-1 `.m2v`, each ADX track as `.adx` plus decoded `.wav`, `.sbt` subtitles |
 
+## Tag schema registry
+
+Schema files live in `src/SunriseStudio.Packages/TagSchemas/schemas/*.json` (investment, activity, rewards, dialog) and are embedded in the build. Set `SOLFORGE_TAG_SCHEMAS=<folder>` to add or replace schemas (by id) without rebuilding. Each schema has `class` (or an `id` for records reached by a pointer), `size`, `provenance` and `fields`; each field has `name`, `offset`, `type` (u8..i64, f32, bool8, hash, tag, class, string_hash, string_ref, string_ref16, relptr, relptr_tag, relptr_cstring, array, size64), `status` (`confirmed` or `guessed`) and `source`, plus optional `min`/`max`/`allow`, `element_class`/`element`/`stride`/`max_count` for arrays and `target` for pointers. Sources name the reflection record (`reflection 0x<class> record 0x<rva>`), the Sunrise client reader or SolForge decoder, or `data:` for package samples. The hand decoders (InvestmentCatalog, the activity/reward/dialog tables) take their offsets from these files.
+
 ## Paging
 
 Results come back as `{cursor, count, total | total_at_least, next_cursor, rows}`. To get the next page, pass `next_cursor` back as `cursor`. Lists are sorted deterministically, so cursors stay stable.
 
 ## Known gaps
 
-- No dedicated decoders yet for activity and director tags, dialog tables, or loot tables. `infer_tag_schema` and `dump_tag` cover these generically.
+- Activity, reward and dialog tables decode read-only; director tags do not (use `infer_tag_schema` and `dump_tag`). Drop tables (real loot) are rolled by the server; the client classes 0x808077D1 and 0x80805A72 that look like them are empty in this build.
+- Schema fields marked `guessed` are data-only. Few fields cite a decomp function: class hashes are not literals in the decomp, so layouts come from the exe reflection records (struct size, pointer and array members), the Sunrise client readers that validate the installed tables, the hand decoders, and package samples.
 - Havok: every collision shape class in build 86657 decodes (BV compressed mesh, static compound, list, convex vertices incl. plane-less hulls, box/sphere/capsule/cylinder/transform, shape arrays, physics bodies) and cloth collidables are drawn at rest. Ragdoll/hinge constraint data, cloth simulation data, cloth planes and cloth convex geometry are counted, not decoded. The build has no Havok animation.
 - USM: the container, ADX audio (type 3, unencrypted) and subtitles decode; MPEG-1 video is exported as an elementary stream for an external player, not decoded in SolForge. HCA audio and encrypted USM/ADX are refused (none ship in this build).
 - D1 script bytecode is not decoded.
