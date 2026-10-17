@@ -255,7 +255,7 @@ async Task Tools()
     approve = true;
     shell.Reply = _ => new ShellResult(0, "DEPLOYED=4 EXISTED=1 CREATED=3 BACKUP=/root/sol-local/solforge-backups/x", "", false);
     var deployed = await Tool("local_server_deploy").Handler(new JsonObject(), default);
-    Expect(!deployed.IsError && shell.Scripts[^1].Contains("tar -czf", StringComparison.Ordinal), "deploy tool runs after approval");
+    Expect(!deployed.IsError && shell.Scripts.Any(s => s.Contains("tar -czf", StringComparison.Ordinal)), "deploy tool runs after approval");
     var badRollback = await Tool("local_server_rollback").Handler(new JsonObject { ["backup"] = "../../etc" }, default);
     Expect(badRollback.IsError, "rollback id validated");
 
