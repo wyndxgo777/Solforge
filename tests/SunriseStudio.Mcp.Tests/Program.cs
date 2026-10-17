@@ -66,6 +66,8 @@ try
     checks.Add("class layer: MSVC RTTI (type descriptors, locators, hierarchy) in a fixture image, demangling, vtable runs split at referenced starts, Class::vfN owners, constructors, inferred fields, the class cache, and get_class/get_vtables/get_struct/decomp_status");
     await AutomaticChecks.Run(Path.Combine(scratch, "automatic"), new FixtureHost(dataProject));
     checks.Add("automatic mode: /automatic parsing, start prompt, idle nudge with progress and remaining, repeat and stuck nudges change tactic, prompt and busy screens wait, goal_complete, goal_blocked, stop, nudge and time limits, nesting guard, saved goal resume, and the automatic_*/goal_* tools with no approve click");
+    await CommandChecks.Run(Path.Combine(scratch, "commands"), new FixtureHost(dataProject));
+    checks.Add("command coverage: list_commands (catalog, query, paused), run_command, show_panel, set_viewport_options, set_camera, export_asset, import_asset, project_change and arm_file_dialog validate before one approve click; catalog and get_help tool map name only real tools; header controls open with ui_invoke/ui_set_checked");
     Approvals();
     checks.Add("auto-allow: Claude Code, agy and Cline allow prompts match only with a one-time Yes/Allow highlighted at the bottom; No, scrollback, quotes, persistent rows and free text never do");
     foreach (string check in checks) Console.WriteLine("PASS " + check);

@@ -28,6 +28,7 @@ Goal: a cloned and edited armor item (stats, perks, name, icon, collections, ven
 
 ## UI fallback
 Any Solforge control can be driven with `list_ui_controls` then `ui_invoke` / `ui_set_value` / `ui_set_checked` / `ui_select` (approve click each).
+Menus, toolbar toggles and file pickers: `list_commands` then `run_command` (give `path` instead of a picker), `show_panel` before `list_ui_controls`, `export_asset` / `import_asset`, `set_viewport_options` / `set_camera`, `project_change`, `arm_file_dialog`; `get_help` with section `tools` names the tool for any menu, panel or dialog.
 Armor > Clone dialog; Investment tab; Edit workflow; Build > Build and install.
 
 ## Verify

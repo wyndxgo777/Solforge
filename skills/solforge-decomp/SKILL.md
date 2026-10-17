@@ -42,3 +42,5 @@ All addresses are RVAs (offsets from the image start), for example `0xE2DBE0`. `
 - Decompiled output has Ghidra default types and no auto-analysis, so caller lists count direct calls only. Indirect calls go through vtables, so check `get_vtables`.
 - A function listed in FAILED.txt has no C. Read its assembly in `full\text\*.asm` instead.
 - Struct inference covers one function only. Merge it with the callers' view before trusting a layout.
+
+Menus, toolbar toggles and file pickers: `list_commands` then `run_command` (give `path` instead of a picker), `show_panel` before `list_ui_controls`, `export_asset` / `import_asset`, `set_viewport_options` / `set_camera`, `project_change`, `arm_file_dialog`; `get_help` with section `tools` names the tool for any menu, panel or dialog.
