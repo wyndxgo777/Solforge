@@ -2,6 +2,7 @@
  * File: Windows pseudo-console (ConPTY) host for the AI terminal: starts a child process attached to a pseudo console
  * and exchanges text with it. Shown by TerminalView.cs, parsed by VtScreen.cs.
  */
+using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -12,7 +13,8 @@ namespace SunriseStudio.Editor.Ai;
 
 /**
  * Solforge Phase 47B: a Windows pseudo console (ConPTY, Windows 10 1809+) running one command line. Output
- * is decoded on a reader thread and handed to the screen; input bytes go straight to the console.
+ * is decoded on a reader thread and handed to the screen; input bytes queue for a writer thread, so a large paste
+ * the child reads slowly never blocks the UI.
  */
 internal sealed class ConPtyTerminal : IDisposable
 {
@@ -20,7 +22,9 @@ internal sealed class ConPtyTerminal : IDisposable
     private readonly SafeFileHandle input, output;
     private readonly FileStream writer;
     private readonly IntPtr process, thread;
-    private readonly Thread reader;
+    private readonly Thread reader, sender;
+    /** Input waiting for the writer thread, in order. */
+    private readonly BlockingCollection<byte[]> pending = new();
     private bool disposed;
 
     public VtScreen Screen { get; }
@@ -70,6 +74,8 @@ internal sealed class ConPtyTerminal : IDisposable
         writer = new FileStream(input, FileAccess.Write, 1, false);
         reader = new Thread(Read) { IsBackground = true, Name = "Solforge AI terminal" };
         reader.Start();
+        sender = new Thread(Write) { IsBackground = true, Name = "Solforge AI terminal input" };
+        sender.Start();
     }
 
     /** This process's variables with the overrides, sorted as Windows expects, as a UTF-16 block. */
@@ -87,17 +93,31 @@ internal sealed class ConPtyTerminal : IDisposable
         return Marshal.StringToHGlobalUni(text.Append('\0').ToString());
     }
 
-    /** Writes text to the child process input. */
+    /** Queues text for the child process input; returns at once, the writer thread blocks while the pipe is full. */
     public void Send(string text)
     {
         if (disposed || Exited || text.Length == 0) return;
+        try { pending.Add(Encoding.UTF8.GetBytes(text)); }
+        catch (InvalidOperationException) { }
+    }
+
+    /** Writer thread: sends queued input until the terminal is disposed or the pipe breaks. */
+    private void Write()
+    {
         try
         {
-            byte[] bytes = Encoding.UTF8.GetBytes(text);
-            writer.Write(bytes);
-            writer.Flush();
+            foreach (byte[] bytes in pending.GetConsumingEnumerable())
+            {
+                // Chunks keep a huge paste from holding one write call while the console drains it.
+                for (int at = 0; at < bytes.Length; at += 4096)
+                {
+                    writer.Write(bytes, at, Math.Min(4096, bytes.Length - at));
+                    writer.Flush();
+                }
+            }
         }
         catch (IOException) { Exited = true; }
+        catch (ObjectDisposedException) { }
     }
 
     /** Resizes the pseudo console. */
@@ -161,6 +181,7 @@ internal sealed class ConPtyTerminal : IDisposable
         if (disposed) return;
         disposed = true;
         Exited = true;
+        pending.CompleteAdding();
         // Closing the console ends the client and breaks the reader's pipe.
         ClosePseudoConsole(console);
         if (process != IntPtr.Zero && WaitForSingleObject(process, 500) != 0) TerminateProcess(process, 1);

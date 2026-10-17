@@ -13,7 +13,9 @@ namespace SunriseStudio.Editor.Ai;
  * terminal has focus. Characters come from the form's KeyPress (control characters included); keys
  * that make no character (arrows, Home, Delete...) come from ImGui.
  * The mouse selects (drag, double-click a word, triple-click a line, Shift+click extends, also into the
- * scrollback); Ctrl+Shift+C copies, Ctrl+Shift+V pastes and right-click opens Copy/Paste/Select all.
+ * scrollback); Ctrl+Shift+C copies, Ctrl+V / Ctrl+Shift+V / Shift+Insert paste and right-click opens Copy/Paste/Select all.
+ * A paste of files copied in Explorer, or files dropped on the terminal, types their quoted paths; a clipboard image is
+ * saved as a PNG under TerminalPaste.Folder and its path typed (TerminalPaste.cs).
  * Ctrl+C sends ^C; a second Ctrl+C within a second kills the engine's process tree (HelpCatalog lists these keys).
  */
 internal sealed class TerminalView : IDisposable
@@ -31,6 +33,8 @@ internal sealed class TerminalView : IDisposable
     private bool lineKnown = true;
     /** Backspaces still to send, one per frame, to clear a line LineCommand took (engines drop a burst of them). */
     private int erase;
+    /** Paths of clipboard images saved on a worker thread, typed by the next Draw on the UI thread. */
+    private readonly System.Collections.Concurrent.ConcurrentQueue<string> saved = new();
     private const string MenuId = "##ai-terminal-menu";
     /** Measured once per frame to get the font's fractional advance; CalcTextSize rounds one "M" up to a whole pixel. */
     private static readonly string Ruler = new('M', 256);
@@ -38,6 +42,13 @@ internal sealed class TerminalView : IDisposable
     public ConPtyTerminal? Terminal { get; private set; }
     public bool Focused { get; private set; }
     public string? Failure { get; private set; }
+    /** Where the terminal was last drawn, in ImGui (client) coordinates; empty before the first Draw. */
+    public (Vector2 Min, Vector2 Max) Area { get; private set; }
+    /** True when the terminal was drawn in the last two seconds, so a drop never lands in a hidden AI panel. */
+    public bool Visible => Environment.TickCount64 - drawn < 2000;
+    private long drawn = long.MinValue / 2;
+    /** True while a paste or drop can reach a running engine. */
+    public bool Accepting => Terminal is { HasExited: false } && !Stopped;
     /** Ctrl+C twice ended the engine; its last screen stays for reading and copying until Restart or Start. */
     public bool Stopped { get; private set; }
     /**
@@ -121,6 +132,39 @@ internal sealed class TerminalView : IDisposable
         lineKnown = false;
     }
 
+    /**
+     * Pastes whatever the clipboard holds: files as quoted paths, text as text, an image as the quoted path of a PNG saved
+     * on a worker thread (typed by a later frame). Falls back to ImGui's clipboard text when the clipboard cannot be read.
+     */
+    public void PasteClipboard()
+    {
+        if (!Accepting) return;
+        switch (TerminalPaste.Read())
+        {
+            case { Files: { } files }: Paste(TerminalPaste.Paths(files)); break;
+            case { Text: { } text }: Paste(text); break;
+            case { Png: { } png }: SaveInBackground(() => TerminalPaste.SavePng(png, TerminalPaste.Folder)); break;
+            case { Image: { } image }: SaveInBackground(() => TerminalPaste.SaveImage(image, TerminalPaste.Folder)); break;
+            default: Paste(ImGui.GetClipboardText() ?? ""); break;
+        }
+    }
+
+    /** Files dropped on Solforge over the terminal (or while it has focus): types their quoted paths and takes focus. */
+    public void DropFiles(IEnumerable<string> paths)
+    {
+        if (!Accepting) return;
+        Paste(TerminalPaste.Paths(paths));
+        Focused = true;
+    }
+
+    /** Runs an image save off the UI thread; the path is typed by the next Draw. A failed save is kept in Failure. */
+    private void SaveInBackground(Func<string> save) => _ = Task.Run(() =>
+    {
+        try { saved.Enqueue(TerminalPaste.Quote(save()) + " "); }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or System.Runtime.InteropServices.ExternalException
+            or ArgumentException or OutOfMemoryException) { Failure = "Could not save the pasted image: " + error.Message; }
+    });
+
     /** Sends Enter for text Solforge put on the input line itself (a paste it then submits), so the next typed line is known again. */
     public void Submit()
     {
@@ -143,6 +187,7 @@ internal sealed class TerminalView : IDisposable
     /** Draws the terminal and handles mouse and resize. */
     public void Draw(ImFontPtr font, Vector2 size)
     {
+        while (saved.TryDequeue(out string? path)) Paste(path);
         if (Stopped && Terminal is not null)
         {
             // A row above the kept screen rather than a band over it, so its button gets the clicks.
@@ -154,6 +199,8 @@ internal sealed class TerminalView : IDisposable
         }
         var draw = ImGui.GetWindowDrawList();
         var origin = ImGui.GetCursorScreenPos();
+        Area = (origin, origin + size);
+        drawn = Environment.TickCount64;
         draw.AddRectFilled(origin, origin + size, SolTheme.U32(SolTheme.Bg));
         ImGui.InvisibleButton("##ai-terminal", Vector2.Max(size, Vector2.One));
         bool hovered = ImGui.IsItemHovered(), pressed = ImGui.IsItemClicked(ImGuiMouseButton.Left),
@@ -254,7 +301,7 @@ internal sealed class TerminalView : IDisposable
         if (open) ImGui.OpenPopup(MenuId);
         if (!ImGui.BeginPopup(MenuId)) return;
         if (ImGui.MenuItem("Copy", "Ctrl+Shift+C", false, selection.Active)) Copy();
-        if (ImGui.MenuItem("Paste", "Ctrl+Shift+V", false, !Stopped && Terminal is { HasExited: false })) Paste(ImGui.GetClipboardText() ?? "");
+        if (ImGui.MenuItem("Paste", "Ctrl+V", false, Accepting)) PasteClipboard();
         if (ImGui.MenuItem("Select all")) SelectAll();
         ImGui.EndPopup();
     }
@@ -335,7 +382,7 @@ internal sealed class TerminalView : IDisposable
                 interrupt.Reset();
                 // Ctrl+V and Ctrl+Shift+V both arrive as ^V.
                 if (c == '\b') terminal.Send("\x7f");
-                else if (c == 22 && io.KeyCtrl) Paste(ImGui.GetClipboardText() ?? "");
+                else if (c == 22 && io.KeyCtrl) PasteClipboard();
                 else terminal.Send(c.ToString());
             }
             selection.Clear();
@@ -351,7 +398,14 @@ internal sealed class TerminalView : IDisposable
             (ImGuiKey.Delete, "\x1b[3~"), (ImGuiKey.PageUp, "\x1b[5~"), (ImGuiKey.PageDown, "\x1b[6~"), (ImGuiKey.Insert, "\x1b[2~")
         ];
         foreach (var (key, text) in keys)
-            if (ImGui.IsKeyPressed(key)) { terminal.Send(text); scroll = 0; lineKnown = false; }
+        {
+            if (!ImGui.IsKeyPressed(key)) continue;
+            // Shift+Insert is the classic Windows console paste; it makes no character, so it is caught here.
+            if (key == ImGuiKey.Insert && io.KeyShift && !io.KeyCtrl) { PasteClipboard(); continue; }
+            terminal.Send(text);
+            scroll = 0;
+            lineKnown = false;
+        }
         if (io.KeyShift && ImGui.IsKeyPressed(ImGuiKey.Tab)) { terminal.Send("\x1b[Z"); lineKnown = false; }
     }
 

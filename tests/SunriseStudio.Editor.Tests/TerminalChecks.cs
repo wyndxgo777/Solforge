@@ -121,6 +121,9 @@ internal static class TerminalChecks
         Check(TerminalView.PasteText("a\r\nb\nc", false) == "a\rb\rc", "Pasted line breaks were not sent as Enter.");
         Check(TerminalView.PasteText("x\x1b[201~y", true) == "\x1b[200~xy\x1b[201~",
             "Bracketed paste was not wrapped, or pasted text could end it early.");
+        Check(TerminalView.PasteText("one", false) == "one" && TerminalView.PasteText("", true) == "\x1b[200~\x1b[201~",
+            "A plain paste was changed or an empty bracketed paste was not wrapped.");
+        PasteChecks();
 
         var press = new DoublePress(1.0);
         Check(!press.Press(10) && press.Pending(10.5) && press.Press(10.5), "A second Ctrl+C inside a second did not stop the engine.");
@@ -193,6 +196,48 @@ internal static class TerminalChecks
         screen.Resize(40, 10);
         screen.Feed("\u001b8x\x1b[ux\x1b[?1049lx");
         Check(screen.CursorY < 10 && screen.CursorX < 40, "A restored cursor was left outside the resized screen.");
+    }
+
+    /** Quoted paths for Explorer files and drops, and a clipboard image saved as a temporary PNG. */
+    private static void PasteChecks()
+    {
+        Check(TerminalPaste.Quote(@"C:\a b\c.png") == "\"C:\\a b\\c.png\"" && TerminalPaste.Quote("\"C:\\x\"") == "\"C:\\x\""
+            && TerminalPaste.Quote("  ") == "" && TerminalPaste.Quote(null) == "", "A path was not quoted once, or a blank path was kept.");
+        Check(TerminalPaste.Paths([@"C:\one.txt", null, @"D:\two words\b.cs"]) == "\"C:\\one.txt\" \"D:\\two words\\b.cs\" "
+            && TerminalPaste.Paths([]) == "", "Dropped paths were not quoted and space separated with a trailing space.");
+        Check(TerminalView.PasteText(TerminalPaste.Paths([@"C:\a b.png"]), true) == "\x1b[200~\"C:\\a b.png\" \x1b[201~",
+            "A file paste was not bracketed whole.");
+        Check(TerminalPaste.Folder.EndsWith(Path.Combine("Solforge", "paste"), StringComparison.OrdinalIgnoreCase)
+            && Path.IsPathRooted(TerminalPaste.Folder), "Pasted images are not saved under %LOCALAPPDATA%\\Solforge\\paste.");
+
+        string folder = Path.Combine(Path.GetTempPath(), "solforge-paste-check-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            using (var bitmap = new System.Drawing.Bitmap(3, 2))
+            {
+                bitmap.SetPixel(1, 1, System.Drawing.Color.Red);
+                string first = TerminalPaste.SaveImage(new System.Drawing.Bitmap(bitmap), folder);
+                byte[] bytes = File.ReadAllBytes(first);
+                Check(Path.IsPathRooted(first) && Path.GetDirectoryName(first) == Path.GetFullPath(folder)
+                    && Path.GetFileName(first).StartsWith("paste-", StringComparison.Ordinal) && first.EndsWith(".png", StringComparison.Ordinal)
+                    && bytes.Length > 8 && bytes[0] == 0x89 && bytes[1] == (byte)'P' && bytes[2] == (byte)'N' && bytes[3] == (byte)'G',
+                    "A clipboard bitmap was not saved as a full-path PNG in the paste folder.");
+                using (var back = new System.Drawing.Bitmap(first))
+                    Check(back.Width == 3 && back.Height == 2 && back.GetPixel(1, 1).ToArgb() == System.Drawing.Color.Red.ToArgb(),
+                        "The saved PNG lost the pasted pixels.");
+                string second = TerminalPaste.SavePng(bytes, folder);
+                Check(second != first && File.ReadAllBytes(second).SequenceEqual(bytes), "Two pastes in one moment shared a file, or PNG bytes changed.");
+            }
+            string old = Path.Combine(folder, "paste-old.png");
+            File.WriteAllBytes(old, [1]);
+            File.SetLastWriteTimeUtc(old, DateTime.UtcNow.AddDays(-8));
+            TerminalPaste.SavePng([0x89, (byte)'P', (byte)'N', (byte)'G', 0, 0, 0, 0, 0], folder);
+            Check(!File.Exists(old), "A week-old pasted image was not removed.");
+        }
+        finally
+        {
+            if (Directory.Exists(folder) && folder.StartsWith(Path.GetTempPath(), StringComparison.OrdinalIgnoreCase)) Directory.Delete(folder, true);
+        }
     }
 
     private static string Row(VtScreen screen, int row) => screen.Text().Split('\n')[row];

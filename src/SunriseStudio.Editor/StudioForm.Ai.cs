@@ -93,6 +93,11 @@ public sealed partial class StudioForm
             KeyPress += (_, e) => aiTerminal.OnChar(e.KeyChar);
             aiTerminal.LineCommand = AiAutomaticLine;
             FormClosed += (_, _) => { aiTerminal.Dispose(); StopAiService(); };
+            // Files dragged from Explorer onto the terminal type their quoted paths (TerminalView.DropFiles).
+            AllowDrop = true;
+            DragEnter += AiTerminalDragOver;
+            DragOver += AiTerminalDragOver;
+            DragDrop += AiTerminalDrop;
             aiKeyHooked = true;
         }
         EnsureAiService();
@@ -763,6 +768,28 @@ public sealed partial class StudioForm
                 aiAttention.Record(AttentionKind.Focus, AiId(selected), AiLabel(selected));
             aiLastPivot = pivot;
         }
+    }
+
+    /** Explorer files over the terminal (or anywhere while it has focus) can be dropped; anything else shows no-drop. */
+    private void AiTerminalDragOver(object? sender, DragEventArgs e) =>
+        e.Effect = AiTerminalDropFiles(e) is not null ? DragDropEffects.Copy : DragDropEffects.None;
+
+    /** Types the dropped files' quoted paths into the terminal and brings Solforge forward so typing can follow. */
+    private void AiTerminalDrop(object? sender, DragEventArgs e)
+    {
+        if (AiTerminalDropFiles(e) is not { } files) return;
+        aiTerminal.DropFiles(files);
+        Activate();
+    }
+
+    /** The dropped file paths when they would reach a running terminal: under the pointer, or the terminal has focus. */
+    private string[]? AiTerminalDropFiles(DragEventArgs e)
+    {
+        if (!aiTerminal.Accepting || !aiTerminal.Visible || e.Data?.GetData(DataFormats.FileDrop) is not string[] { Length: > 0 } files) return null;
+        var point = PointToClient(new System.Drawing.Point(e.X, e.Y));
+        var (min, max) = aiTerminal.Area;
+        bool over = point.X >= min.X && point.Y >= min.Y && point.X < max.X && point.Y < max.Y;
+        return over || aiTerminal.Focused ? files : null;
     }
 
     /** Keys typed into the terminal never reach Studio shortcuts (Ctrl+Z, Ctrl+S, Q/W/E/R...). */
