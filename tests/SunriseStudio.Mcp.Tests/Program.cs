@@ -66,6 +66,8 @@ try
     checks.Add("class layer: MSVC RTTI (type descriptors, locators, hierarchy) in a fixture image, demangling, vtable runs split at referenced starts, Class::vfN owners, constructors, inferred fields, the class cache, and get_class/get_vtables/get_struct/decomp_status");
     await AutomaticChecks.Run(Path.Combine(scratch, "automatic"), new FixtureHost(dataProject));
     checks.Add("automatic mode: /automatic parsing, start prompt, idle nudge with progress and remaining, repeat and stuck nudges change tactic, prompt and busy screens wait, goal_complete, goal_blocked, stop, nudge and time limits, nesting guard, saved goal resume, and the automatic_*/goal_* tools with no approve click");
+    await MissionInsightChecks.Run(Path.Combine(scratch, "insight"), new FixtureHost(dataProject));
+    checks.Add("mission insight: SDK module reader (slots, squad data, states, directives, dialogue cues and text, scenes, trigger volumes), mission_coverage by retail name and tag with prefab scope, squads with no data, cutscene state from tag bytes 0x0C-0x0F, dialogue inline, trigger map, retail timelines, script steps and saved beat marks");
     Approvals();
     checks.Add("auto-allow: Claude Code, agy and Cline allow prompts match only with a one-time Yes/Allow highlighted at the bottom; No, scrollback, quotes, persistent rows and free text never do");
     foreach (string check in checks) Console.WriteLine("PASS " + check);
