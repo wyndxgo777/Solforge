@@ -25,13 +25,35 @@ public sealed partial class StudioForm
     internal enum TitleGroup
     {
         File, Edit, Assets, Build, View, Window, Help,
-        Relay, Navigation, Project, Render, Shaders, Quality, Detail, Lighting, Settings
+        Owner, Navigation, Project, Render, Shaders, Quality, Detail, Lighting, Settings
     }
 
-    private static readonly TitleGroup[] TitleGroups = Enum.GetValues<TitleGroup>();
+    // Owner is only on the row in owner builds (RELEASING.md); public builds leave it out, so it leaves no gap.
+    private static readonly TitleGroup[] TitleGroups =
+        [.. Enum.GetValues<TitleGroup>().Where(group => group != TitleGroup.Owner || HasOwnerTitleGroup())];
+    // The first control group after the menus starts a section (it gets the lead and the hairline).
+    private static readonly TitleGroup FirstToolGroup = TitleGroups.First(group => !IsMenu(group));
 
-    // Width each group took when last drawn on the row (0 until then), used to decide what fits.
-    private readonly float[] titleWidths = new float[TitleGroups.Length];
+    // Width each group took when last drawn on the row (0 until then), used to decide what fits; indexed by group.
+    private readonly float[] titleWidths = new float[Enum.GetValues<TitleGroup>().Length];
+
+    private static bool HasOwnerTitleGroup()
+    {
+        bool present = false;
+        OwnerTitleGroup(ref present);
+        return present;
+    }
+
+    /** Owner builds only: whether they add the Owner title bar group; public builds do not. */
+    static partial void OwnerTitleGroup(ref bool present);
+    /** Owner builds only: the Owner group on the title bar row. */
+    partial void DrawOwnerTitleGroup(float row);
+    /** Owner builds only: the Owner group inside the "»" menu. */
+    partial void DrawOwnerTitleOverflow();
+    /** Owner builds only: extra View menu items. */
+    partial void DrawOwnerViewMenuItems();
+    /** Owner builds only: extra windows, drawn with the dialogs. */
+    partial void DrawOwnerWindows();
     private readonly HashSet<string> titleReachable = [];
     private readonly List<string> titleOverflow = [];
 
@@ -168,9 +190,9 @@ public sealed partial class StudioForm
         titleRects.Add(new(name, menu, new(Math.Min(startX, min.X), min.Y), max));
     }
 
-    // Extra room before a section, with a hairline in it: menus | relay and navigation | project | view controls.
+    // Extra room before a section, with a hairline in it: menus | (owner and) navigation | project | view controls.
     // Controls inside a section are ItemSpacing.X apart.
-    private float TitleLead(TitleGroup group) => group is TitleGroup.Relay or TitleGroup.Project or TitleGroup.Render ? 16 * scale : 0;
+    private float TitleLead(TitleGroup group) => group == FirstToolGroup || group is TitleGroup.Project or TitleGroup.Render ? 16 * scale : 0;
 
     /** A --line hairline one control tall, centred at x between two title bar sections. */
     private static void TitleDivider(float x, float row)
@@ -241,7 +263,7 @@ public sealed partial class StudioForm
             case TitleGroup.View: DrawViewMenu(); break;
             case TitleGroup.Window: DrawWindowMenu(); break;
             case TitleGroup.Help: DrawHelpMenu(); break;
-            case TitleGroup.Relay: DrawScreenRelayButton(row); break;
+            case TitleGroup.Owner: DrawOwnerTitleGroup(row); break;
             case TitleGroup.Navigation: DrawNavigationButtons(row); break;
             case TitleGroup.Project:
                 ImGui.SetCursorPosY(textTop);
@@ -324,9 +346,7 @@ public sealed partial class StudioForm
             case TitleGroup.View: DrawViewMenu(); break;
             case TitleGroup.Window: DrawWindowMenu(); break;
             case TitleGroup.Help: DrawHelpMenu(); break;
-            case TitleGroup.Relay:
-                if (UiAuto.BeginMenu("Screen relay")) { DrawScreenRelayItems(); UiAuto.EndMenu(); }
-                break;
+            case TitleGroup.Owner: DrawOwnerTitleOverflow(); break;
             case TitleGroup.Navigation:
                 if (UiAuto.MenuItem("Back", ShortcutInput.Text(ShortcutActions.NavigateBack), false, workspace.CanNavigateBack)) NavigateBack();
                 if (UiAuto.MenuItem("Forward", ShortcutInput.Text(ShortcutActions.NavigateForward), false, workspace.CanNavigateForward))
@@ -531,7 +551,7 @@ public sealed partial class StudioForm
         if (UiAuto.MenuItem("Grid", "", ref grid)) viewport!.ShowGrid = grid;
         ImGui.Separator();
         DrawRenderingMenuItem();
-        DrawPhoneStreamMenuItems();
+        DrawOwnerViewMenuItems();
         UiAuto.EndMenu();
     }
 
@@ -565,7 +585,7 @@ public sealed partial class StudioForm
         if (shortcutsDialog) { ImGui.OpenPopup("Shortcuts"); shortcutsDialog = false; }
         if (noticesDialog) { ImGui.OpenPopup("Third-party notices"); noticesDialog = false; }
         DrawLocationDialog(); DrawProjectDialog(); DrawAddDialog(); DrawCacheDialog(); DrawBundleDialogs(); DrawModDialog();
-        DrawShortcutsDialog(); DrawNoticesDialog(); DrawHelpDialog(); DrawPreferences(); DrawDataExplorer(); DrawPhoneStreamWindow();
+        DrawShortcutsDialog(); DrawNoticesDialog(); DrawHelpDialog(); DrawPreferences(); DrawDataExplorer(); DrawOwnerWindows();
         DrawContentEditors();
         DrawCreation();
     }

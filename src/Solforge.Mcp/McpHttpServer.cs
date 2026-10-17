@@ -13,10 +13,9 @@ namespace Solforge.Mcp;
  * needs "Authorization: Bearer <token>". A plain TcpListener keeps http.sys URL ACLs and ASP.NET Core out.
  * GET /viewport, /viewport.mjpeg and /viewport.jpg show the live viewport in a local browser; they need ?key=<ViewKey>,
  * a separate random key that grants nothing else, and refuse framing.
- * POST /remote/ai (same bearer token, no Origin allowed) is the phone remote control's AI terminal hook: JSON
- * {"text": "...", "keys": ["enter"], "rows": 40} in, the terminal's state and last rows out (ISolforgeHost.RemoteAiAsync).
+ * Owner builds may add authenticated routes beside /mcp through OwnerRoute (see RELEASING.md); public builds have none.
  */
-public sealed class McpHttpServer : IAsyncDisposable
+public sealed partial class McpHttpServer : IAsyncDisposable
 {
     private const int MaximumBody = 16 << 20;
     private readonly McpDispatcher dispatcher;
@@ -36,11 +35,8 @@ public sealed class McpHttpServer : IAsyncDisposable
     /** The live viewport frames the /viewport pages show; null serves 404. */
     public ViewportFeed? Viewport { get; set; }
     public string ViewKey { get; }
-    /** The remote control AI terminal hook behind POST /remote/ai; null serves 404. */
-    public Func<RemoteAiRequest, CancellationToken, Task<JsonObject>>? Remote { get; set; }
     /** Who is connected (McpSessions.cs); null keeps no record. Each request runs with McpSessionRegistry.Current set. */
     public McpSessionRegistry? Sessions { get; set; }
-    private const int MaximumRemoteBody = 16 << 10, MaximumRemoteText = 4000;
     public string ViewportUrl => $"http://127.0.0.1:{Port}/viewport?key={ViewKey}";
 
     public string Token { get; }
@@ -94,7 +90,9 @@ public sealed class McpHttpServer : IAsyncDisposable
         if (!CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(request.Header("authorization") ?? ""),
                 Encoding.UTF8.GetBytes("Bearer " + Token)))
         { await Write(stream, 401, "text/plain", "Missing or wrong Solforge MCP token").ConfigureAwait(false); return; }
-        if (request.Path == "/remote/ai") { await ServeRemoteAi(stream, request).ConfigureAwait(false); return; }
+        Func<NetworkStream, Task>? owner = null;
+        OwnerRoute(request, ref owner);
+        if (owner is not null) { await owner(stream).ConfigureAwait(false); return; }
         if (request.Path != "/mcp") { await Write(stream, 404, "text/plain", "Not found").ConfigureAwait(false); return; }
         string? session = request.Header("mcp-session-id");
         switch (request.Method)
@@ -214,35 +212,8 @@ public sealed class McpHttpServer : IAsyncDisposable
         finally { feed.EndStream(); }
     }
 
-    /** POST /remote/ai for the local screen_stream.py pusher; browsers are refused outright (no Origin may be sent). */
-    private async Task ServeRemoteAi(NetworkStream stream, HttpRequest request)
-    {
-        if (Remote is not { } remote) { await Write(stream, 404, "text/plain", "Not found").ConfigureAwait(false); return; }
-        if (request.Method != "POST") { await Write(stream, 405, "text/plain", "Method not allowed").ConfigureAwait(false); return; }
-        if (request.Header("origin") is not null) { await Write(stream, 403, "text/plain", "Origin not allowed").ConfigureAwait(false); return; }
-        if (request.Body.Length > MaximumRemoteBody) { await Write(stream, 413, "text/plain", "Too large").ConfigureAwait(false); return; }
-        string? text = null;
-        var keys = new List<string>();
-        int rows = 40;
-        try
-        {
-            if (request.Body.Length > 0 && JsonNode.Parse(request.Body) is JsonObject body)
-            {
-                if (body["text"] is JsonValue value && value.TryGetValue(out string? typed)) text = typed;
-                if (body["rows"] is JsonValue count && count.TryGetValue(out int asked)) rows = asked;
-                if (body["keys"] is JsonArray list)
-                    foreach (var key in list.Take(16))
-                        if (key is JsonValue name && name.TryGetValue(out string? k) && k.Length is > 0 and <= 16) keys.Add(k);
-            }
-        }
-        catch (JsonException) { await Write(stream, 400, "text/plain", "Bad JSON").ConfigureAwait(false); return; }
-        if (text is { Length: > MaximumRemoteText }) { await Write(stream, 413, "text/plain", "Text too long").ConfigureAwait(false); return; }
-        JsonObject reply;
-        try { reply = await remote(new RemoteAiRequest(text, keys, Math.Clamp(rows, 1, 200)), stop.Token).WaitAsync(TimeSpan.FromSeconds(10), stop.Token).ConfigureAwait(false); }
-        catch (TimeoutException) { reply = new JsonObject { ["error"] = "Solforge did not answer in time (busy?)." }; }
-        catch (InvalidOperationException exception) { reply = new JsonObject { ["error"] = exception.Message }; }
-        await Write(stream, 200, "application/json", reply.ToJsonString()).ConfigureAwait(false);
-    }
+    /** Owner builds only: picks a handler for an authenticated path other than /mcp; public builds leave it null. */
+    partial void OwnerRoute(HttpRequest request, ref Func<NetworkStream, Task>? handler);
 
     /** initialize params.clientInfo name and version; nulls when absent or not JSON. */
     private static (string? Name, string? Version) ClientInfo(string body)

@@ -15,11 +15,11 @@ public sealed record ViewportFrame(long Id, DateTimeOffset Time, int Width, int 
 
 /**
  * The live viewport: Solforge captures the 3D view continuously while anyone watches (a tool call in the last two
- * minutes, an open local stream or the relay) and keeps the latest frames here. A frame is only added when the
+ * minutes or an open local stream) and keeps the latest frames here. A frame is only added when the
  * picture changed (a 32x18 luminance grid moved by more than a few levels), so ids say "something changed" and
  * waiting for a new id is waiting for the view to change. Reads never touch the GPU.
  */
-public sealed class ViewportFeed(int capacity = 32)
+public sealed partial class ViewportFeed(int capacity = 32)
 {
     public const int GridWidth = 32, GridHeight = 18;
     private const int Tolerance = 3;
@@ -33,7 +33,7 @@ public sealed class ViewportFeed(int capacity = 32)
 
     public static TimeSpan IdleTimeout { get; } = TimeSpan.FromMinutes(2);
 
-    /** Width in pixels of stored frames (160-1920; the relay caps it lower). */
+    /** Width in pixels of stored frames (160-1920). */
     public int MaxWidth { get => maxWidth; set => maxWidth = Math.Clamp(value, 160, 1920); }
     public int Quality { get => quality; set => quality = Math.Clamp(value, 20, 95); }
     public int Fps { get => fps; set => fps = Math.Clamp(value, 1, 30); }
@@ -45,13 +45,22 @@ public sealed class ViewportFeed(int capacity = 32)
     public DateTimeOffset? LastCapture { get; private set; }
     /** Local browser stream (http://127.0.0.1:port/viewport?key=...), set when the MCP server starts. */
     public string? LocalUrl { get; set; }
-    public FrameRelay? Relay { get; set; }
 
     /** Keeps the capture running for IdleTimeout. */
     public void Want() => Interlocked.Exchange(ref lastWant, Environment.TickCount64);
 
-    public bool Wanted => Volatile.Read(ref streams) > 0 || Relay is { Running: true }
-        || Environment.TickCount64 - Interlocked.Read(ref lastWant) < (long)IdleTimeout.TotalMilliseconds;
+    public bool Wanted
+    {
+        get
+        {
+            bool wanted = Volatile.Read(ref streams) > 0 || Environment.TickCount64 - Interlocked.Read(ref lastWant) < (long)IdleTimeout.TotalMilliseconds;
+            if (!wanted) OwnerWanted(ref wanted);
+            return wanted;
+        }
+    }
+
+    /** Owner builds only (RELEASING.md): an owner-only consumer keeps the capture running; public builds have none. */
+    partial void OwnerWanted(ref bool wanted);
 
     /** Registers a streaming consumer and wakes the capture. */
     public void BeginStream() { Interlocked.Increment(ref streams); Want(); }

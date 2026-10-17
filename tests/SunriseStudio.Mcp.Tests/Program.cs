@@ -263,7 +263,7 @@ async Task StdioRoundTrip()
             "list_content_families", "list_content", "get_content", "validate_content", "get_subclass_layout", "check_subclass_build", "get_help",
             "create_content", "update_content", "delete_content", "export_content",
             "list_ui_controls", "ui_invoke", "ui_set_value", "ui_set_checked", "ui_select",
-            "get_viewport_frame", "get_viewport_frames", "wait_for_viewport_change", "read_screen_text", "get_viewport_stream", "set_viewport_stream",
+            "get_viewport_frame", "get_viewport_frames", "wait_for_viewport_change", "read_screen_text", "get_viewport_stream", .. SolforgeTools.OwnerToolNames,
             "get_player_position", "wait_for_player_near",
             "list_graph_node_types", "list_graphs", "get_graph", "compile_graph", "create_mission_script", "create_graph", "edit_graph", "apply_graph",
             "list_mission_lib_calls", "insert_mission_lib_call",
@@ -272,7 +272,7 @@ async Task StdioRoundTrip()
 
         string[] actions = ["select_object", "focus_camera", "highlight", "open_file", "apply_project_edit", "open_map", "open_asset",
             "set_viewport_rendering", "edit_placement", "edit_bounds", "revert_object_edit", "apply_item_edit", "apply_vendor_edit",
-            "start_creation", "replace_texture_pixels", "build_project", "set_settings", "set_mod_details", "close_map", "close_asset", "open_project", "create_project", "close_project", "build_to_folder", "update_running_game", "reload_mission_scripts", "rename_function", "ui_invoke", "ui_set_value", "ui_set_checked", "ui_select", "set_viewport_stream", "create_content", "update_content", "delete_content", "export_content", "create_mission_script", "create_graph", "edit_graph", "apply_graph", "insert_mission_lib_call", "revert_to_base", .. SolforgeTools.CommandToolNames.Where(name => name != "list_commands")];
+            "start_creation", "replace_texture_pixels", "build_project", "set_settings", "set_mod_details", "close_map", "close_asset", "open_project", "create_project", "close_project", "build_to_folder", "update_running_game", "reload_mission_scripts", "rename_function", "ui_invoke", "ui_set_value", "ui_set_checked", "ui_select", .. SolforgeTools.OwnerToolNames, "create_content", "update_content", "delete_content", "export_content", "create_mission_script", "create_graph", "edit_graph", "apply_graph", "insert_mission_lib_call", "revert_to_base", .. SolforgeTools.CommandToolNames.Where(name => name != "list_commands")];
         Expect(tools.Select(tool => tool?["name"]?.ToString()).SequenceEqual(expected), "tool names: " + string.Join(",", tools.Select(tool => tool?["name"])));
         foreach (var tool in tools)
         {
@@ -393,7 +393,8 @@ async Task StdioRoundTrip()
         var still = Body(await Call(48, "tools/call", new JsonObject { ["name"] = "wait_for_viewport_change", ["arguments"] = new JsonObject { ["timeout"] = 0.2 } }));
         Expect(still["changed"]?.GetValue<bool>() == false && still["latest"]?.GetValue<long>() == 1, "wait_for_viewport_change times out on a still view");
         var streamInfo = Body(await Call(49, "tools/call", new JsonObject { ["name"] = "get_viewport_stream", ["arguments"] = new JsonObject() }));
-        Expect(streamInfo["relay"]?["on"]?.GetValue<bool>() == false, "the relay is off by default: " + streamInfo.ToJsonString());
+        Expect(streamInfo["status"] is not null && streamInfo["fps"] is not null, "get_viewport_stream: " + streamInfo.ToJsonString());
+        OwnerChecks.StreamInfo(streamInfo.AsObject());
         // Player position.
         var player = Body(await Call(50, "tools/call", new JsonObject { ["name"] = "get_player_position", ["arguments"] = new JsonObject() }));
         Expect(player["source"]?.ToString() == "recorder" && host.Queries.Contains("get_player_position"), "get_player_position reaches the host");
@@ -628,8 +629,7 @@ static void ViewportFeedChecks()
     Expect(feed.WaitForChangeAsync(3, TimeSpan.Zero, CancellationToken.None).Result?.Id == 5, "an old id returns the newest frame at once");
     Expect(new ViewportFrame(1, DateTimeOffset.UnixEpoch, 1, 1, [0xFF, 0xD8, 0xFF], 1, "x").Jpeg.Length == 3
         && McpToolResult.MimeType([0xFF, 0xD8, 0xFF]) == "image/jpeg" && McpToolResult.MimeType([0x89, 0x50]) == "image/png", "image MIME types");
-    Expect(FrameRelay.Clean("My Stream!") == "my-stream" && FrameRelay.Clean("x") is null && FrameRelay.Clean("../etc") == "etc", "relay stream names");
-    Expect(!feed.Wanted || feed.Relay is null, "nothing keeps a fresh feed running except a recent want");
+    OwnerChecks.Feed(feed);
 }
 
 void CommandResolution()

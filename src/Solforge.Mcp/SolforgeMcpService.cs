@@ -3,7 +3,7 @@ using System.Diagnostics;
 namespace Solforge.Mcp;
 
 /** The running server for one Solforge process: dispatcher, HTTP listener, discovery file and client configs. */
-public sealed class SolforgeMcpService : IAsyncDisposable
+public sealed partial class SolforgeMcpService : IAsyncDisposable
 {
     private readonly McpHttpServer server;
 
@@ -34,7 +34,8 @@ public sealed class SolforgeMcpService : IAsyncDisposable
             .. Testkit.TestkitTools.Create(Testkit.TestkitMonitor.CreateDefault(), host.ApproveAsync)], host as ISolforgePresence, sessions), version,
             SolforgeTools.Instructions + LocalServer.LocalServerTools.Instructions + ClientProvenance.ClientBuildTools.Instructions + Testkit.TestkitTools.Instructions + MultiAgentTools.Instructions);
         dispatcher.OnToolCall = tool => host.Automatic?.NoteToolCall(tool);
-        var server = new McpHttpServer(dispatcher) { Viewport = host.Viewport, Remote = host.RemoteAiAsync, Sessions = sessions };
+        var server = new McpHttpServer(dispatcher) { Viewport = host.Viewport, Sessions = sessions };
+        ConnectOwnerFeatures(server, host);
         server.Start();
         host.Viewport.LocalUrl = server.ViewportUrl;
         McpDiscovery.CleanStale();
@@ -68,11 +69,16 @@ public sealed class SolforgeMcpService : IAsyncDisposable
         return null;
     }
 
+    /** Owner builds only (RELEASING.md): wires their extra server features to the host; public builds have none. */
+    static partial void ConnectOwnerFeatures(McpHttpServer server, ISolforgeHost host);
+    /** Owner builds only: stops what ConnectOwnerFeatures or their tools started. */
+    static partial void StopOwnerFeatures(ViewportFeed feed);
+
     /** Removes the discovery file and stops the server. */
     public async ValueTask DisposeAsync()
     {
         McpDiscovery.Remove(Environment.ProcessId);
-        if (server.Viewport is { } feed) { feed.Relay?.Stop(); feed.LocalUrl = null; }
+        if (server.Viewport is { } feed) { StopOwnerFeatures(feed); feed.LocalUrl = null; }
         await server.DisposeAsync().ConfigureAwait(false);
     }
 

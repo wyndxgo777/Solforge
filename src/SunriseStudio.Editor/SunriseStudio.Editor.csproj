@@ -27,7 +27,7 @@
     <ProjectReference Include="../Solforge.Graphs/Solforge.Graphs.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <!-- View > Stream to phone draws the phone link as a QR code. -->
-    <PackageReference Include="QRCoder" Version="1.8.0" />
+    <!-- Owner builds only (SolforgeRelay=true, RELEASING.md) draw a link as a QR code. -->
+    <PackageReference Include="QRCoder" Version="1.8.0" Condition="'$(SolforgeRelay)' == 'true'" />
   </ItemGroup>
 </Project>

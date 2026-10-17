@@ -1,4 +1,5 @@
-# Developer build, used by verify.ps1. Users build with publish.ps1.
+# Developer build, used by verify.ps1. Users build with publish.ps1. This is the public configuration
+# (SolforgeRelay=false, Directory.Build.props): no owner-only features (RELEASING.md).
 param([ValidateSet('Debug', 'Release')][string]$Configuration = 'Release')
 $ErrorActionPreference = 'Stop'
 $env:DOTNET_CLI_HOME = Join-Path $PSScriptRoot '.dotnet'

@@ -94,7 +94,7 @@ public sealed partial class StudioForm
         if (aiAutomaticEnterAt == 0 && now - aiAutomaticQuietSince >= 1.5 && watchdog.TakeOutgoing() is { } message)
         {
             aiTerminal.Paste(message);
-            // Claude Code drops keys that arrive with a paste (see RemoteAiAsync), so Enter follows a little later.
+            // Claude Code drops keys that arrive with a paste, so Enter follows a little later.
             aiAutomaticEnterAt = now + .4;
         }
     }
