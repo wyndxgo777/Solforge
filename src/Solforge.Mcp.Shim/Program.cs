@@ -83,7 +83,7 @@ async Task Forward(string message)
         request.Headers.Accept.ParseAdd("text/event-stream");
         if (session is not null) request.Headers.TryAddWithoutValidation("Mcp-Session-Id", session);
         // Several agents can share one Solforge: the pid tells their sessions apart in get_sessions and the presence list.
-        request.Headers.TryAddWithoutValidation(McpSessionRegistry.PidHeader, Environment.ProcessId.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        request.Headers.TryAddWithoutValidation("X-Solforge-Client-Pid" /* McpSessionRegistry.PidHeader */, Environment.ProcessId.ToString(System.Globalization.CultureInfo.InvariantCulture));
         using var response = await http.SendAsync(request);
         if (response.Headers.TryGetValues("Mcp-Session-Id", out var values)) session = values.FirstOrDefault() ?? session;
         if (response.StatusCode == HttpStatusCode.Accepted) return;
