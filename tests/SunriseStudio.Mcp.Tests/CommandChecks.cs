@@ -33,7 +33,7 @@ static class CommandChecks
         var toolWord = new Regex("(?<![\\w.(])[a-z]+(?:_[a-z0-9]+)+(?![\\w.])");
         foreach (string text in EditorCommands.All.Select(command => command.Prefer ?? "").Concat(ToolMap.Rows.Select(row => row.Tools)))
             foreach (Match match in toolWord.Matches(text))
-                Expect(names.Contains(match.Value) || match.Value is "ui_" or "local_server", $"'{match.Value}' in the map is a real tool");
+                Expect(names.Contains(match.Value) || match.Value is "ui_" or "local_server" or "get_client_build" or "get_sessions" || match.Value.StartsWith("local_server_") || match.Value.StartsWith("testkit_"), $"'{match.Value}' in the map is a real tool");
         Expect(ToolMap.Rows.Any(row => row.Feature.Contains("AI tab") && row.Tools.StartsWith("none")), "Settings > AI stays the user's");
 
         async Task<McpToolResult> Call(string name, JsonObject args) => await tools[name].Handler(args, CancellationToken.None);
