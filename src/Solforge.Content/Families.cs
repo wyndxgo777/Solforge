@@ -152,6 +152,22 @@ public sealed class LootPoolDefinition : ContentDocument
     }
 }
 
+/**
+ * One map squad an enemy document stands for. The Sol server places squads, so it applies the member
+ * counts to script placements and rolls the enemy's loot_pool on each death in the squad.
+ */
+public sealed class EnemySquadBinding
+{
+    /** The squad's id or slot name in the mission (list_mission_objects); a trailing '*' matches a prefix. */
+    public string Squad { get; set; } = "";
+    /** Substring of the activity id the binding is limited to; empty binds it everywhere. */
+    public string Activity { get; set; } = "";
+    /** Member counts by lane (0..64 each, at most 15); empty keeps the package counts times CountScale. */
+    public List<int> Counts { get; set; } = [];
+    /** Multiplies the package's default member counts when Counts is empty (0..10). */
+    public double CountScale { get; set; } = 1;
+}
+
 /** Enemy ranks, from minor to champions. */
 public enum EnemyRank { Minor, Elite, Major, Ultra, Boss, ChampionBarrier, ChampionOverload, ChampionUnstoppable }
 
@@ -174,6 +190,10 @@ public sealed class EnemyDefinition : ContentDocument
     public Dictionary<string, double> Resistances { get; set; } = [];
     public List<string> Abilities { get; set; } = [];
     public string? LootPool { get; set; }
+    /** Chance per kill (0..1) that a death in a bound squad pays from LootPool. */
+    public double LootChance { get; set; } = 0.05;
+    /** Map squads this enemy stands for; the server applies counts and drops to them. */
+    public List<EnemySquadBinding> Squads { get; set; } = [];
     public int Level { get; set; }
 
     /** Checks this enemy family for problems the server would refuse. */
@@ -187,6 +207,18 @@ public sealed class EnemyDefinition : ContentDocument
         foreach (var (type, value) in Resistances) if (value is < 0 or > 10) issues.Error("resistances." + type, "Must be 0..10.");
         if (BaseTag is not null && ParseHash(BaseTag) is null) issues.Error("base_tag", "Not a tag hash.");
         if (Rank is EnemyRank.Boss or EnemyRank.Ultra && Health < 1000) issues.Warn("health", "Bosses usually have far more health.");
+        if (LootChance is < 0 or > 1) issues.Error("loot_chance", "Chance is 0..1 per kill.");
+        if (LootPool is not null && Squads.Count == 0)
+            issues.Warn("loot_pool", "The server pays enemy drops per squad: bind squads, or use a loot_pools enemy_kill rule.");
+        for (int i = 0; i < Squads.Count; i++)
+        {
+            var squad = Squads[i];
+            if (string.IsNullOrWhiteSpace(squad.Squad) || squad.Squad.Trim() == "*") issues.Error($"squads[{i}].squad", "Name the squad (id or slot name).");
+            if (squad.Counts.Count > 15) issues.Error($"squads[{i}].counts", "A squad has at most 15 member lanes.");
+            if (squad.Counts.Any(count => count is < 0 or > 64)) issues.Error($"squads[{i}].counts", "Each count is 0..64.");
+            if (squad.CountScale is < 0 or > 10) issues.Error($"squads[{i}].count_scale", "Must be 0..10.");
+            if (squad.Counts.Count > 0 && squad.CountScale != 1) issues.Warn($"squads[{i}].count_scale", "Ignored: counts are set.");
+        }
     }
 
     /** Content this enemy points at. */
@@ -357,6 +389,10 @@ public sealed class ArtifactDefinition : ContentDocument
                 else if (!ids.Add(perk.Id)) issues.Error($"columns[{c}].perks[{p}].id", "Repeated perk id.");
                 if (string.IsNullOrWhiteSpace(perk.Name)) issues.Error($"columns[{c}].perks[{p}].name", "Name cannot be empty.");
                 if (perk.PlugHash is not null && ParseHash(perk.PlugHash) is null) issues.Error($"columns[{c}].perks[{p}].plug_hash", "Not a hash.");
+                if (perk.PlugHash is null) issues.Warn($"columns[{c}].perks[{p}].plug_hash", "No plug: the server cannot sell this perk.");
+                foreach (int index in perk.SandboxPerks)
+                    if (index is < 0 or > ushort.MaxValue) issues.Error($"columns[{c}].perks[{p}].sandbox_perks", $"Perk index {index} is out of range.");
+                if (perk.SandboxPerks.Count > 8) issues.Error($"columns[{c}].perks[{p}].sandbox_perks", "At most 8 sandbox perks per mod.");
             }
         }
     }

@@ -100,7 +100,7 @@ public sealed partial class StudioForm
             }
         }
         if (UiAuto.Button("Export all to build\\server", new(-1, 0))) ExportContent(store);
-        if (ImGui.IsItemHovered()) ImGui.SetTooltip("loot_pools.lua and sol_content.lua (server/scripts), subclass_nodes.tsv (server/data)");
+        if (ImGui.IsItemHovered()) ImGui.SetTooltip("loot_pools.lua and sol_custom_data.lua (server/scripts), subclass_nodes.tsv (server/data)");
     }
 
     private void ExportContent(ContentStore store)

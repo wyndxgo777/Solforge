@@ -11,6 +11,7 @@ Goal: get different enemies into the world with what Studio supports.
 - Editable on an existing enemy: Local definition (class 0x8080815F: display name and action table), Damage part scale, per-type scale, pool start fraction. These change the shared config used by every enemy of that type and may not work in game.
 - A new skinned model: Entities > New uses Import skinned model, Hob rig only.
 - In practice "new enemy" means reusing existing squads/prefabs, changing where they appear (Lua), or tuning a shared config.
+- Enemy content documents (`create_content` family `enemy`) export to `sol_custom_data.lua`. The server applies only `squads` (bind to map squads by id or slot name, `*` prefix, optional `activity`; `counts` per lane or `count_scale`) and `loot_pool` + `loot_chance` (rolled per death in a bound squad). Health, shields, damage_scale, resistances and level are client-simulated and not applied.
 
 ## Steps
 1. `get_context`, `get_open_documents`. Decide: reuse placement (Lua) or tune a config.
@@ -18,7 +19,7 @@ Goal: get different enemies into the world with what Studio supports.
 3. Reuse in patrol/freeroam: add `freeroam.unit(mission.Squad.X, mission.Slot.X)` to a zone's `patrol` in `<dest>_freeroam/content.lua`. See skill solforge-patrol-content. The squad must exist in that destination's installed mission data.
 4. In a mission script: place squads with `lib.combat`/`lib.flow` (`assign_combat_objective` before placing; await `cohort.cleared`). See skill solforge-new-mission.
 5. Tune a shared enemy: `open_asset`, `get_tag`, `get_package_entry`, then edit damage scales in the UI Components tab. Warn the user it affects every use of that config.
-6. Kill drops: `loot_pools.lua` `enemy_kill.<name>` rule (activity/bubble substring, pool, chance).
+6. Squad size and kill drops: an enemy document with `squads` and `loot_pool`/`loot_chance` (`export_content`, copy `sol_custom_data.lua` to Sunrise\scripts; `/content status` shows the bindings), or a `loot_pools.lua` `enemy_kill.<name>` rule (activity/bubble substring, pool, chance).
 7. `build_project` (`install=true` with game closed; Update running game for Lua-only changes).
 8. Test: go to the zone, confirm the squad spawns, fights and drops.
 

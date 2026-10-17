@@ -108,7 +108,47 @@ try { LootPoolsReader.Parse("return { pools = os.exit() }"); } catch (InvalidDat
 Check(badLua, "code in the module is refused");
 var files = ContentExport.Build([pool, subclass]);
 Check(files.Select(file => file.RelativePath).Order(StringComparer.Ordinal)
-    .SequenceEqual(["server/data/subclass_nodes.tsv", "server/scripts/loot_pools.lua", "server/scripts/sol_content.lua"]), "export writes the three server files");
+    .SequenceEqual(["server/data/subclass_nodes.tsv", "server/scripts/loot_pools.lua", "server/scripts/sol_custom_data.lua"]), "export writes the three server files");
+Check(ContentExport.CustomDataPath == "server/scripts/sol_custom_data.lua" && files.All(file => !file.RelativePath.Contains("sol_content")),
+    "custom data is sol_custom_data.lua, not the server's sol_content gate");
+
+// Custom data the server reads (server/activity/authored_content.cpp): enemy squads and drops, artifact perks.
+var grunt = (EnemyDefinition)ContentStore.NewDocument(ContentFamilies.Enemy, "dreg", "Dreg");
+grunt.LootPool = "moon";
+grunt.LootChance = 0.25;
+grunt.Squads = [new() { Squad = "SQ_DREGS*", Counts = [4, 2] }, new() { Squad = "sq_boss", Activity = "strike_bond", CountScale = 2 }];
+Check(!grunt.Validate().HasErrors, "enemy squad bindings validate: " + string.Join("; ", grunt.Validate()));
+var badGrunt = (EnemyDefinition)ContentStore.NewDocument(ContentFamilies.Enemy, "bad", "Bad");
+badGrunt.LootChance = 2;
+badGrunt.Squads = [new() { Squad = "" }, new() { Squad = "sq", Counts = [65] }, new() { Squad = "sq", CountScale = 11 }];
+var badIssues = badGrunt.Validate();
+Check(new[] { "loot_chance", "squads[0].squad", "squads[1].counts", "squads[2].count_scale" }
+    .All(field => badIssues.Any(issue => issue.Error && issue.Path == field)), "bad squad bindings are errors: " + string.Join("; ", badIssues));
+var poolOnly = (EnemyDefinition)ContentStore.NewDocument(ContentFamilies.Enemy, "pool_only", "Pool only");
+poolOnly.LootPool = "moon";
+Check(poolOnly.Validate().Any(issue => !issue.Error && issue.Path == "loot_pool"), "a loot_pool without squads warns (drops are per squad)");
+var season = (ArtifactDefinition)ContentStore.NewDocument(ContentFamilies.Artifact, "season", "Season");
+season.Columns = [new() { Perks = [new() { Id = "p1", Name = "P1", PlugHash = "0x00000011", SandboxPerks = [7] }] }];
+season.MaxUnlocks = 1;
+Check(!season.Validate().HasErrors, "an artifact perk with sandbox perks validates: " + string.Join("; ", season.Validate()));
+season.Columns[0].Perks[0].SandboxPerks = [70000];
+Check(season.Validate().Any(issue => issue.Error && issue.Path.EndsWith("sandbox_perks", StringComparison.Ordinal)), "an artifact sandbox perk out of range is an error");
+season.Columns[0].Perks[0].SandboxPerks = [7];
+string custom = ContentExport.Build([grunt, season]).Single(file => file.RelativePath == ContentExport.CustomDataPath).Text;
+Check(custom.Contains("squads = {") && custom.Contains("squad = \"SQ_DREGS*\"") && custom.Contains("count_scale = 2") && custom.Contains("loot_chance = 0.25")
+    && custom.Contains("counts = {") && custom.Contains("activity = \"strike_bond\"") && custom.Contains("sandbox_perks = {")
+    && custom.Contains("plug_hash = \"0x00000011\"") && custom.Contains("schema = 1"), "sol_custom_data.lua carries what the server reads:\n" + custom);
+
+// Runtime support: Live only where the server applies the whole family; client-owned parts say why.
+RuntimeSupport SupportOf(string id) => ContentFamilies.Find(id)!.Support;
+Check(SupportOf(ContentFamilies.Artifact) == RuntimeSupport.Live && SupportOf(ContentFamilies.LootPool) == RuntimeSupport.Live
+    && SupportOf(ContentFamilies.Ability) == RuntimeSupport.Partial && SupportOf(ContentFamilies.Enemy) == RuntimeSupport.Partial
+    && SupportOf(ContentFamilies.Activity) == RuntimeSupport.Partial && SupportOf(ContentFamilies.DamageType) == RuntimeSupport.AuthoringOnly,
+    "runtime support levels match the server reader");
+Check(ContentFamilies.All.Where(family => family.Support != RuntimeSupport.Live)
+        .All(family => family.Notes.Contains("client", StringComparison.OrdinalIgnoreCase) || family.Notes.Contains("authoring only", StringComparison.OrdinalIgnoreCase))
+    && ContentFamilies.All.Where(family => family.Id != ContentFamilies.LootPool).All(family => family.Output.Contains("sol_custom_data.lua")),
+    "non-live families say what is not applied, and outputs name sol_custom_data.lua");
 
 // Activities: unreachable objectives and missing completions are errors.
 var activity = (ActivityDefinition)ContentStore.NewDocument(ContentFamilies.Activity, "strike", "Strike");

@@ -240,7 +240,7 @@ public static partial class SolforgeTools
             (store, args) => store.Delete(ContentFamilies.Find(Arg(args, "family"))!.Id, Arg(args, "id")) ? "Deleted." : "No such document.");
         yield return Act("export_content", "Export the project's content under <project>/build (or output, a folder inside the project): " +
             "server/scripts/loot_pools.lua (live: copy to Sunrise\\scripts beside the server), server/data/subclass_nodes.tsv (live node names: copy to " +
-            "Sunrise\\data) and server/scripts/sol_content.lua (every document as plain data). Refuses while validate_content reports errors.",
+            "Sunrise\\data) and server/scripts/sol_custom_data.lua (every document as plain data; the server applies each family's live parts: copy to Sunrise\\scripts). Refuses while validate_content reports errors.",
             McpJson.Schema(("output", "string", "Optional project-relative folder (default build)", false)),
             args => McpJson.String(args, "output") is { Length: > 0 } output && (Path.IsPathRooted(output) || output.Contains("..")) ? "output must be a folder inside the project." : null,
             args => "Export content to " + (McpJson.String(args, "output") is { Length: > 0 } output ? output : "build"),
