@@ -176,9 +176,7 @@ public sealed partial class StudioForm
                 problems.Add($"{solforge.Name}: {error}");
             if (run != Volatile.Read(ref aiMcpCheck)) return;
             aiMcpWarning = problems.Count == 0 ? null
-                : "MCP servers that will not connect (fix the path or republish Solforge, then Start again):
-  " + string.Join("
-  ", problems);
+                : "MCP servers that will not connect (fix the path or republish Solforge, then Start again):\n  " + string.Join("\n  ", problems);
         });
     }
 
