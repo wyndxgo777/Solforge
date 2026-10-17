@@ -228,6 +228,7 @@ public sealed partial class StudioForm
             case "view.local_server": return AiShowPanel("local_server");
             case "view.items": return AiShowPanel("items");
             case "view.data_explorer": return AiShowPanel("data_explorer");
+            case "view.retail": return AiShowPanel("retail");
             case "view.frame_selection": viewport?.FocusSelection(); return "Framed the selection.";
             case "view.set_cursor_to_selection": viewport?.SetCursorToSelection(); return "Moved the 3D cursor to the selection.";
             case "view.wireframe": viewport!.Wireframe = on; return "Wireframe " + (on ? "on." : "off.");
@@ -286,6 +287,7 @@ public sealed partial class StudioForm
                 if (workspace.Catalog is null) return Refused + "Open the game installation first.";
                 ShowItems(); return "Showing the item browser.";
             case "data_explorer": dataExplorerOpen = true; return "Opened the Data explorer.";
+            case "retail": retailOpen = true; return "Opened the Retail workspace.";
             case "content_editors": contentOpen = true; return "Opened the Content editors.";
             case "asset_browser": return AiShowLayoutPanel(StudioPanelKind.Browser);
             case "inspector": return AiShowLayoutPanel(StudioPanelKind.Inspector);

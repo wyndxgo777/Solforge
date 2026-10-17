@@ -95,6 +95,9 @@ Invoke-Dotnet 'Check failed: Solforge.Provenance.Tests' @(
     (Join-Path $PSScriptRoot 'tests/Solforge.Provenance.Tests/bin/Release/net9.0/Solforge.Provenance.Tests.dll'))
 Invoke-Dotnet 'Check failed: Solforge.TagSchemas.Tests' @(
     (Join-Path $PSScriptRoot 'tests/Solforge.TagSchemas.Tests/bin/Release/net9.0/Solforge.TagSchemas.Tests.dll'))
+# Retail (build 245048) reader, decoders, converters and retail_* MCP tools on synthetic tags; no dump needed.
+Invoke-Dotnet 'Check failed: Solforge.Retail.Tests' @(
+    (Join-Path $PSScriptRoot 'tests/Solforge.Retail.Tests/bin/Release/net9.0/Solforge.Retail.Tests.dll'))
 
 if ($Game) {
     $missionUi = Get-Check 'Missions.UiTests' 'net9.0-windows'

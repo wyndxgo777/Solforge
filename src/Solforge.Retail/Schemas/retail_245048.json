@@ -1,0 +1,142 @@
+{
+  "comment": "Retail Destiny 2 build 245048 (package v53) struct layouts. Kept apart from the 86657 schemas in SunriseStudio.Packages: this registry uses the retail array marker 0x80809FB8. 'confirmed' means the offset was checked on real retail payloads from E:\\sol-live-pkg-extract (2026-10-17) and agrees with cohaereo/alkahest (the most recent retail reader); 'guessed' fields come from alkahest or Charm alone. Wide fields (16-byte WideHash: u32 hash32, u32 is-32-bit flag, u64 hash64) are declared as their u32 tag word plus a u32 flag.",
+  "schemas": [
+    {"class": "0x808099EF", "name": "SLocalizedStrings (string container)", "family": "strings", "size": 80, "provenance": "alkahest data/strings.rs SLocalizedStrings; verified on 0x80D26002", "decoders": ["RetailStrings"], "fields": [
+      {"name": "file_size", "offset": 0, "type": "size64", "status": "confirmed", "source": "tag header"},
+      {"name": "string_hashes", "offset": 8, "type": "array", "status": "confirmed", "source": "alkahest SLocalizedStrings.string_hashes; verified", "element_class": "0x80800070", "stride": 4},
+      {"name": "language_english", "offset": 24, "type": "tag", "status": "confirmed", "source": "alkahest SLocalizedStrings.language_english; verified (class 0x808099F1)"},
+      {"name": "language_1c", "offset": 28, "type": "tag", "status": "guessed", "source": "the other languages follow; alkahest leaves their order unnamed"}
+    ]},
+    {"class": "0x808099F1", "name": "SStringData (one language of a container)", "family": "strings", "size": 80, "provenance": "alkahest data/strings.rs SStringData; verified on 0x80D3C9A5", "decoders": ["RetailStrings"], "fields": [
+      {"name": "file_size", "offset": 0, "type": "size64", "status": "confirmed", "source": "tag header"},
+      {"name": "string_parts", "offset": 8, "type": "array", "status": "confirmed", "source": "alkahest SStringData.string_parts; verified", "element_class": "0x808099F7", "element": "retail.string_part", "stride": 32},
+      {"name": "string_data", "offset": 40, "type": "array", "status": "confirmed", "source": "alkahest SStringData.string_data (UTF-8 bytes); verified", "element_class": "0x80800005", "stride": 1},
+      {"name": "string_combinations", "offset": 56, "type": "array", "status": "confirmed", "source": "alkahest SStringData.string_combinations; verified", "element_class": "0x808099F5", "element": "retail.string_combination", "stride": 16}
+    ]},
+    {"id": "retail.string_part", "class": "0x808099F7", "name": "SStringPart", "family": "strings", "size": 32, "provenance": "alkahest SStringPart; verified", "fields": [
+      {"name": "unk0", "offset": 0, "type": "u64", "status": "guessed", "source": "alkahest"},
+      {"name": "data", "offset": 8, "type": "relptr", "status": "confirmed", "source": "relative pointer into string_data; verified"},
+      {"name": "byte_length", "offset": 20, "type": "u16", "status": "confirmed", "source": "verified"},
+      {"name": "string_length", "offset": 22, "type": "u16", "status": "confirmed", "source": "verified"},
+      {"name": "cipher_shift", "offset": 24, "type": "u16", "status": "confirmed", "source": "Charm/alkahest; 0 in every sampled part (added to each char when not 0)"}
+    ]},
+    {"id": "retail.string_combination", "class": "0x808099F5", "name": "SStringCombination", "family": "strings", "size": 16, "provenance": "alkahest SStringPartDefinition list; verified", "fields": [
+      {"name": "first_part", "offset": 0, "type": "relptr", "status": "confirmed", "source": "relative pointer to the first SStringPart; verified"},
+      {"name": "part_count", "offset": 8, "type": "i64", "status": "confirmed", "source": "verified"}
+    ]},
+    {"class": "0x80808E8E", "name": "SActivity", "family": "activity", "size": 308, "provenance": "alkahest data/activity/mod.rs SActivity; verified on 0x80E5A897 (schism freeroam)", "decoders": ["RetailActivity"], "fields": [
+      {"name": "file_size", "offset": 0, "type": "size64", "status": "confirmed", "source": "tag header"},
+      {"name": "location_name", "offset": 8, "type": "hash", "status": "confirmed", "source": "FNV-1 of the location; tiger-mcp scan_tag_for_hashes resolves 'schism'"},
+      {"name": "activity_name", "offset": 12, "type": "hash", "status": "confirmed", "source": "FNV-1 of the activity; resolves 'schism_freeroam'"},
+      {"name": "unk10", "offset": 16, "type": "hash", "status": "guessed", "source": "alkahest"},
+      {"name": "unk14", "offset": 20, "type": "hash", "status": "guessed", "source": "alkahest"},
+      {"name": "unk18", "offset": 24, "type": "relptr", "status": "guessed", "source": "alkahest ResourcePointer"},
+      {"name": "destination", "offset": 32, "type": "tag", "status": "confirmed", "source": "WideHash (16 bytes) to an SDestination 0x80808E8B; verified"},
+      {"name": "unk40", "offset": 64, "type": "array", "status": "confirmed", "source": "alkahest; element class 0x80808926 seen", "element_class": "0x80808926"},
+      {"name": "unk50", "offset": 80, "type": "array", "status": "confirmed", "source": "alkahest SUnk80808924 phases (bubble, map references); verified", "element_class": "0x80808924", "element": "retail.activity_phase", "stride": 72},
+      {"name": "unk70", "offset": 112, "type": "hash", "status": "guessed", "source": "alkahest"},
+      {"name": "unk74", "offset": 116, "type": "tag", "status": "guessed", "source": "alkahest"},
+      {"name": "ambient_activity", "offset": 120, "type": "tag", "status": "confirmed", "source": "WideHash; verified"}
+    ]},
+    {"id": "retail.activity_phase", "class": "0x80808924", "name": "Activity phase (bubble entry)", "family": "activity", "size": 72, "provenance": "alkahest SUnk80808924; verified", "fields": [
+      {"name": "location_name", "offset": 0, "type": "hash", "status": "confirmed", "source": "verified"},
+      {"name": "activity_name", "offset": 4, "type": "hash", "status": "confirmed", "source": "verified"},
+      {"name": "bubble_name", "offset": 8, "type": "hash", "status": "confirmed", "source": "FNV-1 bubble name; resolves e.g. 'backyard'"},
+      {"name": "unk18", "offset": 24, "type": "array", "status": "confirmed", "source": "alkahest SUnk80808948 (entity resource links); verified", "element_class": "0x80808948", "element": "retail.activity_entity_link", "stride": 24},
+      {"name": "map_references", "offset": 40, "type": "array", "status": "confirmed", "source": "WideHash list to SBubbleParent 0x8080891E; verified", "element_class": "0x8080891D", "stride": 16}
+    ]},
+    {"id": "retail.activity_entity_link", "class": "0x80808948", "name": "Activity entity link", "family": "activity", "size": 24, "provenance": "alkahest SUnk80808948; verified", "fields": [
+      {"name": "location_name", "offset": 0, "type": "hash", "status": "confirmed", "source": "verified"},
+      {"name": "activity_name", "offset": 4, "type": "hash", "status": "confirmed", "source": "verified"},
+      {"name": "bubble_name", "offset": 8, "type": "hash", "status": "confirmed", "source": "verified"},
+      {"name": "activity_phase_name", "offset": 12, "type": "hash", "status": "guessed", "source": "alkahest"},
+      {"name": "activity_phase_name2", "offset": 16, "type": "hash", "status": "guessed", "source": "alkahest"},
+      {"name": "unk_entity_reference", "offset": 20, "type": "tag", "status": "confirmed", "source": "tag of class 0x80808E89 (entity resource list); verified"}
+    ]},
+    {"class": "0x80808E8B", "name": "SDestination", "family": "activity", "size": 96, "provenance": "alkahest data/activity/mod.rs SDestination, offsets re-checked on 0x80A7E254 (bootstrap_d3) and 0x80A7E28D (schism)", "decoders": ["RetailActivity"], "fields": [
+      {"name": "file_size", "offset": 0, "type": "size64", "status": "confirmed", "source": "tag header"},
+      {"name": "location_name", "offset": 8, "type": "hash", "status": "confirmed", "source": "FNV-1 location name"},
+      {"name": "string_container", "offset": 16, "type": "tag", "status": "confirmed", "source": "WideHash to SLocalizedStrings; schism's 64-bit hash is not in the lookup cache"},
+      {"name": "events", "offset": 32, "type": "tag", "status": "guessed", "source": "alkahest"},
+      {"name": "patrols", "offset": 36, "type": "tag", "status": "guessed", "source": "alkahest"},
+      {"name": "unk2c", "offset": 44, "type": "tag", "status": "guessed", "source": "alkahest", "allow": [4294967295]},
+      {"name": "tag_bags", "offset": 48, "type": "array", "status": "guessed", "source": "alkahest"},
+      {"name": "activities", "offset": 72, "type": "array", "status": "confirmed", "source": "stride 0x18: FNV activity name, u64 hash, relptr to 'destination.activity' C string at +0x10; verified (35 on schism)", "element_class": "0x8080892E", "element": "retail.destination_activity", "stride": 24},
+      {"name": "destination_name", "offset": 88, "type": "relptr_cstring", "status": "confirmed", "source": "verified ('schism', 'bootstrap_d3')"}
+    ]},
+    {"id": "retail.destination_activity", "class": "0x8080892E", "name": "Destination activity row", "family": "activity", "size": 24, "provenance": "verified on 0x80A7E28D", "fields": [
+      {"name": "activity_name", "offset": 0, "type": "hash", "status": "confirmed", "source": "FNV-1"},
+      {"name": "unk8", "offset": 8, "type": "u64", "status": "guessed", "source": "not a tag hash64 (absent from the lookup cache)"},
+      {"name": "name", "offset": 16, "type": "relptr_cstring", "status": "confirmed", "source": "'schism.mission_alice'; the named tags of the lookup cache map it to the SActivity tag"}
+    ]},
+    {"class": "0x8080891E", "name": "SBubbleParent", "family": "map", "size": 96, "provenance": "alkahest data/map.rs SBubbleParent; Charm 86657 class 0x80807DAE; verified on 0x80E523F3", "decoders": ["RetailMap"], "fields": [
+      {"name": "file_size", "offset": 0, "type": "size64", "status": "confirmed", "source": "tag header"},
+      {"name": "child_map", "offset": 8, "type": "tag", "status": "confirmed", "source": "WideHash to SBubbleDefinition 0x80808701; verified"},
+      {"name": "map_name", "offset": 32, "type": "hash", "status": "confirmed", "source": "FNV-1 bubble name ('backyard'); verified"}
+    ]},
+    {"class": "0x80808701", "name": "SBubbleDefinition", "family": "map", "size": 0, "provenance": "alkahest SBubbleDefinition; 86657 0x808091E0; verified", "decoders": ["RetailMap"], "fields": [
+      {"name": "file_size", "offset": 0, "type": "size64", "status": "confirmed", "source": "tag header"},
+      {"name": "map_resources", "offset": 8, "type": "array", "status": "confirmed", "source": "WideHash list to SMapContainer 0x80808707; verified (24 on 0x80E3D5B7)", "element_class": "0x80808703", "stride": 16}
+    ]},
+    {"class": "0x80808707", "name": "SMapContainer", "family": "map", "size": 0, "provenance": "alkahest SMapContainer; 86657 0x80808A54; verified", "decoders": ["RetailMap"], "fields": [
+      {"name": "file_size", "offset": 0, "type": "size64", "status": "confirmed", "source": "tag header"},
+      {"name": "data_tables", "offset": 40, "type": "array", "status": "confirmed", "source": "u32 tags of SMapNodeTable 0x80809883; verified", "stride": 4}
+    ]},
+    {"class": "0x80809883", "name": "SMapNodeTable", "family": "map", "size": 24, "provenance": "alkahest SMapDataTable; 86657 0x808099D6; verified", "decoders": ["RetailMap"], "fields": [
+      {"name": "file_size", "offset": 0, "type": "size64", "status": "confirmed", "source": "tag header"},
+      {"name": "data_entries", "offset": 8, "type": "array", "status": "confirmed", "source": "verified", "element_class": "0x80809885", "element": "retail.map_node", "stride": 144}
+    ]},
+    {"id": "retail.map_node", "class": "0x80809885", "name": "SMapNode (placement)", "family": "map", "size": 144, "provenance": "alkahest SMapDataEntry; 86657 0x808099D8; verified on 932 nodes of bubble 0x80E523F3", "fields": [
+      {"name": "rotation_x", "offset": 0, "type": "f32", "status": "confirmed", "source": "quaternion xyzw; unit length on all 932 nodes of 0x80E523F3"},
+      {"name": "rotation_y", "offset": 4, "type": "f32", "status": "confirmed", "source": "verified"},
+      {"name": "rotation_z", "offset": 8, "type": "f32", "status": "confirmed", "source": "verified"},
+      {"name": "rotation_w", "offset": 12, "type": "f32", "status": "confirmed", "source": "verified"},
+      {"name": "translation_x", "offset": 16, "type": "f32", "status": "confirmed", "source": "verified"},
+      {"name": "translation_y", "offset": 20, "type": "f32", "status": "confirmed", "source": "verified"},
+      {"name": "translation_z", "offset": 24, "type": "f32", "status": "confirmed", "source": "verified"},
+      {"name": "translation_w", "offset": 28, "type": "f32", "status": "guessed", "source": "alkahest; values 0.18-1+ suggest a scale or radius"},
+      {"name": "entity_old", "offset": 32, "type": "tag", "status": "confirmed", "source": "usually 0xFFFFFFFF", "allow": [4294967295]},
+      {"name": "entity", "offset": 40, "type": "tag", "status": "confirmed", "source": "WideHash to an SEntity 0x80809AD8; resolved on all 932 nodes of 0x80E523F3"},
+      {"name": "world_id", "offset": 112, "type": "u64", "status": "guessed", "source": "alkahest; not unique (794 distinct over 932 nodes of 0x80E523F3)"},
+      {"name": "data_resource", "offset": 120, "type": "relptr", "status": "confirmed", "source": "component linked list: class at p+off-4, data at p+off+16, next pointer at p+off; ends at 0 or i64 max; verified"}
+    ]},
+    {"class": "0x80806A0D", "name": "SStaticMapParent (static instances wrapper)", "family": "map", "size": 48, "provenance": "alkahest SStaticMapParent; 86657 0x80806EF4; verified", "fields": [
+      {"name": "file_size", "offset": 0, "type": "size64", "status": "confirmed", "source": "tag header"},
+      {"name": "static_map", "offset": 8, "type": "tag", "status": "confirmed", "source": "SStaticMapData 0x808093AD; verified"}
+    ]},
+    {"class": "0x808093AD", "name": "SStaticMapData (static instances)", "family": "map", "size": 0, "provenance": "alkahest SStaticMapData; 86657 0x8080966D; verified on 0x80E3F655", "decoders": ["RetailGeometry"], "fields": [
+      {"name": "file_size", "offset": 0, "type": "size64", "status": "confirmed", "source": "tag header"},
+      {"name": "occlusion_bounds", "offset": 24, "type": "tag", "status": "guessed", "source": "alkahest (class 0x808093B1)"},
+      {"name": "transforms", "offset": 64, "type": "array", "status": "confirmed", "source": "quat xyzw, translation vec3 at +0x10, uniform scale at +0x1C; verified", "element_class": "0x80806D40", "stride": 64},
+      {"name": "statics", "offset": 120, "type": "array", "status": "confirmed", "source": "u32 tags of SStaticMesh 0x80806D44; verified", "element_class": "0x808093BD", "stride": 4},
+      {"name": "instance_groups", "offset": 136, "type": "array", "status": "confirmed", "source": "u16 instance_count, u16 instance_start, u16 static_index, u16; verified", "element_class": "0x80806D28", "stride": 8}
+    ]},
+    {"class": "0x80806D44", "name": "SStaticMesh", "family": "geometry", "size": 0, "provenance": "alkahest SStaticMesh; verified", "decoders": ["RetailGeometry"], "fields": [
+      {"name": "file_size", "offset": 0, "type": "size64", "status": "confirmed", "source": "tag header"},
+      {"name": "opaque_meshes", "offset": 8, "type": "tag", "status": "confirmed", "source": "SStaticMeshData 0x80806D30; verified"},
+      {"name": "techniques", "offset": 16, "type": "array", "status": "guessed", "source": "alkahest"}
+    ]},
+    {"class": "0x80806D30", "name": "SStaticMeshData", "family": "geometry", "size": 0, "provenance": "alkahest SStaticMeshData; verified on 0x80E3DA28", "decoders": ["RetailGeometry"], "fields": [
+      {"name": "file_size", "offset": 0, "type": "size64", "status": "confirmed", "source": "tag header"},
+      {"name": "mesh_groups", "offset": 8, "type": "array", "status": "confirmed", "source": "verified", "element_class": "0x80806D38"},
+      {"name": "parts", "offset": 24, "type": "array", "status": "confirmed", "source": "u32 index_start, u32 index_count, u8 buffer_index, u8, u8 lod_category, u8 primitive_type (3 list, 5 strip); verified", "element_class": "0x80806D37", "stride": 12},
+      {"name": "buffers", "offset": 40, "type": "array", "status": "confirmed", "source": "index, vertex0, vertex1, color buffer header tags; verified", "element_class": "0x80806D36", "stride": 16},
+      {"name": "mesh_offset_x", "offset": 64, "type": "f32", "status": "confirmed", "source": "verified"},
+      {"name": "mesh_offset_y", "offset": 68, "type": "f32", "status": "confirmed", "source": "verified"},
+      {"name": "mesh_offset_z", "offset": 72, "type": "f32", "status": "confirmed", "source": "verified"},
+      {"name": "mesh_scale", "offset": 76, "type": "f32", "status": "confirmed", "source": "verified"},
+      {"name": "texture_coordinate_scale", "offset": 80, "type": "f32", "status": "guessed", "source": "alkahest"}
+    ]},
+    {"class": "0x80806C81", "name": "STerrain", "family": "geometry", "size": 176, "provenance": "alkahest STerrain; 86657 0x8080714F; verified on 0x80AEA32B (vertices match the bounds)", "decoders": ["RetailGeometry"], "fields": [
+      {"name": "file_size", "offset": 0, "type": "size64", "status": "confirmed", "source": "tag header"},
+      {"name": "bounds_min_x", "offset": 16, "type": "f32", "status": "confirmed", "source": "verified"},
+      {"name": "bounds_max_x", "offset": 32, "type": "f32", "status": "confirmed", "source": "verified"},
+      {"name": "unk30_x", "offset": 48, "type": "f32", "status": "confirmed", "source": "vertex offset added to the int16 components; verified"},
+      {"name": "mesh_groups", "offset": 80, "type": "array", "status": "confirmed", "source": "verified", "element_class": "0x80806C86", "stride": 96},
+      {"name": "vertex0_buffer", "offset": 96, "type": "tag", "status": "confirmed", "source": "verified"},
+      {"name": "vertex1_buffer", "offset": 100, "type": "tag", "status": "confirmed", "source": "verified"},
+      {"name": "index_buffer", "offset": 104, "type": "tag", "status": "confirmed", "source": "verified"},
+      {"name": "mesh_parts", "offset": 120, "type": "array", "status": "confirmed", "source": "technique u32, index_start u32, index_count u16, group u8, detail_level u8 (0 high); verified", "element_class": "0x80806C84", "stride": 12}
+    ]}
+  ]
+}

@@ -1148,6 +1148,86 @@
           "status": "in_progress"
         }
       ]
+    },
+    {
+      "id": "RETAIL",
+      "title": "Retail (245048) backport",
+      "status": "partial",
+      "notes": "Branch retail-mcp (2026-10-17). Read side, map view and mission skeleton done; everything that writes 86657 game data is open.",
+      "items": [
+        {
+          "id": "R.1",
+          "title": "Retail reader, schemas and retail_* MCP tools",
+          "description": "Solforge.Retail: index cache, payloads, lookup cache, tiger-mcp client, 19 retail schemas, class map; 12 read tools + 4 write tools; standalone solforge-retail-mcp",
+          "status": "partial"
+        },
+        {
+          "id": "R.2",
+          "title": "Retail map viewer",
+          "description": "Retail bubbles in the editor viewport: node markers, untextured terrain and statics, selection inspector (read-only)",
+          "status": "partial"
+        },
+        {
+          "id": "R.3",
+          "title": "Retail mission port",
+          "description": "Activity document + Lua skeleton with CHANGE_ME placeholders and a report; encounters, AI, loot and dialogue not ported",
+          "status": "partial"
+        },
+        {
+          "id": "R.4",
+          "title": "Retail entity models",
+          "description": "Decode retail entity/dynamic models (vertex layouts, skinning) for the viewport and porting",
+          "status": "todo"
+        },
+        {
+          "id": "R.5",
+          "title": "Retail textures and materials",
+          "description": "Retail texture headers, formats and streaming links to DDS; material/shader binding to 86657 shaders",
+          "status": "todo"
+        },
+        {
+          "id": "R.6",
+          "title": "Retail audio",
+          "description": "Wwise bank/stream versions vs 86657 runtime; decode and re-encode streams",
+          "status": "todo"
+        },
+        {
+          "id": "R.7",
+          "title": "Full mission logic port",
+          "description": "Decode retail entity scripts/encounter data so objectives, squads, triggers and dialogue port beyond the skeleton",
+          "status": "todo"
+        },
+        {
+          "id": "R.8",
+          "title": "String bank packing",
+          "description": "Tool that packs retail_port_strings output into an 86657 string bank package (RetailConverters.ToBank exists, no tool calls it)",
+          "status": "todo"
+        },
+        {
+          "id": "R.9",
+          "title": "Investment converter",
+          "description": "Retail item/perk/plug/socket investment layouts to 86657 (classes 0x8080799D / 0x8080549F unverified)",
+          "status": "todo"
+        },
+        {
+          "id": "R.10",
+          "title": "86657 static and terrain writer",
+          "description": "Write decoded retail statics/terrain as 86657 static mesh and terrain tags (map geometry port)",
+          "status": "todo"
+        },
+        {
+          "id": "R.11",
+          "title": "Layout converters for portable-adjacent classes",
+          "description": "Field-by-field converters for classes the class map pairs but whose size or fields differ (port plan 'layout')",
+          "status": "todo"
+        },
+        {
+          "id": "R.12",
+          "title": "In-game test of a portable tag",
+          "description": "Convert one 'portable' tag, package it with PackageWriter and confirm 86657 loads it",
+          "status": "todo"
+        }
+      ]
     }
   ]
 }

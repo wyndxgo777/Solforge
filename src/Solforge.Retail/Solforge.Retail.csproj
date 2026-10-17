@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Solforge.Retail: read-only access to the retail Destiny 2 extraction (build 245048, package v53) for backporting
+       into Project Sol (build 86657). Reads the payload dump on E:/G:, the tiger-pkg lookup cache and, for what the dump
+       lacks (incoming references, localized string search, wordlists), the tiger-mcp HTTP API. Plain net9.0 with no
+       Windows dependencies so Solforge.Mcp, the standalone retail MCP host and the checks share it. -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <RootNamespace>Solforge.Retail</RootNamespace>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Tag schema registry (the retail schemas are a separate registry with the retail array marker). -->
+    <ProjectReference Include="../SunriseStudio.Packages/SunriseStudio.Packages.csproj" />
+    <!-- Content documents: the mission port writes an activity document. -->
+    <ProjectReference Include="../Solforge.Content/Solforge.Content.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Data\class_map.json" LogicalName="Solforge.Retail.class_map.json" />
+    <EmbeddedResource Include="Schemas\*.json" LogicalName="Solforge.Retail.Schemas.%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Solforge.Retail.Tests" />
+  </ItemGroup>
+</Project>

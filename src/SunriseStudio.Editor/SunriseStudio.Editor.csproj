@@ -25,6 +25,8 @@
     <ProjectReference Include="../Solforge.Mcp/Solforge.Mcp.csproj" />
     <ProjectReference Include="../Solforge.Content/Solforge.Content.csproj" />
     <ProjectReference Include="../Solforge.Graphs/Solforge.Graphs.csproj" />
+    <!-- Retail workspace: live-build dump reader, retail map viewer and porting (read-only towards game packages). -->
+    <ProjectReference Include="../Solforge.Retail/Solforge.Retail.csproj" />
   </ItemGroup>
   <ItemGroup>
     <!-- View > Stream to phone draws the phone link as a QR code. -->

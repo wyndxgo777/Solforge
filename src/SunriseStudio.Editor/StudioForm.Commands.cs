@@ -520,6 +520,7 @@ public sealed partial class StudioForm
         if (UiAuto.MenuItem("Local Server")) focusLocalServer = true;
         if (UiAuto.MenuItem("Items", "", false, workspace.Catalog is not null)) ShowItems();
         if (UiAuto.MenuItem("Data explorer (decomp, tags, strings)")) dataExplorerOpen = true;
+        if (UiAuto.MenuItem("Retail workspace (live build, maps, porting)")) retailOpen = true;
         ImGui.Separator();
         if (UiAuto.MenuItem("Frame selection", ShortcutInput.Text(ShortcutActions.FrameSelection3D), false,
             viewport?.Camera.PivotFree == true)) viewport?.FocusSelection();
@@ -565,7 +566,7 @@ public sealed partial class StudioForm
         if (shortcutsDialog) { ImGui.OpenPopup("Shortcuts"); shortcutsDialog = false; }
         if (noticesDialog) { ImGui.OpenPopup("Third-party notices"); noticesDialog = false; }
         DrawLocationDialog(); DrawProjectDialog(); DrawAddDialog(); DrawCacheDialog(); DrawBundleDialogs(); DrawModDialog();
-        DrawShortcutsDialog(); DrawNoticesDialog(); DrawHelpDialog(); DrawPreferences(); DrawDataExplorer(); DrawPhoneStreamWindow();
+        DrawShortcutsDialog(); DrawNoticesDialog(); DrawHelpDialog(); DrawPreferences(); DrawDataExplorer(); DrawRetailWorkspace(); DrawPhoneStreamWindow();
         DrawContentEditors();
         DrawCreation();
     }

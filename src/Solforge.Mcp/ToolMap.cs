@@ -53,6 +53,9 @@ public static class ToolMap
         new("Window", "Layouts, panels, asset browser drawer, AI workspace, content editors, restore/reset", "show_panel, run_command window.*"),
         new("Help", "Keybinds & Tips, shortcuts, notices", "get_help, run_command help.*, edit.shortcuts"),
         new("Reference", "Reference library (08-docs\\reference)", "search_reference, read_reference"),
+        new("Retail", "Retail workspace: live-build (245048) tags, activities, strings, maps in the viewport, porting",
+            "retail_status, retail_search, retail_tag, retail_read, retail_references, retail_strings, retail_class_map, retail_activity, " +
+            "retail_map, retail_port_plan, retail_preview_mission, retail_engine, retail_open_map, retail_port_mission, retail_port_strings, retail_convert_tag"),
         new("AI workspace", "Context, attention, automatic mode", "get_context, get_attention_log, get_open_documents, read_screen_text, automatic_start, automatic_status, automatic_stop, goal_progress, goal_complete, goal_blocked")
     ];
 

@@ -1,0 +1,4456 @@
+{
+ "source": "Generated 2026-10-17 from MontagueM/Charm Tiger/Schema SchemaStruct attributes (SK 2601/2999 = the build 86657 family; BEYONDLIGHT/WITCHQUEEN/LATEST = retail) and cohaereo/alkahest tiger_type ids (2026-09), with retail top-level tag counts from the E:/sol-live-pkg-extract index (build 245048).",
+ "rows": [
+  {
+   "name": "SHash64Definition",
+   "charm": "SHash64Definition",
+   "sol_class": "0x80809D02",
+   "sol_size": 16,
+   "retail_class": "0x80809EC2",
+   "retail_size": 16,
+   "retail_tags": 0,
+   "status": "charm_only",
+   "evidence": [
+    "Charm SHash64Definition (SK 2601; retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "SD2PackageActivityEntry",
+   "charm": "SD2PackageActivityEntry",
+   "sol_class": "0x80809EEC",
+   "sol_size": 16,
+   "retail_class": "0x80809EC5",
+   "retail_size": 16,
+   "retail_tags": 0,
+   "status": "charm_only",
+   "evidence": [
+    "Charm SD2PackageActivityEntry (SK 2601; retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2FileEntryBitpacked",
+   "charm": "D2FileEntryBitpacked",
+   "sol_class": "0x80809EF3",
+   "sol_size": 16,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm D2FileEntryBitpacked (SK 2601; )"
+   ]
+  },
+  {
+   "name": "SActivity_SK",
+   "charm": "SActivity_SK",
+   "sol_class": "0x808091DE",
+   "sol_size": 136,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm SActivity_SK (SK 2601; )"
+   ]
+  },
+  {
+   "name": "S537D8080",
+   "charm": "S537D8080",
+   "sol_class": "0x80807D53",
+   "sol_size": 16,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm S537D8080 (SK 2601; )"
+   ]
+  },
+  {
+   "name": "S62998080",
+   "charm": "S62998080",
+   "sol_class": "0x80809962",
+   "sol_size": 136,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm S62998080 (SK 2601; )"
+   ]
+  },
+  {
+   "name": "SC4988080",
+   "charm": "SC4988080",
+   "sol_class": "0x808098C4",
+   "sol_size": 24,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm SC4988080 (SK 2601; )"
+   ]
+  },
+  {
+   "name": "SC2988080",
+   "charm": "SC2988080",
+   "sol_class": "0x808098C2",
+   "sol_size": 80,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm SC2988080 (SK 2601; )"
+   ]
+  },
+  {
+   "name": "S9C9B8080",
+   "charm": "S9C9B8080",
+   "sol_class": "0x80809B9C",
+   "sol_size": 2,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm S9C9B8080 (SK 2601; )"
+   ]
+  },
+  {
+   "name": "S80978080",
+   "charm": "S80978080",
+   "sol_class": "0x80809780",
+   "sol_size": 136,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm S80978080 (SK 2601; )"
+   ]
+  },
+  {
+   "name": "SUnkActivity_SK",
+   "charm": "SUnkActivity_SK",
+   "sol_class": "0x80809994",
+   "sol_size": 136,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm SUnkActivity_SK (SK 2601; )"
+   ]
+  },
+  {
+   "name": "S4A928080",
+   "charm": "S4A928080",
+   "sol_class": "0x8080924A",
+   "sol_size": 16,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm S4A928080 (SK 2601; )"
+   ]
+  },
+  {
+   "name": "S4D928080",
+   "charm": "S4D928080",
+   "sol_class": "0x8080924D",
+   "sol_size": 24,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm S4D928080 (SK 2601; )"
+   ]
+  },
+  {
+   "name": "S4F928080",
+   "charm": "S4F928080",
+   "sol_class": "0x8080924F",
+   "sol_size": 76,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm S4F928080 (SK 2601; )"
+   ]
+  },
+  {
+   "name": "S5B928080",
+   "charm": "S5B928080",
+   "sol_class": "0x8080925B",
+   "sol_size": 24,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm S5B928080 (SK 2601; )"
+   ]
+  },
+  {
+   "name": "S5E928080",
+   "charm": "S5E928080",
+   "sol_class": "0x8080925E",
+   "sol_size": 56,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm S5E928080 (SK 2601; )"
+   ]
+  },
+  {
+   "name": "S60928080",
+   "charm": "S60928080",
+   "sol_class": "0x80809260",
+   "sol_size": 4,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm S60928080 (SK 2601; )"
+   ]
+  },
+  {
+   "name": "S62948080",
+   "charm": "S62948080",
+   "sol_class": "0x80809462",
+   "sol_size": 88,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm S62948080 (SK 2601; )"
+   ]
+  },
+  {
+   "name": "S64948080",
+   "charm": "S64948080",
+   "sol_class": "0x80809464",
+   "sol_size": 24,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm S64948080 (SK 2601; )"
+   ]
+  },
+  {
+   "name": "S66948080",
+   "charm": "S66948080",
+   "sol_class": "0x80809466",
+   "sol_size": 4,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm S66948080 (SK 2601; )"
+   ]
+  },
+  {
+   "name": "S68948080",
+   "charm": "S68948080",
+   "sol_class": "0x80809468",
+   "sol_size": 32,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm S68948080 (SK 2601; )"
+   ]
+  },
+  {
+   "name": "SActivity",
+   "charm": "SActivity_WQ",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80808E8E",
+   "retail_size": 136,
+   "retail_tags": 673,
+   "status": "retail_only",
+   "evidence": [
+    "Charm SActivity_WQ (retail LATEST)",
+    "alkahest SActivity (data/activity/mod.rs)",
+    "673 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SDestination",
+   "charm": "D2Class_8B8E8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80808E8B",
+   "retail_size": 120,
+   "retail_tags": 129,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_8B8E8080 (retail WITCHQUEEN_6307)",
+    "alkahest SDestination (data/activity/mod.rs)",
+    "129 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SUnk80808926",
+   "charm": "D2Class_26898080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80808926",
+   "retail_size": 104,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_26898080 (retail LATEST)",
+    "alkahest SUnk80808926 (data/activity/mod.rs)"
+   ]
+  },
+  {
+   "name": "SUnk80808948",
+   "charm": "D2Class_48898080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80808948",
+   "retail_size": 24,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_48898080 (retail WITCHQUEEN_6307)",
+    "alkahest SUnk80808948 (data/activity/mod.rs)"
+   ]
+  },
+  {
+   "name": "D2Class_19978080",
+   "charm": "D2Class_19978080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80809719",
+   "retail_size": 32,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_19978080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_18978080",
+   "charm": "D2Class_18978080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80809718",
+   "retail_size": 32,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_18978080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_D5908080",
+   "charm": "D2Class_D5908080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808090D5",
+   "retail_size": 80,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_D5908080 (retail LATEST)"
+   ]
+  },
+  {
+   "name": "SUnk80808924",
+   "charm": "D2Class_24898080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80808924",
+   "retail_size": 56,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_24898080 (retail WITCHQUEEN_6307)",
+    "alkahest SUnk80808924 (data/activity/mod.rs)"
+   ]
+  },
+  {
+   "name": "D2Class_C98E8080",
+   "charm": "D2Class_C98E8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80808EC9",
+   "retail_size": 128,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_C98E8080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_F5458080",
+   "charm": "D2Class_F5458080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808045F5",
+   "retail_size": 56,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_F5458080 (retail LATEST)"
+   ]
+  },
+  {
+   "name": "D2Class_FA458080",
+   "charm": "D2Class_FA458080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808045FA",
+   "retail_size": 32,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_FA458080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "SUnkMusicE8BF8080",
+   "charm": "SUnkMusicE8BF8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080BFE8",
+   "retail_size": 64,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm SUnkMusicE8BF8080 (retail LATEST)"
+   ]
+  },
+  {
+   "name": "D2Class_2A978080",
+   "charm": "D2Class_2A978080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080972A",
+   "retail_size": 64,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_2A978080 (retail LATEST)"
+   ]
+  },
+  {
+   "name": "D2Class_33978080",
+   "charm": "D2Class_33978080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80809733",
+   "retail_size": 144,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_33978080 (retail LATEST)"
+   ]
+  },
+  {
+   "name": "D2Class_2D978080",
+   "charm": "D2Class_2D978080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080972D",
+   "retail_size": 56,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_2D978080 (retail LATEST)"
+   ]
+  },
+  {
+   "name": "D2Class_30978080",
+   "charm": "D2Class_30978080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80809730",
+   "retail_size": 40,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_30978080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_38978080",
+   "charm": "D2Class_38978080",
+   "sol_class": "0x80809738",
+   "sol_size": 56,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm D2Class_38978080 (SK 2601; )"
+   ]
+  },
+  {
+   "name": "SPattern",
+   "charm": "SEntity",
+   "sol_class": "0x80809C0F",
+   "sol_size": 160,
+   "retail_class": "0x80809AD8",
+   "retail_size": 152,
+   "retail_tags": 84064,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SEntity (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest SPattern (data/pattern.rs)",
+    "84064 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_F09A8080",
+   "charm": "D2Class_F09A8080",
+   "sol_class": "0x80809C25",
+   "sol_size": 8,
+   "retail_class": "0x80809AF0",
+   "retail_size": 8,
+   "retail_tags": 0,
+   "status": "charm_only",
+   "evidence": [
+    "Charm D2Class_F09A8080 (SK 2601; retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "SComponentAccessor",
+   "charm": "D2Class_ED9A8080",
+   "sol_class": "0x80809C22",
+   "sol_size": 40,
+   "retail_class": "0x80809AED",
+   "retail_size": 40,
+   "retail_tags": 0,
+   "status": "corroborated",
+   "evidence": [
+    "Charm D2Class_ED9A8080 (SK 2601; retail WITCHQUEEN_6307)",
+    "alkahest SComponentAccessor (data/pattern.rs)"
+   ]
+  },
+  {
+   "name": "D2Class_EB9A8080",
+   "charm": "D2Class_EB9A8080",
+   "sol_class": "0x80809C20",
+   "sol_size": 24,
+   "retail_class": "0x80809AEB",
+   "retail_size": 24,
+   "retail_tags": 0,
+   "status": "charm_only",
+   "evidence": [
+    "Charm D2Class_EB9A8080 (SK 2601; retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "SComponentRef",
+   "charm": "D2Class_CD9A8080",
+   "sol_class": "0x80809C04",
+   "sol_size": 12,
+   "retail_class": "0x80809ACD",
+   "retail_size": 12,
+   "retail_tags": 0,
+   "status": "corroborated",
+   "evidence": [
+    "Charm D2Class_CD9A8080 (SK 2601; retail WITCHQUEEN_6307)",
+    "alkahest SComponentRef (data/pattern.rs)"
+   ]
+  },
+  {
+   "name": "SComponent",
+   "charm": "D2Class_069B8080",
+   "sol_class": "0x80809C36",
+   "sol_size": 160,
+   "retail_class": "0x80809B06",
+   "retail_size": 160,
+   "retail_tags": 908303,
+   "status": "corroborated",
+   "evidence": [
+    "Charm D2Class_069B8080 (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest SComponent (data/pattern.rs)",
+    "908303 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_7C908080",
+   "charm": "D2Class_7C908080",
+   "sol_class": "0x8080907C",
+   "sol_size": 16,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm D2Class_7C908080 (SK 2601; )"
+   ]
+  },
+  {
+   "name": "D2Class_8F6D8080",
+   "charm": "D2Class_8F6D8080",
+   "sol_class": "0x808072BD",
+   "sol_size": 832,
+   "retail_class": "0x80806D8F",
+   "retail_size": 1104,
+   "retail_tags": 0,
+   "status": "charm_only",
+   "evidence": [
+    "Charm D2Class_8F6D8080 (SK 2601; retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_1C6E8080",
+   "charm": "D2Class_1C6E8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806E1C",
+   "retail_size": 56,
+   "retail_tags": 12267,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_1C6E8080 (retail WITCHQUEEN_6307)",
+    "12267 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_919E8080",
+   "charm": "D2Class_919E8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80809E91",
+   "retail_size": 32,
+   "retail_tags": 41313,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_919E8080 (retail WITCHQUEEN_6307)",
+    "41313 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_939E8080",
+   "charm": "D2Class_939E8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80809E93",
+   "retail_size": 20,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_939E8080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "S80808682",
+   "charm": "D2Class_986D8080",
+   "sol_class": "0x808072C5",
+   "sol_size": 8,
+   "retail_class": "0x80806D98",
+   "retail_size": 8,
+   "retail_tags": 0,
+   "status": "corroborated",
+   "evidence": [
+    "Charm D2Class_986D8080 (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest S80808682 (data/tfx/features/dynamic.rs)"
+   ]
+  },
+  {
+   "name": "SDynamicMeshMaterialVariants",
+   "charm": "SExternalMaterialMapEntry",
+   "sol_class": "0x808072C4",
+   "sol_size": 12,
+   "retail_class": "0x80806D97",
+   "retail_size": 12,
+   "retail_tags": 0,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SExternalMaterialMapEntry (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest SDynamicMeshMaterialVariants (data/tfx/features/dynamic.rs)"
+   ]
+  },
+  {
+   "name": "D2Class_8F9A8080",
+   "charm": "D2Class_8F9A8080",
+   "sol_class": "0x80809A8F",
+   "sol_size": 56,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm D2Class_8F9A8080 (SK 2601; )"
+   ]
+  },
+  {
+   "name": "D2Class_8A6D8080",
+   "charm": "D2Class_8A6D8080",
+   "sol_class": "0x808072B8",
+   "sol_size": 512,
+   "retail_class": "0x80806D8A",
+   "retail_size": 736,
+   "retail_tags": 0,
+   "status": "charm_only",
+   "evidence": [
+    "Charm D2Class_8A6D8080 (SK 2601; retail BEYONDLIGHT_3402)"
+   ]
+  },
+  {
+   "name": "D2Class_DD818080",
+   "charm": "D2Class_DD818080",
+   "sol_class": "0x80808545",
+   "sol_size": 256,
+   "retail_class": "0x808081DD",
+   "retail_size": 256,
+   "retail_tags": 0,
+   "status": "charm_only",
+   "evidence": [
+    "Charm D2Class_DD818080 (SK 2601; retail BEYONDLIGHT_3402)"
+   ]
+  },
+  {
+   "name": "D2Class_DC818080",
+   "charm": "D2Class_DC818080",
+   "sol_class": "0x808081DC",
+   "sol_size": 64,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm D2Class_DC818080 (SK 2601; )"
+   ]
+  },
+  {
+   "name": "SRotationTranslation",
+   "charm": "D2Class_4F9F8080",
+   "sol_class": "0x80809F75",
+   "sol_size": 32,
+   "retail_class": "0x80809F4F",
+   "retail_size": 32,
+   "retail_tags": 0,
+   "status": "corroborated",
+   "evidence": [
+    "Charm D2Class_4F9F8080 (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest SRotationTranslation (data/tfx/common.rs)"
+   ]
+  },
+  {
+   "name": "D2Class_DE818080",
+   "charm": "D2Class_DE818080",
+   "sol_class": "0x80808546",
+   "sol_size": 240,
+   "retail_class": "0x808081DE",
+   "retail_size": 264,
+   "retail_tags": 0,
+   "status": "charm_only",
+   "evidence": [
+    "Charm D2Class_DE818080 (SK 2601; retail BEYONDLIGHT_3402)"
+   ]
+  },
+  {
+   "name": "D2Class_42868080",
+   "charm": "D2Class_42868080",
+   "sol_class": "0x80808A08",
+   "sol_size": 16,
+   "retail_class": "0x80808642",
+   "retail_size": 16,
+   "retail_tags": 0,
+   "status": "charm_only",
+   "evidence": [
+    "Charm D2Class_42868080 (SK 2601; retail BEYONDLIGHT_3402)"
+   ]
+  },
+  {
+   "name": "SDynamicModel",
+   "charm": "SEntityModel",
+   "sol_class": "0x808073A5",
+   "sol_size": 160,
+   "retail_class": "0x80806F07",
+   "retail_size": 160,
+   "retail_tags": 42478,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SEntityModel (SK 2601; retail WITCHQUEEN_6307)",
+    "alkahest SDynamicModel (data/tfx/features/dynamic.rs)",
+    "42478 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SDynamicMesh",
+   "charm": "SEntityModelMesh",
+   "sol_class": "0x80807378",
+   "sol_size": 136,
+   "retail_class": "0x80806EC5",
+   "retail_size": 128,
+   "retail_tags": 0,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SEntityModelMesh (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest SDynamicMesh (data/tfx/features/dynamic.rs)"
+   ]
+  },
+  {
+   "name": "SDynamicMeshPart",
+   "charm": "D2Class_CB6E8080",
+   "sol_class": "0x8080737E",
+   "sol_size": 32,
+   "retail_class": "0x80806ECB",
+   "retail_size": 36,
+   "retail_tags": 0,
+   "status": "corroborated",
+   "evidence": [
+    "Charm D2Class_CB6E8080 (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest SDynamicMeshPart (data/tfx/features/dynamic.rs)"
+   ]
+  },
+  {
+   "name": "D2Class_5B6D8080",
+   "charm": "D2Class_5B6D8080",
+   "sol_class": "0x80806D5B",
+   "sol_size": 800,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm D2Class_5B6D8080 (SK 2601; )"
+   ]
+  },
+  {
+   "name": "D2Class_6C6D8080",
+   "charm": "D2Class_6C6D8080",
+   "sol_class": "0x80806D6C",
+   "sol_size": 1152,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm D2Class_6C6D8080 (SK 2601; )"
+   ]
+  },
+  {
+   "name": "D2Class_DA5E8080",
+   "charm": "D2Class_DA5E8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80805EDA",
+   "retail_size": 336,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_DA5E8080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_DB5E8080",
+   "charm": "D2Class_DB5E8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80805EDB",
+   "retail_size": 576,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_DB5E8080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_12848080",
+   "charm": "D2Class_12848080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80808412",
+   "retail_size": 80,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_12848080 (retail BEYONDLIGHT_3402)"
+   ]
+  },
+  {
+   "name": "D2Class_0E848080",
+   "charm": "D2Class_0E848080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080840E",
+   "retail_size": 160,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_0E848080 (retail BEYONDLIGHT_3402)"
+   ]
+  },
+  {
+   "name": "D2Class_6E358080",
+   "charm": "D2Class_6E358080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080356E",
+   "retail_size": 1752,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_6E358080 (retail LATEST)"
+   ]
+  },
+  {
+   "name": "D2Class_9B318080",
+   "charm": "D2Class_9B318080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080319B",
+   "retail_size": 296,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_9B318080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_0D8C8080",
+   "charm": "D2Class_0D8C8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80808C0D",
+   "retail_size": 24,
+   "retail_tags": 626,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_0D8C8080 (retail WITCHQUEEN_6307)",
+    "626 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_0F8C8080",
+   "charm": "D2Class_0F8C8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80808C0F",
+   "retail_size": 24,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_0F8C8080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_138C8080",
+   "charm": "D2Class_138C8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80808C13",
+   "retail_size": 40,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_138C8080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_97318080",
+   "charm": "D2Class_97318080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80803197",
+   "retail_size": 1344,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_97318080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_F62C8080",
+   "charm": "D2Class_F62C8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80802CF6",
+   "retail_size": 176,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_F62C8080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_F42C8080",
+   "charm": "D2Class_F42C8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80802CF4",
+   "retail_size": 856,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_F42C8080 (retail LATEST)"
+   ]
+  },
+  {
+   "name": "D2Class_FA2C8080",
+   "charm": "D2Class_FA2C8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080BCEE",
+   "retail_size": 632,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_FA2C8080 (retail LATEST)"
+   ]
+  },
+  {
+   "name": "SSequence",
+   "charm": "D2Class_79818080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80808179",
+   "retail_size": 912,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_79818080 (retail WITCHQUEEN_6307)",
+    "alkahest SSequence (data/tfx/sequencer/mod.rs)"
+   ]
+  },
+  {
+   "name": "SUnk808091f1",
+   "charm": "D2Class_F1918080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808091F1",
+   "retail_size": 24,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_F1918080 (retail WITCHQUEEN_6307)",
+    "alkahest SUnk808091f1 (data/tfx/sequencer/mod.rs)"
+   ]
+  },
+  {
+   "name": "SSequenceAudioEvent",
+   "charm": "D2Class_40668080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806640",
+   "retail_size": 104,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_40668080 (retail WITCHQUEEN_6307)",
+    "alkahest SSequenceAudioEvent (data/tfx/sequencer/mod.rs)"
+   ]
+  },
+  {
+   "name": "SCubemapComponent",
+   "charm": "CubemapResource",
+   "sol_class": "0x80806B7F",
+   "sol_size": 448,
+   "retail_class": "0x80806695",
+   "retail_size": 480,
+   "retail_tags": 0,
+   "status": "corroborated",
+   "evidence": [
+    "Charm CubemapResource (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest SCubemapComponent (data/tfx/features/cubemap.rs)"
+   ]
+  },
+  {
+   "name": "D2Class_D8928080",
+   "charm": "D2Class_D8928080",
+   "sol_class": "0x80809BD9",
+   "sol_size": 400,
+   "retail_class": "0x808092D8",
+   "retail_size": 400,
+   "retail_tags": 0,
+   "status": "charm_only",
+   "evidence": [
+    "Charm D2Class_D8928080 (SK 2601; retail BEYONDLIGHT_3402)"
+   ]
+  },
+  {
+   "name": "D2Class_EF8C8080",
+   "charm": "D2Class_EF8C8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80808CEF",
+   "retail_size": 96,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_EF8C8080 (retail BEYONDLIGHT_3402)"
+   ]
+  },
+  {
+   "name": "D2Class_FA988080",
+   "charm": "D2Class_FA988080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808098FA",
+   "retail_size": 128,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_FA988080 (retail BEYONDLIGHT_3402)"
+   ]
+  },
+  {
+   "name": "D2Class_F88C8080",
+   "charm": "D2Class_F88C8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80808CF8",
+   "retail_size": 128,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_F88C8080 (retail BEYONDLIGHT_3402)"
+   ]
+  },
+  {
+   "name": "D2Class_EF988080",
+   "charm": "D2Class_EF988080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808098EF",
+   "retail_size": 128,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_EF988080 (retail BEYONDLIGHT_3402)"
+   ]
+  },
+  {
+   "name": "D2Class_6F418080",
+   "charm": "D2Class_6F418080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080416F",
+   "retail_size": 224,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_6F418080 (retail BEYONDLIGHT_3402)"
+   ]
+  },
+  {
+   "name": "D2Class_26988080",
+   "charm": "D2Class_26988080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80809826",
+   "retail_size": 152,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_26988080 (retail BEYONDLIGHT_3402)"
+   ]
+  },
+  {
+   "name": "D2Class_95468080",
+   "charm": "D2Class_95468080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80804695",
+   "retail_size": 144,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_95468080 (retail BEYONDLIGHT_3402)"
+   ]
+  },
+  {
+   "name": "D2Class_05998080",
+   "charm": "D2Class_05998080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80809905",
+   "retail_size": 16,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_05998080 (retail BEYONDLIGHT_3402)"
+   ]
+  },
+  {
+   "name": "D2Class_6B908080",
+   "charm": "D2Class_6B908080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080906B",
+   "retail_size": 40,
+   "retail_tags": 471843,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_6B908080 (retail BEYONDLIGHT_3402)",
+    "471843 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_029D8080",
+   "charm": "D2Class_029D8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80809D02",
+   "retail_size": 16,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_029D8080 (retail BEYONDLIGHT_3402)"
+   ]
+  },
+  {
+   "name": "D2Class_4D898080",
+   "charm": "D2Class_4D898080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080894D",
+   "retail_size": 12,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_4D898080 (retail BEYONDLIGHT_3402)"
+   ]
+  },
+  {
+   "name": "D2Class_E58C8080",
+   "charm": "D2Class_E58C8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80808CE5",
+   "retail_size": 240,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_E58C8080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_56998080",
+   "charm": "D2Class_56998080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80809956",
+   "retail_size": 24,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_56998080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_C88C8080",
+   "charm": "D2Class_C88C8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80808CC8",
+   "retail_size": 56,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_C88C8080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_C48C8080",
+   "charm": "D2Class_C48C8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80808CC4",
+   "retail_size": 56,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_C48C8080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_357C8080",
+   "charm": "D2Class_357C8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80807C35",
+   "retail_size": 7120,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_357C8080 (retail BEYONDLIGHT_3402)"
+   ]
+  },
+  {
+   "name": "D2Class_18808080",
+   "charm": "D2Class_18808080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80808018",
+   "retail_size": 1144,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_18808080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_4D7E8080",
+   "charm": "D2Class_4D7E8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80807E4D",
+   "retail_size": 48,
+   "retail_tags": 398,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_4D7E8080 (retail BEYONDLIGHT_3402)",
+    "398 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_0E478080",
+   "charm": "D2Class_0E478080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080470E",
+   "retail_size": 272,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_0E478080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_B5468080",
+   "charm": "D2Class_B5468080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808046B5",
+   "retail_size": 336,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_B5468080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_96468080",
+   "charm": "D2Class_96468080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080470E",
+   "retail_size": 128,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_96468080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "SScope",
+   "charm": "SDye",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806DBA",
+   "retail_size": 888,
+   "retail_tags": 16189,
+   "status": "retail_only",
+   "evidence": [
+    "Charm SDye (retail WITCHQUEEN_6307)",
+    "alkahest SScope (data/tfx/scope.rs)",
+    "16189 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_97798080",
+   "charm": "D2Class_97798080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80807997",
+   "retail_size": 24,
+   "retail_tags": 1,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_97798080 (retail WITCHQUEEN_6307)",
+    "1 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_9B798080",
+   "charm": "D2Class_9B798080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080799B",
+   "retail_size": 32,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_9B798080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_9D798080",
+   "charm": "D2Class_9D798080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080799D",
+   "retail_size": 288,
+   "retail_tags": 38894,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_9D798080 (retail WITCHQUEEN_6307)",
+    "38894 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_77738080",
+   "charm": "D2Class_77738080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80807377",
+   "retail_size": 96,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_77738080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_7D738080",
+   "charm": "D2Class_7D738080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080737D",
+   "retail_size": 4,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_7D738080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_7B738080",
+   "charm": "D2Class_7B738080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080737B",
+   "retail_size": 4,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_7B738080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_BE548080",
+   "charm": "D2Class_BE548080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808054BE",
+   "retail_size": 24,
+   "retail_tags": 1,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_BE548080 (retail WITCHQUEEN_6307)",
+    "1 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_C4548080",
+   "charm": "D2Class_C4548080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808054C4",
+   "retail_size": 56,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_C4548080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_C8548080",
+   "charm": "D2Class_C8548080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808054C8",
+   "retail_size": 24,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_C8548080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_257A8080",
+   "charm": "D2Class_257A8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80807A25",
+   "retail_size": 8,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_257A8080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_6B588080",
+   "charm": "D2Class_6B588080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080586B",
+   "retail_size": 24,
+   "retail_tags": 1,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_6B588080 (retail WITCHQUEEN_6307)",
+    "1 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_6F588080",
+   "charm": "D2Class_6F588080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080586F",
+   "retail_size": 36,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_6F588080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_C9798080",
+   "charm": "D2Class_C9798080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808079C9",
+   "retail_size": 24,
+   "retail_tags": 1,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_C9798080 (retail WITCHQUEEN_6307)",
+    "1 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_CF798080",
+   "charm": "D2Class_CF798080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808079CF",
+   "retail_size": 8,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_CF798080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_99548080",
+   "charm": "D2Class_99548080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80805499",
+   "retail_size": 24,
+   "retail_tags": 1,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_99548080 (retail WITCHQUEEN_6307)",
+    "1 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_9D548080",
+   "charm": "D2Class_9D548080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080549D",
+   "retail_size": 32,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_9D548080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_9F548080",
+   "charm": "D2Class_9F548080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080549F",
+   "retail_size": 304,
+   "retail_tags": 31090,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_9F548080 (retail WITCHQUEEN_6307)",
+    "31090 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_CE558080",
+   "charm": "D2Class_CE558080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808055CE",
+   "retail_size": 40,
+   "retail_tags": 1,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_CE558080 (retail WITCHQUEEN_6307)",
+    "1 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_D4558080",
+   "charm": "D2Class_D4558080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808055D4",
+   "retail_size": 32,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_D4558080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_D7558080",
+   "charm": "D2Class_D7558080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808055D7",
+   "retail_size": 8,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_D7558080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_D8558080",
+   "charm": "D2Class_D8558080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808055D8",
+   "retail_size": 24,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_D8558080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_DA558080",
+   "charm": "D2Class_DA558080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808055DA",
+   "retail_size": 4,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_DA558080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_434F8080",
+   "charm": "D2Class_434F8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80804F43",
+   "retail_size": 24,
+   "retail_tags": 1,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_434F8080 (retail WITCHQUEEN_6307)",
+    "1 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_454F8080",
+   "charm": "D2Class_454F8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80804F45",
+   "retail_size": 8,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_454F8080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "SRenderGlobals",
+   "charm": "D2Class_8C978080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080978C",
+   "retail_size": 40,
+   "retail_tags": 347,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_8C978080 (retail WITCHQUEEN_6307)",
+    "alkahest SRenderGlobals (data/tfx/render_globals.rs)",
+    "347 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SUnk8080870f",
+   "charm": "D2Class_0F878080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080870F",
+   "retail_size": 24,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_0F878080 (retail WITCHQUEEN_6307)",
+    "alkahest SUnk8080870f (data/tfx/render_globals.rs)"
+   ]
+  },
+  {
+   "name": "D2Class_AA528080",
+   "charm": "D2Class_AA528080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808052AA",
+   "retail_size": 24,
+   "retail_tags": 1,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_AA528080 (retail WITCHQUEEN_6307)",
+    "1 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_AE528080",
+   "charm": "D2Class_AE528080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808052AE",
+   "retail_size": 48,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_AE528080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_A36F8080",
+   "charm": "D2Class_A36F8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806FA3",
+   "retail_size": 24,
+   "retail_tags": 40270,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_A36F8080 (retail WITCHQUEEN_6307)",
+    "40270 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_B83E8080",
+   "charm": "D2Class_B83E8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80803EB8",
+   "retail_size": 128,
+   "retail_tags": 26349,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_B83E8080 (retail WITCHQUEEN_6307)",
+    "26349 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_CF3E8080",
+   "charm": "D2Class_CF3E8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80803ECF",
+   "retail_size": 24,
+   "retail_tags": 32390,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_CF3E8080 (retail WITCHQUEEN_6307)",
+    "32390 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_CD3E8080",
+   "charm": "D2Class_CD3E8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80803ECD",
+   "retail_size": 32,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_CD3E8080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_D23E8080",
+   "charm": "D2Class_D23E8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80803ED2",
+   "retail_size": 16,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_D23E8080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_D53E8080",
+   "charm": "D2Class_D53E8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80803ED5",
+   "retail_size": 4,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_D53E8080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_C2558080",
+   "charm": "D2Class_C2558080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808055C2",
+   "retail_size": 24,
+   "retail_tags": 1,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_C2558080 (retail WITCHQUEEN_6307)",
+    "1 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_C6558080",
+   "charm": "D2Class_C6558080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808055C6",
+   "retail_size": 8,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_C6558080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "SDyeChannels",
+   "charm": "SDyeChannels",
+   "sol_class": "0x80805BDE",
+   "sol_size": 24,
+   "retail_class": "0x808051F2",
+   "retail_size": 24,
+   "retail_tags": 1,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SDyeChannels (SK 2601; retail WITCHQUEEN_6307)",
+    "1 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SDyeChannelHash",
+   "charm": "SDyeChannelHash",
+   "sol_class": "0x80805BE2",
+   "sol_size": 4,
+   "retail_class": "0x80804F2C",
+   "retail_size": 4,
+   "retail_tags": 0,
+   "status": "charm_only",
+   "evidence": [
+    "Charm SDyeChannelHash (SK 2601; retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_095A8080",
+   "charm": "D2Class_095A8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80805A09",
+   "retail_size": 24,
+   "retail_tags": 1,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_095A8080 (retail WITCHQUEEN_6307)",
+    "1 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_0E5A8080",
+   "charm": "D2Class_0E5A8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80805A0E",
+   "retail_size": 32,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_0E5A8080 (retail LATEST)"
+   ]
+  },
+  {
+   "name": "D2Class_CF508080",
+   "charm": "D2Class_CF508080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808050CF",
+   "retail_size": 24,
+   "retail_tags": 1,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_CF508080 (retail WITCHQUEEN_6307)",
+    "1 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_D3508080",
+   "charm": "D2Class_D3508080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808050D3",
+   "retail_size": 40,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_D3508080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_3C758080",
+   "charm": "D2Class_3C758080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080753C",
+   "retail_size": 24,
+   "retail_tags": 1,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_3C758080 (retail WITCHQUEEN_6307)",
+    "1 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_40758080",
+   "charm": "D2Class_40758080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80807540",
+   "retail_size": 176,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_40758080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_4C588080",
+   "charm": "D2Class_4C588080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080584C",
+   "retail_size": 24,
+   "retail_tags": 1,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_4C588080 (retail WITCHQUEEN_6307)",
+    "1 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_50588080",
+   "charm": "D2Class_50588080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80805850",
+   "retail_size": 88,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_50588080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_B0738080",
+   "charm": "D2Class_B0738080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808073B0",
+   "retail_size": 40,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_B0738080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_15908080",
+   "charm": "D2Class_15908080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80809015",
+   "retail_size": 2,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_15908080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_0F3C8080",
+   "charm": "D2Class_0F3C8080",
+   "sol_class": "0x80803C0F",
+   "sol_size": 24,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm D2Class_0F3C8080 (SK 2601; )"
+   ]
+  },
+  {
+   "name": "D2Class_113C8080",
+   "charm": "D2Class_113C8080",
+   "sol_class": "0x80803C11",
+   "sol_size": 4,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm D2Class_113C8080 (SK 2601; )"
+   ]
+  },
+  {
+   "name": "D2Class_123C8080",
+   "charm": "D2Class_123C8080",
+   "sol_class": "0x80803C12",
+   "sol_size": 32,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm D2Class_123C8080 (SK 2601; )"
+   ]
+  },
+  {
+   "name": "SMaterial_SK",
+   "charm": "SMaterial_SK",
+   "sol_class": "0x808071E8",
+   "sol_size": 1024,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm SMaterial_SK (SK 2601; )"
+   ]
+  },
+  {
+   "name": "STechnique",
+   "charm": "SMaterial_BL",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806DAA",
+   "retail_size": 944,
+   "retail_tags": 682288,
+   "status": "retail_only",
+   "evidence": [
+    "Charm SMaterial_BL (retail BEYONDLIGHT_3402)",
+    "alkahest STechnique (data/tfx/technique.rs)",
+    "682288 retail top-level tags"
+   ]
+  },
+  {
+   "name": "STechnique",
+   "charm": "SMaterial_WQ",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806DAA",
+   "retail_size": 976,
+   "retail_tags": 682288,
+   "status": "retail_only",
+   "evidence": [
+    "Charm SMaterial_WQ (retail WITCHQUEEN_6307)",
+    "alkahest STechnique (data/tfx/technique.rs)",
+    "682288 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SDirectXSamplerTagSK",
+   "charm": "SDirectXSamplerTagSK",
+   "sol_class": "0x808073F3",
+   "sol_size": 16,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm SDirectXSamplerTagSK (SK 2601; )"
+   ]
+  },
+  {
+   "name": "SSamplerReference",
+   "charm": "SDirectXSamplerTagBL",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080013F",
+   "retail_size": 16,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm SDirectXSamplerTagBL (retail BEYONDLIGHT_3402)",
+    "alkahest SSamplerReference (data/tfx/technique.rs)"
+   ]
+  },
+  {
+   "name": "SStaticMeshInstances",
+   "charm": "SStaticMapData",
+   "sol_class": "0x8080966D",
+   "sol_size": 160,
+   "retail_class": "0x808093AD",
+   "retail_size": 192,
+   "retail_tags": 2637,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SStaticMapData (SK 2601; retail WITCHQUEEN_6307)",
+    "alkahest SStaticMeshInstances (data/tfx/features/statics.rs)",
+    "2637 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SUnknownUInt",
+   "charm": "SUnknownUInt",
+   "sol_class": "0x8080000B",
+   "sol_size": 4,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm SUnknownUInt (SK 2601; )"
+   ]
+  },
+  {
+   "name": "SOcclusionBounds",
+   "charm": "SOcclusionBounds",
+   "sol_class": "0x80809671",
+   "sol_size": 24,
+   "retail_class": "0x808093B1",
+   "retail_size": 24,
+   "retail_tags": 14954,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SOcclusionBounds (SK 2601; retail WITCHQUEEN_6307)",
+    "alkahest SOcclusionBounds (data/tfx/common.rs)",
+    "14954 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SObjectOcclusionBounds",
+   "charm": "SMeshInstanceOcclusionBounds",
+   "sol_class": "0x80809673",
+   "sol_size": 48,
+   "retail_class": "0x808093B3",
+   "retail_size": 48,
+   "retail_tags": 0,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SMeshInstanceOcclusionBounds (SK 2601; retail WITCHQUEEN_6307)",
+    "alkahest SObjectOcclusionBounds (data/tfx/common.rs)"
+   ]
+  },
+  {
+   "name": "SStaticInstanceTransform",
+   "charm": "SStaticMeshInstanceTransform",
+   "sol_class": "0x808071A3",
+   "sol_size": 48,
+   "retail_class": "0x80806D40",
+   "retail_size": 64,
+   "retail_tags": 0,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SStaticMeshInstanceTransform (SK 2601; retail WITCHQUEEN_6307)",
+    "alkahest SStaticInstanceTransform (data/tfx/features/statics.rs)"
+   ]
+  },
+  {
+   "name": "SStaticMeshHash",
+   "charm": "SStaticMeshHash",
+   "sol_class": "0x8080967D",
+   "sol_size": 4,
+   "retail_class": "0x808093BD",
+   "retail_size": 4,
+   "retail_tags": 0,
+   "status": "charm_only",
+   "evidence": [
+    "Charm SStaticMeshHash (SK 2601; retail BEYONDLIGHT_3402)"
+   ]
+  },
+  {
+   "name": "SStaticMeshInstanceGroup",
+   "charm": "SStaticMeshInstanceMap",
+   "sol_class": "0x80807190",
+   "sol_size": 8,
+   "retail_class": "0x80806D28",
+   "retail_size": 8,
+   "retail_tags": 0,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SStaticMeshInstanceMap (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest SStaticMeshInstanceGroup (data/tfx/features/statics.rs)"
+   ]
+  },
+  {
+   "name": "SBubbleParent",
+   "charm": "SBubbleParent",
+   "sol_class": "0x80807DAE",
+   "sol_size": 80,
+   "retail_class": "0x8080891E",
+   "retail_size": 96,
+   "retail_tags": 634,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SBubbleParent (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest SBubbleParent (data/map.rs)",
+    "634 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_C9968080",
+   "charm": "D2Class_C9968080",
+   "sol_class": "0x80809644",
+   "sol_size": 16,
+   "retail_class": "0x808096C9",
+   "retail_size": 16,
+   "retail_tags": 0,
+   "status": "charm_only",
+   "evidence": [
+    "Charm D2Class_C9968080 (SK 2601; retail BEYONDLIGHT_3402)"
+   ]
+  },
+  {
+   "name": "SBubbleDefinition",
+   "charm": "SBubbleDefinition",
+   "sol_class": "0x808091E0",
+   "sol_size": 24,
+   "retail_class": "0x80808701",
+   "retail_size": 96,
+   "retail_tags": 620,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SBubbleDefinition (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest SBubbleDefinition (data/map.rs)",
+    "620 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SMapContainerEntry",
+   "charm": "SMapContainerEntry",
+   "sol_class": "0x808084C1",
+   "sol_size": 16,
+   "retail_class": "0x80808703",
+   "retail_size": 16,
+   "retail_tags": 0,
+   "status": "charm_only",
+   "evidence": [
+    "Charm SMapContainerEntry (SK 2601; retail BEYONDLIGHT_3402)"
+   ]
+  },
+  {
+   "name": "SMapContainer",
+   "charm": "SMapContainer",
+   "sol_class": "0x80808A54",
+   "sol_size": 56,
+   "retail_class": "0x80808707",
+   "retail_size": 56,
+   "retail_tags": 7126,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SMapContainer (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest SMapContainer (data/map.rs)",
+    "7126 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SMapDataTableEntry",
+   "charm": "SMapDataTableEntry",
+   "sol_class": "0x80808BB0",
+   "sol_size": 4,
+   "retail_class": "0x80808709",
+   "retail_size": 4,
+   "retail_tags": 0,
+   "status": "charm_only",
+   "evidence": [
+    "Charm SMapDataTableEntry (SK 2601; retail BEYONDLIGHT_3402)"
+   ]
+  },
+  {
+   "name": "SMapNodeTable",
+   "charm": "SMapDataTable",
+   "sol_class": "0x808099D6",
+   "sol_size": 24,
+   "retail_class": "0x80809883",
+   "retail_size": 24,
+   "retail_tags": 180239,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SMapDataTable (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest SMapNodeTable (data/map.rs)",
+    "180239 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SMapNodeEntry",
+   "charm": "SMapDataEntry",
+   "sol_class": "0x808099D8",
+   "sol_size": 144,
+   "retail_class": "0x80809885",
+   "retail_size": 144,
+   "retail_tags": 0,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SMapDataEntry (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest SMapNodeEntry (data/map.rs)"
+   ]
+  },
+  {
+   "name": "SStaticInstancesCollectionComponent",
+   "charm": "SMapDataResource",
+   "sol_class": "0x808071B3",
+   "sol_size": 24,
+   "retail_class": "0x80806CC9",
+   "retail_size": 24,
+   "retail_tags": 0,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SMapDataResource (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest SStaticInstancesCollectionComponent (data/map.rs)"
+   ]
+  },
+  {
+   "name": "SUnk808082D5",
+   "charm": "SStaticMapParent",
+   "sol_class": "0x80806EF4",
+   "sol_size": 40,
+   "retail_class": "0x80806A0D",
+   "retail_size": 48,
+   "retail_tags": 2637,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SStaticMapParent (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest SUnk808082D5 (data/tfx/features/statics.rs)",
+    "2637 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_B5678080",
+   "charm": "D2Class_B5678080",
+   "sol_class": "0x80806CBF",
+   "sol_size": 24,
+   "retail_class": "0x808067B5",
+   "retail_size": 28,
+   "retail_tags": 0,
+   "status": "charm_only",
+   "evidence": [
+    "Charm D2Class_B5678080 (SK 2601; retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_786A8080",
+   "charm": "D2Class_786A8080",
+   "sol_class": "0x80806F68",
+   "sol_size": 56,
+   "retail_class": "0x80806A78",
+   "retail_size": 56,
+   "retail_tags": 10568,
+   "status": "corroborated",
+   "evidence": [
+    "Charm D2Class_786A8080 (SK 2601; retail WITCHQUEEN_6307)",
+    "10568 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_7D6A8080",
+   "charm": "D2Class_7D6A8080",
+   "sol_class": "0x80806F6D",
+   "sol_size": 12,
+   "retail_class": "0x80806A7D",
+   "retail_size": 12,
+   "retail_tags": 0,
+   "status": "charm_only",
+   "evidence": [
+    "Charm D2Class_7D6A8080 (SK 2601; retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_A16D8080",
+   "charm": "D2Class_A16D8080",
+   "sol_class": "0x808071DC",
+   "sol_size": 144,
+   "retail_class": "0x80806DA1",
+   "retail_size": 128,
+   "retail_tags": 175126,
+   "status": "corroborated",
+   "evidence": [
+    "Charm D2Class_A16D8080 (SK 2601; retail BEYONDLIGHT_3402)",
+    "175126 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SLightCollectionComponent",
+   "charm": "SMapLightResource",
+   "sol_class": "0x80806F5A",
+   "sol_size": 24,
+   "retail_class": "0x80806A63",
+   "retail_size": 24,
+   "retail_tags": 0,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SMapLightResource (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest SLightCollectionComponent (data/map.rs)"
+   ]
+  },
+  {
+   "name": "SLightCollection",
+   "charm": "D2Class_656C8080",
+   "sol_class": "0x8080713A",
+   "sol_size": 96,
+   "retail_class": "0x80806C65",
+   "retail_size": 96,
+   "retail_tags": 1263,
+   "status": "corroborated",
+   "evidence": [
+    "Charm D2Class_656C8080 (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest SLightCollection (data/tfx/features/light.rs)",
+    "1263 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SSkyObjectCollectionComponent",
+   "charm": "SMapSkyEntResource",
+   "sol_class": "0x80806F91",
+   "sol_size": 24,
+   "retail_class": "0x80806AA3",
+   "retail_size": 24,
+   "retail_tags": 0,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SMapSkyEntResource (SK 2601; retail WITCHQUEEN_6307)",
+    "alkahest SSkyObjectCollectionComponent (data/map.rs)"
+   ]
+  },
+  {
+   "name": "SSkyObjectCollection",
+   "charm": "SMapSkyEntities",
+   "sol_class": "0x80806F95",
+   "sol_size": 104,
+   "retail_class": "0x80806AA7",
+   "retail_size": 96,
+   "retail_tags": 532,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SMapSkyEntities (SK 2601; retail WITCHQUEEN_6307)",
+    "alkahest SSkyObjectCollection (data/tfx/features/sky_objects.rs)",
+    "532 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SLight",
+   "charm": "D2Class_706C8080",
+   "sol_class": "0x8080713E",
+   "sol_size": 160,
+   "retail_class": "0x80806C70",
+   "retail_size": 240,
+   "retail_tags": 0,
+   "status": "corroborated",
+   "evidence": [
+    "Charm D2Class_706C8080 (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest SLight (data/tfx/features/light.rs)"
+   ]
+  },
+  {
+   "name": "SSkyObject",
+   "charm": "D2Class_A96A8080",
+   "sol_class": "0x80806F97",
+   "sol_size": 128,
+   "retail_class": "0x80806AA9",
+   "retail_size": 144,
+   "retail_tags": 0,
+   "status": "corroborated",
+   "evidence": [
+    "Charm D2Class_A96A8080 (SK 2601; retail WITCHQUEEN_6307)",
+    "alkahest SSkyObject (data/tfx/features/sky_objects.rs)"
+   ]
+  },
+  {
+   "name": "SDecalCollectionComponent",
+   "charm": "SMapDecalsResource",
+   "sol_class": "0x80806E62",
+   "sol_size": 24,
+   "retail_class": "0x80806955",
+   "retail_size": 24,
+   "retail_tags": 0,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SMapDecalsResource (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest SDecalCollectionComponent (data/map.rs)"
+   ]
+  },
+  {
+   "name": "SDecalCollection",
+   "charm": "SMapDecals",
+   "sol_class": "0x80806E68",
+   "sol_size": 120,
+   "retail_class": "0x8080695B",
+   "retail_size": 120,
+   "retail_tags": 1391,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SMapDecals (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest SDecalCollection (data/tfx/features/decals.rs)",
+    "1391 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SDecalSet",
+   "charm": "D2Class_63698080",
+   "sol_class": "0x80806E6C",
+   "sol_size": 8,
+   "retail_class": "0x80806963",
+   "retail_size": 8,
+   "retail_tags": 0,
+   "status": "corroborated",
+   "evidence": [
+    "Charm D2Class_63698080 (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest SDecalSet (data/tfx/features/decals.rs)"
+   ]
+  },
+  {
+   "name": "D2Class_64698080",
+   "charm": "D2Class_64698080",
+   "sol_class": "0x80806E6D",
+   "sol_size": 16,
+   "retail_class": "0x80806964",
+   "retail_size": 16,
+   "retail_tags": 0,
+   "status": "charm_only",
+   "evidence": [
+    "Charm D2Class_64698080 (SK 2601; retail BEYONDLIGHT_3402)"
+   ]
+  },
+  {
+   "name": "SSkyObjectModelRef",
+   "charm": "D2Class_AE6A8080",
+   "sol_class": "0x80806F9B",
+   "sol_size": 16,
+   "retail_class": "0x80806AAE",
+   "retail_size": 16,
+   "retail_tags": 6385,
+   "status": "corroborated",
+   "evidence": [
+    "Charm D2Class_AE6A8080 (SK 2601; retail WITCHQUEEN_6307)",
+    "alkahest SSkyObjectModelRef (data/tfx/features/sky_objects.rs)",
+    "6385 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SObjectOcclusionBounds",
+   "charm": "D2Class_B3938080",
+   "sol_class": "0x80809673",
+   "sol_size": 48,
+   "retail_class": "0x808093B3",
+   "retail_size": 48,
+   "retail_tags": 0,
+   "status": "corroborated",
+   "evidence": [
+    "Charm D2Class_B3938080 (SK 2601; retail WITCHQUEEN_6307)",
+    "alkahest SObjectOcclusionBounds (data/tfx/common.rs)"
+   ]
+  },
+  {
+   "name": "SDecorator",
+   "charm": "D2Class_986C8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806C98",
+   "retail_size": 160,
+   "retail_tags": 1570,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_986C8080 (retail WITCHQUEEN_6307)",
+    "alkahest SDecorator (data/tfx/features/decorators.rs)",
+    "1570 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_B16C8080",
+   "charm": "D2Class_B16C8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806CB1",
+   "retail_size": 4,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_B16C8080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "SUnk8080717E",
+   "charm": "D2Class_B26C8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806CB2",
+   "retail_size": 256,
+   "retail_tags": 1817,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_B26C8080 (retail WITCHQUEEN_6307)",
+    "alkahest SUnk8080717E (data/tfx/features/decorators.rs)",
+    "1817 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SUnk80807184",
+   "charm": "D2Class_B86C8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806CB8",
+   "retail_size": 24,
+   "retail_tags": 807,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_B86C8080 (retail WITCHQUEEN_6307)",
+    "alkahest SUnk80807184 (data/tfx/features/decorators.rs)",
+    "807 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SUnk80807186",
+   "charm": "D2Class_BA6C8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806CBA",
+   "retail_size": 80,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_BA6C8080 (retail WITCHQUEEN_6307)",
+    "alkahest SUnk80807186 (data/tfx/features/decorators.rs)"
+   ]
+  },
+  {
+   "name": "SShadowingLight",
+   "charm": "D2Class_716C8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806C71",
+   "retail_size": 272,
+   "retail_tags": 151686,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_716C8080 (retail WITCHQUEEN_6307)",
+    "alkahest SShadowingLight (data/tfx/features/light.rs)",
+    "151686 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SWaterPlaneComponent",
+   "charm": "SMapWaterDecal",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808068D4",
+   "retail_size": 112,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm SMapWaterDecal (retail WITCHQUEEN_6307)",
+    "alkahest SWaterPlaneComponent (data/map.rs)"
+   ]
+  },
+  {
+   "name": "D2Class_7B918080",
+   "charm": "D2Class_7B918080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080917B",
+   "retail_size": 28,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_7B918080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_21918080",
+   "charm": "D2Class_21918080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80809121",
+   "retail_size": 32,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_21918080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "D2Class_19808080",
+   "charm": "D2Class_19808080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80808019",
+   "retail_size": 80,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_19808080 (retail WITCHQUEEN_6307)"
+   ]
+  },
+  {
+   "name": "SStaticMesh",
+   "charm": "SStaticMesh",
+   "sol_class": "0x808071A7",
+   "sol_size": 144,
+   "retail_class": "0x80806D44",
+   "retail_size": 112,
+   "retail_tags": 215168,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SStaticMesh (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest SStaticMesh (data/tfx/features/statics.rs)",
+    "215168 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SMaterialHash",
+   "charm": "SMaterialHash",
+   "sol_class": "0x80800014",
+   "sol_size": 4,
+   "retail_class": "0x80800014",
+   "retail_size": 4,
+   "retail_tags": 0,
+   "status": "charm_only",
+   "evidence": [
+    "Charm SMaterialHash (SK 2601; retail BEYONDLIGHT_3402)"
+   ]
+  },
+  {
+   "name": "SStaticSpecialMesh",
+   "charm": "SStaticMeshDecal",
+   "sol_class": "0x80807193",
+   "sol_size": 32,
+   "retail_class": "0x80806D2F",
+   "retail_size": 36,
+   "retail_tags": 0,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SStaticMeshDecal (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest SStaticSpecialMesh (data/tfx/features/statics.rs)"
+   ]
+  },
+  {
+   "name": "SStaticMeshData_SK",
+   "charm": "SStaticMeshData_SK",
+   "sol_class": "0x80807194",
+   "sol_size": 64,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm SStaticMeshData_SK (SK 2601; )"
+   ]
+  },
+  {
+   "name": "SStaticMeshData",
+   "charm": "SStaticMeshData_BL",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806D30",
+   "retail_size": 96,
+   "retail_tags": 124247,
+   "status": "retail_only",
+   "evidence": [
+    "Charm SStaticMeshData_BL (retail WITCHQUEEN_6307)",
+    "alkahest SStaticMeshData (data/tfx/features/statics.rs)",
+    "124247 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SStaticMeshMaterialAssignment_SK",
+   "charm": "SStaticMeshMaterialAssignment_SK",
+   "sol_class": "0x8080719B",
+   "sol_size": 8,
+   "retail_class": null,
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "sol_only",
+   "evidence": [
+    "Charm SStaticMeshMaterialAssignment_SK (SK 2601; )"
+   ]
+  },
+  {
+   "name": "SStaticMeshGroup",
+   "charm": "SStaticMeshMaterialAssignment_WQ",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806D38",
+   "retail_size": 6,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm SStaticMeshMaterialAssignment_WQ (retail WITCHQUEEN_6307)",
+    "alkahest SStaticMeshGroup (data/tfx/features/statics.rs)"
+   ]
+  },
+  {
+   "name": "SStaticMeshPart",
+   "charm": "SStaticMeshPart",
+   "sol_class": "0x8080719A",
+   "sol_size": 12,
+   "retail_class": "0x80806D37",
+   "retail_size": 12,
+   "retail_tags": 0,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SStaticMeshPart (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest SStaticMeshPart (data/tfx/features/statics.rs)"
+   ]
+  },
+  {
+   "name": "SStaticMeshBuffers",
+   "charm": "SStaticMeshBuffers",
+   "sol_class": "0x80807199",
+   "sol_size": 16,
+   "retail_class": "0x80806D36",
+   "retail_size": 20,
+   "retail_tags": 0,
+   "status": "charm_only",
+   "evidence": [
+    "Charm SStaticMeshBuffers (SK 2601; retail BEYONDLIGHT_3402)"
+   ]
+  },
+  {
+   "name": "SStaticTerrainPatchesComponent",
+   "charm": "SMapTerrainResource",
+   "sol_class": "0x8080714B",
+   "sol_size": 32,
+   "retail_class": "0x80806C7D",
+   "retail_size": 32,
+   "retail_tags": 0,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SMapTerrainResource (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest SStaticTerrainPatchesComponent (data/map.rs)"
+   ]
+  },
+  {
+   "name": "STerrain",
+   "charm": "STerrain",
+   "sol_class": "0x8080714F",
+   "sol_size": 176,
+   "retail_class": "0x80806C81",
+   "retail_size": 176,
+   "retail_tags": 8194,
+   "status": "corroborated",
+   "evidence": [
+    "Charm STerrain (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest STerrain (data/tfx/features/terrain.rs)",
+    "8194 retail top-level tags"
+   ]
+  },
+  {
+   "name": "STerrainMeshGroup",
+   "charm": "SMeshGroup",
+   "sol_class": "0x80807154",
+   "sol_size": 96,
+   "retail_class": "0x80806C86",
+   "retail_size": 96,
+   "retail_tags": 0,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SMeshGroup (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest STerrainMeshGroup (data/tfx/features/terrain.rs)"
+   ]
+  },
+  {
+   "name": "STerrainMeshPart",
+   "charm": "SStaticPart",
+   "sol_class": "0x80807152",
+   "sol_size": 12,
+   "retail_class": "0x80806C84",
+   "retail_size": 12,
+   "retail_tags": 0,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SStaticPart (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest STerrainMeshPart (data/tfx/features/terrain.rs)"
+   ]
+  },
+  {
+   "name": "SLocalizedStrings",
+   "charm": "SLocalizedStrings",
+   "sol_class": "0x80809A88",
+   "sol_size": 80,
+   "retail_class": "0x808099EF",
+   "retail_size": 80,
+   "retail_tags": 10637,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SLocalizedStrings (SK 2601; retail BEYONDLIGHT_3402)",
+    "alkahest SLocalizedStrings (data/strings.rs)",
+    "10637 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SLocalizedStringsData",
+   "charm": "SLocalizedStringsData",
+   "sol_class": "0x80809A8A",
+   "sol_size": 88,
+   "retail_class": "0x808099F1",
+   "retail_size": 72,
+   "retail_tags": 136890,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SLocalizedStringsData (SK 2601; retail LATEST)",
+    "136890 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SStringPart",
+   "charm": "SStringPart",
+   "sol_class": "0x80809A90",
+   "sol_size": 32,
+   "retail_class": "0x808099F7",
+   "retail_size": 32,
+   "retail_tags": 0,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SStringPart (SK 2601; retail WITCHQUEEN_6307)",
+    "alkahest SStringPart (data/strings.rs)"
+   ]
+  },
+  {
+   "name": "SStringCombination",
+   "charm": "SStringPartDefinition",
+   "sol_class": "0x80809A8E",
+   "sol_size": 16,
+   "retail_class": "0x808099F5",
+   "retail_size": 16,
+   "retail_tags": 0,
+   "status": "corroborated",
+   "evidence": [
+    "Charm SStringPartDefinition (SK 2601; retail WITCHQUEEN_6307)",
+    "alkahest SStringCombination (data/strings.rs)"
+   ]
+  },
+  {
+   "name": "D2Class_02218080",
+   "charm": "D2Class_02218080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80802102",
+   "retail_size": 104,
+   "retail_tags": 20,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_02218080 (retail BEYONDLIGHT_3402)",
+    "20 retail top-level tags"
+   ]
+  },
+  {
+   "name": "D2Class_0E3C8080",
+   "charm": "D2Class_0E3C8080",
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80803C0E",
+   "retail_size": 40,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "Charm D2Class_0E3C8080 (retail BEYONDLIGHT_3402)"
+   ]
+  },
+  {
+   "name": "SMaterialPermutationsComponent",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080402E",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SMaterialPermutationsComponent (data/map.rs)"
+   ]
+  },
+  {
+   "name": "SStaticAmbientOcclusionComponent",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806A40",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SStaticAmbientOcclusionComponent (data/map.rs)"
+   ]
+  },
+  {
+   "name": "SShadowingLightComponent",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806C5E",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SShadowingLightComponent (data/map.rs)"
+   ]
+  },
+  {
+   "name": "SDecoratorsComponent",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806CC3",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SDecoratorsComponent (data/map.rs)"
+   ]
+  },
+  {
+   "name": "SRoadDecalCollectionComponent",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808068E8",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SRoadDecalCollectionComponent (data/map.rs)"
+   ]
+  },
+  {
+   "name": "SSunDataComponent",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806A71",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SSunDataComponent (data/map.rs)"
+   ]
+  },
+  {
+   "name": "SUmbraTomeComponent",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806CF1",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SUmbraTomeComponent (data/map.rs)"
+   ]
+  },
+  {
+   "name": "SRespawnPointsComponent",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80808CB5",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SRespawnPointsComponent (data/map.rs)"
+   ]
+  },
+  {
+   "name": "SRespawnPoints",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80808CB7",
+   "retail_size": null,
+   "retail_tags": 724,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SRespawnPoints (data/map.rs)",
+    "724 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SRespawnPoint",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80808CB9",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SRespawnPoint (data/map.rs)"
+   ]
+  },
+  {
+   "name": "SAudioPathComponent",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080666D",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SAudioPathComponent (data/map.rs)"
+   ]
+  },
+  {
+   "name": "SAudioPointComponent",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080666F",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SAudioPointComponent (data/map.rs)"
+   ]
+  },
+  {
+   "name": "SInterfaceMap",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80809AE7",
+   "retail_size": 72,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SInterfaceMap (data/pattern.rs)"
+   ]
+  },
+  {
+   "name": "SComponentWiring",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80809A8F",
+   "retail_size": 56,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SComponentWiring (data/pattern.rs)"
+   ]
+  },
+  {
+   "name": "S8080841B",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080841B",
+   "retail_size": 64,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S8080841B (data/pattern.rs)"
+   ]
+  },
+  {
+   "name": "S8080841D",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080841D",
+   "retail_size": 24,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S8080841D (data/pattern.rs)"
+   ]
+  },
+  {
+   "name": "SObjectChannelComponent",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80809597",
+   "retail_size": 424,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SObjectChannelComponent (data/pattern.rs)"
+   ]
+  },
+  {
+   "name": "SObjectChannel",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808095A9",
+   "retail_size": 112,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SObjectChannel (data/pattern.rs)"
+   ]
+  },
+  {
+   "name": "SUmbraTomes",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806E6B",
+   "retail_size": 232,
+   "retail_tags": 612,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SUmbraTomes (data/umbra.rs)",
+    "612 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SWwiseEvent",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80809738",
+   "retail_size": null,
+   "retail_tags": 88454,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SWwiseEvent (data/wwise.rs)",
+    "88454 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SUnk80808e89",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80808E89",
+   "retail_size": null,
+   "retail_tags": 12078,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SUnk80808e89 (data/activity/mod.rs)",
+    "12078 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SUnk80808ebe",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80808EBE",
+   "retail_size": null,
+   "retail_tags": 12078,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SUnk80808ebe (data/activity/mod.rs)",
+    "12078 retail top-level tags"
+   ]
+  },
+  {
+   "name": "Unk80808943",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80808943",
+   "retail_size": 36,
+   "retail_tags": 708994,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest Unk80808943 (data/activity/mod.rs)",
+    "708994 retail top-level tags"
+   ]
+  },
+  {
+   "name": "S808096BF",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808096BF",
+   "retail_size": null,
+   "retail_tags": 129,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S808096BF (data/activity/transition.rs)",
+    "129 retail top-level tags"
+   ]
+  },
+  {
+   "name": "S808096CE",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808096CE",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S808096CE (data/activity/transition.rs)"
+   ]
+  },
+  {
+   "name": "S808096C3",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808096C3",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S808096C3 (data/activity/transition.rs)"
+   ]
+  },
+  {
+   "name": "S80809A4F",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80809A4F",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S80809A4F (data/activity/transition.rs)"
+   ]
+  },
+  {
+   "name": "S80809567",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80809567",
+   "retail_size": 160,
+   "retail_tags": 1185,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S80809567 (data/activity/transition.rs)",
+    "1185 retail top-level tags"
+   ]
+  },
+  {
+   "name": "S80809588",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80809588",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S80809588 (data/activity/transition.rs)"
+   ]
+  },
+  {
+   "name": "S8080957B",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080957B",
+   "retail_size": null,
+   "retail_tags": 501,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S8080957B (data/activity/transition.rs)",
+    "501 retail top-level tags"
+   ]
+  },
+  {
+   "name": "S8080957E",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080957E",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S8080957E (data/activity/transition.rs)"
+   ]
+  },
+  {
+   "name": "SCuiScreen",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80803DB2",
+   "retail_size": null,
+   "retail_tags": 684,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SCuiScreen (data/cui/mod.rs)",
+    "684 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SCuiObjectParent",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80803A38",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SCuiObjectParent (data/cui/mod.rs)"
+   ]
+  },
+  {
+   "name": "S80803C6F",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80803C6F",
+   "retail_size": null,
+   "retail_tags": 2382,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S80803C6F (data/cui/mod.rs)",
+    "2382 retail top-level tags"
+   ]
+  },
+  {
+   "name": "S80803A29",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80803A29",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S80803A29 (data/cui/mod.rs)"
+   ]
+  },
+  {
+   "name": "SCuiComponent",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80803A44",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SCuiComponent (data/cui/mod.rs)"
+   ]
+  },
+  {
+   "name": "S80803B33",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80803B33",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S80803B33 (data/cui/mod.rs)"
+   ]
+  },
+  {
+   "name": "S80803B2F",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80803B2F",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S80803B2F (data/cui/mod.rs)"
+   ]
+  },
+  {
+   "name": "S80803B2D",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80803B2D",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S80803B2D (data/cui/mod.rs)"
+   ]
+  },
+  {
+   "name": "S80803B2B",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80803B2B",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S80803B2B (data/cui/mod.rs)"
+   ]
+  },
+  {
+   "name": "SCuiOverlay",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80803A4C",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SCuiOverlay (data/cui/mod.rs)"
+   ]
+  },
+  {
+   "name": "S80803B0C",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80803B0C",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S80803B0C (data/cui/mod.rs)"
+   ]
+  },
+  {
+   "name": "S80803CA3",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80803CA3",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S80803CA3 (data/cui/mod.rs)"
+   ]
+  },
+  {
+   "name": "S80803B10",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80803B10",
+   "retail_size": 56,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S80803B10 (data/cui/mod.rs)"
+   ]
+  },
+  {
+   "name": "S80803ABB",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80803ABB",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S80803ABB (data/cui/mod.rs)"
+   ]
+  },
+  {
+   "name": "S80803AB2",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80803AB2",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S80803AB2 (data/cui/mod.rs)"
+   ]
+  },
+  {
+   "name": "S80803AB9",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80803AB9",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S80803AB9 (data/cui/mod.rs)"
+   ]
+  },
+  {
+   "name": "S80803D91",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80803D91",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S80803D91 (data/cui/mod.rs)"
+   ]
+  },
+  {
+   "name": "S80803D8B",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80803D8B",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S80803D8B (data/cui/mod.rs)"
+   ]
+  },
+  {
+   "name": "S8080AF04",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080AF04",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S8080AF04 (data/cui/mod.rs)"
+   ]
+  },
+  {
+   "name": "S8080468D",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080468D",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S8080468D (data/cui/mod.rs)"
+   ]
+  },
+  {
+   "name": "S80804834",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80804834",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S80804834 (data/cui/mod.rs)"
+   ]
+  },
+  {
+   "name": "S8080490D",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080490D",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S8080490D (data/cui/mod.rs)"
+   ]
+  },
+  {
+   "name": "S8080490F",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080490F",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S8080490F (data/cui/mod.rs)"
+   ]
+  },
+  {
+   "name": "S80803AAF",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80803AAF",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S80803AAF (data/cui/mod.rs)"
+   ]
+  },
+  {
+   "name": "S80804837",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80804837",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S80804837 (data/cui/mod.rs)"
+   ]
+  },
+  {
+   "name": "S808048DF",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808048DF",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S808048DF (data/cui/mod.rs)"
+   ]
+  },
+  {
+   "name": "S808048D9",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808048D9",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S808048D9 (data/cui/mod.rs)"
+   ]
+  },
+  {
+   "name": "S808048D7",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808048D7",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S808048D7 (data/cui/mod.rs)"
+   ]
+  },
+  {
+   "name": "S808048D1",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808048D1",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S808048D1 (data/cui/mod.rs)"
+   ]
+  },
+  {
+   "name": "SAtmosphereDataComponent",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806BC1",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SAtmosphereDataComponent (data/tfx/atmosphere.rs)"
+   ]
+  },
+  {
+   "name": "SUnk80806a74",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806A74",
+   "retail_size": null,
+   "retail_tags": 163,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SUnk80806a74 (data/tfx/atmosphere.rs)",
+    "163 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SUnk80808ac8",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80808AC8",
+   "retail_size": null,
+   "retail_tags": 540,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SUnk80808ac8 (data/tfx/atmosphere.rs)",
+    "540 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SSunAngles",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80808B49",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SSunAngles (data/tfx/atmosphere.rs)"
+   ]
+  },
+  {
+   "name": "SRenderGlobalsData",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808067A8",
+   "retail_size": null,
+   "retail_tags": 2,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SRenderGlobalsData (data/tfx/render_globals.rs)",
+    "2 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SRenderGlobalLookupTextures",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808066AE",
+   "retail_size": null,
+   "retail_tags": 2,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SRenderGlobalLookupTextures (data/tfx/render_globals.rs)",
+    "2 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SRenderGlobalScope",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808067AD",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SRenderGlobalScope (data/tfx/render_globals.rs)"
+   ]
+  },
+  {
+   "name": "SRenderGlobalPipelines",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808067AC",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SRenderGlobalPipelines (data/tfx/render_globals.rs)"
+   ]
+  },
+  {
+   "name": "SRenderGlobalsGlobalChannels",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080822D",
+   "retail_size": null,
+   "retail_tags": 2,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SRenderGlobalsGlobalChannels (data/tfx/render_globals.rs)",
+    "2 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SVertexInputLayouts",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806D78",
+   "retail_size": 56,
+   "retail_tags": 2,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SVertexInputLayouts (data/tfx/render_globals.rs)",
+    "2 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SVertexInputLayoutMapping",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806D7B",
+   "retail_size": 24,
+   "retail_tags": 2,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SVertexInputLayoutMapping (data/tfx/render_globals.rs)",
+    "2 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SVertexLayout",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806D7E",
+   "retail_size": 28,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SVertexLayout (data/tfx/render_globals.rs)"
+   ]
+  },
+  {
+   "name": "SVertexInputElementSets",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806D7F",
+   "retail_size": 24,
+   "retail_tags": 4,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SVertexInputElementSets (data/tfx/render_globals.rs)",
+    "4 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SVertexInputElementSet",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806D81",
+   "retail_size": 16,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SVertexInputElementSet (data/tfx/render_globals.rs)"
+   ]
+  },
+  {
+   "name": "SVertexInputElement",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806D84",
+   "retail_size": 3,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SVertexInputElement (data/tfx/render_globals.rs)"
+   ]
+  },
+  {
+   "name": "SWaterDisplacementGlobals",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080684B",
+   "retail_size": null,
+   "retail_tags": 120,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SWaterDisplacementGlobals (data/tfx/render_globals.rs)",
+    "120 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SMaterialTextureAssignment",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806DCF",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SMaterialTextureAssignment (data/tfx/technique.rs)"
+   ]
+  },
+  {
+   "name": "SStaticAmbientOcclusion",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806D19",
+   "retail_size": null,
+   "retail_tags": 611,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SStaticAmbientOcclusion (data/tfx/features/ao.rs)",
+    "611 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SAmbientOcclusionOffsetMapping",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806D21",
+   "retail_size": null,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SAmbientOcclusionOffsetMapping (data/tfx/features/ao.rs)"
+   ]
+  },
+  {
+   "name": "SUnk80807170",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806CA4",
+   "retail_size": null,
+   "retail_tags": 1565,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SUnk80807170 (data/tfx/features/decorators.rs)",
+    "1565 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SDecoratorInstanceData",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806CA7",
+   "retail_size": null,
+   "retail_tags": 1544,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SDecoratorInstanceData (data/tfx/features/decorators.rs)",
+    "1544 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SDecoratorInstanceElement",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806CA9",
+   "retail_size": 16,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SDecoratorInstanceElement (data/tfx/features/decorators.rs)"
+   ]
+  },
+  {
+   "name": "SUnk8080716B",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806C9F",
+   "retail_size": null,
+   "retail_tags": 1557,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SUnk8080716B (data/tfx/features/decorators.rs)",
+    "1557 retail top-level tags"
+   ]
+  },
+  {
+   "name": "S8080BACC",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80809AF7",
+   "retail_size": 24,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S8080BACC (data/tfx/features/dynamic.rs)"
+   ]
+  },
+  {
+   "name": "S8080BAD0",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80809AFB",
+   "retail_size": 8,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest S8080BAD0 (data/tfx/features/dynamic.rs)"
+   ]
+  },
+  {
+   "name": "SRoadDecalCollection",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808068EA",
+   "retail_size": null,
+   "retail_tags": 285,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SRoadDecalCollection (data/tfx/features/road_decals.rs)",
+    "285 retail top-level tags"
+   ]
+  },
+  {
+   "name": "SRoadDecal",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808068E3",
+   "retail_size": 96,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SRoadDecal (data/tfx/features/road_decals.rs)"
+   ]
+  },
+  {
+   "name": "SUnk8080816f",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x8080816F",
+   "retail_size": 56,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SUnk8080816f (data/tfx/sequencer/mod.rs)"
+   ]
+  },
+  {
+   "name": "SSequenceGlobalChannel",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808091D1",
+   "retail_size": 112,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SSequenceGlobalChannel (data/tfx/sequencer/mod.rs)"
+   ]
+  },
+  {
+   "name": "SSequenceFlowParallel",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808091E3",
+   "retail_size": 96,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SSequenceFlowParallel (data/tfx/sequencer/mod.rs)"
+   ]
+  },
+  {
+   "name": "SUnk808091dd",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808091DD",
+   "retail_size": 96,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SUnk808091dd (data/tfx/sequencer/mod.rs)"
+   ]
+  },
+  {
+   "name": "SUnk808091d9",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808091D9",
+   "retail_size": 88,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SUnk808091d9 (data/tfx/sequencer/mod.rs)"
+   ]
+  },
+  {
+   "name": "SUnk808091df",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808091DF",
+   "retail_size": 96,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SUnk808091df (data/tfx/sequencer/mod.rs)"
+   ]
+  },
+  {
+   "name": "SUnk808091e5",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808091E5",
+   "retail_size": 64,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SUnk808091e5 (data/tfx/sequencer/mod.rs)"
+   ]
+  },
+  {
+   "name": "SUnk808091db",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808091DB",
+   "retail_size": 96,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SUnk808091db (data/tfx/sequencer/mod.rs)"
+   ]
+  },
+  {
+   "name": "SUnk808091e1",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808091E1",
+   "retail_size": 80,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SUnk808091e1 (data/tfx/sequencer/mod.rs)"
+   ]
+  },
+  {
+   "name": "SUnk80802636Animation",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80802636",
+   "retail_size": 416,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SUnk80802636Animation (data/tfx/sequencer/mod.rs)"
+   ]
+  },
+  {
+   "name": "SSequenceDelay",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808091D7",
+   "retail_size": 32,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SSequenceDelay (data/tfx/sequencer/mod.rs)"
+   ]
+  },
+  {
+   "name": "SSequenceDamageImpulse",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80803F2F",
+   "retail_size": 400,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SSequenceDamageImpulse (data/tfx/sequencer/mod.rs)"
+   ]
+  },
+  {
+   "name": "SSequenceAreaImpulse",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80803F24",
+   "retail_size": 1296,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SSequenceAreaImpulse (data/tfx/sequencer/mod.rs)"
+   ]
+  },
+  {
+   "name": "SSequenceScreenAreaFx",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808091CF",
+   "retail_size": 256,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SSequenceScreenAreaFx (data/tfx/sequencer/mod.rs)"
+   ]
+  },
+  {
+   "name": "SUnk80809205",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80809205",
+   "retail_size": 64,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SUnk80809205 (data/tfx/sequencer/mod.rs)"
+   ]
+  },
+  {
+   "name": "SUnk80809204",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80809204",
+   "retail_size": 144,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SUnk80809204 (data/tfx/sequencer/mod.rs)"
+   ]
+  },
+  {
+   "name": "SSequenceLight",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806A52",
+   "retail_size": 304,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SSequenceLight (data/tfx/sequencer/mod.rs)"
+   ]
+  },
+  {
+   "name": "SSequenceLensFlare",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806A48",
+   "retail_size": 304,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SSequenceLensFlare (data/tfx/sequencer/mod.rs)"
+   ]
+  },
+  {
+   "name": "SSequenceEmbeddedParticleSystem",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808067B9",
+   "retail_size": 272,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SSequenceEmbeddedParticleSystem (data/tfx/sequencer/mod.rs)"
+   ]
+  },
+  {
+   "name": "SUnk808067bb",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808067BB",
+   "retail_size": 24,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SUnk808067bb (data/tfx/sequencer/mod.rs)"
+   ]
+  },
+  {
+   "name": "SExpression",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x00000000",
+   "retail_size": 48,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SExpression (data/tfx/sequencer/mod.rs)"
+   ]
+  },
+  {
+   "name": "SSequenceNodeRef",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x808094E9",
+   "retail_size": 4,
+   "retail_tags": 0,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SSequenceNodeRef (data/tfx/sequencer/mod.rs)"
+   ]
+  },
+  {
+   "name": "SUnk80806920",
+   "charm": null,
+   "sol_class": null,
+   "sol_size": null,
+   "retail_class": "0x80806920",
+   "retail_size": 72,
+   "retail_tags": 85058,
+   "status": "retail_only",
+   "evidence": [
+    "alkahest SUnk80806920 (data/tfx/sequencer/mod.rs)",
+    "85058 retail top-level tags"
+   ]
+  }
+ ]
+}

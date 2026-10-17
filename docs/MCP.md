@@ -124,6 +124,19 @@ In the viewport, the player shows as an orange ring with a facing arrow and a br
 - `check_mission_script` {path} checks a Lua mission script without the game: syntax, every mission key and hash it names, Slot constants against the open mission's objects, and the script library's `check()`. Problems carry line numbers. It is the Graph panel's **Checks > Check script** button.
 - `simulate_mission` {path, mode} walks a campaign script step by step through a fake game host. The modes are `play`, `skip`, `cutscene_never_loads` and `rejoin`. It returns the step trace, stalls, script errors and missing mocks. It is the **Checks > Simulate** button.
 
+## Retail backporting
+
+- The `retail_*` tools read the retail Destiny 2 extraction (build 245048); see docs/DATA-TOOLS.md and the
+  `solforge-retail-port` skill. Start with `retail_status`.
+- `retail_open_map` {bubble} shows a retail bubble in the viewport (approval). The Retail workspace's Map viewer tab names
+  the retail tag behind the selected object; `select_object`, `focus_camera` and screenshots work as on 86657 maps.
+- `retail_port_mission`, `retail_port_strings` and `retail_convert_tag` write into the open project (approval); nothing is
+  written to game packages.
+- Without the editor, `solforge-retail-mcp.exe` serves the read-only retail tools over stdio:
+```json
+{ "mcpServers": { "solforge-retail": { "command": "<solforge>\\solforge-retail-mcp.exe", "args": ["--root", "E:\\sol-live-pkg-extract"] } } }
+```
+
 ## Several agents on one Solforge
 
 - Each `solforge-mcp` shim sends its pid (`X-Solforge-Client-Pid`); with the `Mcp-Session-Id` from `initialize` and the clientInfo name, that identifies each agent.

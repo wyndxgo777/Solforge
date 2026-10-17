@@ -39,7 +39,7 @@ public static class EditorCommands
     /** show_panel names: the dock panels, the floating editors and the dialogs a menu opens. */
     public static readonly string[] Panels =
     [
-        "graph", "live", "local_server", "items", "data_explorer", "content_editors", "asset_browser", "inspector", "changes",
+        "graph", "live", "local_server", "items", "data_explorer", "retail", "content_editors", "asset_browser", "inspector", "changes",
         "object_tree", "workspace", "ai_workspace", "settings", "keybinds", "shortcuts", "cache", "sunrise_location", "mod_details",
         "new_project", "add_asset", "notices"
     ];
@@ -111,6 +111,7 @@ public static class EditorCommands
         new("view.local_server", "View > Local Server", CommandInput.None, "Show the Local Server panel.", "show_panel"),
         new("view.items", "View > Items", CommandInput.None, "Show the item browser.", "show_panel"),
         new("view.data_explorer", "View > Data explorer", CommandInput.None, "Open the Data explorer.", "show_panel"),
+        new("view.retail", "View > Retail workspace", CommandInput.None, "Open the Retail workspace (live-build data, maps, porting).", "show_panel"),
         new("view.frame_selection", "View > Frame selection", CommandInput.None, "Frame the selection in the 3D view.", "focus_camera"),
         new("view.set_cursor_to_selection", "View > Set cursor to selection", CommandInput.None, "Move the 3D cursor to the selection."),
         new("view.wireframe", "View > Wireframe", CommandInput.Toggle, "Wireframe on or off.", "set_viewport_options"),

@@ -25,11 +25,16 @@ public readonly record struct TagArrayView(int Field, int Count, uint Class, int
  */
 public static class TagSchemaReader
 {
+    /** The build 86657 array marker. Retail (build 245048) uses 0x80809FB8; pass it as marker or use a registry built with it. */
     public const uint ArrayMarker = 0x80809FBD;
     private const int MaximumArray = 1_048_576;
 
     /** Reads the typed array whose 16-byte descriptor is at field; problem says why it is not one. Count 0 is a valid empty array. */
-    public static bool TryArray(ReadOnlySpan<byte> bytes, int field, out TagArrayView view, out string? problem)
+    public static bool TryArray(ReadOnlySpan<byte> bytes, int field, out TagArrayView view, out string? problem) =>
+        TryArray(bytes, field, ArrayMarker, out view, out problem);
+
+    /** TryArray for a build whose array header marker is marker (0x80809FBD for 86657, 0x80809FB8 for retail). */
+    public static bool TryArray(ReadOnlySpan<byte> bytes, int field, uint marker, out TagArrayView view, out string? problem)
     {
         view = default; problem = null;
         if (field < 0 || field + 16 > bytes.Length) { problem = "array descriptor leaves the tag"; return false; }
@@ -40,7 +45,7 @@ public static class TagSchemaReader
         long header = field + 8L + delta;
         if (header < 4 || header + 16 > bytes.Length) { problem = "array header leaves the tag"; return false; }
         int at = (int)header;
-        if (BinaryPrimitives.ReadUInt32LittleEndian(bytes[(at - 4)..]) != ArrayMarker) { problem = "array header has no 0x80809FBD marker"; return false; }
+        if (BinaryPrimitives.ReadUInt32LittleEndian(bytes[(at - 4)..]) != marker) { problem = $"array header has no 0x{marker:X8} marker"; return false; }
         if (BinaryPrimitives.ReadUInt64LittleEndian(bytes[at..]) != count) { problem = "array header count disagrees with the descriptor"; return false; }
         view = new(field, (int)count, BinaryPrimitives.ReadUInt32LittleEndian(bytes[(at + 8)..]), at, at + 16);
         return true;
@@ -73,7 +78,7 @@ public static class TagSchemaReader
     }
 
     /** Reads one field of the struct at start; null when its bytes leave the tag. */
-    public static TagFieldValue? Read(ReadOnlySpan<byte> bytes, int start, TagSchemaField field)
+    public static TagFieldValue? Read(ReadOnlySpan<byte> bytes, int start, TagSchemaField field, uint marker = ArrayMarker)
     {
         int at = start + field.Offset;
         if (at < 0 || at + field.Width > bytes.Length) return null;
@@ -112,7 +117,7 @@ public static class TagSchemaReader
                 return new(field, at, (ulong)target, target, $"-> 0x{target:X}");
             }
             case "array":
-                return TryArray(bytes, at, out var view, out string? problem)
+                return TryArray(bytes, at, marker, out var view, out string? problem)
                     ? new(field, at, (ulong)view.Count, view.Count, view.Count == 0 ? "0 elements" : $"{view.Count} x 0x{view.Class:X8} @0x{view.Data:X}")
                     : new(field, at, null, null, "(bad array: " + problem + ")");
             default:
@@ -121,10 +126,10 @@ public static class TagSchemaReader
     }
 
     /** Every field of the struct at start, in offset order (fields whose bytes leave the tag are skipped). */
-    public static IEnumerable<TagFieldValue> ReadAll(byte[] bytes, int start, TagSchema schema)
+    public static IEnumerable<TagFieldValue> ReadAll(byte[] bytes, int start, TagSchema schema, uint marker = ArrayMarker)
     {
         foreach (var field in schema.Fields)
-            if (Read(bytes, start, field) is { } value) yield return value;
+            if (Read(bytes, start, field, marker) is { } value) yield return value;
     }
 
     /** Validates the struct at start against schema, recursing into elements and pointer targets up to depth levels. */
@@ -143,7 +148,7 @@ public static class TagSchemaReader
         foreach (var field in schema.Fields)
         {
             string at = path + "." + field.Name;
-            var value = Read(bytes, start, field);
+            var value = Read(bytes, start, field, registry.ArrayMarker);
             if (value is null) { issues.Add(new(at, start + field.Offset, "field leaves the tag", true)); continue; }
             CheckValue(field, value, at, issues);
             if (field.Type == "array") CheckArray(registry, bytes, field, start + field.Offset, depth, elementLimit, at, issues);
@@ -175,7 +180,7 @@ public static class TagSchemaReader
 
     private static void CheckArray(TagSchemaRegistry registry, byte[] bytes, TagSchemaField field, int at, int depth, int elementLimit, string path, List<TagSchemaIssue> issues)
     {
-        if (!TryArray(bytes, at, out var view, out string? problem)) { issues.Add(new(path, at, problem ?? "bad array", true)); return; }
+        if (!TryArray(bytes, at, registry.ArrayMarker, out var view, out string? problem)) { issues.Add(new(path, at, problem ?? "bad array", true)); return; }
         if (view.Count == 0) return;
         if (field.ElementClass is { } expected && view.Class != expected)
             issues.Add(new(path, at, $"element class 0x{view.Class:X8}, schema says 0x{expected:X8}", true));
@@ -210,11 +215,11 @@ public static class TagSchemaReader
         string here = prefix.Length == 0 ? field.Name : prefix + "." + field.Name;
         if (index == parts.Length - 1 && !each && !follow)
         {
-            if (Read(bytes, start, field) is { } value) yield return (here, value);
+            if (Read(bytes, start, field, registry.ArrayMarker) is { } value) yield return (here, value);
             yield break;
         }
         if (each && field.Type == "array" && field.Element is { } id && registry.FindId(id) is { } element
-            && TryArray(bytes, start + field.Offset, out var view, out _) && view.Count > 0)
+            && TryArray(bytes, start + field.Offset, registry.ArrayMarker, out var view, out _) && view.Count > 0)
         {
             int stride = field.Stride > 0 ? field.Stride : element.Size;
             if (stride <= 0) yield break;

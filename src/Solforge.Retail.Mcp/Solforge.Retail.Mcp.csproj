@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- solforge-retail-mcp.exe: the retail_* read tools (live build 245048) as a stdio MCP server, usable without the
+       editor (Claude Code, Codex, Gemini). The write tools (retail_port_mission, retail_port_strings, retail_convert_tag,
+       retail_open_map) need an open project and stay in the editor's MCP server. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <AssemblyName>solforge-retail-mcp</AssemblyName>
+    <RootNamespace>Solforge.Retail.Mcp</RootNamespace>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Solforge.Retail/Solforge.Retail.csproj" />
+    <ProjectReference Include="../Solforge.Mcp/Solforge.Mcp.csproj" />
+  </ItemGroup>
+</Project>

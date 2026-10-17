@@ -12,6 +12,8 @@
     <ProjectReference Include="../Solforge.Graphs/Solforge.Graphs.csproj" />
     <!-- Tag schema registry and decoders behind the game table tools. -->
     <ProjectReference Include="../SunriseStudio.Packages/SunriseStudio.Packages.csproj" />
+    <!-- Retail (live build 245048) dump reader, decoders and porting behind the retail_* tools. -->
+    <ProjectReference Include="../Solforge.Retail/Solforge.Retail.csproj" />
   </ItemGroup>
   <ItemGroup>
     <!-- Screen OCR helper (Windows.Media.Ocr through Windows PowerShell 5.1); ScreenOcr writes it to %TEMP% and runs it. -->

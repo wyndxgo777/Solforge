@@ -19,11 +19,14 @@ public sealed class TagSchemaRegistry
     public static TagSchemaRegistry Default => Embedded.Value;
 
     public IReadOnlyList<TagSchema> All { get; }
+    /** Typed-array header marker of the build these schemas describe: 0x80809FBD (86657) unless built for another build. */
+    public uint ArrayMarker { get; }
     /** Files or entries that failed to parse or reference unknown schemas; empty when everything loaded. */
     public IReadOnlyList<string> Problems { get; }
 
-    private TagSchemaRegistry(IEnumerable<TagSchema> schemas, List<string> problems)
+    private TagSchemaRegistry(IEnumerable<TagSchema> schemas, List<string> problems, uint arrayMarker)
     {
+        ArrayMarker = arrayMarker;
         byId = new(StringComparer.OrdinalIgnoreCase);
         byClass = new();
         foreach (var schema in schemas)
@@ -45,12 +48,18 @@ public sealed class TagSchemaRegistry
     }
 
     /** Builds a registry from (file name, JSON text) pairs; later files replace earlier schemas with the same id. */
-    public static TagSchemaRegistry FromSources(IEnumerable<(string File, string Json)> sources)
+    public static TagSchemaRegistry FromSources(IEnumerable<(string File, string Json)> sources) => FromSources(sources, TagSchemaReader.ArrayMarker);
+
+    /**
+     * A registry for another build (Solforge.Retail keeps the build 245048 schemas this way): arrayMarker is that build's
+     * typed-array header marker, which Validate and Values use. Keep each build's schemas in their own registry.
+     */
+    public static TagSchemaRegistry FromSources(IEnumerable<(string File, string Json)> sources, uint arrayMarker)
     {
         var problems = new List<string>();
         var schemas = new List<TagSchema>();
         foreach (var (file, json) in sources) schemas.AddRange(TagSchemaJson.Parse(file, json, problems));
-        return new TagSchemaRegistry(schemas, problems);
+        return new TagSchemaRegistry(schemas, problems, arrayMarker);
     }
 
     /** The embedded schema files, then every *.json in overrideFolder (when it exists). */

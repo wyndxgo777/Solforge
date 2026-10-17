@@ -98,7 +98,7 @@ public static partial class SolforgeTools
         "get_shader, list_animations, get_animation, list_audio and get_audio. Action tools need the user's approve click. " +
         "For how the game client works (functions, xrefs, strings, structs, vtables, tag class handlers in destiny2.exe) and for raw " +
         "tag data, unknown tag classes, localized text and JSON/CSV export, start with decomp_status and read the solforge-decomp skill; " +
-        "paged results return next_cursor, which you pass back as cursor. " + SelfServiceHint + " " + AutomaticHint + " " + CommandsHint;
+        "paged results return next_cursor, which you pass back as cursor. " + RetailHint + " " + SelfServiceHint + " " + AutomaticHint + " " + CommandsHint;
 
     /** Shared by the server instructions and the session file, so every engine knows it can do its own setup. */
     public const string SelfServiceHint =
@@ -118,7 +118,7 @@ public static partial class SolforgeTools
     {
         McpTool Read(string name, string description, JsonObject schema, Func<JsonObject, CancellationToken, Task<McpToolResult>> run) =>
             new(name, description, schema, false, async (args, cancel) =>
-                host.Paused && name is not ("read_project_file" or "search_project" or "search_reference" or "read_reference") && !CatalogTools.Contains(name) && !ContentReadTools.Contains(name) && !AssetReadTools.Contains(name) && !ItemSourceReadTools.Contains(name)
+                host.Paused && name is not ("read_project_file" or "search_project" or "search_reference" or "read_reference") && !CatalogTools.Contains(name) && !ContentReadTools.Contains(name) && !AssetReadTools.Contains(name) && !ItemSourceReadTools.Contains(name) && !RetailReadTools.Contains(name)
                     ? McpToolResult.Error("The user paused context publishing in Solforge's AI workspace.")
                     : await run(args, cancel).ConfigureAwait(false));
         McpTool Act(string name, string description, JsonObject schema, Func<JsonObject, string?> validate, Func<JsonObject, string> summary) =>
@@ -353,7 +353,8 @@ public static partial class SolforgeTools
             .. CommandTools(host),
             .. InsightTools(host, Read),
             .. MissionHostTools(host, Read),
-            .. ItemSourceTools(host, Read, Act)
+            .. ItemSourceTools(host, Read, Act),
+            .. RetailTools(host, Read, Act)
         ];
     }
 

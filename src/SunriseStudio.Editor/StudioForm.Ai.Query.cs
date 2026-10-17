@@ -609,6 +609,7 @@ public sealed partial class StudioForm
             case "create_mission_script": return AiCreateMissionScript(args);
             case "apply_vendor_edit": return AiApplyVendorEdit(args);
             case "revert_to_base": return AiRevertToBase(args);
+            case "retail_open_map": return AiRetailOpenMap(args);
             case "start_creation": return AiStartCreation(args);
             case "replace_texture_pixels":
             {

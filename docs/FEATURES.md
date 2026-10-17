@@ -128,6 +128,17 @@ Project facts (TFM, references, sizes) are in ARCHITECTURE.md; this file is abou
 - Player tracking: Live link, recorder snapshots or the local server's /coop; viewport marker, facing, trail, Follow player;
   `get_player_position`, `wait_for_player_near`. Map/mission link in `open_map` and `list_missions`.
 
+## Retail backport (`Solforge.Retail`, `Solforge.Retail.Mcp`, docs/DATA-TOOLS.md)
+- (Solforge) Read-only access to the retail Destiny 2 extraction (build 245048, package v53): tag index (8.6M rows, cached),
+  payload dump, tiger-pkg lookup cache (64-bit hashes, named tags), optional tiger-mcp for incoming references and string search.
+- Retail schemas (own registry, array marker 0x80809FB8) and decoders: localized strings, activities and destinations,
+  bubbles (map nodes with transforms and component kinds), static instances and meshes, terrain. Class map retail to 86657.
+- Porting: `retail_port_plan` (portable / needs_converter / blocked per dependency), `retail_convert_tag` (array marker,
+  element classes, reference relinking), `retail_port_strings`, `retail_port_mission` (activity document + Lua skeleton).
+- View > Retail workspace: activities, map viewer (retail bubbles in the same viewport, markers plus untextured terrain and
+  statics, selection inspector), tags (decoded/annotated/hex/references), strings, port. Retail views are read-only.
+- `solforge-retail-mcp.exe`: the read-only retail tools as a standalone stdio MCP server; skill `skills/solforge-retail-port`.
+
 ## Checks (`tests/*.Tests`, run by verify.ps1)
 - (Exists) 36 console check programs (no test framework); `-Game` adds installation checks,
   `-Blender` the add-on checks; CI runs the install-free set on WARP.
@@ -136,3 +147,5 @@ Project facts (TFM, references, sizes) are in ARCHITECTURE.md; this file is abou
   catalog search peak working set under 1.5 GB with `-Game`).
 - Manual: `verify.ps1 -Game <install> -Stress` runs the 115 GB full-install stress test (cold parse of
   every package file, every entry read, 1.5 GB budget); without it the check prints a `skipped:` line.
+- Solforge: `Solforge.Retail.Tests` checks the retail reader on synthetic tags (no dump); `--retail <root>` adds read-only
+  checks against the real extraction.

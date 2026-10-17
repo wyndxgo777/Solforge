@@ -191,7 +191,7 @@ public sealed partial class StudioWorkspace : IDisposable
                 cachedWorldLoader = loader;
                 ResetBrowserRows(rows);
                 RefreshAddedBrowserRows();
-                if (Document is { AddedAssetId: null, Guardian: null } document)
+                if (Document is { AddedAssetId: null, Guardian: null, Kind: not RetailKind } document)
                     Document = document with { Name = names.Describe(document.Entry) };
                 if (ActiveScene is { } scene) names.NameScene(scene);
                 if (Document?.Scene is { } assetScene && !ReferenceEquals(assetScene, ActiveScene)) names.NameScene(assetScene);
@@ -548,6 +548,7 @@ public sealed partial class StudioWorkspace : IDisposable
         RefreshOverlay();
         undo.Clear(); redo.Clear();
         if (World is not null) ReloadWorld();
+        else if (Document is { Kind: RetailKind }) Status = project?.Name ?? "View only"; // a retail view reads no project bytes
         else if (Document is { AddedAssetId: null } document) Select(document.Entry.TagHash, context: document.OpenContext);
         else if (Document is { AddedAssetId: not null }) { Document = null; DocumentRevision++; }
         else Status = project?.Name ?? "View only";
