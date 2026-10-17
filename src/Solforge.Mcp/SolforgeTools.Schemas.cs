@@ -90,7 +90,10 @@ public static partial class SolforgeTools
     }
 
     /** Yields the schema and game table tools. */
-    private static IEnumerable<McpTool> SchemaTools(ISolforgeHost host)
+    private static IEnumerable<McpTool> SchemaTools(ISolforgeHost host) => SchemaTools(host as ISolforgeDataHost);
+
+    /** The schema and game table tools over package data alone (null data: the registry tools still work, the rest report it). */
+    public static IEnumerable<McpTool> SchemaTools(ISolforgeDataHost? packageData)
     {
         static JsonObject Paged(params (string, string, string, bool)[] properties) => McpJson.Schema([.. properties, .. DataPages.Args]);
         static string A(JsonObject args, string name) => McpJson.String(args, name) ?? "";
@@ -99,7 +102,7 @@ public static partial class SolforgeTools
         McpTool Pkg(string name, string description, JsonObject schema, Func<ISolforgeDataHost, JsonObject, CancellationToken, Task<McpToolResult>> run) =>
             new(name, description, schema, false, async (args, cancel) =>
             {
-                if (host is not ISolforgeDataHost data) return McpToolResult.Error("This Solforge host has no package data access.");
+                if (packageData is not { } data) return McpToolResult.Error("This Solforge host has no package data access.");
                 if (data.DataUnavailable is { } reason) return McpToolResult.Error(reason);
                 return await run(data, args, cancel).ConfigureAwait(false);
             });
