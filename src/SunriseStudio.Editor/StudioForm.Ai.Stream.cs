@@ -8,8 +8,8 @@ using SunriseStudio.Rendering;
 namespace SunriseStudio.Editor;
 
 /**
- * The MCP live viewport: while anyone watches (a frame tool call in the last two minutes, a local browser stream or
- * the relay), every drawn frame steps the renderer's staging ring (Dx11Renderer.GrabCycle) at the feed's rate, and
+ * The MCP live viewport: while anyone watches (a frame tool call in the last two minutes or a local browser
+ * stream), every drawn frame steps the renderer's staging ring (Dx11Renderer.GrabCycle) at the feed's rate, and
  * finished copies of the viewport region go to one worker that measures the change, scales and JPEG-encodes them into
  * the ViewportFeed. A worker still busy drops the frame rather than queueing; nothing runs while nobody watches or
  * while context publishing is paused.
@@ -20,15 +20,20 @@ public sealed partial class StudioForm
     private int aiStreamBusy;
     private bool aiStreamIdle = true;
 
+    /** Owner builds only (RELEASING.md): keep capturing while paused for a stream the user started; public builds never do. */
+    partial void OwnerKeepsStreaming(ViewportFeed feed, ref bool keep);
+
     /** Copies the viewport region for the live feed when someone is watching. */
     private void StreamAiViewport()
     {
         if (aiHost is not { } host || renderer is null) return;
         var feed = host.Viewport;
         feed.Paused = aiPaused;
-        // Seth's own Stream to phone keeps capturing while AI context publishing is paused; the AI's frame tools and
-        // the local /viewport page still refuse (they check Paused), and an AI-started relay stops capturing as before.
-        bool blocked = aiPaused && !PhoneStreamOwned(feed);
+        // In owner builds a stream the user started (OwnerKeepsStreaming) keeps capturing while AI context publishing
+        // is paused; the AI's frame tools and the local /viewport page still refuse (they check Paused).
+        bool keep = false;
+        if (aiPaused) OwnerKeepsStreaming(feed, ref keep);
+        bool blocked = aiPaused && !keep;
         if (blocked || !feed.Wanted)
         {
             if (blocked && feed.Latest is not null) feed.Clear();

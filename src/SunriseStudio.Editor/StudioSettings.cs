@@ -19,8 +19,12 @@ public sealed class StudioSettings
     /** The project opened last; reopened at startup when AutoOpenLastProject is on. */
     public string LastProjectPath { get; set; } = "";
     public bool AutoOpenLastProject { get; set; } = true;
-    /** Fallback when no project was saved yet. */
+    /** Fallback when no project was saved yet: the owner's project in owner builds (RELEASING.md), none in public builds. */
+#if SOLFORGE_RELAY
     public const string DefaultProjectPath = @"C:\Users\Seth\Desktop\sol\10-Project Sol\Project Sol\sunrise.project.json";
+#else
+    public const string DefaultProjectPath = "";
+#endif
     public float BrowserWidth { get; set; } = 300;
     public float InspectorWidth { get; set; } = 300;
     public float ChangesHeight { get; set; } = 190;

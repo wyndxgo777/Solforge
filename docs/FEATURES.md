@@ -123,8 +123,8 @@ Project facts (TFM, references, sizes) are in ARCHITECTURE.md; this file is abou
 - (Solforge) stdio shim + streamable HTTP; config snippets for Claude Code/Desktop, Cline, Cursor, Gemini CLI/Antigravity, Codex.
 - UI automation: `UiAuto` wraps the ImGui widgets the editor uses and records each drawn control (ImGui id, label, panel,
   scope, rect, value); `list_ui_controls` + approval-gated `ui_invoke/ui_set_value/ui_set_checked/ui_select`.
-- Live viewport: `Dx11Renderer.GrabCycle` staging ring (no stall), `ViewportFeed` change-only JPEG ring, local MJPEG page,
-  opt-in outbound relay (`tools/stream-relay`, website login + allow-list).
+- Live viewport: `Dx11Renderer.GrabCycle` staging ring (no stall), `ViewportFeed` change-only JPEG ring, local MJPEG page
+  (this PC only). Owner builds add owner-only streaming features; public builds have none (`RELEASING.md`).
 - Player tracking: Live link, recorder snapshots or the local server's /coop; viewport marker, facing, trail, Follow player;
   `get_player_position`, `wait_for_player_near`. Map/mission link in `open_map` and `list_missions`.
 

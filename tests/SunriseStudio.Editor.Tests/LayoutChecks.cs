@@ -2,7 +2,7 @@ using System.Text.Json;
 using SunriseStudio.Editor;
 
 /** Checks editor panel layouts: area type changes keep the displaced editor, old layouts restore, and the default layout includes the Local Server panel. */
-internal static class LayoutChecks
+internal static partial class LayoutChecks
 {
     /** Entry point: runs every check in this class and throws on the first failure. */
     internal static void Run(string root)
@@ -205,8 +205,18 @@ internal static class LayoutChecks
         ("navigate-back", "Navigation"), ("navigate-forward", "Navigation"), ("project name", "Project"),
         ("tb-new", "Project"), ("tb-add", "Project"), ("tb-build", "Project"), ("tb-render", "Render"),
         ("tb-shaders", "Shaders"), ("##quality", "Quality"), ("tb-detail", "Detail"), ("##lighting", "Lighting"),
-        ("tb-settings", "Settings"), ("window buttons", "WindowButtons"), ("tb-relay", "Relay")
+        ("tb-settings", "Settings"), ("window buttons", "WindowButtons"), .. OwnerBarControls()
     ];
+
+    /** Controls only owner builds (SolforgeRelay=true, RELEASING.md) put on the title bar; none in public builds. */
+    private static List<(string Control, string Group)> OwnerBarControls()
+    {
+        var controls = new List<(string Control, string Group)>();
+        AddOwnerBarControls(controls);
+        return controls;
+    }
+
+    static partial void AddOwnerBarControls(List<(string Control, string Group)> controls);
 
     /**
      * The window buttons fill the bar's height at its right end; every control on the row and the "»" button stays
