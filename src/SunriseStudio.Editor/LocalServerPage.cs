@@ -24,6 +24,8 @@ public sealed class LocalServerPage
     private readonly List<string> log = [];
     /** Follows the server log file. */
     private readonly LogFollower follower = new();
+    /** Client build provenance and testkit health (the Client tab). */
+    private readonly ClientTestkitSection clientTab = new();
     private const int MaxLogLines = 5000;
 
     private LocalServerStatus? status;
@@ -64,6 +66,9 @@ public sealed class LocalServerPage
     {
         Poll();
         DrawHeader();
+        var (testkitColor, testkitTip) = clientTab.Dot();
+        ImGui.TextColored(testkitColor, "(o) testkit");
+        if (ImGui.IsItemHovered()) Tip(testkitTip);
         if (ImGui.BeginTabBar("local-server-tabs"))
         {
             if (ImGui.BeginTabItem("Status")) { DrawStatus(); ImGui.EndTabItem(); }
@@ -72,6 +77,7 @@ public sealed class LocalServerPage
             if (ImGui.BeginTabItem("Config")) { DrawConfig(); ImGui.EndTabItem(); }
             if (ImGui.BeginTabItem("Actions")) { DrawActions(); ImGui.EndTabItem(); }
             if (ImGui.BeginTabItem("Subsystems")) { DrawSubsystems(); ImGui.EndTabItem(); }
+            if (ImGui.BeginTabItem("Client")) { clientTab.Draw(); ImGui.EndTabItem(); }
             ImGui.EndTabBar();
         }
     }
