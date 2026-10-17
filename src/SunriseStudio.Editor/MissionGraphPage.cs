@@ -188,7 +188,7 @@ public sealed partial class MissionGraphPage
                 + (scriptError.Length > 0 ? 1 : 0) + (sdk.Length > 0 ? 1 : 0) + (source.Error.Length > 0 ? 1 : 0);
             // Unified Graph: the same Nodes / source / Checks views as the node graph model (GraphViews).
             GraphViews.Tabs("mission-views", () => DrawNodes(CanEdit), "Lua", () => DrawSource(CanEdit), problems,
-                () => DrawChecks(calls, sdk, problems));
+                () => DrawChecks(calls, sdk, problems), (RetailTabLabel, DrawRetail));
         }
         catch (Exception error) when (Recoverable(error)) { Fail(error.Message); workspace.Error = error.Message; }
     }
@@ -200,6 +200,7 @@ public sealed partial class MissionGraphPage
         {
             ImGui.TextDisabled(apiSchema is null ? "No problems found; API calls not checked" : "No problems found");
             ApiStatusTip();
+            DrawCoverage();
             return;
         }
         if (sdk.Length > 0) Problem(sdk);
@@ -208,6 +209,7 @@ public sealed partial class MissionGraphPage
         foreach (var diagnostic in graph!.Diagnostics.Concat(sceneChecks)) Problem(diagnostic.Message);
         foreach (string check in calls) Problem(check);
         if (apiSchema is null) { ImGui.TextDisabled("API calls not checked"); ApiStatusTip(); }
+        DrawCoverage();
     }
 
     /** One wrapped line in the problem color. */
