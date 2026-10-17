@@ -304,29 +304,16 @@ void BashSyntax(List<string> done)
     done.Add($"bash -n accepts all {scripts.Length} generated scripts");
 }
 
-sealed class FakeShell : IWslShell
-{
-    public List<string> Scripts { get; } = [];
-    public Func<string, ShellResult> Reply { get; set; } = _ => new ShellResult(0, "", "", false);
-
-    /** Records the script and answers with the configured reply instead of running a shell. */
-    public Task<ShellResult> RunAsync(string script, TimeSpan timeout, CancellationToken cancel)
-    {
-        Scripts.Add(script);
-        return Task.FromResult(Reply(script));
-    }
-}
-
 static void WslNoise()
 {
-    const string noise = "wsl: Failed to translate 'E:\solforge-p47b\.dotnet\.dotnet\tools'";
+    const string noise = @"wsl: Failed to translate 'E:\solforge-p47b\.dotnet\.dotnet\tools'";
     Expect(Shell.StripWslNoise(noise + "\nSTARTED=12\n") == "STARTED=12\n", "noise line removed");
     Expect(Shell.StripWslNoise(noise + "\r\n" + noise + "\r\nok") == "ok", "CRLF and repeated lines removed");
     Expect(Shell.StripWslNoise(string.Concat((noise + "\n").Select(c => c + "\0"))) == "", "UTF-16 padded line removed");
     Expect(Shell.StripWslNoise("PID=1\nFailed to translate in my log\n") == "PID=1\nFailed to translate in my log\n", "other text untouched");
 }
 
-static async Task DeployReports()
+async Task DeployReports()
 {
     string project = Path.Combine(scratch, "project");
     var plan = DeployPlanner.Plan(project);
@@ -371,4 +358,17 @@ static async Task DeployReports()
 
     Expect(DeployPlanner.ParseScriptCheck("garbage", "wsl died").Why.Contains("wsl died", StringComparison.Ordinal), "unparseable check output");
     try { DeployPlanner.CheckScriptsScript(["scripts/../x.lua"], options); Expect(false, "dotdot accepted"); } catch (InvalidDataException) { }
+}
+
+sealed class FakeShell : IWslShell
+{
+    public List<string> Scripts { get; } = [];
+    public Func<string, ShellResult> Reply { get; set; } = _ => new ShellResult(0, "", "", false);
+
+    /** Records the script and answers with the configured reply instead of running a shell. */
+    public Task<ShellResult> RunAsync(string script, TimeSpan timeout, CancellationToken cancel)
+    {
+        Scripts.Add(script);
+        return Task.FromResult(Reply(script));
+    }
 }
