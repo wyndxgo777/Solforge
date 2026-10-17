@@ -11,13 +11,15 @@ internal static class GraphViews
 {
     public static readonly Vector4 ProblemColor = new(1, .55f, .45f, 1);
 
-    /** The three tabs. The ### id keeps Checks selected while its count changes. */
-    public static void Tabs(string id, Action nodes, string sourceLabel, Action source, int problems, Action checks)
+    /** The three tabs, plus an optional extra one (the mission script's Retail tab). The ### id keeps Checks selected while its count changes. */
+    public static void Tabs(string id, Action nodes, string sourceLabel, Action source, int problems, Action checks,
+        (string Label, Action Draw)? extra = null)
     {
         if (!ImGui.BeginTabBar(id)) return;
         if (UiAuto.BeginTabItem("Nodes")) { nodes(); UiAuto.EndTabItem(); }
         if (UiAuto.BeginTabItem(sourceLabel)) { source(); UiAuto.EndTabItem(); }
         if (UiAuto.BeginTabItem(problems > 0 ? $"Checks ({problems})###checks" : "Checks###checks")) { checks(); UiAuto.EndTabItem(); }
+        if (extra is { } tab && UiAuto.BeginTabItem(tab.Label)) { tab.Draw(); UiAuto.EndTabItem(); }
         ImGui.EndTabBar();
     }
 

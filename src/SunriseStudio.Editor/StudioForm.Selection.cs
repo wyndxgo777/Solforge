@@ -96,7 +96,7 @@ public sealed partial class StudioForm
             }
             StudioUi.Facts($"property-facts-{group.Key}", facts);
         }
-        if (inspection.References.Count != 0 && ImGui.CollapsingHeader("References", ImGuiTreeNodeFlags.DefaultOpen))
+        if (inspection.References.Count != 0 && UiAuto.CollapsingHeader("References", ImGuiTreeNodeFlags.DefaultOpen))
             foreach (var reference in inspection.References)
             {
                 ImGui.PushID($"{reference.Name}:{reference.TagHash}:{reference.Offset}");
@@ -106,10 +106,10 @@ public sealed partial class StudioForm
                     : $"{reference.TagHash:X8} + {reference.Offset:X}");
                 ImGui.PopID();
             }
-        if (inspection.Slots.Count != 0 && ImGui.CollapsingHeader("Mission slots", ImGuiTreeNodeFlags.DefaultOpen))
+        if (inspection.Slots.Count != 0 && UiAuto.CollapsingHeader("Mission slots", ImGuiTreeNodeFlags.DefaultOpen))
             StudioUi.Facts("mission-slots", inspection.Slots.Select(slot => (
                 workspace.ResolveHash(slot.NameHash) ?? slot.Name, $"type {slot.Identity.Type}, slot {slot.Identity.Index}", "")));
-        if (inspection.RelatedObjects.Count != 0 && ImGui.CollapsingHeader("Related objects"))
+        if (inspection.RelatedObjects.Count != 0 && UiAuto.CollapsingHeader("Related objects"))
             foreach (var related in inspection.RelatedObjects)
                 if (inspectionWorld.Find(related) is { } relatedRow)
                 {
@@ -117,7 +117,7 @@ public sealed partial class StudioForm
                     if (UiAuto.Selectable(relatedRow.Name)) SelectWorldObject(relatedRow);
                     ImGui.PopID();
                 }
-        if (row.Owners.Count != 0 && ImGui.CollapsingHeader("State ownership"))
+        if (row.Owners.Count != 0 && UiAuto.CollapsingHeader("State ownership"))
             foreach (var owner in row.Owners)
             {
                 var state = inspectionWorld.AllStates.FirstOrDefault(state => state.BubbleNameHash == owner.BubbleHash
@@ -153,8 +153,8 @@ public sealed partial class StudioForm
         ImGui.BeginDisabled(!workspace.CanEdit);
         if (info.CanTransform)
         {
-            ImGui.TextDisabled("Position"); ImGui.SetNextItemWidth(-1); ImGui.InputFloat3("##position", ref editPosition, "%.3f");
-            ImGui.TextDisabled("Rotation"); ImGui.SetNextItemWidth(-1); ImGui.InputFloat3("##rotation", ref editRotation, "%.2f");
+            ImGui.TextDisabled("Position"); ImGui.SetNextItemWidth(-1); UiAuto.InputFloat3("##position", ref editPosition, "%.3f");
+            ImGui.TextDisabled("Rotation"); ImGui.SetNextItemWidth(-1); UiAuto.InputFloat3("##rotation", ref editRotation, "%.2f");
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("XYZ degrees");
             if (info.CanScale)
             { ImGui.TextDisabled("Scale"); ImGui.SetNextItemWidth(-1); UiAuto.InputFloat("##scale", ref editScale, 0, 0, "%.4f"); }
@@ -165,8 +165,8 @@ public sealed partial class StudioForm
         }
         if (info.CanBounds)
         {
-            ImGui.TextDisabled("Minimum"); ImGui.SetNextItemWidth(-1); ImGui.InputFloat3("##minimum", ref editMinimum, "%.3f");
-            ImGui.TextDisabled("Maximum"); ImGui.SetNextItemWidth(-1); ImGui.InputFloat3("##maximum", ref editMaximum, "%.3f");
+            ImGui.TextDisabled("Minimum"); ImGui.SetNextItemWidth(-1); UiAuto.InputFloat3("##minimum", ref editMinimum, "%.3f");
+            ImGui.TextDisabled("Maximum"); ImGui.SetNextItemWidth(-1); UiAuto.InputFloat3("##maximum", ref editMaximum, "%.3f");
             if (UiAuto.Button("Apply bounds", new(-1, 0))) workspace.Run(() =>
                 workspace.ApplyObjectEdit(SceneEdits.CreateBoundsEdit(catalog, selectedObject, editMinimum, editMaximum,
                     inspectionWorld, objectInspection?.Object.Name)));
@@ -234,7 +234,7 @@ public sealed partial class StudioForm
 
     private void DrawNameEvidence(uint tag)
     {
-        if (workspace.Names is not { } names || !ImGui.CollapsingHeader("Name source")) return;
+        if (workspace.Names is not { } names || !UiAuto.CollapsingHeader("Name source")) return;
         var info = names.Lookup(tag);
         var facts = new List<(string, string, string)>
         {

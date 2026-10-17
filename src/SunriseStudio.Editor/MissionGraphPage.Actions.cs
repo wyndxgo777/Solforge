@@ -29,7 +29,7 @@ public sealed partial class MissionGraphPage
         { actionDraft = action; actionNode = node.Key; actionError = ""; ImGui.OpenPopup("Edit flow action"); }
         // A custom callback opens as code; a typed one keeps its code one click away.
         if (action is null) FieldLua(node.Key, "run");
-        else if (ImGui.TreeNode("Lua##run")) { FieldLua(node.Key, "run"); ImGui.TreePop(); }
+        else if (UiAuto.TreeNode("Lua##run")) { FieldLua(node.Key, "run"); ImGui.TreePop(); }
         if (!ImGui.BeginPopup("Edit flow action")) return;
         var draft = actionDraft!;
         ImGui.SetNextItemWidth(320);

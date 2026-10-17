@@ -70,6 +70,17 @@ Each engine runs on its own official client and its own sign-in. Claude Code use
 - `ui_invoke`, `ui_set_value`, `ui_set_checked` and `ui_select` act on a control by `id` or by visible label (`query`, narrowed by `window` and `kind`). A query that matches several controls equally is refused and lists them.
 - Every action needs the approval click.
 - The AI workspace and Settings > AI are never listed and cannot be driven.
+- Collapsing headers and tree nodes are kind `header`: `ui_invoke` opens one, `ui_set_checked` opens or closes it. Icon buttons are listed under their tooltip. Colour fields are `text` controls holding `r, g, b, a` (0-1); `ui_set_value` also takes `#RRGGBB[AA]`.
+
+## Commands, panels and file pickers
+
+- `list_commands` lists every menu command and toolbar toggle by a stable id (`file.*`, `edit.*`, `assets.*`, `build.*`, `view.*`, `toolbar.*`, `window.*`, `nav.*`, `help.*`): menu path, input, the dedicated tool to prefer, and whether it is enabled now. It needs no approval and works while paused.
+- `run_command` runs one. A command that opens a native file or folder picker takes `path` instead; exports still refuse paths inside the project or the install.
+- `show_panel` opens a panel, editor window or dialog so `list_ui_controls` can see its controls.
+- `set_viewport_options` sets wireframe, grid, game shaders, full detail, quality, lighting, projection, view presets, axis gizmo and statistics. `set_camera` places the camera (`eye` + `look_at`), re-centres it (`look_at`), turns it (`yaw`, `pitch` in degrees) or zooms it (`distance`).
+- `export_asset` and `import_asset` cover the Assets menu by `kind`. `project_change` reverts, removes, compares or exports Project changes rows.
+- `arm_file_dialog` answers the next picker that a `ui_invoke` opens (Browse buttons, audio, weapon and mission page imports and exports).
+- `get_help` with `section: tools` maps every menu, panel and dialog to its tools. The full table is `08-docs\McpCoverage.md`.
 
 ## Live viewport
 
@@ -110,6 +121,15 @@ In the viewport, the player shows as an orange ring with a facing arrow and a br
 
 - `open_map` takes a map, a mission, or both. A mission alone opens on its own map, and a map alone lists its missions.
 - `list_missions` shows only the open map's missions unless you give `map` or `all=true`.
+- `check_mission_script` {path} checks a Lua mission script without the game: syntax, every mission key and hash it names, Slot constants against the open mission's objects, and the script library's `check()`. Problems carry line numbers. It is the Graph panel's **Checks > Check script** button.
+- `simulate_mission` {path, mode} walks a campaign script step by step through a fake game host. The modes are `play`, `skip`, `cutscene_never_loads` and `rejoin`. It returns the step trace, stalls, script errors and missing mocks. It is the **Checks > Simulate** button.
+
+## Several agents on one Solforge
+
+- Each `solforge-mcp` shim sends its pid (`X-Solforge-Client-Pid`); with the `Mcp-Session-Id` from `initialize` and the clientInfo name, that identifies each agent.
+- `get_sessions` lists the connected sessions, who opened the map the UI shows, and which build, deploy or map load is running and who started it. The AI workspace shows the same list under its header.
+- `find_object`, `get_object`, `list_mission_objects`, `get_mission_object`, `find_world_objects` and `get_placement` take `map=<tag>` (and `mission=<tag>`). They answer from a background copy of that map, and the UI's map does not change. The first call on a large map may say it is still loading; call again. Solforge keeps two copies at most.
+- `open_map` and `close_map` refuse while another session opened the current map less than 10 minutes ago (`SOLFORGE_MAP_GUARD_MINUTES`), unless `force=true`.
 
 ## Shaders, animations and audio
 

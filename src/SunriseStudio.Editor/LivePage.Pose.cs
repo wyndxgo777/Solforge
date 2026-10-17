@@ -297,7 +297,7 @@ public sealed partial class LivePage
             : ("Player model", $"{playerMeshes.Count - playerMeshes.Count(unanimated.Contains)} of {playerMeshes.Count} parts", "Player parts animated"));
         if (poseStatus.Length > 0) rows.Add(("Selection", poseStatus, ""));
         StudioUi.Facts("live-animation", rows);
-        if (animationNotes.Count > 0 && ImGui.TreeNode($"Parts not animated ({animationNotes.Values.Sum()})###animation-notes"))
+        if (animationNotes.Count > 0 && UiAuto.TreeNode($"Parts not animated ({animationNotes.Values.Sum()})###animation-notes"))
         {
             StudioUi.Facts("live-animation-notes", animationNotes.Select(note => (note.Key, $"{note.Value:N0}", note.Key)));
             ImGui.TreePop();

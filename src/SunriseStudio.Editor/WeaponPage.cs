@@ -235,7 +235,7 @@ public sealed class WeaponPage : IStudioPage
                 if (StudioUi.IconButton("weapon-firing", StudioIcon.Spark, "Apply Muzzle, Eject and Reload emitters", idle))
                     PickFiringSource(workspace, weapon);
             }
-            if (ImGui.CollapsingHeader("Model parts")) DrawParts(workspace, art);
+            if (UiAuto.CollapsingHeader("Model parts")) DrawParts(workspace, art);
         }
 
         if (state.AnimationDefinition != 0 && state.Animations.Count != 0)
@@ -271,7 +271,7 @@ public sealed class WeaponPage : IStudioPage
             if (state.ClipBursts.Count != 0) DrawClipBursts(workspace, state);
         }
 
-        if (editable && state.Owned && ImGui.CollapsingHeader("Sounds")) DrawSounds(workspace, state);
+        if (editable && state.Owned && UiAuto.CollapsingHeader("Sounds")) DrawSounds(workspace, state);
 
         StudioUi.Heading("Perks");
         if (state.Behaviors.Count == 0) ImGui.TextDisabled("No perk behavior linked.");
@@ -295,9 +295,11 @@ public sealed class WeaponPage : IStudioPage
 
     private static void PickFiringSource(StudioWorkspace workspace, uint weapon)
     {
-        using var dialog = new OpenFileDialog { Filter = "Blender weapon export|*.glb", CheckFileExists = true };
-        if (dialog.ShowDialog() != DialogResult.OK) return;
-        string path = dialog.FileName;
+        if (AiFileDialog.Pick(() =>
+            {
+                using var dialog = new OpenFileDialog { Filter = "Blender weapon export|*.glb", CheckFileExists = true };
+                return dialog.ShowDialog() == DialogResult.OK ? dialog.FileName : null;
+            }) is not { } path || !File.Exists(path)) return;
         workspace.Run(() => workspace.ApplyFiringEffects(weapon, path));
     }
 
@@ -343,10 +345,10 @@ public sealed class WeaponPage : IStudioPage
         bool usable = tracer.Refusal is null;
         const ImGuiColorEditFlags flags = ImGuiColorEditFlags.NoInputs | ImGuiColorEditFlags.NoTooltip;
         ImGui.BeginDisabled();
-        ImGui.ColorEdit4("Start##tracer", ref tracerStart, flags);
+        UiAuto.ColorEdit4("Start##tracer", ref tracerStart, flags);
         StudioUi.Tip(tracer.Refusal ?? Broken);
         ImGui.SameLine();
-        ImGui.ColorEdit4("End##tracer", ref tracerEnd, flags);
+        UiAuto.ColorEdit4("End##tracer", ref tracerEnd, flags);
         StudioUi.Tip(tracer.Refusal ?? Broken);
         ImGui.EndDisabled();
         ImGui.SameLine();
@@ -382,10 +384,12 @@ public sealed class WeaponPage : IStudioPage
             if (StudioUi.IconButton($"sound-{slot.EventTag:X8}", StudioIcon.Import,
                 "Replace with a 16-bit WAV. A NAME.release.wav beside it plays on release.", !workspace.IsBusy))
             {
-                using var dialog = new OpenFileDialog { Filter = "Wave audio|*.wav", CheckFileExists = true };
-                if (dialog.ShowDialog() == DialogResult.OK)
+                if (AiFileDialog.Pick(() =>
+                    {
+                        using var dialog = new OpenFileDialog { Filter = "Wave audio|*.wav", CheckFileExists = true };
+                        return dialog.ShowDialog() == DialogResult.OK ? dialog.FileName : null;
+                    }) is { } path && File.Exists(path))
                 {
-                    string path = dialog.FileName;
                     workspace.Run(() => workspace.ReplaceWeaponSounds(state.Weapon, new Dictionary<uint, string> { [slot.EventTag] = path }));
                 }
             }

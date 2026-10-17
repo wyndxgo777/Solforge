@@ -175,7 +175,7 @@ public sealed partial class CuiPage
             requestedWidget = target; liveRecord = null; liveRecordContent = null; liveRecordAt = Environment.TickCount64;
             LiveCall(connection => connection.RequestCuiWidget(target));
         }
-        if (!ImGui.CollapsingHeader("In game now (read only)###cui-live-now", ImGuiTreeNodeFlags.DefaultOpen)) return;
+        if (!UiAuto.CollapsingHeader("In game now (read only)###cui-live-now", ImGuiTreeNodeFlags.DefaultOpen)) return;
         if (!LiveOverlay) { ImGui.TextDisabled(LiveChip(live).Tooltip); return; }
         if (LiveStale) ImGui.TextColored(LiveWarning, "Stale: the game stopped answering");
         if (liveJoin.Row(selected.Id) is not { } row) ImGui.TextDisabled(LiveStateText(liveJoin.State(selected.Id)) + " in game");
@@ -238,7 +238,7 @@ public sealed partial class CuiPage
         }
         ImGui.EndTable();
         if (record.Slots is not { } slots) return;
-        bool open = ImGui.TreeNode("Slots###cui-live-slots");
+        bool open = UiAuto.TreeNode("Slots###cui-live-slots");
         StudioUi.Tip(StudioUi.MayBeInaccurate);
         if (!open) return;
         for (int i = 0; i < slots.Count; i++) ImGui.TextDisabled($"{i}: {Number(slots[i])}");

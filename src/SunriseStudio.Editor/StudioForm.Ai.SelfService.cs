@@ -83,7 +83,7 @@ public sealed partial class StudioForm
                 missionGraph.ReloadScripts(workspace.Catalog.GameRoot);
                 return "Reloaded the Mission Graph scripts and API schema.";
             default:
-                return null;
+                return RunAiCommandAction(tool, args);
         }
     }
 

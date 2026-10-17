@@ -492,10 +492,10 @@ public sealed class AssetAnimationPreview : IDisposable
             if (clip.PoseSpace is { } space) DrawPoseInput(space);
         }
         if (Source.Binding?.Controls.Any(control => control.RotationFrame.Kind == 6) == true
-            && ImGui.TreeNode("Aim and look"))
+            && UiAuto.TreeNode("Aim and look"))
         {
-            bool changed = ImGui.SliderFloat2("Aim yaw, pitch", ref aimAngles, -MathF.PI / 2, MathF.PI / 2, "%.2f rad");
-            changed |= ImGui.SliderFloat2("Look yaw, pitch", ref lookAngles, -MathF.PI / 2, MathF.PI / 2, "%.2f rad");
+            bool changed = UiAuto.SliderFloat2("Aim yaw, pitch", ref aimAngles, -MathF.PI / 2, MathF.PI / 2, "%.2f rad");
+            changed |= UiAuto.SliderFloat2("Look yaw, pitch", ref lookAngles, -MathF.PI / 2, MathF.PI / 2, "%.2f rad");
             if (changed) ApplySample();
             ImGui.TreePop();
         }

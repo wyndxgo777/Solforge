@@ -58,7 +58,7 @@ public sealed partial class InvestmentPage
     private static bool CostAction(string id, bool duplicate, string tooltip)
     {
         Vector2 point = ImGui.GetCursorScreenPos();
-        bool clicked = ImGui.InvisibleButton(id, new(22, 20));
+        bool clicked = UiAuto.InvisibleButton(id, tooltip, new(22, 20));
         var draw = ImGui.GetWindowDrawList();
         if (ImGui.IsItemHovered()) draw.AddRectFilled(point, point + new Vector2(22, 20), ImGui.GetColorU32(ImGuiCol.ButtonHovered), 3);
         uint color = ImGui.GetColorU32(ImGuiCol.Text);

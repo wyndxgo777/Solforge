@@ -388,7 +388,7 @@ public sealed partial class StudioForm
             ImGui.TextDisabled("Package"); ImGui.TextWrapped(document.Entry.PackageName);
             ImGui.TextDisabled("Tag"); ImGui.SameLine(); ImGui.TextUnformatted($"{document.Entry.TagHash:X8}");
             ImGui.TextDisabled("Size"); ImGui.SameLine(); ImGui.TextUnformatted(FormatBytes(document.Bytes.Length));
-            if (ImGui.CollapsingHeader("Native metadata"))
+            if (UiAuto.CollapsingHeader("Native metadata"))
                 StudioUi.Facts("native-metadata", [
                     ("Reference", $"{document.Entry.Reference:X8}", ""),
                     ("Type", $"{document.Entry.Type} / {document.Entry.SubType}", ""),
@@ -449,19 +449,19 @@ public sealed partial class StudioForm
                 }
                 if (!property.Editable) ImGui.TextDisabled("Read only");
             }
-            if (document.Scene is { } scene && ImGui.CollapsingHeader("Scene"))
+            if (document.Scene is { } scene && UiAuto.CollapsingHeader("Scene"))
                 StudioUi.Facts("scene-facts", [
                     ("Objects", $"{scene.Instances.Count:N0}", ""),
                     ("Markers", $"{scene.Markers.Count:N0}", ""),
                     ("Triangles", $"{scene.Instances.Sum(instance => (long)instance.Mesh.Indices.Length / 3):N0}", "")]);
             if (document.Scene is { } effectScene) DrawEffectControls(effectScene, null);
-            if (document.Scene?.Diagnostics.Count > 0 && ImGui.CollapsingHeader("Load report"))
+            if (document.Scene?.Diagnostics.Count > 0 && UiAuto.CollapsingHeader("Load report"))
                 StudioUi.Facts("load-report", document.Scene.Diagnostics.Take(100));
             if (AssetPreviewViewport is { Scene: { } previewScene } preview && preview.CollisionPossible(previewScene))
                 DrawCollisionReport(preview);
-            if (document.NativeError.Length != 0 && ImGui.CollapsingHeader("Shader report"))
+            if (document.NativeError.Length != 0 && UiAuto.CollapsingHeader("Shader report"))
                 DrawErrorRow(document.NativeError);
-            if (AssetPreviewViewport is { NativeSceneReady: true } native && ImGui.CollapsingHeader("Shader report##native-scene"))
+            if (AssetPreviewViewport is { NativeSceneReady: true } native && UiAuto.CollapsingHeader("Shader report##native-scene"))
             {
                 if (native.NativeError is { } error) DrawErrorRow(error);
                 StudioUi.Facts("shader-parts", [("Prepared parts", $"{native.NativePartCount:N0}", "")]);
@@ -663,7 +663,7 @@ public sealed partial class StudioForm
                 {
                     SolTheme.SectionHeader("Last build");
                     if (UiAuto.Button("Open output folder")) OpenFolder(build.OutputDirectory);
-                    if (ImGui.TreeNode($"Package files ({build.PackageFiles.Count})###package-files"))
+                    if (UiAuto.TreeNode($"Package files ({build.PackageFiles.Count})###package-files"))
                     {
                         foreach (string path in build.PackageFiles) ImGui.TextUnformatted(Path.GetFileName(path));
                         ImGui.TreePop();

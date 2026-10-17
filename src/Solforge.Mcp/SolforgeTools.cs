@@ -98,7 +98,7 @@ public static partial class SolforgeTools
         "get_shader, list_animations, get_animation, list_audio and get_audio. Action tools need the user's approve click. " +
         "For how the game client works (functions, xrefs, strings, structs, vtables, tag class handlers in destiny2.exe) and for raw " +
         "tag data, unknown tag classes, localized text and JSON/CSV export, start with decomp_status and read the solforge-decomp skill; " +
-        "paged results return next_cursor, which you pass back as cursor. " + SelfServiceHint + " " + AutomaticHint;
+        "paged results return next_cursor, which you pass back as cursor. " + SelfServiceHint + " " + AutomaticHint + " " + CommandsHint;
 
     /** Shared by the server instructions and the session file, so every engine knows it can do its own setup. */
     public const string SelfServiceHint =
@@ -246,17 +246,19 @@ public static partial class SolforgeTools
             Read("get_live_state", "When the in-game Live link is attached: player position and nearby in-game objects.", Schema(),
                 (_, _) => Task.FromResult(McpToolResult.Json(host.LiveState()))),
             Read("list_mission_objects", "The open mission's placed objects (prefab slots), a page at a time: slot id, name, type, " +
-                "registry, owning prefab, placing object id, position and zone. Every filter word must appear in the name, slot id, " +
+                "registry, owning prefab, placing object id, position and zone; squad slots with no squad data (squadData false: cannot be " +
+                "placed), each cutscene's state, dialogue cue counts and first line, and trigger volume overlaps. Every filter word must appear in the name, slot id, " +
                 "SDK constant, kind, label, prefab name or hash.",
                 Schema(("filter", "string", "Optional words, e.g. 'pf_event_multipoint generator'", false),
                     ("placed", "boolean", "Only slots the map places (with a position); default false", false),
+                    ("triggerMap", "boolean", "Also list trigger volumes that overlap a spawn point or each other (default false)", false),
                     ("offset", "integer", "First row (default 0)", false), ("limit", "integer", "Rows per page (default 100, max 500)", false)),
                 async (args, cancel) => await host.MissionAsync(cancel).ConfigureAwait(false) is not { } mission
                     ? McpToolResult.Error(NoMission)
-                    : McpToolResult.Json(MissionSlots.List(mission, McpJson.String(args, "filter"), McpJson.Bool(args, "placed", false),
-                        McpJson.Int(args, "offset", 0), McpJson.Int(args, "limit", 100)))),
+                    : McpToolResult.Json(await Task.Run(() => ListWithInsight(host, mission, args), cancel).ConfigureAwait(false))),
             Read("get_mission_object", "One mission object by slot id, placing object id, slot name or SDK constant: type, transform, " +
-                "registry, parent prefab, parent slot, a page of children, and code refs, the lines naming it in the SDK mission Lua " +
+                "registry, parent prefab, parent slot, a page of children, squad data, cutscene state (tag bytes 0x0C-0x0F), every dialogue " +
+                "line's text, trigger volume bounds and overlaps (spawn points, other volumes), and code refs, the lines naming it in the SDK mission Lua " +
                 "(this mission's file) and the server mission scripts, with full paths and line numbers.",
                 Schema(("id", "string", "slot/... id, object id, slot name or constant (PF_..._O_GENERATOR[_80BE5D9B])", true),
                     ("code", "boolean", "Search the Lua for code refs (default true)", false),
@@ -269,6 +271,7 @@ public static partial class SolforgeTools
                     if (mission.Find(McpJson.String(args, "id") ?? "") is not { } slot)
                         return McpToolResult.Error("No slot with that id, name or constant in the open mission; try find_object or list_mission_objects.");
                     var details = MissionSlots.Describe(mission, slot, McpJson.Int(args, "childOffset", 0), McpJson.Int(args, "childLimit", 50));
+                    await Task.Run(() => DescribeWithInsight(host, mission, slot, details), cancel).ConfigureAwait(false);
                     if (McpJson.Bool(args, "code", true))
                     {
                         bool everywhere = McpJson.Bool(args, "everywhere", false);
@@ -346,6 +349,9 @@ public static partial class SolforgeTools
             .. GraphTools(host),
             .. AssetTools(host, Read),
             .. AutomaticModeTools(host),
+            .. CommandTools(host),
+            .. InsightTools(host, Read),
+            .. MissionHostTools(host, Read),
             .. ItemSourceTools(host, Read, Act)
         ];
     }

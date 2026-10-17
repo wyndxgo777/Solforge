@@ -19,7 +19,7 @@ public sealed partial class StudioForm
         var key = selected is null ? (EffectPlacementKey?)null : EffectPlacementKey.Of(selected);
         var markers = scene.Markers.Where(marker => marker.Effect is { Kind: EffectKind.ParticleSystem }
             && (key is null || EffectPlacementKey.Of(marker) == key)).ToArray();
-        if (markers.Length == 0 || !ImGui.CollapsingHeader("Effects##effect-controls", ImGuiTreeNodeFlags.DefaultOpen)) return;
+        if (markers.Length == 0 || !UiAuto.CollapsingHeader("Effects##effect-controls", ImGuiTreeNodeFlags.DefaultOpen)) return;
         bool showAll = effectControls.ShowAll;
         if (UiAuto.Checkbox("Show all effects", ref showAll)) effectControls.ShowAll = showAll;
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Run every particle effect all the time, whatever starts it in the game.");
@@ -37,7 +37,7 @@ public sealed partial class StudioForm
             ImGui.SameLine();
             ImGui.TextDisabled(effect.Activation?.Trigger() ?? "sequence not read");
         }
-        else if (ImGui.TreeNode($"Force on ({markers.Length})##effect-force"))
+        else if (UiAuto.TreeNode($"Force on ({markers.Length})##effect-force"))
         {
             for (int index = 0; index < markers.Length; index++)
             {

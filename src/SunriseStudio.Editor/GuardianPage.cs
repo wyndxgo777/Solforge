@@ -77,7 +77,7 @@ public sealed class GuardianPage : IStudioPage
         DrawColours(current, Change);
         ImGui.EndDisabled();
         var notes = document.Guardian!.Diagnostics;
-        if (notes.Count != 0 && ImGui.CollapsingHeader($"Notes ({notes.Count})###notes"))
+        if (notes.Count != 0 && UiAuto.CollapsingHeader($"Notes ({notes.Count})###notes"))
             StudioUi.Facts("guardian-notes", notes);
     }
 
@@ -225,7 +225,7 @@ public sealed class GuardianPage : IStudioPage
     /** A collapsing section with tip on its header. */
     private static bool Section(string label, string tip, ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags.None)
     {
-        bool open = ImGui.CollapsingHeader(label, flags);
+        bool open = UiAuto.CollapsingHeader(label, flags);
         StudioUi.Tip(tip);
         return open;
     }

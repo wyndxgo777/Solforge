@@ -114,7 +114,7 @@ public sealed class MaterialsPage : IPreparedStudioPage
             }
             ImGui.EndTable();
         }
-        if (additionalTextures.Length > 0 && ImGui.CollapsingHeader("Additional textures"))
+        if (additionalTextures.Length > 0 && UiAuto.CollapsingHeader("Additional textures"))
             foreach (uint tag in additionalTextures)
             {
                 ImGui.PushID(unchecked((int)tag));
@@ -132,7 +132,7 @@ public sealed class MaterialsPage : IPreparedStudioPage
             foreach (var stage in new[] { execution.Vertex, execution.Pixel, execution.Compute })
             {
                 if (stage.Shader is null && stage.ConstantTemplate.Length == 0 && stage.TfxConstants.Length == 0) continue;
-                if (!ImGui.CollapsingHeader($"{stage.Stage} constants")) continue;
+                if (!UiAuto.CollapsingHeader($"{stage.Stage} constants")) continue;
                 ImGui.PushID($"{stage.Stage}");
                 DrawVectors("Material", stage.ConstantTemplate);
                 DrawVectors("Expressions", stage.TfxConstants);
@@ -149,7 +149,7 @@ public sealed class MaterialsPage : IPreparedStudioPage
             ImGui.TextColored(StudioTheme.Accent, "Constants not read");
             StudioUi.Tip(material.Error);
         }
-        if (surface.Diagnostics.Count > 0 && ImGui.CollapsingHeader($"Load report ({surface.Diagnostics.Count})###Load report"))
+        if (surface.Diagnostics.Count > 0 && UiAuto.CollapsingHeader($"Load report ({surface.Diagnostics.Count})###Load report"))
             StudioUi.Facts("surface-load-report", surface.Diagnostics);
         ImGui.EndChild();
     }
@@ -169,7 +169,7 @@ public sealed class MaterialsPage : IPreparedStudioPage
     /** Constants retain their authored vector order. */
     private static void DrawVectors(string title, Vector4[] values)
     {
-        if (values.Length == 0 || !ImGui.TreeNode($"{title} ({values.Length})###{title}")) return;
+        if (values.Length == 0 || !UiAuto.TreeNode($"{title} ({values.Length})###{title}")) return;
         for (int i = 0; i < values.Length; i++)
         {
             var value = values[i];
@@ -216,7 +216,7 @@ public sealed class ShadersPage : IStudioPage
         ImGui.TextUnformatted($"{selected.Profile} / {selected.Bytecode.Length:N0} bytes");
         ImGui.SameLine();
         if (UiAuto.SmallButton("Open bytecode")) context.Workspace.Select(selected.Shader.BytecodeTag);
-        if (ImGui.CollapsingHeader("Declarations"))
+        if (UiAuto.CollapsingHeader("Declarations"))
             foreach (string declaration in selected.Declarations) ImGui.TextUnformatted(declaration);
         if (!ReferenceEquals(previous, selected))
         {
@@ -227,7 +227,7 @@ public sealed class ShadersPage : IStudioPage
             while (start < all.Length && (all[start].TrimStart().StartsWith("//", StringComparison.Ordinal) || all[start].Trim().Length == 0)) start++;
             header = all[..start]; lines = all[start..];
         }
-        if (header.Length > 0 && ImGui.TreeNode($"Header ({header.Length} lines)###shader-header"))
+        if (header.Length > 0 && UiAuto.TreeNode($"Header ({header.Length} lines)###shader-header"))
         {
             if (context.MonospaceFont.NativePtr != null) ImGui.PushFont(context.MonospaceFont);
             foreach (string line in header) ImGui.TextUnformatted(line.TrimEnd('\r'));

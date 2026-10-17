@@ -29,7 +29,7 @@ public sealed class RelatedAssetsPage : IStudioPage
             previous = connections; appliedSearch = search;
         }
         ImGui.TextDisabled($"{rows.Length:N0} connected assets");
-        if (connections.Diagnostics.Count > 0 && ImGui.CollapsingHeader($"Notes ({connections.Diagnostics.Count})###notes"))
+        if (connections.Diagnostics.Count > 0 && UiAuto.CollapsingHeader($"Notes ({connections.Diagnostics.Count})###notes"))
             StudioUi.Facts("connection-notes", connections.Diagnostics);
         if (!ImGui.BeginTable("connections", 2, ImGuiTableFlags.ScrollY | ImGuiTableFlags.RowBg | ImGuiTableFlags.Resizable,
             ImGui.GetContentRegionAvail())) return;

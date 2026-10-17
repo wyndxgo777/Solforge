@@ -140,7 +140,7 @@ public sealed partial class MissionGraphPage
             bool main = ReferenceEquals(call, node.ApiCall);
             ImGui.PushID("api" + ordinal);
             if (main) ImGui.SeparatorText("Call: " + typed.Title);
-            bool open = main || ImGui.CollapsingHeader("Call: " + typed.Title + "##api-" + ordinal);
+            bool open = main || UiAuto.CollapsingHeader("Call: " + typed.Title + "##api-" + ordinal);
             Tip(CallSummary(typed));
             if (open) DrawApiCall(node.Key, ordinal, typed, editable);
             ImGui.PopID();

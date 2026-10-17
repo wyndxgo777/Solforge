@@ -118,7 +118,7 @@ public sealed partial class StudioForm
             ImGui.TextDisabled($"{imported.ChangedAssets:N0} changed / {imported.AddedAssets.Count:N0} added");
             notices = imported.Notices;
         }
-        if (notices.Count > 0 && ImGui.CollapsingHeader("Compatibility", ImGuiTreeNodeFlags.DefaultOpen))
+        if (notices.Count > 0 && UiAuto.CollapsingHeader("Compatibility", ImGuiTreeNodeFlags.DefaultOpen))
         {
             var groups = notices.GroupBy(notice => (notice.Surface, notice.Status)).ToArray();
             if (ImGui.BeginTable("transfer-report", 2, ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY,
@@ -151,7 +151,7 @@ public sealed partial class StudioForm
         ImGui.TextDisabled($"{stats.Instances:N0} placements | {stats.Geometries:N0} meshes | {stats.Textures:N0} textures");
         if (result.Manifest.Notices.Any(notice => notice.Status == "Partial source decode"))
             ImGui.TextDisabled("Some source content was unavailable");
-        if (ImGui.CollapsingHeader("Notes"))
+        if (UiAuto.CollapsingHeader("Notes"))
         {
             var groups = result.Manifest.Notices.GroupBy(notice => (notice.Surface, notice.Status)).ToArray();
             if (ImGui.BeginTable("world-export-notes", 2, ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY,

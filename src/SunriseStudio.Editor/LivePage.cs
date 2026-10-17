@@ -528,7 +528,7 @@ public sealed partial class LivePage : IDisposable
         rows.Add(("Spawned shown", $"{viewport.LiveInstanceCount:N0} of {dynamic.ObservedCount:N0}", "Spawned entities shown of those observed"));
         StudioUi.Facts("live-object-notes", rows);
         if (dynamic.Status.Length > 0) ImGui.TextDisabled(dynamic.Status);
-        if (dynamic.Errors.Count > 0 && ImGui.TreeNode($"No preview ({dynamic.Errors.Count})###entity-notes"))
+        if (dynamic.Errors.Count > 0 && UiAuto.TreeNode($"No preview ({dynamic.Errors.Count})###entity-notes"))
         {
             foreach (var (tag, reason) in dynamic.Errors)
             {

@@ -4,14 +4,30 @@
     "done": "complete",
     "partial": "started in Solforge",
     "upstream_partial": "upstream Sunrise Studio already has part of it",
-    "todo": "not started"
+    "todo": "not started",
+    "in_progress": "an agent already has it (2026-10-16)",
+    "decision_needed": "waiting on Seth"
   },
   "phases": [
     {
       "id": "00",
       "title": "Repository, Upstream Pin & Product Contract",
       "status": "partial",
-      "notes": "Fork, subtree, UPSTREAM.md, ARCHITECTURE.md, todo.json done; clean baseline build + archived log pending (main session builds)"
+      "notes": "Fork, subtree, UPSTREAM.md, ARCHITECTURE.md, todo.json done; clean baseline build + archived log pending (main session builds)",
+      "items": [
+        {
+          "id": "4F.27",
+          "title": "Upstream PR radar",
+          "description": "Score open upstream PRs for local impact and merge-readiness",
+          "status": "todo"
+        },
+        {
+          "id": "4F.29",
+          "title": "Fork-drift guard",
+          "description": "Fail check when a local edit touches a file an open upstream PR also touches",
+          "status": "todo"
+        }
+      ]
     },
     {
       "id": "01",
@@ -65,7 +81,15 @@
       "id": "07",
       "title": "Tag Deserialization & Structural Memory Mapping",
       "status": "done",
-      "notes": "(Exists) typed deserializers: Strings = Packages/LocalizedStrings.cs, Entity Templates = ComponentIndex.EntityConfigs + ComponentRoles.ReadConfig (EntityComponents.cs), Sound Banks = Audio/AudioCatalog.ReadBank + WwiseSoundBank.Nodes; Formats.TagReader. Solforge: Packages/TagHeaders.cs (Compose/TryDecompose per §5.4, ParseEntryTable/ParseEntryRecord/WriteEntryRecord per §5.2; PackageFile.LoadTables now parses through it), PackageCatalog.TryLocate, Packages/TagDependencyGraph.cs (TryAdd/Add reject cycle and self edges, RejectedEdges, Reaches, Closure, TopologicalOrder, bounded Build walk). Check: Packages.Tests (hash mapping, record round trip, 10,000-header parse best of 5 under 100 ms, DAG cycle rejection/order/Build); --game-root maps every installed hash and builds a native-dependency DAG from 200 entity templates. Memory mapping still not needed (Phase 05 index)"
+      "notes": "(Exists) typed deserializers: Strings = Packages/LocalizedStrings.cs, Entity Templates = ComponentIndex.EntityConfigs + ComponentRoles.ReadConfig (EntityComponents.cs), Sound Banks = Audio/AudioCatalog.ReadBank + WwiseSoundBank.Nodes; Formats.TagReader. Solforge: Packages/TagHeaders.cs (Compose/TryDecompose per §5.4, ParseEntryTable/ParseEntryRecord/WriteEntryRecord per §5.2; PackageFile.LoadTables now parses through it), PackageCatalog.TryLocate, Packages/TagDependencyGraph.cs (TryAdd/Add reject cycle and self edges, RejectedEdges, Reaches, Closure, TopologicalOrder, bounded Build walk). Check: Packages.Tests (hash mapping, record round trip, 10,000-header parse best of 5 under 100 ms, DAG cycle rejection/order/Build); --game-root maps every installed hash and builds a native-dependency DAG from 200 entity templates. Memory mapping still not needed (Phase 05 index)",
+      "items": [
+        {
+          "id": "T1.3",
+          "title": "Class-hash schema registry",
+          "description": "Generic class-hash to struct schema registry with named fields, field search and validation",
+          "status": "in_progress"
+        }
+      ]
     },
     {
       "id": "08",
@@ -83,7 +107,15 @@
       "id": "10",
       "title": "Direct3D Viewport Pipeline",
       "status": "partial",
-      "notes": "(Exists) D3D11 swapchain via Vortice (Rendering/Dx11Renderer.cs), orbit + fly (Viewport/ViewerCamera.cs, AssetViewport.Fly.cs), perspective/orthographic toggle (AssetViewport.cs toolbar), pivot-following decade grid (AssetViewport.DrawGrid). Solforge: the grid draws nested decade levels until it reaches the far plane (perspective) or covers the view (orthographic), so it has no visible edge (no distance fade); Top/Bottom/Front/Back/Right/Left axis views (Viewport/CameraViews.cs; View toolbar menu + Numpad 7/1/3, Ctrl opposite, Numpad 5 ortho in AssetViewport.ViewOverlay.cs), corner world-axis gizmo, FPS/draw call/triangle overlay (ViewportStatistics; Rendering/Dx11Renderer.Statistics.cs counts triangles). Checks: tests/SunriseStudio.ViewportPipeline.Tests (CameraChecks), in verify.ps1. Manual: View menu, Numpad keys, corner gizmo, statistics overlay and the grid toward the horizon and in Top view. Unbuilt: stays partial until the main session's build and verify.ps1 pass and the manual checks are done."
+      "notes": "(Exists) D3D11 swapchain via Vortice (Rendering/Dx11Renderer.cs), orbit + fly (Viewport/ViewerCamera.cs, AssetViewport.Fly.cs), perspective/orthographic toggle (AssetViewport.cs toolbar), pivot-following decade grid (AssetViewport.DrawGrid). Solforge: the grid draws nested decade levels until it reaches the far plane (perspective) or covers the view (orthographic), so it has no visible edge (no distance fade); Top/Bottom/Front/Back/Right/Left axis views (Viewport/CameraViews.cs; View toolbar menu + Numpad 7/1/3, Ctrl opposite, Numpad 5 ortho in AssetViewport.ViewOverlay.cs), corner world-axis gizmo, FPS/draw call/triangle overlay (ViewportStatistics; Rendering/Dx11Renderer.Statistics.cs counts triangles). Checks: tests/SunriseStudio.ViewportPipeline.Tests (CameraChecks), in verify.ps1. Manual: View menu, Numpad keys, corner gizmo, statistics overlay and the grid toward the horizon and in Top view. Unbuilt: stays partial until the main session's build and verify.ps1 pass and the manual checks are done.",
+      "items": [
+        {
+          "id": "R2.A1",
+          "title": "Occlusion debug layer",
+          "description": "Viewport layer for tiles/cells/portals/voxels + why-is-this-culled query",
+          "status": "todo"
+        }
+      ]
     },
     {
       "id": "11",
@@ -113,7 +145,27 @@
       "id": "15",
       "title": "Project System & Workspace Architecture",
       "status": "partial",
-      "notes": "sunrise.project.json exists (StudioProject.cs); schema documented in docs/sunrise.project.schema.json + ProjectSchema.cs (Projects); external edit watcher ProjectWatcher.cs (Projects); AppData prefs/layouts/recent projects exist (Editor/StudioSettings.cs, %LocalAppData%/Sunrise Studio/settings.json). Checks: tests/SunriseStudio.ProjectSystem.Tests (SchemaChecks, WatcherChecks) in verify.ps1. Left: Studio owns no ProjectWatcher yet (one per open project, poll Pending each frame, Scan(), prompt to reload/revalidate, MarkClean() after Studio saves); done until then: schema doc + AppData prefs"
+      "notes": "sunrise.project.json exists (StudioProject.cs); schema documented in docs/sunrise.project.schema.json + ProjectSchema.cs (Projects); external edit watcher ProjectWatcher.cs (Projects); AppData prefs/layouts/recent projects exist (Editor/StudioSettings.cs, %LocalAppData%/Sunrise Studio/settings.json). Checks: tests/SunriseStudio.ProjectSystem.Tests (SchemaChecks, WatcherChecks) in verify.ps1. Left: Studio owns no ProjectWatcher yet (one per open project, poll Pending each frame, Scan(), prompt to reload/revalidate, MarkClean() after Studio saves); done until then: schema doc + AppData prefs",
+      "items": [
+        {
+          "id": "R2.E20",
+          "title": "Persistent edit-history browser",
+          "description": "Scrub ProjectTransactions/deltas and jump to prior state",
+          "status": "todo"
+        },
+        {
+          "id": "R2.E21",
+          "title": "Diff review pane for change sets",
+          "description": "Per-tag/object/Lua-hunk review with comment, approve/reject",
+          "status": "todo"
+        },
+        {
+          "id": "R2.E22",
+          "title": "Cross-project content clipboard",
+          "description": "Copy object group or mission graph between projects with dependency collection",
+          "status": "todo"
+        }
+      ]
     },
     {
       "id": "16",
@@ -125,7 +177,15 @@
       "id": "17",
       "title": "Asset Interchange & Export",
       "status": "partial",
-      "notes": "glTF/OBJ/DDS/PNG export + Blender bundles exist (Interchange AssetBundle*, WorldSceneExport, Authoring importers); FBX still planned. Added: package-blender.ps1 packs blender/ as <id>-<version>.zip (manifest exclude rules, reproducible), called by publish.ps1; tests/blender_package_check.ps1 in verify.ps1. WAV stems: Audio/AudioStemExport.cs (mix + mono stem per channel, any channel count) with ProjectSystem.Tests StemChecks (raw PCM WEM). Manual: export a compressed Vorbis WEM from the install via AudioStemExport.ExportWem; no Audio page menu item for stems yet; FBX"
+      "notes": "glTF/OBJ/DDS/PNG export + Blender bundles exist (Interchange AssetBundle*, WorldSceneExport, Authoring importers); FBX still planned. Added: package-blender.ps1 packs blender/ as <id>-<version>.zip (manifest exclude rules, reproducible), called by publish.ps1; tests/blender_package_check.ps1 in verify.ps1. WAV stems: Audio/AudioStemExport.cs (mix + mono stem per channel, any channel count) with ProjectSystem.Tests StemChecks (raw PCM WEM). Manual: export a compressed Vorbis WEM from the install via AudioStemExport.ExportWem; no Audio page menu item for stems yet; FBX",
+      "items": [
+        {
+          "id": "R2.E24",
+          "title": "Blender live link + integrity report",
+          "description": "Live link to Blender and round-trip integrity report",
+          "status": "todo"
+        }
+      ]
     },
     {
       "id": "18",
@@ -143,13 +203,35 @@
       "id": "20",
       "title": "Parhelion Source Audit & Domain Extraction",
       "status": "partial",
-      "notes": "docs/PARHELION_AUDIT.md (module map, kept vs dropped, licence); src/Solforge.Weapons (WeaponRecipe, WeaponRecipeEnums, WeaponRecipeJson, WeaponRecipeValidator incl. validate_for_donor identity rules, WeaponIdentityHashes (from_namespace derivation), WeaponCollections + WeaponCollectionNodeBudget (collection.rs), WeaponDonorProfile, WeaponNamespace, HexHash) built on Formats InvestmentItemDetail + Authoring WeaponTuning; check tests/Solforge.Weapons.Tests (sample.weapon.json round-trip + 26 rejection cases + identity/node-budget/donor/catalog checks, no game needed) in .sln and verify.ps1; THIRD_PARTY.md Parhelion GPL-3.0-only section. Left: licence decision (Studio.md 2.1) before shipping; RPN stack-depth check (Phase 21); filling WeaponDonorProfile's catalog sets (PlugSetCount, KnownSocketTypes, WeaponPatternIndices, StatGroupIndices) from installed tables (Phase 21/23); NodeBudget wired into a build and the recipe-to-Studio compiler (Phase 21)."
+      "notes": "docs/PARHELION_AUDIT.md (module map, kept vs dropped, licence); src/Solforge.Weapons (WeaponRecipe, WeaponRecipeEnums, WeaponRecipeJson, WeaponRecipeValidator incl. validate_for_donor identity rules, WeaponIdentityHashes (from_namespace derivation), WeaponCollections + WeaponCollectionNodeBudget (collection.rs), WeaponDonorProfile, WeaponNamespace, HexHash) built on Formats InvestmentItemDetail + Authoring WeaponTuning; check tests/Solforge.Weapons.Tests (sample.weapon.json round-trip + 26 rejection cases + identity/node-budget/donor/catalog checks, no game needed) in .sln and verify.ps1; THIRD_PARTY.md Parhelion GPL-3.0-only section. Left: licence decision (Studio.md 2.1) before shipping; RPN stack-depth check (Phase 21); filling WeaponDonorProfile's catalog sets (PlugSetCount, KnownSocketTypes, WeaponPatternIndices, StatGroupIndices) from installed tables (Phase 21/23); NodeBudget wired into a build and the recipe-to-Studio compiler (Phase 21).",
+      "items": [
+        {
+          "id": "T6.29",
+          "title": "Parhelion GPL licence decision",
+          "description": "DECISION NEEDED (Seth): GPL release with stan, relicense, or clean-room Solforge.Weapons; blocks Phase 22 workbench",
+          "status": "decision_needed"
+        }
+      ]
     },
     {
       "id": "21",
       "title": "Weapon Recipe DSL & Schema Implementation",
       "status": "todo",
-      "notes": "From Phase 20: RPN stack-depth check (validation.rs validate_numeric_instructions: exactly one value left, needs the progression opcode table); recipe-to-Studio compiler (recipe -> InvestmentItemClone/InvestmentSocketEdits/WeaponTuningAuthoring/WeaponArchetypeAuthoring project edits, Parhelion weapon.rs + weapon/build/), which Phase 24 needs; WeaponCollectionNodeBudget checked over a build's recipes; decode the installed reusable plug-set count, socket-type table and weapon-pattern indices into WeaponDonorProfile; importing full .parhelion.json recipes."
+      "notes": "From Phase 20: RPN stack-depth check (validation.rs validate_numeric_instructions: exactly one value left, needs the progression opcode table); recipe-to-Studio compiler (recipe -> InvestmentItemClone/InvestmentSocketEdits/WeaponTuningAuthoring/WeaponArchetypeAuthoring project edits, Parhelion weapon.rs + weapon/build/), which Phase 24 needs; WeaponCollectionNodeBudget checked over a build's recipes; decode the installed reusable plug-set count, socket-type table and weapon-pattern indices into WeaponDonorProfile; importing full .parhelion.json recipes.",
+      "items": [
+        {
+          "id": "T2.7",
+          "title": "Socket array growth",
+          "description": "Capacity-aware socket array append in investment editor + validator",
+          "status": "todo"
+        },
+        {
+          "id": "4D.19",
+          "title": "Plug-set draw simulator",
+          "description": "Reproduce LCG draws to show real per-item probabilities",
+          "status": "todo"
+        }
+      ]
     },
     {
       "id": "22",
@@ -161,7 +243,15 @@
       "id": "23",
       "title": "Weapon Stat & Recoil Sandbox Engine",
       "status": "todo",
-      "notes": "From Phase 20: installed stat-group indices (WeaponDonorProfile.StatGroupIndices) and stat-group curve bounds for stats a donor lacks (FromInvestment leaves AddableStats Minimum/Maximum null, so their values are not range-checked)."
+      "notes": "From Phase 20: installed stat-group indices (WeaponDonorProfile.StatGroupIndices) and stat-group curve bounds for stats a donor lacks (FromInvestment leaves AddableStats Minimum/Maximum null, so their values are not range-checked).",
+      "items": [
+        {
+          "id": "T3.13",
+          "title": "Weapon TTK/DPS calculator",
+          "description": "TTK/DPS solver and recoil-curve sandbox vs archetype baselines",
+          "status": "todo"
+        }
+      ]
     },
     {
       "id": "24",
@@ -187,7 +277,15 @@
     {
       "id": "28",
       "title": "Sandbox Limit & Balance Guard",
-      "status": "todo"
+      "status": "todo",
+      "items": [
+        {
+          "id": "T2.10",
+          "title": "Perk authoring hardening",
+          "description": "Verified badge per node, perk dry-run simulator, pre-build lint vs sandbox caps",
+          "status": "todo"
+        }
+      ]
     },
     {
       "id": "29",
@@ -214,35 +312,215 @@
     {
       "id": "33",
       "title": "Tiger Mission Script Runtime Rules Enforcement",
-      "status": "todo"
+      "status": "todo",
+      "items": [
+        {
+          "id": "R2.G33",
+          "title": "Golden-run Lua mission tests",
+          "description": "Run mission scripts on a mock Tiger VM and compare call trace (mission simulator)",
+          "status": "in_progress"
+        },
+        {
+          "id": "3C.15",
+          "title": "Re-validate generated files on load",
+          "description": "Check regenerated files against mission SDK schema and sandbox Lua rules",
+          "status": "todo"
+        },
+        {
+          "id": "4B.7",
+          "title": "Per-slot Auth validator",
+          "description": "Validate requests against slot Auth size/bits and Sense contract",
+          "status": "todo"
+        },
+        {
+          "id": "4B.8",
+          "title": "Script budget analyzer and VM model",
+          "description": "Static+dynamic vars/timers/instructions/memory/source size and sandbox lint",
+          "status": "todo"
+        },
+        {
+          "id": "4B.9",
+          "title": "Request-lifecycle tracer",
+          "description": "Reserve, commit, queue, expiry states and staged-not-applied warning",
+          "status": "todo"
+        },
+        {
+          "id": "4B.10",
+          "title": "First-report/event-order simulator",
+          "description": "Replay recorded session and show which callbacks fire or are swallowed (mission simulator)",
+          "status": "in_progress"
+        },
+        {
+          "id": "4B.11",
+          "title": "Reload-safety checker",
+          "description": "Lint for state destroyed by reload and on_load replay",
+          "status": "todo"
+        }
+      ]
     },
     {
       "id": "34",
       "title": "Checker Phase: Mission Scripting Engine Audit",
-      "status": "todo"
+      "status": "todo",
+      "items": [
+        {
+          "id": "4B.6",
+          "title": "Activity Host conformance harness",
+          "description": "Assert 59-message table invariants on a real session",
+          "status": "todo"
+        }
+      ]
     },
     {
       "id": "35",
       "title": "Destiny Destination & World Editor",
-      "status": "todo"
+      "status": "todo",
+      "items": [
+        {
+          "id": "T2.6",
+          "title": "Activity and map clone",
+          "description": "Clone activity definition + map/world tag + register (PackageDelta, PackageWriter, id allocator)",
+          "status": "todo"
+        },
+        {
+          "id": "T2.12",
+          "title": "Volume hull editing beyond grow-only",
+          "description": "Bake new hull via Blender round-trip (CollisionImport, HavokPackfileBuilder)",
+          "status": "todo"
+        },
+        {
+          "id": "R2.D16",
+          "title": "Map linter",
+          "description": "Out-of-bounds, under-terrain, zero-size volumes, orphan lights, unreferenced triggers",
+          "status": "todo"
+        },
+        {
+          "id": "R2.D17",
+          "title": "Prop scatter/paint brush",
+          "description": "Brush bulk placement with density, jitter, exclusion masks",
+          "status": "todo"
+        },
+        {
+          "id": "R2.D18",
+          "title": "Terrain write path (verify first)",
+          "description": "Verify terrain writability; heightmap round-trip and brushes if possible",
+          "status": "todo"
+        },
+        {
+          "id": "4D.17",
+          "title": "Free-roam resolver",
+          "description": "Destination to public-region row; warn when none",
+          "status": "todo"
+        }
+      ]
     },
     {
       "id": "36",
       "title": "Activity, Strike & Raid Director",
       "status": "partial",
-      "notes": "Solforge.Content activity documents (content/activity): type, destination, map/mission tags, fireteam caps, objective graph with reachability and completion checks, encounters, rewards (loot pools + items); Window > Content editors + MCP content tools. No server reader yet (exports to sol_content.lua)."
+      "notes": "Solforge.Content activity documents (content/activity): type, destination, map/mission tags, fireteam caps, objective graph with reachability and completion checks, encounters, rewards (loot pools + items); Window > Content editors + MCP content tools. No server reader yet (exports to sol_content.lua).",
+      "items": [
+        {
+          "id": "T1.1",
+          "title": "Server content reader",
+          "description": "Server loads exported sol_custom_data.lua so 5 authoring-only families go Live (avoid name clash with sol_content.h)",
+          "status": "in_progress"
+        },
+        {
+          "id": "T1.2",
+          "title": "Activity/loot/dialog decoders",
+          "description": "Decoders + list_activities/get_activity/get_loot_table/get_dialog_table MCP tools and pages",
+          "status": "in_progress"
+        },
+        {
+          "id": "3C.14",
+          "title": "Derive zone/patrol/objective tables",
+          "description": "Generate from mission.Squad.*/Slot.* and validate references exist",
+          "status": "todo"
+        },
+        {
+          "id": "4F.30",
+          "title": "Bubble state sandbox",
+          "description": "Alternate bubble state selections, step-object/proxy-slot editor, waypoint validator",
+          "status": "todo"
+        }
+      ]
     },
     {
       "id": "37",
       "title": "Combatant, AI & Encounter Builder",
       "status": "partial",
-      "notes": "Solforge.Content enemy documents: race, rank incl. champions, base tag, health/shields/resistances, abilities, loot pool cross-reference; authoring only until the server reads sol_content.lua."
+      "notes": "Solforge.Content enemy documents: race, rank incl. champions, base tag, health/shields/resistances, abilities, loot pool cross-reference; authoring only until the server reads sol_content.lua.",
+      "items": [
+        {
+          "id": "T2.8",
+          "title": "Combatant/enemy tag writer",
+          "description": "Phase 37 writer unblocks Enemy New, AI/faction/health/weapon editing",
+          "status": "todo"
+        },
+        {
+          "id": "4C.12",
+          "title": "Squad population designer",
+          "description": "Model SquadAuth with trap validation",
+          "status": "todo"
+        },
+        {
+          "id": "4C.13",
+          "title": "Spawn-request saturation diagnostic",
+          "description": "Flag designs exceeding the 80-request global squad cap",
+          "status": "todo"
+        },
+        {
+          "id": "4C.14",
+          "title": "Selector/action browser",
+          "description": "98 selectors, action kinds 0-119, consumer warnings, payload sizes",
+          "status": "todo"
+        },
+        {
+          "id": "4C.15",
+          "title": "AI reference browser",
+          "description": "Temperament ids, path gates, query pool, faction rules, validated vs install",
+          "status": "todo"
+        }
+      ]
     },
     {
       "id": "38",
       "title": "Seasonal Artifact & Progression Studio",
       "status": "partial",
-      "notes": "Solforge.Content artifact documents: columns with unlock thresholds and perks (plug hash, sandbox perks); authoring only."
+      "notes": "Solforge.Content artifact documents: columns with unlock thresholds and perks (plug hash, sandbox perks); authoring only.",
+      "items": [
+        {
+          "id": "T2.9",
+          "title": "Talent-grid writer",
+          "description": "Write ability_buckets.bin for real subclass-tree editing",
+          "status": "todo"
+        },
+        {
+          "id": "T3.14",
+          "title": "Progression simulator",
+          "description": "Model drop rates, tier gates, Power curve; time-to-target per activity",
+          "status": "todo"
+        },
+        {
+          "id": "4D.16",
+          "title": "Gate and lock explainer",
+          "description": "Evaluate requirement groups, release rows, lock-message resolver",
+          "status": "todo"
+        },
+        {
+          "id": "4D.18",
+          "title": "Collections/records/catalyst graph editor",
+          "description": "Presentation nodes, collectibles, objectives, catalysts, which-flag explainer",
+          "status": "todo"
+        },
+        {
+          "id": "4D.20",
+          "title": "Progression binding panel",
+          "description": "88 progressions with documented pairs and flagged ambiguities",
+          "status": "todo"
+        }
+      ]
     },
     {
       "id": "39",
@@ -252,24 +530,74 @@
     {
       "id": "40",
       "title": "The `solc` Mod Compiler Pipeline",
-      "status": "todo"
+      "status": "todo",
+      "items": [
+        {
+          "id": "T4.17",
+          "title": "solc headless CLI + .solmod",
+          "description": "CI/VPS builds without the GUI, incremental changed-only deltas",
+          "status": "todo"
+        },
+        {
+          "id": "R2.A2",
+          "title": "Occlusion report build gate",
+          "description": "TomeEditReport dry-run lint, warn near 2047 cells, block unintended holes",
+          "status": "todo"
+        }
+      ]
     },
     {
       "id": "41",
       "title": "Package Limit Enforcer & Sharder",
-      "status": "todo"
+      "status": "todo",
+      "items": [
+        {
+          "id": "T4.18",
+          "title": "Package sharder/entry-limit enforcer",
+          "description": "Enforce 8192 entries / 0x0CFF ids cliff by sharding",
+          "status": "todo"
+        }
+      ]
     },
     {
       "id": "42",
       "title": "Mod Container Packaging (`.solmod`)",
       "status": "partial",
-      "notes": "Solforge.Content.Packaging.SolmodContainer: Pack (solmod.json manifest, per-file size + SHA-256, profile, deps), ReadManifest, Verify, Extract with path checks; Build > Pack .solmod... No signing yet."
+      "notes": "Solforge.Content.Packaging.SolmodContainer: Pack (solmod.json manifest, per-file size + SHA-256, profile, deps), ReadManifest, Verify, Extract with path checks; Build > Pack .solmod... No signing yet.",
+      "items": [
+        {
+          "id": "R2.B9",
+          "title": "UI packs as mod type",
+          "description": "Versioned CUI docs+fonts+atlases pack, shippable and rollbackable",
+          "status": "todo"
+        },
+        {
+          "id": "R2.F27",
+          "title": "Mod publishing pipeline",
+          "description": "Signed packages, semver, changelogs, update feed, data-only content packs",
+          "status": "todo"
+        }
+      ]
     },
     {
       "id": "43",
       "title": "Install, Backup & Rollback Manager",
       "status": "partial",
-      "notes": "InstallSnapshots: every Build and install snapshots the previous mods/<id> to <project>/.solforge/snapshots (keeps 5); Build > Restore install snapshot (restore snapshots the current copy first)."
+      "notes": "InstallSnapshots: every Build and install snapshots the previous mods/<id> to <project>/.solforge/snapshots (keeps 5); Build > Restore install snapshot (restore snapshots the current copy first).",
+      "items": [
+        {
+          "id": "T4.19",
+          "title": "Install snapshot and rollback UI",
+          "description": "Restore point before build, one-click rollback, pre-build install diff",
+          "status": "todo"
+        },
+        {
+          "id": "T4.20",
+          "title": "Mod conflict analyzer",
+          "description": "Detect same-tag patches / dependency overlap, report + suggested load order",
+          "status": "todo"
+        }
+      ]
     },
     {
       "id": "44",
@@ -280,40 +608,546 @@
       "id": "45",
       "title": "Live Runtime Bridge (`Solforge.Live`)",
       "status": "upstream_partial",
-      "notes": "Live over shared memory, not TCP 30978"
+      "notes": "Live over shared memory, not TCP 30978",
+      "items": [
+        {
+          "id": "T5.27",
+          "title": "Mission trace recorder",
+          "description": "Record path + trigger fires + script log, replay on editor timeline",
+          "status": "todo"
+        },
+        {
+          "id": "R2.G32",
+          "title": "Scripted player-bot runs",
+          "description": "Drive avatar along recorded paths and assert outcomes via Live channels",
+          "status": "todo"
+        },
+        {
+          "id": "3A.1",
+          "title": "Recorder as SolForge surface",
+          "description": "Session browser, timeline scrubber, path replay, markers, export to test case",
+          "status": "todo"
+        },
+        {
+          "id": "3A.3",
+          "title": "Pose staleness fix",
+          "description": "Pose object with stale/authoritative flags and automatic fallback",
+          "status": "in_progress"
+        }
+      ]
     },
     {
       "id": "46",
       "title": "Live Memory Inspector & Telemetry HUD",
-      "status": "todo"
+      "status": "todo",
+      "items": [
+        {
+          "id": "R2.F29",
+          "title": "Player analytics/heatmaps",
+          "description": "Deaths, stuck spots, path density, event failure rates from Live/recorder",
+          "status": "todo"
+        },
+        {
+          "id": "3A.2",
+          "title": "Finish the probe set",
+          "description": "Real HUD/health/objective/entity probes and get_recorder_state (testkit health)",
+          "status": "in_progress"
+        }
+      ]
     },
     {
       "id": "47",
       "title": "Hot-Reload & Remote Command Dispatcher",
       "status": "upstream_partial",
-      "notes": "Live command channel reloads mission bindings"
+      "notes": "Live command channel reloads mission bindings",
+      "items": [
+        {
+          "id": "T5.22",
+          "title": "Close authoring-to-live loop",
+          "description": "deploy_project, restart_activity, get_server_logs with approval gating (deploy checks)",
+          "status": "in_progress"
+        }
+      ]
     },
     {
       "id": "47B",
       "title": "AI CLI Vibecoding Integration (Cline, Claude Code, Antigravity)",
       "status": "partial",
-      "notes": "AI editor area (StudioPanelKind.AI, Window > AI workspace, Ctrl+Shift+A in Sunrise/Unreal presets): ConPTY terminal (Ai/ConPtyTerminal + VtScreen + TerminalView), engine picker claude/cline/agy/custom via cmd /k at the project folder, Context panel (hovered, selected, camera+zone, open file, pinned, attention log; Pin, Send screenshot, Publish toggle), approval queue + AI edits with Undo. src/Solforge.Mcp: TcpListener streamable HTTP on 127.0.0.1 random port, bearer token, Mcp-Session-Id, SSE GET keep-alive, discovery %LOCALAPPDATA%/Solforge/mcp/server-<pid>.json; src/Solforge.Mcp.Shim = solforge-mcp.exe (publish.ps1). Configs: <project>/.mcp.json, ~/.cline/data/settings/cline_mcp_settings.json (+ VS Code Cline if installed), ~/.gemini/antigravity/mcp_config.json (Antigravity desktop), ~/.gemini/config/mcp_config.json (agy CLI). 11 read tools + 5 approve-gated. Checks: tests/SunriseStudio.Mcp.Tests (verify.ps1). Not built or run yet. Left: build + fix, live acceptance test (static mesh 7489 in Claude Code), apply_project_edit into Project changes proper (now AI-edits list), terminal glyph coverage (box drawing), AI pop-out window keyboard input, confirm Cline CLI and Antigravity config paths Main session 2026-10-15: build + verify.ps1 green on master (stdio check hang fixed); left: live acceptance test in Solforge with Claude Code. 2026-10-15 later: EngineCommands (fresh PATH + PATHEXT, install card), EngineLaunch (Claude Code --mcp-config, --settings UserPromptSubmit hook -> solforge-mcp --context, --append-system-prompt, --add-dir), get_open_documents, Context dropdown + narrow header, terminal glyph ranges + wide cells; verify green. 2026-10-15: agy CLI reads ~/.gemini/config/mcp_config.json (confirmed via agy mcp add); Solforge now writes it (empty installer file merges as {}) and launches agy with --add-dir. Open: duplicate solforge server name (--mcp-config vs project .mcp.json), Cline gets no --add-dir (no such flag). 2026-10-15 Claude-Forge (8598b44): render toggle, Settings window, AI header row + context chip, foldable side panels + Solforge (AI) preset + per-project layouts, 32 more MCP tools (54 total: catalog reads without a map, find_world_objects, get_placement, items/vendors/creation, approve-gated open_map/edit_placement/edit_bounds/item+vendor edits/start_creation/replace_texture_pixels/build_project), solforge-* skills synced to ~/.claude/skills, .solforge/SESSION.md + AGENTS.md block. Build + Mcp/Shortcuts/Editor/Viewport/Creation/Architecture checks green; not tried live. Follow-ups: CUI widget edit tools, CUI animation keys. Content tools (list_content_families, list_content, get_content, validate_content, get_subclass_layout, check_subclass_build, create_content, update_content, delete_content, export_content) and get_help."
+      "notes": "AI editor area (StudioPanelKind.AI, Window > AI workspace, Ctrl+Shift+A in Sunrise/Unreal presets): ConPTY terminal (Ai/ConPtyTerminal + VtScreen + TerminalView), engine picker claude/cline/agy/custom via cmd /k at the project folder, Context panel (hovered, selected, camera+zone, open file, pinned, attention log; Pin, Send screenshot, Publish toggle), approval queue + AI edits with Undo. src/Solforge.Mcp: TcpListener streamable HTTP on 127.0.0.1 random port, bearer token, Mcp-Session-Id, SSE GET keep-alive, discovery %LOCALAPPDATA%/Solforge/mcp/server-<pid>.json; src/Solforge.Mcp.Shim = solforge-mcp.exe (publish.ps1). Configs: <project>/.mcp.json, ~/.cline/data/settings/cline_mcp_settings.json (+ VS Code Cline if installed), ~/.gemini/antigravity/mcp_config.json (Antigravity desktop), ~/.gemini/config/mcp_config.json (agy CLI). 11 read tools + 5 approve-gated. Checks: tests/SunriseStudio.Mcp.Tests (verify.ps1). Not built or run yet. Left: build + fix, live acceptance test (static mesh 7489 in Claude Code), apply_project_edit into Project changes proper (now AI-edits list), terminal glyph coverage (box drawing), AI pop-out window keyboard input, confirm Cline CLI and Antigravity config paths Main session 2026-10-15: build + verify.ps1 green on master (stdio check hang fixed); left: live acceptance test in Solforge with Claude Code. 2026-10-15 later: EngineCommands (fresh PATH + PATHEXT, install card), EngineLaunch (Claude Code --mcp-config, --settings UserPromptSubmit hook -> solforge-mcp --context, --append-system-prompt, --add-dir), get_open_documents, Context dropdown + narrow header, terminal glyph ranges + wide cells; verify green. 2026-10-15: agy CLI reads ~/.gemini/config/mcp_config.json (confirmed via agy mcp add); Solforge now writes it (empty installer file merges as {}) and launches agy with --add-dir. Open: duplicate solforge server name (--mcp-config vs project .mcp.json), Cline gets no --add-dir (no such flag). 2026-10-15 Claude-Forge (8598b44): render toggle, Settings window, AI header row + context chip, foldable side panels + Solforge (AI) preset + per-project layouts, 32 more MCP tools (54 total: catalog reads without a map, find_world_objects, get_placement, items/vendors/creation, approve-gated open_map/edit_placement/edit_bounds/item+vendor edits/start_creation/replace_texture_pixels/build_project), solforge-* skills synced to ~/.claude/skills, .solforge/SESSION.md + AGENTS.md block. Build + Mcp/Shortcuts/Editor/Viewport/Creation/Architecture checks green; not tried live. Follow-ups: CUI widget edit tools, CUI animation keys. Content tools (list_content_families, list_content, get_content, validate_content, get_subclass_layout, check_subclass_build, create_content, update_content, delete_content, export_content) and get_help.",
+      "items": [
+        {
+          "id": "T1.4",
+          "title": "get_item_sources tool",
+          "description": "Where does item X drop, who sells it, which collections/quests reference it",
+          "status": "in_progress"
+        },
+        {
+          "id": "T1.5",
+          "title": "compare_with_base tool",
+          "description": "MCP equivalent of the editor Compare with base / Revert to base dialog",
+          "status": "in_progress"
+        },
+        {
+          "id": "T5.23",
+          "title": "verify_content / lint tool",
+          "description": "One tool running weapon/mission/map validators before a build (check script)",
+          "status": "in_progress"
+        },
+        {
+          "id": "T5.24",
+          "title": "Composite one-shot tools",
+          "description": "clone_weapon, add_patrol_unit etc. with a single approval card",
+          "status": "todo"
+        },
+        {
+          "id": "T5.26",
+          "title": "Machine-readable playbooks + run telemetry",
+          "description": "playbooks/ folder for Automatic mode plus nudge/tool-call/time dashboard",
+          "status": "todo"
+        },
+        {
+          "id": "3A.4",
+          "title": "Movement tools to MCP",
+          "description": "walk_to, face_point, fire_at, respawn (hold X 3 s), pad_steps with drift tolerance",
+          "status": "in_progress"
+        },
+        {
+          "id": "3G.29",
+          "title": "Discord bot for Sol data",
+          "description": "Answers drop/loot-pool/mod-map questions; writes stay gated",
+          "status": "todo"
+        },
+        {
+          "id": "4A.3",
+          "title": "Citation-enforcing agent mode",
+          "description": "Tool results carry source notes; no source, no claim lint",
+          "status": "todo"
+        },
+        {
+          "id": "WIP.2",
+          "title": "MCP full coverage",
+          "description": "Every editor feature reachable through MCP tools",
+          "status": "in_progress"
+        }
+      ]
     },
     {
       "id": "48",
       "title": "Comprehensive Automated Test Suite",
-      "status": "todo"
+      "status": "todo",
+      "items": [
+        {
+          "id": "R2.A3",
+          "title": "Occlusion regression baseline",
+          "description": "Per-map voxel counts, fail build on out-of-region occlusion change",
+          "status": "todo"
+        },
+        {
+          "id": "3A.7",
+          "title": "Test cases as project artifacts",
+          "description": "Recorded run plus assertions stored in project, runnable headless",
+          "status": "todo"
+        },
+        {
+          "id": "3E.24",
+          "title": "Scheduled content jobs",
+          "description": "Nightly validate, crawl, occlusion regression, coverage metric, build, publish",
+          "status": "todo"
+        },
+        {
+          "id": "4A.2",
+          "title": "Machine-readable fact store + spec tests",
+          "description": "reference/facts.json with provenance asserted in CI",
+          "status": "todo"
+        }
+      ]
     },
     {
       "id": "49",
       "title": "Documentation, Starter Templates & Creator Manual",
       "status": "partial",
-      "notes": "Help > Keybinds & Tips (F1 in every preset): searchable keybinds generated from ShortcutActions + the live map, grouped by area, plus a Tips page (workflow, performance, MCP setup); get_help MCP tool. Creator manual and starter templates still to do."
+      "notes": "Help > Keybinds & Tips (F1 in every preset): searchable keybinds generated from ShortcutActions + the live map, grouped by area, plus a Tips page (workflow, performance, MCP setup); get_help MCP tool. Creator manual and starter templates still to do.",
+      "items": [
+        {
+          "id": "T5.25",
+          "title": "Skills coverage map",
+          "description": "New skills: vendor/economy, perk graph, subclass, texture, audio/CUI, release, live testing, loot pools",
+          "status": "todo"
+        },
+        {
+          "id": "3E.23",
+          "title": "Project templates/scaffolding",
+          "description": "solforge project init --template (strike, patrol, weapon-pack, ui-pack) producing a buildable skeleton",
+          "status": "todo"
+        }
+      ]
     },
     {
       "id": "50",
       "title": "Final Product Release 1.0 Milestone",
       "status": "todo"
+    },
+    {
+      "id": "S2026-10-16",
+      "title": "Suggestions 2026-10-16",
+      "status": "todo",
+      "notes": "New-phase suggestion items from the 2026-10-16 report (Tier 1-6, Round 2 A-G, Tier 3 3A-3G, Tier 4 4A-4F) with no fitting phase; items mapped to existing phases are listed under that phase.",
+      "items": [
+        {
+          "id": "T2.11",
+          "title": "Armor New via original-asset pipeline",
+          "description": "Extend OriginalAssetImporter/.glb path to armor meshes",
+          "status": "todo"
+        },
+        {
+          "id": "T3.15",
+          "title": "Vendor rotations and timers",
+          "description": "Server settings module for vendor rotation schedules and reward timers",
+          "status": "todo"
+        },
+        {
+          "id": "T3.16",
+          "title": "Structured quest/bounty family",
+          "description": "Quest family in Solforge.Content with validation, Lua export, server reader",
+          "status": "todo"
+        },
+        {
+          "id": "T4.21",
+          "title": "Decoder coverage dashboard",
+          "description": "Tracked % of tags with a real decoder, written into docs each build",
+          "status": "todo"
+        },
+        {
+          "id": "T6.28",
+          "title": "Dual-build profile system",
+          "description": "Profile as first-class concept (D1_VURANGO_41375 + D2_ARRIVALS_86657), D1 bytecode and package handling",
+          "status": "todo"
+        },
+        {
+          "id": "R2.B4",
+          "title": "CUI new-screen flow + templates",
+          "description": "Clone-from-stock-screen creation for HUD, roster, Director, vendor, event overlays",
+          "status": "todo"
+        },
+        {
+          "id": "R2.B5",
+          "title": "CUI reference-image guides",
+          "description": "Mockup PNG backdrop with widget snapping",
+          "status": "todo"
+        },
+        {
+          "id": "R2.B6",
+          "title": "CUI multi-profile preview",
+          "description": "Render one screen at several aspect/DPI profiles with safe-area overlays",
+          "status": "todo"
+        },
+        {
+          "id": "R2.B7",
+          "title": "CUI text-fit and a11y lint",
+          "description": "Overflow, low-contrast and translation-break checks",
+          "status": "todo"
+        },
+        {
+          "id": "R2.B8",
+          "title": "Per-locale CUI text table",
+          "description": "CUI-scoped string table with missing/unused reports",
+          "status": "todo"
+        },
+        {
+          "id": "R2.C10",
+          "title": "USM muxer",
+          "description": "Writer counterpart to UsmExport for custom intros/cutscenes",
+          "status": "todo"
+        },
+        {
+          "id": "R2.C11",
+          "title": "Destination audio designer",
+          "description": "Day/night beds, combat layers, stingers, ambience zones over existing audio classes",
+          "status": "todo"
+        },
+        {
+          "id": "R2.C12",
+          "title": "Space/reverb authoring",
+          "description": "Reverb as first-class zone property bound to mission regions",
+          "status": "todo"
+        },
+        {
+          "id": "R2.C13",
+          "title": "Dialogue workflow with timing placeholders",
+          "description": "Per-node dialogue table with synthetic placeholder audio for timing only",
+          "status": "todo"
+        },
+        {
+          "id": "R2.C14",
+          "title": "Audio concurrency lint",
+          "description": "Count emitters/voices per zone and warn on Wwise limits",
+          "status": "todo"
+        },
+        {
+          "id": "R2.D15",
+          "title": "Placement dedup/instancing report",
+          "description": "Find repeated static props, propose instancing",
+          "status": "todo"
+        },
+        {
+          "id": "R2.E19",
+          "title": "Command palette + macro recorder",
+          "description": "Record edits and replay on selected objects",
+          "status": "todo"
+        },
+        {
+          "id": "R2.E23",
+          "title": "Split-view compare",
+          "description": "Two viewports/maps side by side",
+          "status": "todo"
+        },
+        {
+          "id": "R2.E25",
+          "title": "Studio extension API",
+          "description": "Documented extension host over ISolforgeHost (panels, importers, validators, tool packs)",
+          "status": "todo"
+        },
+        {
+          "id": "R2.F26",
+          "title": "Player-side mod manager",
+          "description": "Launcher load order, dependency resolution, conflict warnings, toggles, profile presets",
+          "status": "todo"
+        },
+        {
+          "id": "R2.F28",
+          "title": "Crash-dump symbolizer",
+          "description": "Crash address to RVA to named function using image.json and solforge-names.csv",
+          "status": "todo"
+        },
+        {
+          "id": "R2.F30",
+          "title": "Live content ops panel",
+          "description": "Rotations/timers, MOTD, content flags, event A/B via server admin plane",
+          "status": "todo"
+        },
+        {
+          "id": "R2.G31",
+          "title": "Headless map renders",
+          "description": "--render / render_map producing screenshots or turntables",
+          "status": "todo"
+        },
+        {
+          "id": "R2.G34",
+          "title": "Patch-day data refresh assistant",
+          "description": "Diff schemas/offsets on a new build, flag stale decoders and project edits",
+          "status": "todo"
+        },
+        {
+          "id": "3A.5",
+          "title": "Pad/input layer for feel testing",
+          "description": "Record/replay input and measure input-to-display latency",
+          "status": "todo"
+        },
+        {
+          "id": "3A.6",
+          "title": "Multi-client harness",
+          "description": "Launch N clients, grid-pin, synced scripts, per-client capture and assertions",
+          "status": "todo"
+        },
+        {
+          "id": "3B.8",
+          "title": "Reference library as a product",
+          "description": "Schema, templates, search/read_reference integration, staleness checks",
+          "status": "todo"
+        },
+        {
+          "id": "3B.9",
+          "title": "Retail-vs-Sol pacing comparator",
+          "description": "Diff retail timeline notes against mission graph/Lua for drift",
+          "status": "todo"
+        },
+        {
+          "id": "3B.10",
+          "title": "Cinematic/transition parity checklist",
+          "description": "Per-mission videos, subtitles, credits, loading screens, transitions tracked",
+          "status": "todo"
+        },
+        {
+          "id": "3B.11",
+          "title": "Load-transition audit",
+          "description": "Flag load triggers that can fire before geometry is streamed",
+          "status": "todo"
+        },
+        {
+          "id": "3B.12",
+          "title": "Parity report in CI",
+          "description": "Per-mission nightly parity artifact (timings, cinematics, items, vendors, collectibles)",
+          "status": "todo"
+        },
+        {
+          "id": "3C.13",
+          "title": "Generators in-tree with lock + diff",
+          "description": "Own gen_squad_objectives.py output with diff preview, hash header, clobber warning",
+          "status": "todo"
+        },
+        {
+          "id": "3D.16",
+          "title": "D1 decomp profile",
+          "description": "Switch search_functions/get_function/xrefs to d1xb1 Ghidra project via SOLFORGE_DECOMP",
+          "status": "todo"
+        },
+        {
+          "id": "3D.17",
+          "title": "Cross-build symbol comparison",
+          "description": "Side-by-side D2 86657 vs D1 41375 functions/structs",
+          "status": "todo"
+        },
+        {
+          "id": "3D.18",
+          "title": "Shim and launch profile manager",
+          "description": "WinDurango shims, patches, per-era content profiles with hashes",
+          "status": "todo"
+        },
+        {
+          "id": "3D.19",
+          "title": "Patch manager with applicability guards",
+          "description": "Apply/revert D1 binary patches with pre-flight verification",
+          "status": "todo"
+        },
+        {
+          "id": "3D.20",
+          "title": "D1-Sol parity matrix",
+          "description": "Gap list of D1 activities/destinations/weapons vs Sol project",
+          "status": "todo"
+        },
+        {
+          "id": "3D.21",
+          "title": "D1 assets as read-only reference",
+          "description": "Mount a D1 install for inspection in the same viewport",
+          "status": "todo"
+        },
+        {
+          "id": "3E.22",
+          "title": "Headless scripted runs",
+          "description": "Solforge.exe --script over MCP tool surface with job queue, dry-run, receipt",
+          "status": "todo"
+        },
+        {
+          "id": "3F.25",
+          "title": "Unified log/telemetry pipeline",
+          "description": "Client+server+editor logs, saved filters, error fingerprinting, known-issue DB",
+          "status": "todo"
+        },
+        {
+          "id": "3F.26",
+          "title": "Server health dashboard",
+          "description": "Players, tick, memory, script errors, payout rate with alerts",
+          "status": "todo"
+        },
+        {
+          "id": "3F.27",
+          "title": "Network/protocol inspector",
+          "description": "Capture viewer decoding join/activity/loot traffic",
+          "status": "todo"
+        },
+        {
+          "id": "3F.28",
+          "title": "Reproducible dev environment",
+          "description": "One-command containerized server with seeded accounts and reset-to-known-state",
+          "status": "todo"
+        },
+        {
+          "id": "3G.30",
+          "title": "In-launcher problem reporting",
+          "description": "One-click report with build, mods, log tail, activity, screenshot",
+          "status": "todo"
+        },
+        {
+          "id": "3G.31",
+          "title": "Community content registry",
+          "description": "Browseable mod index with dependencies, compat flags, rollback points",
+          "status": "todo"
+        },
+        {
+          "id": "4A.1",
+          "title": "Reference drift pipeline",
+          "description": "Detect upstream page changes, re-fetch, diff, regenerate INDEX.md/index.json",
+          "status": "todo"
+        },
+        {
+          "id": "4A.4",
+          "title": "Open-question tracker",
+          "description": "Status, owner, resolving experiment, feed into todo.json",
+          "status": "todo"
+        },
+        {
+          "id": "4A.5",
+          "title": "Reference-to-code annotations",
+          "description": "Attach note URLs to the constants they justify",
+          "status": "todo"
+        },
+        {
+          "id": "4D.21",
+          "title": "Vendor sale-row editor with traps",
+          "description": "184-B sale rows, 128-B display twins, order/count constraints",
+          "status": "todo"
+        },
+        {
+          "id": "4D.22",
+          "title": "String-bank integrity and routing tool",
+          "description": "Reachability via bank routes, UTF-8 flag, hash alias detection",
+          "status": "todo"
+        },
+        {
+          "id": "4D.23",
+          "title": "Icon/art resolution checker",
+          "description": "Validate every item resolves icon and thumbnail art pre-build",
+          "status": "todo"
+        },
+        {
+          "id": "4E.24",
+          "title": "Account/inventory test bench",
+          "description": "Grant items, set flags, complete activities in an in-memory cheat session",
+          "status": "todo"
+        },
+        {
+          "id": "4E.25",
+          "title": "DB backup, restore, migration",
+          "description": "Backup/restore and schema migration path preserving player saves",
+          "status": "todo"
+        },
+        {
+          "id": "4E.26",
+          "title": "Seeded fixtures for harness",
+          "description": "Known-state accounts for reproducible recorded runs",
+          "status": "todo"
+        },
+        {
+          "id": "4F.28",
+          "title": "Upstream capability adoption list",
+          "description": "PRs 130, 123, 152, 128, 146/150, 149, 115, 69 adoption paths",
+          "status": "todo"
+        },
+        {
+          "id": "WIP.1",
+          "title": "Multi-agent map safety",
+          "description": "Agents editing maps concurrently without clobbering each other",
+          "status": "in_progress"
+        },
+        {
+          "id": "WIP.3",
+          "title": "Client provenance",
+          "description": "Provenance tracking for client builds/outputs",
+          "status": "in_progress"
+        },
+        {
+          "id": "WIP.4",
+          "title": "Mission coverage and insight",
+          "description": "Mission coverage/insight reporting",
+          "status": "in_progress"
+        },
+        {
+          "id": "WIP.5",
+          "title": "Mission library (fades, cutscenes, boss phases)",
+          "description": "Also listed in Studio.md Phase 39B (branch content-libs / mission-lib-transitions)",
+          "status": "in_progress"
+        }
+      ]
     }
   ]
 }
