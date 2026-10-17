@@ -33,6 +33,7 @@ public static class MissionGraphCompiler
         local k = {}
         local values = {}
         local signal_handlers = {}
+        local on_signal = {}
         local waits = {}
         local delays = {}
 
@@ -122,9 +123,11 @@ public static class MissionGraphCompiler
         {
             string name = Quote(node.Get("signal", "ObjectiveUpdated"));
             lua.Append("signal_handlers[").Append(name).Append("] = signal_handlers[").Append(name).AppendLine("] or {}");
-            lua.Append("table.insert(signal_handlers[").Append(name).AppendLine("], function(context, state, event)");
+            // A named function, not an inline argument, so the Graph panel's script graph opens its body as nodes.
+            lua.Append("on_signal[").Append(Quote(node.Id)).AppendLine("] = function(context, state, event)");
             writer.Chain(lua, node.Id, "then", 1, []);
-            lua.AppendLine("end)").AppendLine();
+            lua.AppendLine("end");
+            lua.Append("table.insert(signal_handlers[").Append(name).Append("], on_signal[").Append(Quote(node.Id)).AppendLine("])").AppendLine();
         }
         // Activity callbacks.
         var handlers = new SortedDictionary<string, List<GraphNode>>(StringComparer.Ordinal);
