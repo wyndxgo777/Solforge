@@ -46,10 +46,17 @@ public static class EngineLaunch
     /**
      * Writes the MCP config and the UserPromptSubmit hook settings for the project; @param folder defaults to the
      * discovery folder; @param gemini also adds the shim's --gemini server (ask_gemini runs the user's own agy);
-     * @param clinePass also adds its --clinepass server (ask_clinepass runs the user's own cline on ClinePass).
+     * @param clinePass also adds its --clinepass server (ask_clinepass runs the user's own cline on ClinePass);
+     * @param servers when given, the config holds exactly this Sol MCP set (SolMcpServers.Collect) instead.
      */
-    public static ClaudeFiles WriteClaudeFiles(string projectRoot, string shimPath, string? folder = null, bool gemini = false, bool clinePass = false)
+    public static ClaudeFiles WriteClaudeFiles(string projectRoot, string shimPath, string? folder = null, bool gemini = false, bool clinePass = false,
+        IReadOnlyList<SolMcpServers.Server>? servers = null)
     {
+        if (servers is not null)
+        {
+            gemini = servers.Any(server => server.Name == AgyDelegate.ServerName);
+            clinePass = servers.Any(server => server.Name == ClineDelegate.ServerName);
+        }
         folder ??= McpDiscovery.Folder;
         Directory.CreateDirectory(folder);
         string key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Path.GetFullPath(projectRoot).ToUpperInvariant())))[..12];
@@ -58,18 +65,18 @@ public static class EngineLaunch
         {
             ["type"] = "stdio", ["command"] = shimPath, ["args"] = new JsonArray("--project", projectRoot), ["env"] = new JsonObject()
         };
-        var servers = new JsonObject { [McpClientConfigs.ServerName] = server };
+        var entries = new JsonObject { [McpClientConfigs.ServerName] = server };
         if (gemini)
-            servers[AgyDelegate.ServerName] = new JsonObject
+            entries[AgyDelegate.ServerName] = new JsonObject
             {
                 ["type"] = "stdio", ["command"] = shimPath, ["args"] = new JsonArray("--gemini"), ["env"] = new JsonObject()
             };
         if (clinePass)
-            servers[ClineDelegate.ServerName] = new JsonObject
+            entries[ClineDelegate.ServerName] = new JsonObject
             {
                 ["type"] = "stdio", ["command"] = shimPath, ["args"] = new JsonArray("--clinepass"), ["env"] = new JsonObject()
             };
-        Write(files.McpConfig, new JsonObject { ["mcpServers"] = servers });
+        Write(files.McpConfig, servers is not null ? SolMcpServers.ClaudeConfig(servers) : new JsonObject { ["mcpServers"] = entries });
         // Forward slashes and plain quotes read the same in cmd.exe and in bash, whichever runs the hook.
         string hook = $"\"{shimPath.Replace('\\', '/')}\" --context --project \"{projectRoot.Replace('\\', '/').TrimEnd('/')}\"";
         var command = new JsonObject { ["type"] = "command", ["command"] = hook, ["timeout"] = 5 };
