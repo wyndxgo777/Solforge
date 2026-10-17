@@ -108,6 +108,7 @@ public sealed partial class StudioForm
         bool missing = engine.Command.Length > 0 && AiResolved(engine.Command) is null;
         DrawAiHeader(engine, missing);
         DrawAiAutomaticStrip();
+        DrawAiPresence();
         DrawAiRequests();
         ImGui.Separator();
         // A missing engine shows how to install it instead of launching; a session still running stays in view.
