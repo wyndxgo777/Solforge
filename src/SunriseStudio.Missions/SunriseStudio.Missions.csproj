@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><TargetFramework>net9.0</TargetFramework></PropertyGroup>
-  <ItemGroup><ProjectReference Include="../SunriseStudio.Projects/SunriseStudio.Projects.csproj" /></ItemGroup>
+  <ItemGroup><ProjectReference Include="../SunriseStudio.Projects/SunriseStudio.Projects.csproj" /><ProjectReference Include="../Solforge.Graphs/Solforge.Graphs.csproj" /></ItemGroup>
   <ItemGroup><PackageReference Include="Loretta.CodeAnalysis.Lua" Version="0.2.13" /></ItemGroup>
 </Project>

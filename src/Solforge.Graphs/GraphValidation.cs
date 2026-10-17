@@ -193,6 +193,14 @@ public static class GraphValidation
         foreach (var node in flat.OfType("mission.call"))
             if (!NodeLibrary.MissionContextFunctions.Contains(node.Get("function"), StringComparer.Ordinal))
                 result.Add(new(DiagnosticSeverity.Error, $"The server's mission context has no function '{node.Get("function")}'.", node.Id));
+        // Mission-library nodes: required slots and typed fields; a placeholder library name is a TODO note.
+        foreach (var node in flat.Nodes)
+            if (MissionLibrary.ForNode(node.Type) is { } library)
+            {
+                foreach (string problem in MissionLibrary.Check(library, node.Properties)) result.Add(new(DiagnosticSeverity.Error, problem, node.Id));
+                if (library.Pending)
+                    result.Add(new(DiagnosticSeverity.Info, $"TODO: {MissionLibrary.Alias}.{library.Function} is a placeholder name until the server's mission-lib-transitions branch lands.", node.Id));
+            }
         foreach (var node in flat.Nodes.Where(node => node.Type is "mission.set_directive"))
             if (!LuaName(node.Get("module")) || node.Get("directive").Length == 0)
                 result.Add(new(DiagnosticSeverity.Error, "Set Directive needs the mission module (missions.lua key) and a directive name.", node.Id));

@@ -17,6 +17,7 @@ try
     ScriptGraphChecks.Synthetic();
     ScriptControlChecks.Run(temporary);
     TemplateChecks.Synthetic();
+    LibraryChecks.Synthetic();
     int root = Array.IndexOf(args, "--game-root");
     if (root >= 0)
     {

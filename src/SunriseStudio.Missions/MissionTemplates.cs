@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace SunriseStudio.Missions;
 
 /** The kinds of activity a new mission script can start as; each has a starter template. */
-public enum MissionActivityType { Story, Strike, Patrol, PublicEvent, LostSector, Raid, Encounter, Pvp, Quest, Custom }
+public enum MissionActivityType { Story, Strike, Patrol, PublicEvent, LostSector, Raid, Encounter, Pvp, Quest, Custom, CampaignCinematic, StrikeBoss, RaidEncounter }
 
 /** One activity type's picker row: its MCP id, label and what the template builds. */
 public sealed record MissionTemplateInfo(MissionActivityType Type, string Id, string Label, string Description);
@@ -34,6 +34,12 @@ public static class MissionTemplates
         new(MissionActivityType.Pvp, "pvp", "Crucible / Gambit-style mode", "lib.mission_lib: a timed round with a score variable; ends the round on the timer."),
         new(MissionActivityType.Quest, "quest", "Quest", "lib.campaign: ordered objective steps with a counter step."),
         new(MissionActivityType.Custom, "custom", "Blank custom script", "The bare runtime table: initial state and the start and load callbacks."),
+        new(MissionActivityType.CampaignCinematic, "campaign_cinematic", "Campaign mission with cutscenes and transitions",
+            "lib.campaign + lib.mission_lib: an opening cutscene, a fade/teleport area transition between steps, a boss step and an ordered ending."),
+        new(MissionActivityType.StrikeBoss, "strike_boss", "Strike with a boss phase",
+            "lib.campaign + lib.mission_lib: clear-driven steps, then a boss barrier step whose shield and pylon phase starts at half health; ordered ending."),
+        new(MissionActivityType.RaidEncounter, "raid_encounter", "Raid encounter skeleton",
+            "lib.campaign + lib.mission_lib: a mechanic step (boss invulnerable), a damage phase with pylons, a final stand with a transition out, and an ordered ending."),
     ];
 
     /** Parses an MCP activity id or label (story, strike, patrol, public_event, lost_sector, raid, encounter, pvp, quest, custom). */
@@ -49,6 +55,9 @@ public static class MissionTemplates
             "lostsector" or "sector" => MissionActivityType.LostSector,
             "crucible" or "gambit" or "mode" => MissionActivityType.Pvp,
             "dungeon" => MissionActivityType.Raid,
+            "cinematic" or "campaign_cutscene" => MissionActivityType.CampaignCinematic,
+            "boss_strike" => MissionActivityType.StrikeBoss,
+            "raid_boss" or "encounter_skeleton" => MissionActivityType.RaidEncounter,
             "" or "blank" => MissionActivityType.Custom,
             _ => throw new InvalidDataException("Unknown activity type " + text + "; use one of " + string.Join(", ", Types.Select(info => info.Id)) + ".")
         };
@@ -85,6 +94,7 @@ public static class MissionTemplates
 
     private static string Campaign(MissionActivityType type, string key, Names names)
     {
+        bool library = UsesMissionLibrary(type);
         var squads = names.Squads(type == MissionActivityType.Encounter ? 1 : 6);
         int steps = type == MissionActivityType.Encounter ? 1 : 3;
         // Spread the squads over the steps; the last step is the boss (or the only encounter).
@@ -96,12 +106,14 @@ public static class MissionTemplates
             MissionActivityType.Encounter => ["encounter"],
             MissionActivityType.Raid => ["encounter_1", "encounter_2", "final"],
             MissionActivityType.Quest => ["travel", "collect", "finish"],
-            MissionActivityType.Strike => ["approach", "push", "boss"],
+            MissionActivityType.Strike or MissionActivityType.StrikeBoss => ["approach", "push", "boss"],
+            MissionActivityType.RaidEncounter => ["mechanic", "damage", "final_stand"],
             _ => ["arrive", "fight", "boss"]
         };
         string objective = names.Slot(slot => slot.StartsWith("OBJ_", StringComparison.Ordinal) || slot.Contains("OBJECTIVE"), "OBJECTIVE");
         var text = new StringBuilder();
         text.Append("local campaign = require(\"lib.campaign\")\n");
+        if (library) text.Append(Solforge.Graphs.MissionLibrary.Require + "\n");
         text.Append("local unit = campaign.unit\n");
         text.Append("local Slot, Squad, Directive = mission.Slot, mission.Squad, mission.Directive\n\n");
         for (int i = 0; i < steps; i++)
@@ -128,14 +140,65 @@ public static class MissionTemplates
             text.Append($"        {{id = \"{ids[i]}\", directive = Directive.{directives[i]}");
             if (type == MissionActivityType.Quest && i == 1)
                 text.Append(", counter = {of = 3}, ends = {clear = {\"" + ids[i] + "\"}}");
-            else text.Append((last && type != MissionActivityType.Quest || type == MissionActivityType.Raid ? ", barrier = true" : "")
+            else text.Append((last && type != MissionActivityType.Quest || type is MissionActivityType.Raid or MissionActivityType.RaidEncounter ? ", barrier = true" : "")
                 + ", ends = {clear = {\"" + ids[i] + "\"}}");
+            if (library && LibraryStep(type, i, names) is { } call)
+                text.Append(",\n            on_start = function(context)\n                ").Append(call).Append("\n            end,\n        ");
             text.Append("},\n");
         }
         text.Append("    },\n");
         text.Append($"    encounters = {{{string.Join(", ", ids)}}},\n");
+        if (library)
+        {
+            // The ordered ending runs from campaign's finish hook: final cutscene, fade, rewards, then completion.
+            var ending = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["cutscene"] = type == MissionActivityType.StrikeBoss ? "" : "Slot." + names.Slot(IsCinematic, "CINEMATIC"),
+                ["experience"] = type == MissionActivityType.RaidEncounter ? "5000" : "2500", ["loot_rolls"] = "1",
+            };
+            text.Append("    finish = function(context)\n        ").Append(Lib("ending", ending)).Append("\n    end,\n");
+        }
         text.Append("}\n");
         return text.ToString();
+    }
+
+    /** True for the templates that call lib.mission_lib (cutscenes, transitions, boss phases, ordered endings). */
+    public static bool UsesMissionLibrary(MissionActivityType type) =>
+        type is MissionActivityType.CampaignCinematic or MissionActivityType.StrikeBoss or MissionActivityType.RaidEncounter;
+
+    private static bool IsCinematic(string slot) => slot.Contains("CINEMATIC") || slot.Contains("CUTSCENE");
+
+    private static string Lib(string function, IReadOnlyDictionary<string, string> values) =>
+        Solforge.Graphs.MissionLibrary.Render(Solforge.Graphs.MissionLibrary.Find(function)
+            ?? throw new InvalidOperationException("The mission library has no " + function + "."), values);
+
+    /** The mission-library call a step starts with, or null; slot names come from the SDK or are CHANGE_ME. */
+    private static string? LibraryStep(MissionActivityType type, int step, Names names)
+    {
+        string Boss() => "Slot." + names.Slot(slot => slot.Contains("BOSS"), "BOSS");
+        string Pylons()
+        {
+            var pylons = names.Slots(slot => slot.Contains("PYLON"), 3);
+            if (pylons.Count == 0) pylons.Add(Placeholder + "_PYLON");
+            return "{" + string.Join(", ", pylons.Select(slot => "Slot." + slot)) + "}";
+        }
+        string Transition() => Lib("transition", new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["teleport"] = "Slot." + names.Slot(slot => slot.Contains("SPAWN"), "SPAWN_POINT"), ["state"] = "mission.states." + names.State(),
+        });
+        return (type, step) switch
+        {
+            (MissionActivityType.CampaignCinematic, 0) => Lib("play_cutscene", new Dictionary<string, string>(StringComparer.Ordinal)
+                { ["cinematic"] = "Slot." + names.Slot(IsCinematic, "CINEMATIC") }),
+            (MissionActivityType.CampaignCinematic, 1) => Transition(),
+            (MissionActivityType.StrikeBoss, 2) => Lib("boss_phase", new Dictionary<string, string>(StringComparer.Ordinal)
+                { ["boss"] = Boss(), ["pylons"] = Pylons() }),
+            (MissionActivityType.RaidEncounter, 0) => Lib("set_invulnerable", new Dictionary<string, string>(StringComparer.Ordinal) { ["target"] = Boss() }),
+            (MissionActivityType.RaidEncounter, 1) => Lib("boss_phase", new Dictionary<string, string>(StringComparer.Ordinal)
+                { ["boss"] = Boss(), ["at_health"] = "1", ["pylons"] = Pylons() }),
+            (MissionActivityType.RaidEncounter, 2) => Transition(),
+            _ => null
+        };
     }
 
     private static string Freeroam(MissionActivityType type, Names names)
@@ -245,6 +308,9 @@ public static class MissionTemplates
 
         /** First slot key matching the filter, else a placeholder. */
         public string Slot(Func<string, bool> match, string what) => Keys("mission.Slot").FirstOrDefault(match) ?? Placeholder + "_" + what;
+
+        /** Up to count slot keys matching the filter. */
+        public List<string> Slots(Func<string, bool> match, int count) => Keys("mission.Slot").Where(match).Take(count).ToList();
 
         /** Squads that also have a slot of the same key, as freeroam.unit and campaign.unit need. */
         public List<string> Squads(int count)
