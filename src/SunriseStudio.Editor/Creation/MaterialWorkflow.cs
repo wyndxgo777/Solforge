@@ -100,7 +100,7 @@ public sealed class MaterialWorkflow : CreationWorkflow
         {
             ImGui.PushID(slot.Offset);
             var (tag, label) = textures.GetValueOrDefault(slot.Offset, (slot.TextureTag, TextureName(slot.TextureTag)));
-            if (ImGui.TreeNode($"{slot.Stage} slot {slot.Slot}: {label}###slot"))
+            if (UiAuto.TreeNode($"{slot.Stage} slot {slot.Slot}: {label}###slot"))
             {
                 if (CreationWidgets.RowPicker($"slot-{slot.Offset}", ref tag, ref label, workspace.ClassRows(PickClass.Texture),
                     null, HashCode.Combine(workspace.AssetRevision, workspace.ProjectRevision, workspace.NameRevision),

@@ -21,7 +21,7 @@ public static class ImGuiIcons
     {
         if (size <= 0) size = ImGui.GetFrameHeight();
         if (active) ImGui.PushStyleColor(ImGuiCol.Button, ImGui.GetStyle().Colors[(int)ImGuiCol.Header]);
-        bool clicked = UiAuto.Button("##" + id, new(size));
+        bool clicked = UiAuto.IconButton(id, tooltip, new(size));
         if (active) ImGui.PopStyleColor();
         Draw(ImGui.GetWindowDrawList(), icon, ImGui.GetItemRectMin() + new Vector2(size * .22f),
             size * .56f, SolTheme.IconTint(active, ImGui.IsItemHovered()));

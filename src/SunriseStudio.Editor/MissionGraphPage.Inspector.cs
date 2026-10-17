@@ -33,7 +33,7 @@ public sealed partial class MissionGraphPage
             if (ImGuiIcons.Button("open-" + callback.Key, StudioIcon.Open, "Open " + callback.CallbackPath)) OpenGroup(BodyKey(callback.Key));
         }
         if (DrawTypedInspector(node, editable)) return;
-        if (!ImGui.CollapsingHeader("Advanced Lua")) return;
+        if (!UiAuto.CollapsingHeader("Advanced Lua")) return;
         foreach (var property in node.Table.Fields.Where(value => value.Name is not (null or "id")))
             if (UiAuto.Selectable(Friendly(property.Name!) + "##" + property.Name, advancedField == property.Name))
             { advancedField = property.Name!; advancedValue = property.Value.Read(graph.Source); }

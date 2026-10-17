@@ -309,16 +309,16 @@ internal sealed class NodeGraphPanel
         // Drags move nodes without a new revision; while this tab shows, keep the text current.
         source.Sync(open.Document.ToJson());
         ImGui.BeginDisabled(!source.HasDraft);
-        if (ImGui.Button("Apply##graph-source")) ApplySource(open, force: true);
+        if (UiAuto.Button("Apply##graph-source")) ApplySource(open, force: true);
         ImGui.SameLine();
-        if (ImGui.Button("Revert##graph-source")) source.Revert();
+        if (UiAuto.Button("Revert##graph-source")) source.Revert();
         ImGui.EndDisabled();
         ImGui.SameLine();
         bool live = source.Live;
-        if (ImGui.Checkbox("Live##graph-source", ref live)) source.Live = live;
+        if (UiAuto.Checkbox("Live##graph-source", ref live)) source.Live = live;
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Apply source edits to the nodes after a short pause. Text that does not parse stays here and shows in Checks.");
         ImGui.SameLine();
-        ImGui.Checkbox(open.Document.Kind == GraphKind.Mission ? "Compiled Lua" : "Compiled", ref showCompiled);
+        UiAuto.Checkbox(open.Document.Kind == GraphKind.Mission ? "Compiled Lua" : "Compiled", ref showCompiled);
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("What Apply writes: the generated Lua for a mission graph, item edits or material writes otherwise. Read-only.");
         if (source.Error.Length > 0) GraphViews.Problem("Not applied: " + source.Error);
         else if (source.Stale) ImGui.TextDisabled("The nodes changed since this edit; Apply replaces them with it, Revert takes the nodes.");
@@ -332,13 +332,13 @@ internal sealed class NodeGraphPanel
             }
             string view = compiled;
             if (Code is { } code) code.CodeText("graph-compiled", ref view, new Vector2(-1, -1), false, open.Document.Kind == GraphKind.Mission);
-            else ImGui.InputTextMultiline("##graph-compiled", ref view, 1 << 20, new Vector2(-1, -1), ImGuiInputTextFlags.ReadOnly);
+            else UiAuto.InputTextMultiline("##graph-compiled", ref view, 1 << 20, new Vector2(-1, -1), ImGuiInputTextFlags.ReadOnly);
             return;
         }
         string text = source.Draft;
         bool changed = Code is { } editorView
             ? editorView.CodeText("graph-source", ref text, new Vector2(-1, -1), true, false)
-            : ImGui.InputTextMultiline("##graph-source", ref text, 1 << 20, new Vector2(-1, -1), ImGuiInputTextFlags.AllowTabInput);
+            : UiAuto.InputTextMultiline("##graph-source", ref text, 1 << 20, new Vector2(-1, -1), ImGuiInputTextFlags.AllowTabInput);
         if (changed) source.Edit(text, now);
         if (source.Due(now)) ApplySource(open, force: false);
     }
@@ -366,7 +366,7 @@ internal sealed class NodeGraphPanel
                 DiagnosticSeverity.Error => new Vector4(1, .4f, .4f, 1), DiagnosticSeverity.Warning => new Vector4(1, .78f, .35f, 1), _ => StudioTheme.Muted
             };
             ImGui.PushStyleColor(ImGuiCol.Text, color);
-            if (ImGui.Selectable($"{problem.Message}##check-{problem.GetHashCode()}") && problem.NodeId is { } id)
+            if (UiAuto.Selectable($"{problem.Message}##check-{problem.GetHashCode()}") && problem.NodeId is { } id)
             {
                 if (graph.Scope?.Id != problem.Scope) graph.Enter(problem.Scope);
                 graph.Selection.Clear();
@@ -381,25 +381,25 @@ internal sealed class NodeGraphPanel
     {
         string label = editor is null ? "No graph" : Path.GetFileName(path) + (editor.Dirty ? " *" : "");
         ImGui.SetNextItemWidth(220);
-        if (ImGui.BeginCombo("##graph-file", label))
+        if (UiAuto.BeginCombo("##graph-file", label))
         {
             if (ImGui.IsWindowAppearing())
                 files = root.Length > 0 && Directory.Exists(root)
                     ? Directory.EnumerateFiles(root, "*" + GraphDocument.Extension, SearchOption.AllDirectories).Take(500).ToList() : [];
             foreach (string file in files)
-                if (ImGui.Selectable(Path.GetRelativePath(root, file).Replace('\\', '/'), file == path)) Open(file);
+                if (UiAuto.Selectable(Path.GetRelativePath(root, file).Replace('\\', '/'), file == path)) Open(file);
             if (files.Count == 0) ImGui.TextDisabled("No graphs in the project yet.");
-            ImGui.EndCombo();
+            UiAuto.EndCombo();
         }
         ImGui.SameLine();
         ImGui.BeginDisabled(root.Length == 0);
-        if (ImGui.Button("New")) ImGui.OpenPopup("new-graph");
+        if (UiAuto.Button("New")) ImGui.OpenPopup("new-graph");
         ImGui.EndDisabled();
         if (ImGui.BeginPopup("new-graph"))
         {
-            ImGui.Combo("Kind", ref newKind, "Material\0Weapon / item\0Mission\0");
-            ImGui.InputText("Name", ref newName, 64);
-            if (ImGui.Button("Create") && newName.Trim().Length > 0)
+            UiAuto.Combo("Kind", ref newKind, "Material\0Weapon / item\0Mission\0");
+            UiAuto.InputText("Name", ref newName, 64);
+            if (UiAuto.Button("Create") && newName.Trim().Length > 0)
             {
                 var kind = newKind switch { 0 => GraphKind.Material, 1 => GraphKind.Weapon, _ => GraphKind.Mission };
                 string safe = string.Concat(newName.Trim().Select(c => char.IsLetterOrDigit(c) || c is '_' or '-' ? c : '_'));
@@ -413,16 +413,16 @@ internal sealed class NodeGraphPanel
         }
         if (editor is null) return;
         ImGui.SameLine();
-        if (ImGui.Button("Save")) Save();
+        if (UiAuto.Button("Save")) Save();
         ImGui.SameLine();
         ImGui.BeginDisabled(!editor.Dirty || path is null);
-        if (ImGui.Button("Revert")) Revert();
+        if (UiAuto.Button("Revert")) Revert();
         ImGui.EndDisabled();
         if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
             ImGui.SetTooltip("Drop unsaved changes and the live preview; the viewport shows the material as it is.");
         ImGui.SameLine();
         ImGui.BeginDisabled(editor.Dirty);
-        bool close = ImGui.Button("Close");
+        bool close = UiAuto.Button("Close");
         ImGui.EndDisabled();
         if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
             ImGui.SetTooltip(editor.Dirty ? "Save or Revert first." : "Close the graph; the viewport shows the material as it is.");
@@ -433,18 +433,18 @@ internal sealed class NodeGraphPanel
         }
         ImGui.SameLine();
         ImGui.BeginDisabled(!editor.CanUndo);
-        if (ImGui.Button("Undo")) editor.Undo();
+        if (UiAuto.Button("Undo")) editor.Undo();
         ImGui.EndDisabled();
         if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled) && editor.UndoLabel.Length > 0) ImGui.SetTooltip("Undo " + editor.UndoLabel);
         ImGui.SameLine();
         ImGui.BeginDisabled(!editor.CanRedo);
-        if (ImGui.Button("Redo")) editor.Redo();
+        if (UiAuto.Button("Redo")) editor.Redo();
         ImGui.EndDisabled();
         ImGui.SameLine();
-        if (ImGui.Button("Compile")) output = GraphCommands.Compile(editor.Document).ToJsonString(new JsonSerializerOptions { WriteIndented = true });
+        if (UiAuto.Button("Compile")) output = GraphCommands.Compile(editor.Document).ToJsonString(new JsonSerializerOptions { WriteIndented = true });
         ImGui.SameLine();
         ImGui.BeginDisabled(diagnostics.Any(problem => problem.Severity == DiagnosticSeverity.Error));
-        if (ImGui.Button("Apply"))
+        if (UiAuto.Button("Apply"))
         {
             Save();
             string relative = Path.GetRelativePath(root, path!).Replace('\\', '/');
@@ -455,11 +455,11 @@ internal sealed class NodeGraphPanel
         ImGui.EndDisabled();
         ImGui.SameLine();
         bool map = canvas.ShowMinimap;
-        if (ImGui.Checkbox("Minimap", ref map)) canvas.ShowMinimap = map;
+        if (UiAuto.Checkbox("Minimap", ref map)) canvas.ShowMinimap = map;
         if (editor.Scope is not null)
         {
             ImGui.SameLine();
-            if (ImGui.Button("Back to graph")) { editor.Enter(null); canvas.FrameAll(); }
+            if (UiAuto.Button("Back to graph")) { editor.Enter(null); canvas.FrameAll(); }
         }
     }
 
@@ -472,7 +472,7 @@ internal sealed class NodeGraphPanel
             if (Live is { } live)
             {
                 bool on = live.Enabled;
-                if (ImGui.Checkbox("Live", ref on))
+                if (UiAuto.Checkbox("Live", ref on))
                 {
                     live.Enabled = on;
                     if (!on) live.Clear();
@@ -482,7 +482,7 @@ internal sealed class NodeGraphPanel
                 ImGui.SameLine();
                 uint? picked = live.SelectedMaterial();
                 ImGui.BeginDisabled(picked is null);
-                if (ImGui.Button("From selection") && picked is { } tag) SetTarget(graph, tag);
+                if (UiAuto.Button("From selection") && picked is { } tag) SetTarget(graph, tag);
                 ImGui.EndDisabled();
                 if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
                     ImGui.SetTooltip(picked is { } chosen ? $"Edit the selected part's material, 0x{chosen:X8}." : "Select a part in the viewport first.");
@@ -524,7 +524,7 @@ internal sealed class NodeGraphPanel
         if (output.Length > 0)
         {
             ImGui.SeparatorText("Output");
-            ImGui.InputTextMultiline("##graph-output", ref output, 1 << 20, new Vector2(-1, 220), ImGuiInputTextFlags.ReadOnly);
+            UiAuto.InputTextMultiline("##graph-output", ref output, 1 << 20, new Vector2(-1, 220), ImGuiInputTextFlags.ReadOnly);
         }
         ImGui.SeparatorText("Keys");
         ImGui.TextDisabled("Tab / right-click: add node\nDrag a pin into space: add linked node\nDouble-click wire: reroute\nC: comment  Ctrl+C/V/D: copy, paste, duplicate\nShift+W/A/S/D: align  Shift+H/V: distribute\nAlt+click pin: break links  Home: frame all");
@@ -572,28 +572,28 @@ internal sealed class NodeGraphPanel
         {
             case PropertyKind.Bool:
                 bool on = value is "true" or "1" or "True";
-                if (ImGui.Checkbox(name, ref on)) graph.SetProperty(node.Id, key, on ? "true" : "false");
+                if (UiAuto.Checkbox(name, ref on)) graph.SetProperty(node.Id, key, on ? "true" : "false");
                 break;
             case PropertyKind.Choice when choices is { Count: > 0 }:
-                if (ImGui.BeginCombo(name, value))
+                if (UiAuto.BeginCombo(name, value))
                 {
                     foreach (string choice in choices)
-                        if (ImGui.Selectable(choice, choice == value)) graph.SetProperty(node.Id, key, choice);
-                    ImGui.EndCombo();
+                        if (UiAuto.Selectable(choice, choice == value)) graph.SetProperty(node.Id, key, choice);
+                    UiAuto.EndCombo();
                 }
                 break;
             case PropertyKind.Color:
                 var parsed = GraphValue.Parse(PinType.Color, value);
                 var color = new Vector4((float)parsed.X, (float)parsed.Y, (float)parsed.Z, (float)parsed.W);
-                if (ImGui.ColorEdit4(name, ref color, ImGuiColorEditFlags.Float))
+                if (UiAuto.ColorEdit4(name, ref color, ImGuiColorEditFlags.Float))
                     drafts[id] = string.Create(CultureInfo.InvariantCulture, $"{color.X},{color.Y},{color.Z},{color.W}");
                 if (ImGui.IsItemDeactivatedAfterEdit() && drafts.Remove(id, out var picked)) graph.SetProperty(node.Id, key, picked);
                 break;
             default:
                 string text = drafts.TryGetValue(id, out var draft) ? draft : value;
                 bool changed = kind == PropertyKind.Code
-                    ? ImGui.InputTextMultiline(name, ref text, 1 << 16, new Vector2(-1, 120))
-                    : ImGui.InputText(name, ref text, 512, kind is PropertyKind.Number or PropertyKind.Integer ? ImGuiInputTextFlags.CharsScientific : ImGuiInputTextFlags.None);
+                    ? UiAuto.InputTextMultiline(name, ref text, 1 << 16, new Vector2(-1, 120))
+                    : UiAuto.InputText(name, ref text, 512, kind is PropertyKind.Number or PropertyKind.Integer ? ImGuiInputTextFlags.CharsScientific : ImGuiInputTextFlags.None);
                 if (changed) drafts[id] = text;
                 if (ImGui.IsItemDeactivatedAfterEdit() && drafts.Remove(id, out var typed) && typed != value) graph.SetProperty(node.Id, key, typed);
                 break;

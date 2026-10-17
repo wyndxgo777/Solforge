@@ -244,7 +244,7 @@ public sealed partial class StudioForm
     {
         if (workspace.World is null || workspace.Project is not { } project) return;
         var groups = project.ObjectGroups;
-        if (!ImGui.CollapsingHeader($"Groups ({groups.Count})###object-groups", ImGuiTreeNodeFlags.DefaultOpen)) return;
+        if (!UiAuto.CollapsingHeader($"Groups ({groups.Count})###object-groups", ImGuiTreeNodeFlags.DefaultOpen)) return;
         var target = GroupCandidate(out string reason);
         bool grouped = target is not null && GroupOf(target.Key) is not null;
         ImGui.BeginDisabled(!workspace.CanEdit || target is null || grouped);
@@ -328,13 +328,13 @@ public sealed partial class StudioForm
         if (UiAuto.Button("Delete group")) RemoveGroup(group);
         ImGui.EndDisabled();
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Removes the group only; its objects and their edits stay.");
-        if (ImGui.CollapsingHeader("Transform group", ImGuiTreeNodeFlags.DefaultOpen))
+        if (UiAuto.CollapsingHeader("Transform group", ImGuiTreeNodeFlags.DefaultOpen))
         {
             ImGui.BeginDisabled(!workspace.CanEdit || present.Count == 0 && group.CollisionParts is not { Count: > 0 });
-            ImGui.TextDisabled("Move by"); ImGui.SetNextItemWidth(-1); ImGui.InputFloat3("##group-move", ref groupMove, "%.3f");
-            ImGui.TextDisabled("Rotate by"); ImGui.SetNextItemWidth(-1); ImGui.InputFloat3("##group-turn", ref groupTurn, "%.2f");
+            ImGui.TextDisabled("Move by"); ImGui.SetNextItemWidth(-1); UiAuto.InputFloat3("##group-move", ref groupMove, "%.3f");
+            ImGui.TextDisabled("Rotate by"); ImGui.SetNextItemWidth(-1); UiAuto.InputFloat3("##group-turn", ref groupTurn, "%.2f");
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("XYZ degrees, around the group's centre");
-            ImGui.TextDisabled("Scale by"); ImGui.SetNextItemWidth(-1); ImGui.InputFloat3("##group-scale", ref groupScale, "%.4f");
+            ImGui.TextDisabled("Scale by"); ImGui.SetNextItemWidth(-1); UiAuto.InputFloat3("##group-scale", ref groupScale, "%.4f");
             if (ImGui.IsItemHovered())
                 ImGui.SetTooltip("Equal values also resize objects that store a scale; unequal values only spread positions");
             if (UiAuto.Button("Apply to group", new(-1, 0)))
@@ -342,7 +342,7 @@ public sealed partial class StudioForm
                     : DegreesToQuaternion(groupTurn), groupScale));
             ImGui.EndDisabled();
         }
-        if (ImGui.CollapsingHeader("Objects", ImGuiTreeNodeFlags.DefaultOpen))
+        if (UiAuto.CollapsingHeader("Objects", ImGuiTreeNodeFlags.DefaultOpen))
         {
             foreach (var (member, source) in present)
             {
@@ -371,7 +371,7 @@ public sealed partial class StudioForm
             }
         }
         bool partsOpen = group.CollisionParts is { } parts
-            && ImGui.CollapsingHeader($"Collision parts ({parts.Count:N0})###group-parts", ImGuiTreeNodeFlags.DefaultOpen);
+            && UiAuto.CollapsingHeader($"Collision parts ({parts.Count:N0})###group-parts", ImGuiTreeNodeFlags.DefaultOpen);
         if (group.CollisionParts is not null) StudioUi.Tip("They move with the group");
         if (partsOpen)
         {

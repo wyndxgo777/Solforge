@@ -70,9 +70,9 @@ public sealed partial class CuiPage
             UiAuto.InputText("Name", ref widgetName, 80);
             ParentPicker("Parent", ref widgetParent);
             var position = new Vector2(widgetRectangle.X, widgetRectangle.Y);
-            if (ImGui.InputFloat2("Position", ref position)) { widgetRectangle.X = position.X; widgetRectangle.Y = position.Y; }
+            if (UiAuto.InputFloat2("Position", ref position)) { widgetRectangle.X = position.X; widgetRectangle.Y = position.Y; }
             var dimensions = new Vector2(widgetRectangle.Z, widgetRectangle.W);
-            if (ImGui.InputFloat2("Size", ref dimensions)) { widgetRectangle.Z = Math.Max(1, dimensions.X); widgetRectangle.W = Math.Max(1, dimensions.Y); }
+            if (UiAuto.InputFloat2("Size", ref dimensions)) { widgetRectangle.Z = Math.Max(1, dimensions.X); widgetRectangle.W = Math.Max(1, dimensions.Y); }
             ImGui.BeginDisabled(string.IsNullOrWhiteSpace(widgetName));
             if (UiAuto.Button("Create"))
             {

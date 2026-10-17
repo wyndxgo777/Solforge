@@ -118,7 +118,7 @@ public sealed partial class StudioForm
             int index = view.SelectedCollision;
             if (collisionRows is not { } cached || !ReferenceEquals(cached.Scene, scene) || cached.Placement != index)
                 collisionRows = cached = (scene, index, CollisionJoin.StaticRows(source, scene, placement));
-            if (ImGui.CollapsingHeader("Static instance", ImGuiTreeNodeFlags.DefaultOpen))
+            if (UiAuto.CollapsingHeader("Static instance", ImGuiTreeNodeFlags.DefaultOpen))
             {
                 if (cached.Rows.Count == 0) ImGui.TextDisabled("No placed row at this transform");
                 foreach (var row in cached.Rows)
@@ -145,7 +145,7 @@ public sealed partial class StudioForm
     {
         var shape = scene.Pieces[placement.Piece].Shape;
         if (shape.TriangleCount == 0) return;
-        if (!ImGui.CollapsingHeader("Parts", ImGuiTreeNodeFlags.DefaultOpen)) return;
+        if (!UiAuto.CollapsingHeader("Parts", ImGuiTreeNodeFlags.DefaultOpen)) return;
         var parts = CollisionParts.Of(shape);
         int picked = view.SelectedCollisionTriangle is >= 0 and var triangle && triangle < parts.PartOfTriangle.Length
             ? parts.PartOfTriangle[triangle] : -1;
@@ -180,10 +180,10 @@ public sealed partial class StudioForm
         }
         string? refusal = summary.Refusal;
         DrawAccentNote(refusal ?? "");
-        ImGui.InputFloat3("Move", ref partMove);
-        ImGui.InputFloat3("Rotate (deg)", ref partRotate);
+        UiAuto.InputFloat3("Move", ref partMove);
+        UiAuto.InputFloat3("Rotate (deg)", ref partRotate);
         UiAuto.InputFloat("Scale", ref partScale);
-        ImGui.InputFloat3("Pivot", ref partPivot);
+        UiAuto.InputFloat3("Pivot", ref partPivot);
         if (UiAuto.SmallButton("Pivot at parts center")) partPivot = (min + max) * .5f;
         ImGui.SameLine();
         if (UiAuto.SmallButton("Pivot at cursor")) partPivot = view.Camera.Pivot;
@@ -304,7 +304,7 @@ public sealed partial class StudioForm
     /** Counts, load time, content without triangles, and every load note. */
     private static void DrawCollisionReport(AssetViewport view)
     {
-        if (!ImGui.CollapsingHeader("Collision")) return;
+        if (!UiAuto.CollapsingHeader("Collision")) return;
         if (view.CollisionStatus.Length > 0)
         {
             ImGui.TextDisabled(FirstSentence(view.CollisionStatus));
@@ -340,7 +340,7 @@ public sealed partial class StudioForm
             .Select(reason => $"Initial state: {reason}")
             .Concat(scene.Undecoded.Select(pair => $"No triangles: {pair.Key} ({pair.Value:N0})"))
             .Concat(scene.Notes.Take(100)).ToList();
-        if (notes.Count > 0 && ImGui.TreeNode($"Notes ({notes.Count})###collision-notes"))
+        if (notes.Count > 0 && UiAuto.TreeNode($"Notes ({notes.Count})###collision-notes"))
         {
             StudioUi.Facts("collision-notes", notes);
             ImGui.TreePop();

@@ -33,7 +33,7 @@ public sealed partial class AudioPage
             }
             plottedTimeline = plan; envelopePlots = plots;
         }
-        if (envelopePlots.Count == 0 || !ImGui.TreeNode($"Clip envelopes ({envelopePlots.Count})###clip-envelopes")) return;
+        if (envelopePlots.Count == 0 || !UiAuto.TreeNode($"Clip envelopes ({envelopePlots.Count})###clip-envelopes")) return;
         ImGui.BeginChild("audio-envelopes", new(0, 230), ImGuiChildFlags.Borders);
         int index = 0;
         foreach (var plot in envelopePlots)

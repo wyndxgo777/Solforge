@@ -314,7 +314,7 @@ public sealed class PerkBehaviorEditor
             && (primitiveSearch.Length == 0 || value.Name.Contains(primitiveSearch, StringComparison.OrdinalIgnoreCase)
                 || value.Description.Contains(primitiveSearch, StringComparison.OrdinalIgnoreCase))))
             if (KindRow(primitive)) { Try(() => AddNode(phase, primitive.Key)); ImGui.CloseCurrentPopup(); }
-        if (Kind(phase) == PerkBehaviorNodeKind.Condition && ImGui.TreeNode("While a state holds"))
+        if (Kind(phase) == PerkBehaviorNodeKind.Condition && UiAuto.TreeNode("While a state holds"))
         {
             foreach (var primitive in NativePerkBehavior.StateGatedPrimitives.Where(value => primitiveSearch.Length == 0
                 || value.Name.Contains(primitiveSearch, StringComparison.OrdinalIgnoreCase)))
@@ -408,7 +408,7 @@ public sealed class PerkBehaviorEditor
             ImGui.EndDisabled(); ImGui.PopID();
         }
         foreach (var filter in node.LabelFilters) DrawLabelFilter(node, filter, editable);
-        if (ImGui.CollapsingHeader("Native details"))
+        if (UiAuto.CollapsingHeader("Native details"))
         {
             ImGui.TextUnformatted($"Class: 0x{node.NativeClass:X8}");
             ImGui.TextUnformatted("Operation: " + node.Primitive);
@@ -548,7 +548,7 @@ public sealed class PerkBehaviorEditor
         foreach (string problem in problems) ImGui.TextWrapped(problem);
         ImGui.PopStyleColor();
         var notes = graph.Diagnostics.ToArray();
-        if (notes.Length > 0 && ImGui.TreeNode($"Notes ({notes.Length})###perk-notes"))
+        if (notes.Length > 0 && UiAuto.TreeNode($"Notes ({notes.Length})###perk-notes"))
         {
             StudioUi.Facts("perk-notes", notes);
             ImGui.TreePop();

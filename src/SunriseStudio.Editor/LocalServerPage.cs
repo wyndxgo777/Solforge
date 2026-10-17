@@ -66,12 +66,12 @@ public sealed class LocalServerPage
         DrawHeader();
         if (ImGui.BeginTabBar("local-server-tabs"))
         {
-            if (ImGui.BeginTabItem("Status")) { DrawStatus(); ImGui.EndTabItem(); }
-            if (ImGui.BeginTabItem("Log")) { DrawLog(); ImGui.EndTabItem(); }
-            if (ImGui.BeginTabItem("Deploy")) { DrawDeploy(projectRoot, lastBuild); ImGui.EndTabItem(); }
-            if (ImGui.BeginTabItem("Config")) { DrawConfig(); ImGui.EndTabItem(); }
-            if (ImGui.BeginTabItem("Actions")) { DrawActions(); ImGui.EndTabItem(); }
-            if (ImGui.BeginTabItem("Subsystems")) { DrawSubsystems(); ImGui.EndTabItem(); }
+            if (UiAuto.BeginTabItem("Status")) { DrawStatus(); UiAuto.EndTabItem(); }
+            if (UiAuto.BeginTabItem("Log")) { DrawLog(); UiAuto.EndTabItem(); }
+            if (UiAuto.BeginTabItem("Deploy")) { DrawDeploy(projectRoot, lastBuild); UiAuto.EndTabItem(); }
+            if (UiAuto.BeginTabItem("Config")) { DrawConfig(); UiAuto.EndTabItem(); }
+            if (UiAuto.BeginTabItem("Actions")) { DrawActions(); UiAuto.EndTabItem(); }
+            if (UiAuto.BeginTabItem("Subsystems")) { DrawSubsystems(); UiAuto.EndTabItem(); }
             ImGui.EndTabBar();
         }
     }
@@ -155,16 +155,16 @@ public sealed class LocalServerPage
         ImGui.SameLine();
         ImGui.TextDisabled($"(local WSL: {server.Options.RunDirectory})");
         ImGui.BeginDisabled(busy.Length > 0);
-        if (ImGui.Button(running ? "Running" : "Start")) { if (!running) Start("Starting", () => server.StartAsync()); }
+        if (UiAuto.Button(running ? "Running" : "Start")) { if (!running) Start("Starting", () => server.StartAsync()); }
         ImGui.SameLine();
-        if (ImGui.Button("Stop")) Start("Stopping", () => server.StopAsync());
+        if (UiAuto.Button("Stop")) Start("Stopping", () => server.StopAsync());
         ImGui.SameLine();
-        if (ImGui.Button("Restart")) Start("Restarting", () => server.RestartAsync());
+        if (UiAuto.Button("Restart")) Start("Restarting", () => server.RestartAsync());
         ImGui.SameLine();
-        if (ImGui.Button("Selftest")) Start("Selftest running", () => server.SelftestAsync());
+        if (UiAuto.Button("Selftest")) Start("Selftest running", () => server.SelftestAsync());
         ImGui.EndDisabled();
         ImGui.SameLine();
-        if (ImGui.Button("Refresh")) RefreshStatus();
+        if (UiAuto.Button("Refresh")) RefreshStatus();
         if (busy.Length > 0) { ImGui.SameLine(); Colored(Warn, busy + "..."); }
         if (lastMessage.Length > 0)
         {
@@ -194,10 +194,10 @@ public sealed class LocalServerPage
         {
             Row("Ghost check", $"{census.Ghosts.Count} ghost member(s): events will not spawn", false);
             foreach (var ghost in census.Ghosts) Bullet($"{ghost.Member} x{ghost.Count} in session {ghost.Session}");
-            if (ImGui.Button("Restart to clear ghosts")) Start("Restarting", () => server.RestartAsync());
+            if (UiAuto.Button("Restart to clear ghosts")) Start("Restarting", () => server.RestartAsync());
         }
         if (census.SplitMembers.Count > 0) ImGui.TextDisabled("In several sessions: " + string.Join(", ", census.SplitMembers));
-        if (current.Sockets.Count > 0 && ImGui.TreeNode("All sockets"))
+        if (current.Sockets.Count > 0 && UiAuto.TreeNode("All sockets"))
         {
             foreach (var socket in current.Sockets) Bullet($"{socket.Protocol} {socket.Address}:{socket.Port}");
             ImGui.TreePop();
@@ -233,17 +233,17 @@ public sealed class LocalServerPage
     private void DrawLog()
     {
         ImGui.SetNextItemWidth(320);
-        ImGui.InputTextWithHint("##log-filter", "filter: terms, -exclude, re:regex", ref logFilter, 256);
+        UiAuto.InputTextWithHint("##log-filter", "filter: terms, -exclude, re:regex", ref logFilter, 256);
         ImGui.SameLine();
-        ImGui.Checkbox("Follow", ref followLog);
+        UiAuto.Checkbox("Follow", ref followLog);
         ImGui.SameLine();
-        ImGui.Checkbox("Pause", ref pauseLog);
+        UiAuto.Checkbox("Pause", ref pauseLog);
         ImGui.SameLine();
-        if (ImGui.Button("Clear")) lock (sync) log.Clear();
+        if (UiAuto.Button("Clear")) lock (sync) log.Clear();
         ImGui.SameLine();
-        if (ImGui.Button("Errors")) logFilter = "re:error|fail|warn|crash";
+        if (UiAuto.Button("Errors")) logFilter = "re:error|fail|warn|crash";
         ImGui.SameLine();
-        if (ImGui.Button("Census")) logFilter = "stage=census";
+        if (UiAuto.Button("Census")) logFilter = "stage=census";
         string[] rows;
         var match = LocalServerParse.Filter(logFilter);
         lock (sync) rows = log.Where(match).ToArray();
@@ -269,7 +269,7 @@ public sealed class LocalServerPage
         Wrapped("Copies the project's scripts/ and sdk/, plus activity_sdk.pack and build_data.bin from the newest build " +
             $"(or the project root), into {server.Options.SunriseDirectory}. Overwritten files are backed up to {server.Options.BackupDirectory} first.");
         bool rescan = planProject != projectRoot;
-        if (ImGui.Button("Re-scan project")) rescan = true;
+        if (UiAuto.Button("Re-scan project")) rescan = true;
         if (rescan)
         {
             planProject = projectRoot;
@@ -280,10 +280,10 @@ public sealed class LocalServerPage
         ImGui.TextUnformatted($"{plan.Files.Count} file(s) from {plan.ProjectRoot}" + (plan.BuildDirectory is null ? "" : $" (build {Path.GetFileName(plan.BuildDirectory)})"));
         foreach (var group in plan.Files.GroupBy(file => file.Target.Split('/')[0])) Bullet($"{group.Key}: {group.Count()}");
         foreach (string note in plan.Notes) ImGui.TextDisabled(note);
-        ImGui.Checkbox("Restart the server afterwards", ref restartAfterDeploy);
+        UiAuto.Checkbox("Restart the server afterwards", ref restartAfterDeploy);
         ImGui.BeginDisabled(busy.Length > 0 || plan.Files.Count == 0);
         var current = plan;
-        if (ImGui.Button("Deploy to local server")) Start("Deploying", async () =>
+        if (UiAuto.Button("Deploy to local server")) Start("Deploying", async () =>
         {
             var result = await server.DeployAsync(current, restartAfterDeploy).ConfigureAwait(false);
             LoadBackups();
@@ -293,7 +293,7 @@ public sealed class LocalServerPage
         ImGui.Separator();
         ImGui.TextUnformatted("Backups");
         ImGui.SameLine();
-        if (ImGui.SmallButton("Refresh##backups")) LoadBackups();
+        if (UiAuto.SmallButton("Refresh##backups")) LoadBackups();
         foreach (var entry in backups.Take(20))
         {
             ImGui.TextUnformatted($"{entry.Id}  {entry.Files} file(s)  {(entry.RolledBack ? "rolled back" : "active")}");
@@ -303,7 +303,7 @@ public sealed class LocalServerPage
                 ImGui.SameLine();
                 ImGui.BeginDisabled(busy.Length > 0);
                 string id = entry.Id;
-                if (ImGui.SmallButton("Roll back##" + id)) Start("Rolling back", async () =>
+                if (UiAuto.SmallButton("Roll back##" + id)) Start("Rolling back", async () =>
                 {
                     var result = await server.RollbackAsync(id, restartAfterDeploy).ConfigureAwait(false);
                     LoadBackups();
@@ -319,7 +319,7 @@ public sealed class LocalServerPage
     /** Draws the config section. */
     private void DrawConfig()
     {
-        if (ImGui.Button("List files")) _ = Task.Run(async () =>
+        if (UiAuto.Button("List files")) _ = Task.Run(async () =>
         {
             try { configFiles = await server.ConfigFilesAsync().ConfigureAwait(false); }
             catch (Exception error) when (error is IOException or InvalidOperationException) { Report(false, error.Message, ""); }
@@ -329,7 +329,7 @@ public sealed class LocalServerPage
         {
             ImGui.SameLine();
             string name = files[i];
-            if (ImGui.RadioButton(name.Replace("config/", "", StringComparison.Ordinal), selectedConfig == i))
+            if (UiAuto.RadioButton(name.Replace("config/", "", StringComparison.Ordinal), selectedConfig == i))
             {
                 selectedConfig = i;
                 _ = Task.Run(async () =>
@@ -345,10 +345,10 @@ public sealed class LocalServerPage
         ImGui.SameLine();
         ImGui.BeginDisabled(busy.Length > 0 || problem is not null);
         string path = configLoaded, text = configText;
-        if (ImGui.Button("Save (backs up the old file)")) Start("Saving " + path, () => server.WriteConfigAsync(path, text));
+        if (UiAuto.Button("Save (backs up the old file)")) Start("Saving " + path, () => server.WriteConfigAsync(path, text));
         ImGui.EndDisabled();
         if (problem is not null) Colored(Bad, problem);
-        ImGui.InputTextMultiline("##config-text", ref configText, 1 << 20, new Vector2(-1, -1));
+        UiAuto.InputTextMultiline("##config-text", ref configText, 1 << 20, new Vector2(-1, -1));
     }
 
     // --- actions ----------------------------------------------------------------------------------------
@@ -359,28 +359,28 @@ public sealed class LocalServerPage
         Wrapped("Runs server commands as the operator console through the local admin API (127.0.0.1:" +
             $"{server.Options.AdminPort}). 'help' lists every command.");
         ImGui.SetNextItemWidth(420);
-        bool enter = ImGui.InputTextWithHint("##command", "who | give <player> glimmer 50000 | activity find <text>", ref commandLine, 512,
+        bool enter = UiAuto.InputTextWithHint("##command", "who | give <player> glimmer 50000 | activity find <text>", ref commandLine, 512,
             ImGuiInputTextFlags.EnterReturnsTrue);
         ImGui.SameLine();
         ImGui.BeginDisabled(busy.Length > 0 || commandLine.Trim().Length == 0);
         string line = commandLine;
-        if (ImGui.Button("Run") || enter) Start("/" + line, () => server.CommandAsync(line));
+        if (UiAuto.Button("Run") || enter) Start("/" + line, () => server.CommandAsync(line));
         ImGui.EndDisabled();
         ImGui.Separator();
-        ImGui.SetNextItemWidth(200); ImGui.InputTextWithHint("##qa-player", "player", ref player, 128);
-        ImGui.SameLine(); ImGui.SetNextItemWidth(220); ImGui.InputTextWithHint("##qa-item", "item name or hash", ref item, 256);
-        ImGui.SameLine(); ImGui.SetNextItemWidth(110); ImGui.InputInt("amount", ref amount);
-        ImGui.SetNextItemWidth(420); ImGui.InputTextWithHint("##qa-target", "activity (name, index, find <text>) or place", ref target, 256);
+        ImGui.SetNextItemWidth(200); UiAuto.InputTextWithHint("##qa-player", "player", ref player, 128);
+        ImGui.SameLine(); ImGui.SetNextItemWidth(220); UiAuto.InputTextWithHint("##qa-item", "item name or hash", ref item, 256);
+        ImGui.SameLine(); ImGui.SetNextItemWidth(110); UiAuto.InputInt("amount", ref amount);
+        ImGui.SetNextItemWidth(420); UiAuto.InputTextWithHint("##qa-target", "activity (name, index, find <text>) or place", ref target, 256);
         ImGui.BeginDisabled(busy.Length > 0);
-        if (ImGui.Button("Give item")) Quick("give");
+        if (UiAuto.Button("Give item")) Quick("give");
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(150); ImGui.InputTextWithHint("##qa-character", "class or slot 1-3", ref character, 16);
+        ImGui.SetNextItemWidth(150); UiAuto.InputTextWithHint("##qa-character", "class or slot 1-3", ref character, 16);
         ImGui.SameLine();
-        if (ImGui.Button("Reset character (all gear, level, progress)")) Quick("reset_character");
+        if (UiAuto.Button("Reset character (all gear, level, progress)")) Quick("reset_character");
         ImGui.SameLine();
-        if (ImGui.Button("Set next activity")) Quick("set_activity");
+        if (UiAuto.Button("Set next activity")) Quick("set_activity");
         ImGui.SameLine();
-        if (ImGui.Button("Go to place")) Quick("goto");
+        if (UiAuto.Button("Go to place")) Quick("goto");
         ImGui.EndDisabled();
         if (lastOutput.Length > 0)
         {

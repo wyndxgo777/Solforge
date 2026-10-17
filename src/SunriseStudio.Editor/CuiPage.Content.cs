@@ -166,7 +166,7 @@ public sealed partial class CuiPage
             }
             ImGui.PopID();
         }
-        if (contentTint is not null) ImGui.ColorEdit4("Text tint", ref editedTint, ImGuiColorEditFlags.Float | ImGuiColorEditFlags.AlphaBar);
+        if (contentTint is not null) UiAuto.ColorEdit4("Text tint", ref editedTint, ImGuiColorEditFlags.Float | ImGuiColorEditFlags.AlphaBar);
         if (content is { BitmapTag: not 0 })
         {
             if (!contentValues.ContainsKey(CuiVisualPropertyKind.Group)) ImGui.TextDisabled("Group 0 (default)");
@@ -238,7 +238,7 @@ public sealed partial class CuiPage
         ImGui.PushID("new-cui-property");
         ImGui.SetNextItemWidth(Math.Max(50, ImGui.GetContentRegionAvail().X - 75));
         if (property.Kind == CuiVisualPropertyKind.Tint)
-            ImGui.ColorEdit4("Value", ref overrideTint, ImGuiColorEditFlags.Float | ImGuiColorEditFlags.AlphaBar);
+            UiAuto.ColorEdit4("Value", ref overrideTint, ImGuiColorEditFlags.Float | ImGuiColorEditFlags.AlphaBar);
         else if (property.Kind == CuiVisualPropertyKind.AutoWidth)
         {
             bool enabled = overrideValue != 0;

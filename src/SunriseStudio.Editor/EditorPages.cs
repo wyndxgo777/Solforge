@@ -236,7 +236,7 @@ public sealed partial class ScenePage
     {
         if (!ReferenceEquals(channelScene, scene)) { channelEdits.Clear(); channelScene = scene; }
         ImGui.BeginDisabled(context.Workspace.IsBusy);
-        if (!ImGui.CollapsingHeader($"Channels ({scene.ObjectChannels.Count})###channels"))
+        if (!UiAuto.CollapsingHeader($"Channels ({scene.ObjectChannels.Count})###channels"))
         {
             StudioUi.Tip(ChannelHelp);
             ImGui.EndDisabled();
@@ -320,7 +320,7 @@ public sealed class PropertiesPage : IStudioPage
         }
         ImGui.BeginChild("property-tree");
         var notes = document.Inspection.Diagnostics;
-        if (notes.Count > 0 && ImGui.TreeNode($"Notes ({notes.Count})###notes"))
+        if (notes.Count > 0 && UiAuto.TreeNode($"Notes ({notes.Count})###notes"))
         {
             StudioUi.Facts("inspection-notes", notes);
             ImGui.TreePop();
@@ -359,7 +359,7 @@ public sealed class PropertiesPage : IStudioPage
     {
         if (matching is not null && !matching.Contains(node)) return;
         var flags = depth == 0 ? ImGuiTreeNodeFlags.DefaultOpen : ImGuiTreeNodeFlags.None;
-        if (!ImGui.TreeNodeEx(node.Name, flags)) return;
+        if (!UiAuto.TreeNodeEx(node.Name, flags)) return;
         if (node.Properties.Count > 0 && ImGui.BeginTable("properties", 2,
             ImGuiTableFlags.RowBg | ImGuiTableFlags.Resizable | ImGuiTableFlags.SizingStretchProp))
         {

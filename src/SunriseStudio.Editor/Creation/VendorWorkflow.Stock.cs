@@ -74,7 +74,7 @@ public sealed partial class VendorWorkflow
             var row = sales[index];
             if (saleSearch.Length != 0 && !row.Label.Contains(saleSearch, StringComparison.OrdinalIgnoreCase)) continue;
             ImGui.PushID(index);
-            bool expanded = ImGui.CollapsingHeader($"{row.Label}##sale");
+            bool expanded = UiAuto.CollapsingHeader($"{row.Label}##sale");
             ImGui.SameLine();
             if (UiAuto.SmallButton("Remove")) { sales.RemoveAt(index); CreationWidgets.Reset(); ImGui.PopID(); break; }
             if (expanded)

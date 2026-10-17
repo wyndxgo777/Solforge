@@ -159,7 +159,7 @@ public sealed partial class StudioForm
             if (UiAuto.SmallButton(name + "##parent") && parent is not null) livePage.SelectRow(parent);
             ImGui.EndDisabled();
         }
-        if (answer.Children.Count > 0 && ImGui.TreeNode(
+        if (answer.Children.Count > 0 && UiAuto.TreeNode(
             $"Attached objects ({answer.Children.Count}{(answer.ChildrenTruncated ? "+" : "")})###live-children"))
         {
             foreach (var child in answer.Children)
@@ -172,7 +172,7 @@ public sealed partial class StudioForm
             }
             ImGui.TreePop();
         }
-        if (answer.Models.Count > 0 && ImGui.TreeNode($"Drawn models ({answer.Models.Count})###live-drawn"))
+        if (answer.Models.Count > 0 && UiAuto.TreeNode($"Drawn models ({answer.Models.Count})###live-drawn"))
         {
             foreach (uint model in answer.Models)
                 if (UiAuto.Selectable($"{workspace.DisplayName(model)}##drawn-{model}")) OpenObjectAsset(model);
@@ -183,7 +183,7 @@ public sealed partial class StudioForm
             ImGui.TextDisabled("No drawn models");
             StudioUi.Tip(answer.PoseTime == 0 ? "No animation capture. Turn on Sync > Animation." : "None in the last animation capture.");
         }
-        if (answer.Datum.Length > 0 && ImGui.TreeNode($"Raw datum ({answer.Datum.Length} bytes)###live-datum"))
+        if (answer.Datum.Length > 0 && UiAuto.TreeNode($"Raw datum ({answer.Datum.Length} bytes)###live-datum"))
         {
             for (int at = 0; at < answer.Datum.Length; at += 16)
                 ImGui.TextUnformatted($"+{at:X3}  {Convert.ToHexString(answer.Datum, at, Math.Min(16, answer.Datum.Length - at))}");

@@ -81,7 +81,7 @@ public sealed partial class MissionGraphPage
         }
         if (node.FallbackReason is { } reason) ImGui.TextWrapped(reason);
         bool showCode = node.Kind is MissionScriptNodeKind.Code or MissionScriptNodeKind.Module or MissionScriptNodeKind.Setting;
-        if (!node.Structural && (showCode || ImGui.CollapsingHeader("Advanced Lua")))
+        if (!node.Structural && (showCode || UiAuto.CollapsingHeader("Advanced Lua")))
         {
             ImGui.SeparatorText("Code");
             ImGui.BeginDisabled(!editable);

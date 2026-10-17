@@ -96,7 +96,7 @@ public sealed partial class AudioPage : IStudioPage, IDisposable
                 : "Preview only; the game may sound different.");
         }
         var notes = session.Document.Diagnostics;
-        if (notes.Count > 0 && ImGui.TreeNode($"Notes ({notes.Count})###audio-notes"))
+        if (notes.Count > 0 && UiAuto.TreeNode($"Notes ({notes.Count})###audio-notes"))
         {
             StudioUi.Facts("audio-notes", notes);
             ImGui.TreePop();
@@ -130,13 +130,13 @@ public sealed partial class AudioPage : IStudioPage, IDisposable
         }
         ImGui.EndChild();
         DrawPlayback(context.Workspace);
-        if ((uint)selectedComposition < (uint)compositions.Count && ImGui.CollapsingHeader("Routing"))
+        if ((uint)selectedComposition < (uint)compositions.Count && UiAuto.CollapsingHeader("Routing"))
         {
             ImGui.BeginChild("audio-routing", new(0, 160), ImGuiChildFlags.Borders);
             ImGui.TextUnformatted(compositions[selectedComposition].Routing);
             ImGui.EndChild();
         }
-        if (session.CompositionLog.Length > 0 && ImGui.CollapsingHeader("Composer notes"))
+        if (session.CompositionLog.Length > 0 && UiAuto.CollapsingHeader("Composer notes"))
         {
             ImGui.BeginChild("audio-composer-notes", new(0, 160), ImGuiChildFlags.Borders);
             ImGui.TextUnformatted(session.CompositionLog);
@@ -194,21 +194,30 @@ public sealed partial class AudioPage : IStudioPage, IDisposable
         if (!ImGui.BeginPopup("audio-export-menu")) return;
         if (UiAuto.MenuItem("WAV...", "", false, !IsBusy && loadedWave.Length > 0)) Try(() =>
         {
-            using var dialog = new SaveFileDialog { Filter = "Wave audio|*.wav", FileName = "audio.wav", AddExtension = true };
-            if (dialog.ShowDialog() == DialogResult.OK) AudioSession.ExportWave(loadedWave, dialog.FileName, workspace.Catalog!.GameRoot);
+            if (AiFileDialog.Pick(() =>
+                {
+                    using var dialog = new SaveFileDialog { Filter = "Wave audio|*.wav", FileName = "audio.wav", AddExtension = true };
+                    return dialog.ShowDialog() == DialogResult.OK ? dialog.FileName : null;
+                }) is { } wave) AudioSession.ExportWave(loadedWave, wave, workspace.Catalog!.GameRoot);
         });
         if (UiAuto.MenuItem("WEM...", "", false, !IsBusy && selectedMedia >= 0)) Try(() =>
         {
             var item = session!.Document.Media[selectedMedia];
-            using var dialog = new SaveFileDialog { Filter = "Wwise media|*.wem", FileName = item.Id + ".wem", AddExtension = true };
-            if (dialog.ShowDialog() == DialogResult.OK) session!.ExportMedia(item.Id, dialog.FileName, workspace.Catalog!.GameRoot);
+            if (AiFileDialog.Pick(() =>
+                {
+                    using var dialog = new SaveFileDialog { Filter = "Wwise media|*.wem", FileName = item.Id + ".wem", AddExtension = true };
+                    return dialog.ShowDialog() == DialogResult.OK ? dialog.FileName : null;
+                }) is { } media) session!.ExportMedia(item.Id, media, workspace.Catalog!.GameRoot);
         });
         if (UiAuto.MenuItem("Composition WAVs and routing...", "", false, !IsBusy && session!.Compositions.Count > 0)) Try(() =>
         {
-            using var dialog = new FolderBrowserDialog { Description = "Export one WAV per composition, routing.txt and the media",
-                UseDescriptionForTitle = true };
-            if (dialog.ShowDialog() != DialogResult.OK) return;
-            var active = session!; string folder = dialog.SelectedPath, gameRoot = workspace.Catalog!.GameRoot;
+            if (AiFileDialog.Pick(() =>
+                {
+                    using var dialog = new FolderBrowserDialog { Description = "Export one WAV per composition, routing.txt and the media",
+                        UseDescriptionForTitle = true };
+                    return dialog.ShowDialog() == DialogResult.OK ? dialog.SelectedPath : null;
+                }, folder: true) is not { } folder) return;
+            var active = session!; string gameRoot = workspace.Catalog!.GameRoot;
             Begin("Exporting compositions", async token => { await active.ExportCompositionSet(folder, gameRoot, token); return new(); });
         });
         ImGui.EndPopup();

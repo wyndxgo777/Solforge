@@ -22,7 +22,7 @@ public sealed partial class AudioPage
     /** Authored choices regenerate a distinct composition instead of changing the loaded bank. */
     private void DrawCompositionOptions()
     {
-        if (session?.Document.Bank is null || !ImGui.CollapsingHeader("Composition controls")) return;
+        if (session?.Document.Bank is null || !UiAuto.CollapsingHeader("Composition controls")) return;
         var active = session;
         if (active.Analysis is not { } analysis)
         {
@@ -53,7 +53,7 @@ public sealed partial class AudioPage
             }
             ImGui.PopID();
         }
-        if (analysis.Parameters.Count > 0 && ImGui.TreeNode($"Game parameters ({analysis.Parameters.Count})###game-parameters"))
+        if (analysis.Parameters.Count > 0 && UiAuto.TreeNode($"Game parameters ({analysis.Parameters.Count})###game-parameters"))
         {
             ImGui.BeginChild("audio-parameters", new(0, 140), ImGuiChildFlags.Borders);
             foreach (var parameter in analysis.Parameters)
@@ -113,7 +113,7 @@ public sealed partial class AudioPage
             ImGui.TextDisabled($"Next play {active.PlaylistPlayCount(selectedPlaylist) + 1}");
             ImGui.SameLine(); ImGui.TextDisabled("Dry mix");
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("Dry mix: no effects.");
-            if (active.Timeline is { } plan && ImGui.TreeNode($"Timeline ({plan.Segments.Count} segments)###timeline"))
+            if (active.Timeline is { } plan && UiAuto.TreeNode($"Timeline ({plan.Segments.Count} segments)###timeline"))
             {
                 ImGui.BeginChild("audio-timeline", new(0, 140), ImGuiChildFlags.Borders);
                 foreach (var segment in plan.Segments)
@@ -121,7 +121,7 @@ public sealed partial class AudioPage
                 if (active.TimelineRender is { } render)
                     ImGui.TextDisabled($"Overlap {render.OverlapFrames / 48000.0:F2} s / Clipped {render.ClippedSamples:N0} samples");
                 ImGui.EndChild();
-                if (plan.Notices.Count > 0 && ImGui.TreeNode($"Notes ({plan.Notices.Count})###timeline-notes"))
+                if (plan.Notices.Count > 0 && UiAuto.TreeNode($"Notes ({plan.Notices.Count})###timeline-notes"))
                 {
                     StudioUi.Facts("timeline-notes", plan.Notices);
                     ImGui.TreePop();

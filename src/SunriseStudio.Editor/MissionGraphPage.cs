@@ -311,14 +311,17 @@ public sealed partial class MissionGraphPage
 
     private void ExportLua()
     {
-        using var dialog = new FolderBrowserDialog { Description = "Export mission script for review", UseDescriptionForTitle = true };
-        if (dialog.ShowDialog() != DialogResult.OK) return;
+        if (AiFileDialog.Pick(() =>
+            {
+                using var picker = new FolderBrowserDialog { Description = "Export mission script for review", UseDescriptionForTitle = true };
+                return picker.ShowDialog() == DialogResult.OK ? picker.SelectedPath : null;
+            }, folder: true) is not { } chosen) return;
         Try(() =>
         {
             RequireNoLuaDrafts();
             ApplyDraft();
             string game = catalog?.GameRoot ?? throw new InvalidOperationException("Installed scripts did not load.");
-            string path = MissionProject.Export(script!.RelativePath, graph!.Source, dialog.SelectedPath, game);
+            string path = MissionProject.Export(script!.RelativePath, graph!.Source, chosen, game);
             Note("Exported " + Path.GetFileName(path));
         });
     }
