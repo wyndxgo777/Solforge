@@ -76,12 +76,15 @@ public static class RetailMissionPort
             foreach (uint parent in phase.BubbleParents)
             {
                 var bubble = new JsonObject { ["bubble_parent"] = RetailTag.Hex(parent) };
-                if (readBubbles && RetailMap.ReadBubble(source, parent, out string? why, maxNodes: 20_000) is { } map)
+                if (readBubbles)
                 {
-                    bubble["nodes"] = map.Nodes.Count;
-                    bubble["components"] = new JsonObject(map.KindCounts.Select(pair => KeyValuePair.Create(pair.Key, (JsonNode?)pair.Value)));
+                    if (RetailMap.ReadBubble(source, parent, out string? why, maxNodes: 20_000) is { } map)
+                    {
+                        bubble["nodes"] = map.Nodes.Count;
+                        bubble["components"] = new JsonObject(map.KindCounts.Select(pair => KeyValuePair.Create(pair.Key, (JsonNode?)pair.Value)));
+                    }
+                    else bubble["problem"] = why;
                 }
-                else if (readBubbles) bubble["problem"] = why;
                 bubbles.Add(bubble);
             }
             string objectiveId = $"phase_{phase.Index + 1}";

@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Retail (build 245048) reader checks: synthetic tags built to the verified layouts, no dump needed; with
-       --retail <extraction root> the same decoders also run over the real dump (read-only). -->
+       the retail switch and an extraction root the same decoders also run over the real dump (read-only). -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net9.0</TargetFramework>
