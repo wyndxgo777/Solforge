@@ -131,6 +131,84 @@ public static class DeployPlanner
             """.ReplaceLineEndings("\n") + "\n";
     }
 
+    /**
+     * Compile-checks each deployed Lua file with the package.path the mission tests use (scripts/?.lua, sdk/?.lua).
+     * loadfile only compiles, so nothing runs and no server is touched. require("name") calls that resolve nowhere come
+     * back as warnings. sol-server has no check mode, so this uses lua5.4 (or luac -p) in WSL.
+     */
+    public static string CheckScriptsScript(IReadOnlyList<string> files, LocalServerOptions options)
+    {
+        var list = new StringBuilder();
+        foreach (string file in files)
+        {
+            if (!SafeRelative.IsMatch(file) || file.Split('/').Contains("..")) throw new InvalidDataException($"'{file}' is not a safe script path.");
+            list.Append(file).Append('\n');
+        }
+        return $$"""
+            cd {{Shell.Quote(options.SunriseDirectory)}}
+            LUA=""; for c in lua5.4 lua54 lua; do if command -v "$c" >/dev/null 2>&1; then LUA="$c"; break; fi; done
+            LUAC=""; for c in luac5.4 luac54 luac; do if command -v "$c" >/dev/null 2>&1; then LUAC="$c"; break; fi; done
+            if [ -n "$LUA" ]; then
+              echo "LUATOOL=$LUA"
+              P=$(mktemp)
+              cat > "$P" <<'SOLFORGE_LUA'
+            package.path = "scripts/?.lua;sdk/?.lua;" .. package.path
+            local ok, bad = 0, 0
+            local function flat(s) return (tostring(s):gsub("[\r\n\t]+", " ")) end
+            for f in io.lines() do
+              local fn, err = loadfile(f)
+              if fn then
+                ok = ok + 1
+                local h = io.open(f, "rb")
+                local src = h and h:read("a") or ""
+                if h then h:close() end
+                for m in src:gmatch("require%s*%(?%s*[\"']([%w_%.%-]+)[\"']") do
+                  if not package.loaded[m] and not package.searchpath(m, package.path) then print("LUAWARN\t" .. f .. "\trequire '" .. m .. "' not found in scripts/ or sdk/") end
+                end
+              else bad = bad + 1; print("LUAERR\t" .. f .. "\t" .. flat(err)) end
+            end
+            print("LUASUMMARY\t" .. ok .. "\t" .. bad)
+            SOLFORGE_LUA
+              "$LUA" "$P" <<'SOLFORGE_FILES'
+            {{list}}SOLFORGE_FILES
+              rm -f "$P"
+            elif [ -n "$LUAC" ]; then
+              echo "LUATOOL=$LUAC"
+              ok=0; bad=0
+              while IFS= read -r f; do
+                if msg=$("$LUAC" -p -- "$f" 2>&1); then ok=$((ok+1)); else bad=$((bad+1)); printf 'LUAERR\t%s\t%s\n' "$f" "$(printf '%s' "$msg" | tr '\n\t' '  ')"; fi
+              done <<'SOLFORGE_FILES'
+            {{list}}SOLFORGE_FILES
+              printf 'LUASUMMARY\t%s\t%s\n' "$ok" "$bad"
+            else
+              echo "LUAUNAVAILABLE"
+            fi
+            """.ReplaceLineEndings("\n") + "\n";
+    }
+
+    /** Reads CheckScriptsScript output; fallback is shown when the script printed nothing usable. */
+    public static ScriptCheck ParseScriptCheck(string output, string fallback)
+    {
+        string tool = "";
+        int loaded = 0;
+        bool summary = false;
+        var errors = new List<string>();
+        var warnings = new List<string>();
+        foreach (string raw in output.Split('\n'))
+        {
+            string line = raw.TrimEnd('\r');
+            var cells = line.Split('\t');
+            if (line.StartsWith("LUATOOL=", StringComparison.Ordinal)) tool = line[8..];
+            else if (line == "LUAUNAVAILABLE") return ScriptCheck.Unavailable("no lua5.4 or luac in WSL");
+            else if (cells[0] == "LUAERR" && cells.Length >= 3) errors.Add($"{cells[1]}: {cells[2]}");
+            else if (cells[0] == "LUAWARN" && cells.Length >= 3) warnings.Add($"{cells[1]}: {cells[2]}");
+            else if (cells[0] == "LUASUMMARY" && cells.Length >= 3 && int.TryParse(cells[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int n))
+            { loaded = n; summary = true; }
+        }
+        return summary ? new ScriptCheck(true, tool, loaded, errors, warnings)
+            : ScriptCheck.Unavailable("script check gave no result: " + LocalServerParse.Clip(fallback, 200));
+    }
+
     /** Restores the tar over Sunrise and deletes files the deploy created (relative paths only, never with ..). */
     public static string RollbackScript(LocalServerOptions options, string backupId)
     {
@@ -167,3 +245,26 @@ public static class DeployPlanner
 
 /** One backup: id, file count, whether it has been rolled back and the project it came from. */
 public sealed record BackupEntry(string Id, int Files, bool RolledBack, string Project);
+
+/** Result of loading the deployed Lua scripts. Available is false when no interpreter ran, so nothing was checked. */
+public sealed record ScriptCheck(bool Available, string Tool, int Loaded, IReadOnlyList<string> Errors, IReadOnlyList<string> Warnings)
+{
+    public string Why { get; init; } = "";
+    public bool HasErrors => Errors.Count > 0;
+
+    public static ScriptCheck Unavailable(string why) => new(false, "", 0, [], []) { Why = why };
+
+    /** One line for the deploy message. */
+    public string Summary => !Available ? $"scripts NOT CHECKED ({Why})"
+        : Errors.Count == 0 ? $"scripts OK: {Loaded} loaded, 0 errors" + (Warnings.Count > 0 ? $", {Warnings.Count} warning(s)" : "")
+        : $"scripts FAILED: {Loaded} loaded, {Errors.Count} error(s), first {Errors[0]}";
+
+    /** JSON form. */
+    public JsonObject ToJson() => new()
+    {
+        ["checked"] = Available, ["tool"] = Tool, ["loaded"] = Loaded, ["error_count"] = Errors.Count,
+        ["errors"] = new JsonArray(Errors.Select(e => (JsonNode)e).ToArray()),
+        ["warnings"] = new JsonArray(Warnings.Select(e => (JsonNode)e).ToArray()),
+        ["why_unchecked"] = Available ? null : Why,
+    };
+}

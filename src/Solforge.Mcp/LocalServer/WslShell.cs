@@ -19,6 +19,8 @@ public sealed record LocalServerOptions
     public int WebPort { get; init; } = 8098;
     public int AdminPort { get; init; } = 8099;
     public TimeSpan CommandTimeout { get; init; } = TimeSpan.FromSeconds(30);
+    /** How long a deploy waits after a restart for the server to report healthy (process, BAP UDP, web, admin). */
+    public TimeSpan HealthWait { get; init; } = TimeSpan.FromSeconds(25);
     public TimeSpan SelftestTimeout { get; init; } = TimeSpan.FromMinutes(10);
 
     public string SunriseDirectory => RunDirectory + "/Sunrise";
@@ -101,13 +103,25 @@ public sealed class WslShell(string distro = "") : IWslShell
         string text = "", error2 = "";
         try { text = await output.ConfigureAwait(false); error2 = await errors.ConfigureAwait(false); }
         catch (OperationCanceledException) { }
-        return new ShellResult(timedOut ? -1 : process.ExitCode, text, error2, timedOut);
+        return new ShellResult(timedOut ? -1 : process.ExitCode, Shell.StripWslNoise(text), Shell.StripWslNoise(error2), timedOut);
     }
 }
 
 /** Shell quoting helpers for building bash scripts. */
 public static class Shell
 {
+    /**
+     * Drops "wsl: Failed to translate '<windows path>'" lines. wsl.exe prints one per Windows PATH entry it cannot map into
+     * Linux (here a stale user-PATH entry); it is noise, never part of a command's real output. wsl.exe writes some of its
+     * own messages as UTF-16, so NULs are removed first.
+     */
+    public static string StripWslNoise(string text)
+    {
+        if (text.Length == 0 || (!text.Contains("Failed to translate", StringComparison.Ordinal) && !text.Contains('\0'))) return text;
+        text = text.Replace("\0", "", StringComparison.Ordinal);
+        return Regex.Replace(text, @"^[ \t]*wsl: Failed to translate '[^\r\n]*'[ \t]*\r?(\n|$)", "", RegexOptions.Multiline | RegexOptions.CultureInvariant);
+    }
+
     /** One bash single-quoted word. */
     public static string Quote(string text) => "'" + text.Replace("'", "'\\''", StringComparison.Ordinal) + "'";
 

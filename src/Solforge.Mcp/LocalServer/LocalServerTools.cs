@@ -117,7 +117,8 @@ public static class LocalServerTools
             Act("local_server_restart", "Restart the local server race-free (stop, wait for the socket, start). Clears ghost members.", Schema(),
                 None, _ => "restart", (_, cancel) => server.RestartAsync(cancel)),
             Act("local_server_deploy", "Deploy the open project's build to the local server (scripts, sdk, activity_sdk.pack, " +
-                "build_data.bin). Files it overwrites are backed up first; local_server_rollback undoes it.",
+                "build_data.bin). Files it overwrites are backed up first; local_server_rollback undoes it. Every deployed .lua is then loaded in " +
+                "a Lua interpreter (errors reported now), and with restart the report says whether the server came back healthy (pid, ports).",
                 Schema(("restart", "boolean", "Restart the server afterwards (default false)", false)),
                 NeedProject, args => $"deploy {projectRoot()} to {server.Options.SunriseDirectory}" + (Restart(args) ? " and restart" : ""),
                 (args, cancel) => server.DeployAsync(DeployPlanner.Plan(projectRoot()!), Restart(args), cancel)),
