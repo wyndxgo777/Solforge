@@ -7,7 +7,7 @@ Solforge runs a plain MCP server whenever a project is open. Any MCP client can 
 | Transports | stdio, through the shim `solforge-mcp.exe` next to `Solforge.exe`, and streamable HTTP on `127.0.0.1` with a Bearer token |
 | Tool inputs | JSON Schema objects. Every property has a description. |
 | Images | Each image tool also returns text: frame id, size, time, what changed and the labelled objects on screen. Models without vision can work from the text. OCR is not done; the on-screen labels come from Solforge's own scene. |
-| Approval | Action tools (edits, builds, UI clicks, opening maps, the relay stream) wait for the user's click on the approval card in Solforge's AI workspace. This works for every client, because the approval lives in Solforge, not in the client. |
+| Approval | Action tools (edits, builds, UI clicks, opening maps) wait for the user's click on the approval card in Solforge's AI workspace. This works for every client, because the approval lives in Solforge, not in the client. |
 | Skills | Plain Markdown in `skills/` (one `SKILL.md` per job). Any agent can read them. |
 
 ## Client config
@@ -84,18 +84,14 @@ Each engine runs on its own official client and its own sign-in. Claude Code use
 
 ## Live viewport
 
-Solforge captures the 3D viewport continuously while someone watches: a frame tool used in the last 2 minutes, a browser stream or the relay. The capture goes into a ring of 32 JPEG frames. A new frame is kept only when the picture changes. No call waits for a GPU readback.
+Solforge captures the 3D viewport continuously while someone watches: a frame tool used in the last 2 minutes or a browser stream. The capture goes into a ring of 32 JPEG frames. A new frame is kept only when the picture changes. No call waits for a GPU readback.
 
 - `get_viewport_frame`: the latest frame, at once. `since=<id>` returns text only if nothing is newer.
 - `get_viewport_frames`: frames since an id.
 - `wait_for_viewport_change`: blocks until the view changes, up to the timeout.
 - `read_screen_text`: the text on screen via Windows OCR (`Windows.Media.Ocr`, built into Windows, CPU only): lines with `[x, y, w, h]` boxes in image pixels; `region`, `contains`, `words`, `source=screenshot` for full size. `get_viewport_frame` and `wait_for_viewport_change` take `ocr: true` to add the same text to a frame.
 - `get_viewport_stream`: a local URL, `http://127.0.0.1:<port>/viewport?key=<view key>`, for an MJPEG stream on this PC. The view key is not the MCP token.
-- `set_viewport_stream` (approval): pushes frames out to the relay, so viewers can watch at `https://relay.example.invalid/stream/<name>?k=<key>`.
-  - It is off by default. Seth can also turn it on with View > Stream to phone, which shows the link as a QR code.
-  - It needs `SOLFORGE_OWNER_SECRET` (`tools/stream-relay/pc-secret.ps1` sets it; no restart needed).
-  - Only accounts on the relay's allow-list can watch.
-  - See `tools/stream-relay/README.md`.
+- Owner builds (`RELEASING.md`) add owner-only streaming tools; public builds do not have them.
 
 ## Player position
 

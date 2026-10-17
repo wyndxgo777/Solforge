@@ -139,8 +139,8 @@ internal sealed class VtScreen(int columns, int rows)
     }
 
     /**
-     * The last count lines as plain text (scrollback then screen), trailing blank screen rows dropped, for the phone
-     * remote control's AI chat (StudioForm.Ai.Remote.cs).
+     * The last count lines as plain text (scrollback then screen), trailing blank screen rows dropped, for callers that
+     * show the terminal elsewhere.
      */
     public string[] Tail(int count)
     {

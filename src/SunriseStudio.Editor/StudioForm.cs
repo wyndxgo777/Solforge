@@ -1,7 +1,7 @@
 /**
  * File: Main editor window (WinForms host + ImGui frame loop). StudioForm is split in partials: .Commands (menus,
  * dialogs, project open), .Ai* (AI workspace/MCP host), .NodeGraph, .Player (live player tracking), .Preferences,
- * .PhoneStream, .Layout and others; per-page UI lives in the *Page.cs files.
+ * .Layout and others; per-page UI lives in the *Page.cs files.
  */
 using System.Diagnostics;
 using System.Numerics;

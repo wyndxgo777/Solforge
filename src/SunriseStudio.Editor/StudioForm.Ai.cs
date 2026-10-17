@@ -1,7 +1,7 @@
 /**
  * File: AI workspace UI (engine picker, terminal, context dropdown). Related: StudioForm.Ai.Host.cs (ISolforgeHost
  * implementation, UI-thread marshalling), .Ai.Query.cs (project reads), .Ai.Assets.cs (shader/animation/audio reads),
- * .Ai.Media.cs (havok/audio/video), .Ai.Stream.cs (viewport frames), StudioForm.PhoneStream.cs (stream to phone);
+ * .Ai.Media.cs (havok/audio/video), .Ai.Stream.cs (viewport frames);
  * tools themselves are in Solforge.Mcp; terminal in Ai/.
  */
 using System.Diagnostics;

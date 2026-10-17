@@ -1,6 +1,6 @@
 /**
  * File: MCP tools that drive and watch the editor UI: list_ui_controls and ui_* actions, viewport frames and change
- * waits, read_screen_text (ScreenOcr.cs) and viewport streaming (FrameRelay.cs).
+ * waits, read_screen_text (ScreenOcr.cs) and the local viewport stream URL.
  */
 using System.Text.Json.Nodes;
 
@@ -8,7 +8,7 @@ namespace Solforge.Mcp;
 
 /**
  * Driving Solforge's own UI and watching the live viewport. list_ui_controls and the viewport reads are plain reads;
- * ui_invoke, ui_set_value, ui_set_checked, ui_select and set_viewport_stream wait for the user's approve click in
+ * ui_invoke, ui_set_value, ui_set_checked and ui_select wait for the user's approve click in
  * Solforge, which works the same from every MCP client. Every image result also carries text (frame id, size, time,
  * what changed and where, the labelled objects on screen) so models without vision can follow along.
  */
@@ -196,45 +196,49 @@ public static partial class SolforgeTools
                 foreach (var (key, node) in source) summary[key] = node?.DeepClone();
                 return McpToolResult.Json(summary);
             });
-        yield return read("get_viewport_stream", "Where to watch the live viewport in a browser: the local URL (this PC only) " +
-            "and, when set_viewport_stream turned it on, the relay URL (sign-in with an allowed Project Sol account), plus " +
+        yield return read("get_viewport_stream", "Where to watch the live viewport in a browser on this PC (the local URL), plus " +
             "capture rate, size and status.", McpJson.Schema(),
             (_, _) =>
             {
                 var feed = host.Viewport;
-                return Task.FromResult(McpToolResult.Json(new JsonObject
+                var info = new JsonObject
                 {
-                    ["local"] = feed.LocalUrl, ["relay"] = feed.Relay?.ToJson() ?? new FrameRelay(feed).ToJson(),
+                    ["local"] = feed.LocalUrl,
                     ["fps"] = feed.Fps, ["width"] = feed.MaxWidth, ["quality"] = feed.Quality, ["status"] = feed.Status, ["latest"] = feed.Latest?.Id
-                }));
+                };
+                OwnerStreamInfo(feed, info);
+                return Task.FromResult(McpToolResult.Json(info));
             });
-        yield return new McpTool("set_viewport_stream", "Turn the outbound relay stream of the viewport on or off (off by default). " +
-            "On pushes JPEG frames from this PC to the Project Sol stream relay over HTTPS (no inbound connection needed) at up " +
-            $"to {FrameRelay.MaxFps} fps and {FrameRelay.MaxWidth} px; the viewer URL carries a new random key each time and " +
-            "only signed-in allowed accounts can open it.",
-            McpJson.Schema(("on", "boolean", "true to start, false to stop", true), ("name", "string", "Optional stream name (3-32 of a-z, 0-9, -)", false),
-                ("fps", "integer", $"Frames per second (1-{FrameRelay.MaxFps}, default 2)", false)), true,
-            async (args, cancel) =>
-            {
-                if (args["on"] is not JsonValue) return McpToolResult.Error("Give on: true or false.");
-                bool on = McpJson.Bool(args, "on", false);
-                if (on && host.Paused) return McpToolResult.Error("The user paused context publishing in Solforge's AI workspace.");
-                if (!await host.ApproveAsync("set_viewport_stream", on ? $"Stream the viewport to {FrameRelay.RelayBase}" : "Stop the viewport relay stream", cancel)
-                        .ConfigureAwait(false))
-                    return McpToolResult.Error("The user declined this in Solforge.");
-                var feed = host.Viewport;
-                if (!on) { feed.Relay?.Stop(); return McpToolResult.Text("The relay stream is off."); }
-                var relay = feed.Relay ??= new FrameRelay(feed);
-                if (relay.Start(McpJson.String(args, "name"), McpJson.Int(args, "fps", 2)) is not { } url) return McpToolResult.Error(relay.Status);
-                return McpToolResult.Json(new JsonObject { ["viewerUrl"] = url, ["status"] = relay.Status, ["note"] = "Only accounts on the relay's allow-list can watch." });
-            });
+        var owner = new List<McpTool>();
+        OwnerUiTools(host, owner);
+        foreach (var tool in owner) yield return tool;
+    }
+
+    /** Owner builds only (RELEASING.md): extra fields for get_viewport_stream; public builds add none. */
+    static partial void OwnerStreamInfo(ViewportFeed feed, JsonObject info);
+    /** Owner builds only: extra UI tools, listed right after get_viewport_stream; public builds add none. */
+    static partial void OwnerUiTools(ISolforgeHost host, List<McpTool> tools);
+    /** Owner builds only: the names OwnerUiTools adds, in order (for the tool-name checks). */
+    static partial void OwnerUiToolNames(List<string> names);
+    /** Owner builds only: a lower width cap while an owner-only stream runs. */
+    static partial void OwnerWidthCap(ViewportFeed feed, ref int cap);
+
+    /** The tool names only owner builds add after get_viewport_stream; empty in public builds. */
+    public static string[] OwnerToolNames
+    {
+        get { var names = new List<string>(); OwnerUiToolNames(names); return [.. names]; }
     }
 
     /** Applies the width, quality and fps arguments to the viewport feed (width is capped while streaming). */
     private static void Tune(ViewportFeed feed, JsonObject args)
     {
         feed.Want();
-        if (args["width"] is JsonValue) feed.MaxWidth = Math.Min(McpJson.Int(args, "width", feed.MaxWidth), feed.Relay is { Running: true } ? FrameRelay.MaxWidth : 1920);
+        if (args["width"] is JsonValue)
+        {
+            int cap = 1920;
+            OwnerWidthCap(feed, ref cap);
+            feed.MaxWidth = Math.Min(McpJson.Int(args, "width", feed.MaxWidth), cap);
+        }
         if (args["quality"] is JsonValue) feed.Quality = McpJson.Int(args, "quality", feed.Quality);
         if (args["fps"] is JsonValue) feed.Fps = McpJson.Int(args, "fps", feed.Fps);
     }

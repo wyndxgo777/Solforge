@@ -18,7 +18,7 @@ public static class ToolMap
         new("Any", "Native file or folder pickers", "run_command/export_asset/import_asset path, or arm_file_dialog then ui_invoke"),
         new("Title bar", "File, Edit, Assets, Build, View, Window, Help menus, Back/Forward", "list_commands, run_command"),
         new("Title bar", "Toolbar: 3D rendering, Game shaders, Quality, Full detail, Lighting", "set_viewport_options, set_viewport_rendering"),
-        new("Title bar", "Screen relay, Stream to phone, phone/remote links", "set_viewport_stream, get_viewport_stream (links and remote control stay the user's)"),
+        new("Viewport", "Watch the live viewport in a local browser (this PC only)", "get_viewport_stream"),
         new("Project", "New / open / close project, recent projects, mod details", "create_project, open_project, close_project, set_mod_details, get_project, run_command file.open_recent"),
         new("Project", "Save, undo, redo", "run_command file.save, edit.undo, edit.redo"),
         new("Project", "Project changes panel: list, revert, remove, compare with base, export added", "list_project_changes, project_change, revert_object_edit, read_panel changes"),
