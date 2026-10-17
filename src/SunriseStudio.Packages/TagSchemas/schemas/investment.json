@@ -1,0 +1,126 @@
+{
+  "comment": "Investment tables SolForge already decoded by hand; InvestmentCatalog and the vendor authoring read their offsets from here.",
+  "schemas": [
+    {"class": "0x80807BE4", "name": "Item definition index (0x81327CCB)", "family": "investment", "size": 24, "provenance": "reflection + src/SunriseStudio.Formats/InvestmentCatalog.cs ReadIndex and InvestmentVendorAuthoring (row hash must match the display index row)", "decoders": ["InvestmentCatalog"], "fields": [
+      {"name": "file_size", "offset": 0, "type": "size64", "status": "confirmed", "source": "Tiger tag header: u64 byte size of the tag (PackageCatalog)"},
+      {"name": "table", "offset": 8, "type": "array", "status": "confirmed", "source": "src/SunriseStudio.Formats/InvestmentCatalog.cs ReadIndex and InvestmentVendorAuthoring (row hash must match the display index row); offset and kind: reflection 0x80807BE4 record 0x3A0EB08 (member 0x7A1E796B \"table\", type 0x80807C3E)", "element_class": "0x80807BE8", "element": "investment_index_row", "stride": 24, "max_count": 65535}
+    ]},
+    {"class": "0x80805CDB", "name": "Item display index (0x81613CF1)", "family": "investment", "size": 24, "provenance": "reflection + src/SunriseStudio.Formats/InvestmentCatalog.cs ReadIndex and InvestmentVendorAuthoring (row hash must match the display index row)", "decoders": ["InvestmentCatalog"], "fields": [
+      {"name": "file_size", "offset": 0, "type": "size64", "status": "confirmed", "source": "Tiger tag header: u64 byte size of the tag (PackageCatalog)"},
+      {"name": "table", "offset": 8, "type": "array", "status": "confirmed", "source": "src/SunriseStudio.Formats/InvestmentCatalog.cs ReadIndex and InvestmentVendorAuthoring (row hash must match the display index row); offset and kind: reflection 0x80805CDB record 0x3A4BF80 (member 0x7A1E796B \"table\", type 0x80805CDC)", "element_class": "0x80805CDF", "element": "investment_index_row", "stride": 24, "max_count": 65535}
+    ]},
+    {"class": "0x8080784A", "name": "Vendor definition index (0x8131931D)", "family": "investment", "size": 24, "provenance": "reflection + src/SunriseStudio.Formats/InvestmentCatalog.cs ReadIndex and InvestmentVendorAuthoring (row hash must match the display index row)", "decoders": ["InvestmentCatalog", "InvestmentVendorAuthoring"], "fields": [
+      {"name": "file_size", "offset": 0, "type": "size64", "status": "confirmed", "source": "Tiger tag header: u64 byte size of the tag (PackageCatalog)"},
+      {"name": "table", "offset": 8, "type": "array", "status": "confirmed", "source": "src/SunriseStudio.Formats/InvestmentCatalog.cs ReadIndex and InvestmentVendorAuthoring (row hash must match the display index row); offset and kind: reflection 0x8080784A record 0x3A03B68 (member 0x7A1E796B \"table\", type 0x80807A39)", "element_class": "0x8080784E", "element": "investment_index_row", "stride": 24, "max_count": 65535}
+    ]},
+    {"class": "0x808058E8", "name": "Vendor display index (0x81A2926D)", "family": "investment", "size": 24, "provenance": "reflection + src/SunriseStudio.Formats/InvestmentCatalog.cs ReadIndex and InvestmentVendorAuthoring (row hash must match the display index row)", "decoders": ["InvestmentCatalog", "InvestmentVendorAuthoring"], "fields": [
+      {"name": "file_size", "offset": 0, "type": "size64", "status": "confirmed", "source": "Tiger tag header: u64 byte size of the tag (PackageCatalog)"},
+      {"name": "table", "offset": 8, "type": "array", "status": "confirmed", "source": "src/SunriseStudio.Formats/InvestmentCatalog.cs ReadIndex and InvestmentVendorAuthoring (row hash must match the display index row); offset and kind: reflection 0x808058E8 record 0x3A4AFC0 (member 0x7A1E796B \"table\", type 0x808058E9)", "element_class": "0x808058EC", "element": "investment_index_row", "stride": 24, "max_count": 65535}
+    ]},
+    {"id": "investment_index_row", "name": "Investment index row (row classes 0x80807BE8, 0x80805CDF, 0x8080784E, 0x808058EC; 24 bytes)", "family": "investment", "size": 24, "provenance": "reflection: every row class is 24 bytes with no pointer members; src/SunriseStudio.Formats/InvestmentCatalog.cs ReadIndex and InvestmentVendorAuthoring (row hash must match the display index row)", "decoders": ["InvestmentCatalog"], "fields": [
+      {"name": "hash", "offset": 0, "type": "hash", "status": "confirmed", "source": "src/SunriseStudio.Formats/InvestmentCatalog.cs ReadIndex and InvestmentVendorAuthoring (row hash must match the display index row)"},
+      {"name": "unknown_04", "offset": 4, "type": "u32", "status": "guessed", "source": "unread by any decoder"},
+      {"name": "tag", "offset": 16, "type": "tag", "status": "confirmed", "source": "src/SunriseStudio.Formats/InvestmentCatalog.cs ReadIndex and InvestmentVendorAuthoring (row hash must match the display index row)"}
+    ]},
+    {"class": "0x80807BEA", "name": "Item definition", "family": "investment", "size": 240, "provenance": "reflection 0x3A03200 (240 bytes, pointer members) + src/SunriseStudio.Formats/InvestmentCatalog.cs Load (hand decoder behind the item editor; values checked against the install)", "decoders": ["InvestmentCatalog"], "fields": [
+      {"name": "file_size", "offset": 0, "type": "size64", "status": "confirmed", "source": "Tiger tag header: u64 byte size of the tag (PackageCatalog)"},
+      {"name": "m_3A439FC1", "offset": 8, "type": "relptr", "status": "confirmed", "source": "reflection 0x80807BEA record 0x3A03200 (member 0x3A439FC1, type 0x808077AA)"},
+      {"name": "m_E8C4BA19", "offset": 16, "type": "relptr", "status": "confirmed", "source": "reflection 0x80807BEA record 0x3A03200 (member 0xE8C4BA19, type 0x808077A7)"},
+      {"name": "m_A5C09EEB", "offset": 24, "type": "relptr", "status": "confirmed", "source": "reflection 0x80807BEA record 0x3A03200 (member 0xA5C09EEB, type 0x8080297F)"},
+      {"name": "m_1524BDB4", "offset": 32, "type": "relptr", "status": "confirmed", "source": "reflection 0x80807BEA record 0x3A03200 (member 0x1524BDB4, type 0x808077A6)"},
+      {"name": "m_AE9531FB", "offset": 40, "type": "relptr", "status": "confirmed", "source": "reflection 0x80807BEA record 0x3A03200 (member 0xAE9531FB, type 0x808077A5)"},
+      {"name": "m_68F98A96", "offset": 48, "type": "relptr", "status": "confirmed", "source": "reflection 0x80807BEA record 0x3A03200 (member 0x68F98A96, type 0x808077A4)"},
+      {"name": "m_F61007F7", "offset": 56, "type": "relptr", "status": "confirmed", "source": "reflection 0x80807BEA record 0x3A03200 (member 0xF61007F7, type 0x80802C99)"},
+      {"name": "m_4A3F655B", "offset": 64, "type": "relptr", "status": "confirmed", "source": "reflection 0x80807BEA record 0x3A03200 (member 0x4A3F655B, type 0x808077A3)"},
+      {"name": "m_735649B0", "offset": 72, "type": "relptr", "status": "confirmed", "source": "reflection 0x80807BEA record 0x3A03200 (member 0x735649B0, type 0x808077A2)"},
+      {"name": "m_9454CC6A", "offset": 80, "type": "relptr", "status": "confirmed", "source": "reflection 0x80807BEA record 0x3A03200 (member 0x9454CC6A, type 0x808077A1)"},
+      {"name": "m_52425A59", "offset": 88, "type": "relptr", "status": "confirmed", "source": "reflection 0x80807BEA record 0x3A03200 (member 0x52425A59, type 0x808077A0)"},
+      {"name": "m_5360BA61", "offset": 96, "type": "relptr", "status": "confirmed", "source": "reflection 0x80807BEA record 0x3A03200 (member 0x5360BA61, type 0x8080779F)"},
+      {"name": "m_FECF16FB", "offset": 104, "type": "relptr", "status": "confirmed", "source": "reflection 0x80807BEA record 0x3A03200 (member 0xFECF16FB, type 0x8080779E)"},
+      {"name": "m_6AEA605E", "offset": 112, "type": "relptr", "status": "confirmed", "source": "reflection 0x80807BEA record 0x3A03200 (member 0x6AEA605E, type 0x8080779D)"},
+      {"name": "m_7C37365D", "offset": 120, "type": "relptr", "status": "confirmed", "source": "reflection 0x80807BEA record 0x3A03200 (member 0x7C37365D, type 0x8080779C)"},
+      {"name": "m_21BD5706", "offset": 128, "type": "relptr", "status": "confirmed", "source": "reflection 0x80807BEA record 0x3A03200 (member 0x21BD5706, type 0x8080779B)"},
+      {"name": "m_E0C2DF4A", "offset": 136, "type": "relptr", "status": "confirmed", "source": "reflection 0x80807BEA record 0x3A03200 (member 0xE0C2DF4A, type 0x8080779A)"},
+      {"name": "m_23B003E3", "offset": 144, "type": "relptr", "status": "confirmed", "source": "reflection 0x80807BEA record 0x3A03200 (member 0x23B003E3, type 0x80807799)"},
+      {"name": "m_C3BA8D60", "offset": 152, "type": "relptr", "status": "confirmed", "source": "reflection 0x80807BEA record 0x3A03200 (member 0xC3BA8D60, type 0x80807798)"},
+      {"name": "maximum_stack", "offset": 180, "type": "i32", "status": "confirmed", "source": "src/SunriseStudio.Formats/InvestmentCatalog.cs Load (hand decoder behind the item editor; values checked against the install)", "min": 0, "max": 1000000},
+      {"name": "bucket", "offset": 184, "type": "u8", "status": "confirmed", "source": "src/SunriseStudio.Formats/InvestmentCatalog.cs Load (hand decoder behind the item editor; values checked against the install)"},
+      {"name": "tier", "offset": 186, "type": "u8", "status": "confirmed", "source": "src/SunriseStudio.Formats/InvestmentCatalog.cs Load (hand decoder behind the item editor; values checked against the install)"},
+      {"name": "instanced", "offset": 187, "type": "bool8", "status": "confirmed", "source": "src/SunriseStudio.Formats/InvestmentCatalog.cs Load (hand decoder behind the item editor; values checked against the install)"},
+      {"name": "m_8814CA15.m_34F70B23.m_910126EB", "offset": 192, "type": "array", "status": "confirmed", "source": "reflection 0x80807D2F record 0x3A1BDB8 (member 0x910126EB, type 0x80807D30)"},
+      {"name": "m_EEEA2036", "offset": 224, "type": "array", "status": "confirmed", "source": "reflection 0x80807BEA record 0x3A03200 (member 0xEEEA2036, type 0x80802C4F)"}
+    ]},
+    {"class": "0x80805CE1", "name": "Item display", "family": "investment", "size": 264, "provenance": "reflection 0x394D0A8 (264 bytes) + src/SunriseStudio.Formats/InvestmentCatalog.cs Load (hand decoder behind the item editor; values checked against the install)", "decoders": ["InvestmentCatalog"], "fields": [
+      {"name": "file_size", "offset": 0, "type": "size64", "status": "confirmed", "source": "Tiger tag header: u64 byte size of the tag (PackageCatalog)"},
+      {"name": "m_3A439FC1", "offset": 8, "type": "relptr", "status": "confirmed", "source": "reflection 0x80805CE1 record 0x394D0A8 (member 0x3A439FC1, type 0x80805CEE)"},
+      {"name": "m_A90110FF", "offset": 16, "type": "relptr", "status": "confirmed", "source": "reflection 0x80805CE1 record 0x394D0A8 (member 0xA90110FF, type 0x80805CED)"},
+      {"name": "m_E8C4BA19", "offset": 24, "type": "relptr", "status": "confirmed", "source": "reflection 0x80805CE1 record 0x394D0A8 (member 0xE8C4BA19, type 0x80805CEC)"},
+      {"name": "m_A5C09EEB", "offset": 32, "type": "relptr", "status": "confirmed", "source": "reflection 0x80805CE1 record 0x394D0A8 (member 0xA5C09EEB, type 0x80802936)"},
+      {"name": "m_68F98A96", "offset": 40, "type": "relptr", "status": "confirmed", "source": "reflection 0x80805CE1 record 0x394D0A8 (member 0x68F98A96, type 0x80805CEB)"},
+      {"name": "m_4A3F655B", "offset": 48, "type": "relptr", "status": "confirmed", "source": "reflection 0x80805CE1 record 0x394D0A8 (member 0x4A3F655B, type 0x80805CEA)"},
+      {"name": "m_EC0CD28D", "offset": 56, "type": "relptr", "status": "confirmed", "source": "reflection 0x80805CE1 record 0x394D0A8 (member 0xEC0CD28D, type 0x80805CE9)"},
+      {"name": "m_9454CC6A", "offset": 64, "type": "relptr", "status": "confirmed", "source": "reflection 0x80805CE1 record 0x394D0A8 (member 0x9454CC6A, type 0x80805CE8)"},
+      {"name": "m_52425A59", "offset": 72, "type": "relptr", "status": "confirmed", "source": "reflection 0x80805CE1 record 0x394D0A8 (member 0x52425A59, type 0x80805CE7)"},
+      {"name": "m_5360BA61", "offset": 80, "type": "relptr", "status": "confirmed", "source": "reflection 0x80805CE1 record 0x394D0A8 (member 0x5360BA61, type 0x80802B20)"},
+      {"name": "m_FECF16FB", "offset": 88, "type": "relptr", "status": "confirmed", "source": "reflection 0x80805CE1 record 0x394D0A8 (member 0xFECF16FB, type 0x80805CE6)"},
+      {"name": "m_6AEA605E", "offset": 96, "type": "relptr", "status": "confirmed", "source": "reflection 0x80805CE1 record 0x394D0A8 (member 0x6AEA605E, type 0x80805CE5)"},
+      {"name": "m_7C37365D", "offset": 104, "type": "relptr", "status": "confirmed", "source": "reflection 0x80805CE1 record 0x394D0A8 (member 0x7C37365D, type 0x80805CE4)"},
+      {"name": "m_21BD5706", "offset": 112, "type": "relptr", "status": "confirmed", "source": "reflection 0x80805CE1 record 0x394D0A8 (member 0x21BD5706, type 0x80805CE3)"},
+      {"name": "m_C3BA8D60", "offset": 120, "type": "relptr", "status": "confirmed", "source": "reflection 0x80805CE1 record 0x394D0A8 (member 0xC3BA8D60, type 0x80805CE2)"},
+      {"name": "name", "offset": 132, "type": "string_ref", "status": "confirmed", "source": "src/SunriseStudio.Formats/InvestmentCatalog.cs Load (hand decoder behind the item editor; values checked against the install) (inside the 96-byte display struct at 128)"},
+      {"name": "item_type", "offset": 144, "type": "string_ref", "status": "confirmed", "source": "src/SunriseStudio.Formats/InvestmentCatalog.cs Load (hand decoder behind the item editor; values checked against the install)"},
+      {"name": "description", "offset": 152, "type": "string_ref", "status": "confirmed", "source": "src/SunriseStudio.Formats/InvestmentCatalog.cs Load (hand decoder behind the item editor; values checked against the install)"},
+      {"name": "m_98B0A47F.m_6D1C7208", "offset": 168, "type": "array", "status": "confirmed", "source": "reflection 0x80805CEF record 0x3843380 (member 0x6D1C7208, type 0x80802896)"},
+      {"name": "m_98B0A47F.m_BF6FEF36", "offset": 208, "type": "array", "status": "confirmed", "source": "reflection 0x80805CEF record 0x3843380 (member 0xBF6FEF36, type 0x80802B21)"}
+    ]},
+    {"class": "0x80807850", "name": "Vendor definition", "family": "investment", "size": 120, "provenance": "reflection 0x3A305C0 (120 bytes) + src/SunriseStudio.Formats/InvestmentVendorAuthoring.cs", "decoders": ["InvestmentVendorAuthoring"], "fields": [
+      {"name": "file_size", "offset": 0, "type": "size64", "status": "confirmed", "source": "Tiger tag header: u64 byte size of the tag (PackageCatalog)"},
+      {"name": "hash", "offset": 8, "type": "hash", "status": "confirmed", "source": "src/SunriseStudio.Formats/InvestmentVendorAuthoring.cs (must equal the index row hash)"},
+      {"name": "categories", "offset": 32, "type": "array", "status": "confirmed", "source": "src/SunriseStudio.Formats/InvestmentVendorAuthoring.cs; offset and kind: reflection 0x80807850 record 0x3A305C0 (member 0xEEF02324, type 0x80807855)", "element_class": "0x80807860", "stride": 24, "max_count": 4096},
+      {"name": "sales", "offset": 48, "type": "array", "status": "confirmed", "source": "src/SunriseStudio.Formats/InvestmentVendorAuthoring.cs; offset and kind: reflection 0x80807850 record 0x3A305C0 (member 0xD47F485B, type 0x80807854)", "element_class": "0x80807861", "stride": 184, "max_count": 16384},
+      {"name": "actions", "offset": 64, "type": "array", "status": "confirmed", "source": "reflection 0x80807850 record 0x3A305C0 (member 0xC69DA716 \"actions\", type 0x80807853)"},
+      {"name": "m_34F0DF8E", "offset": 80, "type": "array", "status": "confirmed", "source": "reflection 0x80807850 record 0x3A305C0 (member 0x34F0DF8E, type 0x80807852)"},
+      {"name": "m_52281173", "offset": 96, "type": "array", "status": "confirmed", "source": "reflection 0x80807850 record 0x3A305C0 (member 0x52281173, type 0x80807851)"}
+    ]},
+    {"class": "0x80807861", "name": "Vendor sale row", "family": "investment", "size": 184, "provenance": "reflection 0x39A2B10 (184 bytes); members unnamed", "decoders": ["InvestmentVendorAuthoring"], "fields": [
+      {"name": "m_9599223D", "offset": 8, "type": "array", "status": "confirmed", "source": "reflection 0x80807861 record 0x39A2B10 (member 0x9599223D, type 0x80807C04)"},
+      {"name": "m_66010F66", "offset": 32, "type": "array", "status": "confirmed", "source": "reflection 0x80807861 record 0x39A2B10 (member 0x66010F66, type 0x80807863)"},
+      {"name": "m_0810F0AA", "offset": 48, "type": "array", "status": "confirmed", "source": "reflection 0x80807861 record 0x39A2B10 (member 0x0810F0AA, type 0x80803046)"},
+      {"name": "m_7380D7C0", "offset": 80, "type": "array", "status": "confirmed", "source": "reflection 0x80807861 record 0x39A2B10 (member 0x7380D7C0, type 0x8080305D)"},
+      {"name": "m_80D7F6B3", "offset": 120, "type": "array", "status": "confirmed", "source": "reflection 0x80807861 record 0x39A2B10 (member 0x80D7F6B3, type 0x80807C04)"},
+      {"name": "m_F3BED44B", "offset": 136, "type": "array", "status": "confirmed", "source": "reflection 0x80807861 record 0x39A2B10 (member 0xF3BED44B, type 0x80807862)"},
+      {"name": "m_FA45034A.m_910126EB", "offset": 160, "type": "array", "status": "confirmed", "source": "reflection 0x80807D2F record 0x3A1BDB8 (member 0x910126EB, type 0x80807D30)"}
+    ]},
+    {"class": "0x808058EE", "name": "Vendor display", "family": "investment", "size": 216, "provenance": "reflection 0x39F7068 (216 bytes) + src/SunriseStudio.Formats/InvestmentVendorAuthoring.cs", "decoders": ["InvestmentCatalog", "InvestmentVendorAuthoring"], "fields": [
+      {"name": "file_size", "offset": 0, "type": "size64", "status": "confirmed", "source": "Tiger tag header: u64 byte size of the tag (PackageCatalog)"},
+      {"name": "hash", "offset": 8, "type": "hash", "status": "confirmed", "source": "src/SunriseStudio.Formats/InvestmentVendorAuthoring.cs (must equal the index row hash)"},
+      {"name": "m_EEF02324", "offset": 16, "type": "array", "status": "confirmed", "source": "reflection 0x808058EE record 0x39F7068 (member 0xEEF02324, type 0x808058F4)"},
+      {"name": "m_36B6DCB3", "offset": 32, "type": "array", "status": "confirmed", "source": "reflection 0x808058EE record 0x39F7068 (member 0x36B6DCB3, type 0x808058F3)"},
+      {"name": "m_D47F485B", "offset": 48, "type": "array", "status": "confirmed", "source": "reflection 0x808058EE record 0x39F7068 (member 0xD47F485B, type 0x808058F2)"},
+      {"name": "name", "offset": 64, "type": "string_ref16", "status": "confirmed", "source": "src/SunriseStudio.Formats/InvestmentCatalog.cs Load (hand decoder behind the item editor; values checked against the install); src/SunriseStudio.Formats/InvestmentVendorAuthoring.cs NameOffset"},
+      {"name": "subtitle", "offset": 72, "type": "string_ref16", "status": "confirmed", "source": "src/SunriseStudio.Formats/InvestmentVendorAuthoring.cs SubtitleOffset"},
+      {"name": "icon", "offset": 88, "type": "u16", "status": "confirmed", "source": "src/SunriseStudio.Formats/InvestmentVendorAuthoring.cs IconOffset"},
+      {"name": "m_98B0A47F.m_0218A596", "offset": 96, "type": "array", "status": "confirmed", "source": "reflection 0x808058FC record 0x39F6F78 (member 0x0218A596, type 0x80805C4D)"},
+      {"name": "m_9B38E0D2.m_910126EB", "offset": 112, "type": "array", "status": "confirmed", "source": "reflection 0x80807D2F record 0x3A1BDB8 (member 0x910126EB, type 0x80807D30)"},
+      {"name": "actions", "offset": 128, "type": "array", "status": "confirmed", "source": "reflection 0x808058EE record 0x39F7068 (member 0xC69DA716 \"actions\", type 0x808058F1)"},
+      {"name": "m_34F0DF8E", "offset": 144, "type": "array", "status": "confirmed", "source": "reflection 0x808058EE record 0x39F7068 (member 0x34F0DF8E, type 0x808058F0)"},
+      {"name": "services", "offset": 160, "type": "array", "status": "confirmed", "source": "reflection 0x808058EE record 0x39F7068 (member 0x1CC66BB1 \"services\", type 0x808058EF)"},
+      {"name": "m_51AF8106", "offset": 176, "type": "array", "status": "confirmed", "source": "reflection 0x808058EE record 0x39F7068 (member 0x51AF8106, type 0x80805938)"}
+    ]},
+    {"class": "0x80805F98", "name": "String bank list (0x81A27211)", "family": "investment", "size": 24, "provenance": "reflection 0x3A14E18 + src/SunriseStudio.Formats/InvestmentCatalog.cs Load (hand decoder behind the item editor; values checked against the install)", "decoders": ["InvestmentCatalog"], "fields": [
+      {"name": "file_size", "offset": 0, "type": "size64", "status": "confirmed", "source": "Tiger tag header: u64 byte size of the tag (PackageCatalog)"},
+      {"name": "table", "offset": 8, "type": "array", "status": "confirmed", "source": "src/SunriseStudio.Formats/InvestmentCatalog.cs Load (hand decoder behind the item editor; values checked against the install); offset and kind: reflection 0x80805F98 record 0x3A14E18 (member 0x7A1E796B \"table\", type 0x80805F9B)", "element_class": "0x80805F9E", "element": "0x80805F9E", "stride": 8}
+    ]},
+    {"class": "0x80805F9E", "name": "String bank row", "family": "investment", "size": 8, "provenance": "src/SunriseStudio.Formats/InvestmentCatalog.cs Load (hand decoder behind the item editor; values checked against the install)", "decoders": ["InvestmentCatalog"], "fields": [
+      {"name": "unknown_00", "offset": 0, "type": "u32", "status": "guessed", "source": "unread by any decoder"},
+      {"name": "bank", "offset": 4, "type": "tag", "status": "confirmed", "source": "src/SunriseStudio.Formats/InvestmentCatalog.cs Load (hand decoder behind the item editor; values checked against the install)"}
+    ]},
+    {"class": "0x80805CC5", "name": "Stat names (0x81613D07)", "family": "investment", "size": 24, "provenance": "reflection 0x3A01178 + src/SunriseStudio.Formats/InvestmentCatalog.cs Load (hand decoder behind the item editor; values checked against the install)", "decoders": ["InvestmentCatalog"], "fields": [
+      {"name": "file_size", "offset": 0, "type": "size64", "status": "confirmed", "source": "Tiger tag header: u64 byte size of the tag (PackageCatalog)"},
+      {"name": "table", "offset": 8, "type": "array", "status": "confirmed", "source": "src/SunriseStudio.Formats/InvestmentCatalog.cs Load (hand decoder behind the item editor; values checked against the install); offset and kind: reflection 0x80805CC5 record 0x3A01178 (member 0x7A1E796B \"table\", type 0x80805CC6)", "element_class": "0x80805CC9", "element": "0x80805CC9", "stride": 36}
+    ]},
+    {"class": "0x80805CC9", "name": "Stat name row", "family": "investment", "size": 36, "provenance": "src/SunriseStudio.Formats/InvestmentCatalog.cs Load (hand decoder behind the item editor; values checked against the install)", "decoders": ["InvestmentCatalog"], "fields": [
+      {"name": "name", "offset": 4, "type": "string_ref", "status": "confirmed", "source": "src/SunriseStudio.Formats/InvestmentCatalog.cs Load (hand decoder behind the item editor; values checked against the install)"}
+    ]}
+  ]
+}

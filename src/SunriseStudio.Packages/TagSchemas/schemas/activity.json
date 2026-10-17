@@ -1,0 +1,74 @@
+{
+  "comment": "Activity definition and display tables plus the per-activity root tags. Offsets confirmed by the Sunrise client readers or reflection; anything marked guessed is data-only.",
+  "schemas": [
+    {"class": "0x808076F0", "name": "Activity definition table (0x81327CF0)", "family": "activity", "size": 136, "provenance": "reflection 0x383C460 (136 bytes) + Sunrise client middleware/content/packages/tables/activity_definition_reader.cpp (validated on all 1170 rows of 0x81327CF0)", "decoders": ["ActivityTables"], "fields": [
+      {"name": "file_size", "offset": 0, "type": "size64", "status": "confirmed", "source": "Tiger tag header: u64 byte size of the tag (PackageCatalog)"},
+      {"name": "table", "offset": 8, "type": "array", "status": "confirmed", "source": "Sunrise client middleware/content/packages/tables/activity_definition_reader.cpp (validated on all 1170 rows of 0x81327CF0); offset and kind: reflection 0x808076F0 record 0x383C460 (member 0x7A1E796B \"table\", type 0x80807C7C)", "element_class": "0x808076FC", "element": "0x808076FC", "stride": 16, "max_count": 65535},
+      {"name": "m_CBD38C1C.m_6D5B28EF", "offset": 24, "type": "array", "status": "confirmed", "source": "reflection 0x808076F2 record 0x3983580 (member 0x6D5B28EF, type 0x808076F9)"},
+      {"name": "m_CBD38C1C.m_FDD51098", "offset": 40, "type": "array", "status": "confirmed", "source": "reflection 0x808076F2 record 0x3983580 (member 0xFDD51098, type 0x808076F8)"},
+      {"name": "m_CBD38C1C.m_1DE3601D", "offset": 56, "type": "array", "status": "confirmed", "source": "reflection 0x808076F2 record 0x3983580 (member 0x1DE3601D, type 0x808076F7)"},
+      {"name": "m_CBD38C1C.m_1ABE8D88", "offset": 72, "type": "array", "status": "confirmed", "source": "reflection 0x808076F2 record 0x3983580 (member 0x1ABE8D88, type 0x808076F6)"},
+      {"name": "m_CBD38C1C.m_58BB382D", "offset": 88, "type": "array", "status": "confirmed", "source": "reflection 0x808076F2 record 0x3983580 (member 0x58BB382D, type 0x808076F5)"},
+      {"name": "m_CBD38C1C.m_1D7F9B7D", "offset": 104, "type": "array", "status": "confirmed", "source": "reflection 0x808076F2 record 0x3983580 (member 0x1D7F9B7D, type 0x808076F4)"},
+      {"name": "m_CBD38C1C.m_EC71F7EE", "offset": 120, "type": "array", "status": "confirmed", "source": "reflection 0x808076F2 record 0x3983580 (member 0xEC71F7EE, type 0x808076F3)"}
+    ]},
+    {"class": "0x808076FC", "name": "Activity index row", "family": "activity", "size": 16, "provenance": "reflection 0x39FD850 (16 bytes) + Sunrise client middleware/content/packages/tables/activity_definition_reader.cpp (validated on all 1170 rows of 0x81327CF0)", "decoders": ["ActivityTables"], "fields": [
+      {"name": "hash", "offset": 0, "type": "hash", "status": "confirmed", "source": "Sunrise client middleware/content/packages/tables/activity_definition_reader.cpp (validated on all 1170 rows of 0x81327CF0)"},
+      {"name": "padding", "offset": 4, "type": "u32", "status": "guessed", "source": "data: always 0 in the install", "max": 0},
+      {"name": "record", "offset": 8, "type": "relptr", "status": "confirmed", "source": "Sunrise client middleware/content/packages/tables/activity_definition_reader.cpp (validated on all 1170 rows of 0x81327CF0); offset and kind: reflection 0x808076FC record 0x39FD850 (member 0x1EA3BD68, type 0x808076FD)", "target": "activity_definition", "note": "record class 0x80807711 sits in the 4 bytes before it"}
+    ]},
+    {"id": "activity_definition", "class": "0x80807711", "name": "Activity definition record", "family": "activity", "size": 0, "provenance": "Sunrise client middleware/content/packages/tables/activity_definition_reader.cpp (validated on all 1170 rows of 0x81327CF0); records vary in size (0x160 typical)", "decoders": ["ActivityTables"], "fields": [
+      {"name": "hash", "offset": 0, "type": "hash", "status": "confirmed", "source": "Sunrise client middleware/content/packages/tables/activity_definition_reader.cpp (validated on all 1170 rows of 0x81327CF0) (equals the index row hash)"},
+      {"name": "matchmaking_config", "offset": 32, "type": "relptr_tag", "status": "confirmed", "source": "Sunrise client middleware/content/packages/tables/activity_definition_reader.cpp (validated on all 1170 rows of 0x81327CF0)", "allow": ["0xFFFFFFFF"], "note": "0xFFFFFFFF = none"},
+      {"name": "movie_route", "offset": 48, "type": "relptr", "status": "confirmed", "source": "Sunrise client middleware/content/packages/tables/activity_definition_reader.cpp (validated on all 1170 rows of 0x81327CF0)", "note": "non-zero = the activity plays a movie"},
+      {"name": "internal_name", "offset": 104, "type": "relptr_cstring", "status": "confirmed", "source": "Sunrise client middleware/content/packages/tables/activity_definition_reader.cpp (validated on all 1170 rows of 0x81327CF0)", "note": "ASCII [a-z0-9_], e.g. mission_launchpad"},
+      {"name": "required_level", "offset": 176, "type": "i32", "status": "confirmed", "source": "Sunrise client middleware/content/packages/tables/activity_definition_reader.cpp (validated on all 1170 rows of 0x81327CF0)", "min": 0, "max": 200},
+      {"name": "required_power", "offset": 180, "type": "i32", "status": "confirmed", "source": "Sunrise client middleware/content/packages/tables/activity_definition_reader.cpp (validated on all 1170 rows of 0x81327CF0)", "min": 0, "max": 5000},
+      {"name": "level_2", "offset": 184, "type": "i32", "status": "guessed", "source": "Sunrise client middleware/content/packages/tables/activity_definition_reader.cpp (validated on all 1170 rows of 0x81327CF0) reads it; meaning (matchmaking or recommended level) is a guess", "min": 0, "max": 200},
+      {"name": "power_2", "offset": 188, "type": "i32", "status": "guessed", "source": "Sunrise client middleware/content/packages/tables/activity_definition_reader.cpp (validated on all 1170 rows of 0x81327CF0) reads it; meaning is a guess", "min": 0, "max": 5000},
+      {"name": "unlock_slot", "offset": 216, "type": "u16", "status": "confirmed", "source": "Sunrise client middleware/content/packages/tables/activity_definition_reader.cpp (validated on all 1170 rows of 0x81327CF0)", "note": "0xFFFF = none"},
+      {"name": "activity_type", "offset": 218, "type": "u8", "status": "confirmed", "source": "Sunrise client middleware/content/packages/tables/activity_definition_reader.cpp (validated on all 1170 rows of 0x81327CF0)", "max": 53},
+      {"name": "gameplay_settings", "offset": 220, "type": "hash", "status": "confirmed", "source": "Sunrise client middleware/content/packages/tables/activity_definition_reader.cpp (validated on all 1170 rows of 0x81327CF0)"},
+      {"name": "destination", "offset": 224, "type": "u8", "status": "confirmed", "source": "Sunrise client middleware/content/packages/tables/activity_definition_reader.cpp (validated on all 1170 rows of 0x81327CF0)", "max": 47}
+    ]},
+    {"class": "0x80805E0A", "name": "Activity display table (0x81327D35)", "family": "activity", "size": 120, "provenance": "reflection 0x37995B0 (120 bytes) + Sunrise client middleware/content/packages/tables/activity_display_name_reader.cpp", "decoders": ["ActivityTables", "RewardTables"], "fields": [
+      {"name": "file_size", "offset": 0, "type": "size64", "status": "confirmed", "source": "Tiger tag header: u64 byte size of the tag (PackageCatalog)"},
+      {"name": "table", "offset": 8, "type": "array", "status": "confirmed", "source": "Sunrise client middleware/content/packages/tables/activity_display_name_reader.cpp; offset and kind: reflection 0x80805E0A record 0x37995B0 (member 0x7A1E796B \"table\", type 0x80805E12)", "element_class": "0x80805E15", "element": "0x80805E15", "stride": 16, "max_count": 65535},
+      {"name": "display_rows", "offset": 24, "type": "array", "status": "confirmed", "source": "Sunrise client middleware/content/packages/tables/activity_display_name_reader.cpp; offset and kind: reflection 0x80805E0B record 0x3897220 (member 0x66EDC40D, type 0x80805E11)", "element_class": "0x80805E23", "element": "0x80805E23", "stride": 36},
+      {"name": "m_CBD38C1C.m_F916C3FD", "offset": 40, "type": "array", "status": "confirmed", "source": "reflection 0x80805E0B record 0x3897220 (member 0xF916C3FD, type 0x80805E10)"},
+      {"name": "reward_sets", "offset": 56, "type": "array", "status": "guessed", "source": "data: 50 rows of 0x80805E3E, each an array of 0x80805E40 reward groups; display records index them (record +8); offset and kind: reflection 0x80805E0B record 0x3897220 (member 0x1D7F9B7D, type 0x80805E0F)", "element_class": "0x80805E3E", "element": "0x80805E3E", "stride": 16},
+      {"name": "m_CBD38C1C.m_324842BC", "offset": 72, "type": "array", "status": "confirmed", "source": "reflection 0x80805E0B record 0x3897220 (member 0x324842BC, type 0x80805E0E)"},
+      {"name": "m_CBD38C1C.m_EC71F7EE", "offset": 88, "type": "array", "status": "confirmed", "source": "reflection 0x80805E0B record 0x3897220 (member 0xEC71F7EE, type 0x80805E0D)"},
+      {"name": "m_CBD38C1C.m_0F486758", "offset": 104, "type": "array", "status": "confirmed", "source": "reflection 0x80805E0B record 0x3897220 (member 0x0F486758, type 0x80805E0C)"}
+    ]},
+    {"class": "0x80805E15", "name": "Activity display index row", "family": "activity", "size": 16, "provenance": "reflection 0x3A2CC88 (16 bytes) + Sunrise client middleware/content/packages/tables/activity_display_name_reader.cpp", "decoders": ["ActivityTables"], "fields": [
+      {"name": "hash", "offset": 0, "type": "hash", "status": "confirmed", "source": "Sunrise client middleware/content/packages/tables/activity_display_name_reader.cpp"},
+      {"name": "record", "offset": 8, "type": "relptr", "status": "confirmed", "source": "Sunrise client middleware/content/packages/tables/activity_display_name_reader.cpp; offset and kind: reflection 0x80805E15 record 0x3A2CC88 (member 0x1EA3BD68, type 0x80805E16)", "target": "0x80805E18"}
+    ]},
+    {"class": "0x80805E18", "name": "Activity display record", "family": "activity", "size": 136, "provenance": "reflection 0x3941798 (136 bytes) + Sunrise client middleware/content/packages/tables/activity_display_name_reader.cpp", "decoders": ["ActivityTables", "RewardTables"], "fields": [
+      {"name": "display_row", "offset": 0, "type": "relptr", "status": "confirmed", "source": "Sunrise client middleware/content/packages/tables/activity_display_name_reader.cpp", "target": "0x80805E23"},
+      {"name": "reward_set_index", "offset": 8, "type": "u16", "status": "guessed", "source": "data: values 0..48 (< 50 reward sets) or 0xFFFF on 906 of 1170 records", "note": "index into the display table reward_sets; 0xFFFF = none"},
+      {"name": "m_1C2A8C12", "offset": 24, "type": "array", "status": "confirmed", "source": "reflection 0x80805E18 record 0x3941798 (member 0x1C2A8C12, type 0x808076D7)"},
+      {"name": "skulls", "offset": 40, "type": "array", "status": "confirmed", "source": "reflection 0x3941798 member \"skulls\" (type 0x80803069)"},
+      {"name": "m_E86AAEE5", "offset": 72, "type": "relptr", "status": "confirmed", "source": "reflection 0x80805E18 record 0x3941798 (member 0xE86AAEE5, type 0x80805E1C)"},
+      {"name": "m_277E8058.m_8732A78F", "offset": 104, "type": "array", "status": "confirmed", "source": "reflection 0x80805E3C record 0x3A40F18 (member 0x8732A78F, type 0x80805F42)"}
+    ]},
+    {"class": "0x80805E23", "name": "Activity display row", "family": "activity", "size": 36, "provenance": "reflection 0x39C7230 (36 bytes, no pointer members) + Sunrise client middleware/content/packages/tables/activity_display_name_reader.cpp", "decoders": ["ActivityTables"], "fields": [
+      {"name": "unknown_00", "offset": 0, "type": "u32", "status": "guessed", "source": "data: 0xFFFF in most rows"},
+      {"name": "name", "offset": 4, "type": "string_ref", "status": "confirmed", "source": "Sunrise client middleware/content/packages/tables/activity_display_name_reader.cpp"},
+      {"name": "description", "offset": 12, "type": "string_ref", "status": "guessed", "source": "data: same bank as name, text reads as a description"},
+      {"name": "text_3", "offset": 20, "type": "string_ref", "status": "guessed", "source": "data: a third bank/hash pair"},
+      {"name": "unknown_1c", "offset": 28, "type": "u16", "status": "guessed", "source": "data only"},
+      {"name": "unknown_1e", "offset": 30, "type": "u16", "status": "guessed", "source": "data only"},
+      {"name": "unknown_20", "offset": 32, "type": "hash", "status": "guessed", "source": "data only"}
+    ]},
+    {"class": "0x80808AAE", "name": "Activity root (per-activity tag in w64_*_activities packages)", "family": "activity", "size": 32, "provenance": "reflection 0x3A3F1D0 (32 bytes); 468 tags; inline array data follows the struct", "decoders": ["ActivityTables"], "fields": [
+      {"name": "file_size", "offset": 0, "type": "size64", "status": "confirmed", "source": "Tiger tag header: u64 byte size of the tag (PackageCatalog)"},
+      {"name": "name_hash", "offset": 8, "type": "hash", "status": "confirmed", "source": "data: FNV-1 32 of the activity name (fnv1(\"edz_freeroam\") = 0x601D014E, fnv1(\"mission_ember\") = 0x1A6AF329)"},
+      {"name": "parts", "offset": 16, "type": "array", "status": "confirmed", "source": "reflection 0x3A3F1D0 member 0x8C2B408F (type 0x80808490); elements are u32 tags (scenario 0x80809994, 0x80809BA3)", "element_class": "0x80808491", "element": "0x80808491", "stride": 4}
+    ]},
+    {"class": "0x80808491", "name": "Activity part reference", "family": "activity", "size": 4, "provenance": "reflection 0x3967C00 (4 bytes)", "decoders": ["ActivityTables"], "fields": [
+      {"name": "tag", "offset": 0, "type": "tag", "status": "confirmed", "source": "data: every value is a tag in the catalog"}
+    ]}
+  ]
+}

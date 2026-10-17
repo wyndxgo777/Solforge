@@ -6,4 +6,8 @@
     <InternalsVisibleTo Include="SunriseStudio.Scene" />
     <InternalsVisibleTo Include="SunriseStudio.Packages.Tests" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- Tag schema registry files (TagSchemas/schemas/*.json), the one source of truth for decoded struct layouts. -->
+    <EmbeddedResource Include="TagSchemas\schemas\*.json" LogicalName="SunriseStudio.Packages.TagSchemas.%(Filename)%(Extension)" />
+  </ItemGroup>
 </Project>
