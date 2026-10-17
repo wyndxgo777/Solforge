@@ -198,6 +198,8 @@ try
     ModInstallChecks.Run(root);
     MergeSidecarChecks.Run(root);
     DependencyTableChecks.Run();
+    ItemSourceChecks.Run();
+    checks.Add("compare/revert with base: decoded fields with both values, byte ranges for the rest, field and range filters, single-field revert; item reference walks with roots, hash hits and the node bound");
     foreach (string check in checks) Console.WriteLine("PASS " + check);
     Console.WriteLine($"PASS checks={checks.Count}");
 }

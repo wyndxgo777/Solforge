@@ -68,6 +68,44 @@ Check(!pool.Validate().HasErrors, "loot pool validates: " + string.Join("; ", po
 string lua = ContentExport.LootPoolsModule([pool]);
 Check(lua.Contains("pools") && lua.Contains("moon_extra") && lua.Contains("[\"0x00000001\"]") && lua.Contains("enemy_kill") && lua.Contains("chance"),
     "loot_pools.lua carries pools and kill rules:\n" + lua);
+// get_item_sources reads loot_pools.lua back: the server's decimal-keyed file, then the project's module layered on top.
+const string serverPools = """
+    -- Loot pools the offline Sunrise server pays.
+    return {
+        pools = {
+        moon_extra = {
+            any = {
+                ["1"] = 1,
+                ["640114618"] = 3,   -- the project layer leaves this one alone
+            },
+        },
+        lost_ghost = { any = { ["443031982"] = 1 }, quantity = 9, profile = true, },
+        exotic_weapons = { catalog = "exotic_weapons", },
+        old = { only = { "5", 6 } },
+        },
+        enemy_kill = { ghosts = { pool = "lost_ghost", chance = 0.5, bubble = "anchor" } },
+    }
+    """;
+var serverModule = LootPoolsReader.Parse(serverPools);
+Check(serverModule?["pools"]?["lost_ghost"]?["quantity"]?.GetValue<double>() == 9 && serverModule["pools"]!["old"]!["only"] is System.Text.Json.Nodes.JsonArray { Count: 2 },
+    "loot_pools.lua parses: " + serverModule?.ToJsonString());
+var layered = new[] { (serverModule, "server"), (LootPoolsReader.Parse(lua), "project") };
+var ghost = LootPoolsReader.Find(layered, 443031982);
+Check(ghost.Count == 1 && ghost[0] is { Pool: "lost_ghost", List: "any", Quantity: 9, Profile: true } && ghost[0].Rules.Single().Contains("bubble~anchor"),
+    "a server pool hit carries quantity, profile and its enemy_kill rule");
+var moon = LootPoolsReader.Find(layered, 1);
+Check(moon.Count == 1 && moon[0] is { Pool: "moon_extra", Weight: 2, File: "project" } && moon[0].Rules.Single().StartsWith("moon_kills"),
+    "the project layer overrides a server pool's weight and adds its rule: " + string.Join("; ", moon));
+Check(LootPoolsReader.Find(layered, 640114618).Single().Weight == 3 && LootPoolsReader.Find(layered, 2).Single().List == "hunter",
+    "unlisted server items survive the project layer; class lists are named");
+Check(LootPoolsReader.Find(layered, 6).Single().List == "only" && LootPoolsReader.Find(layered, 7).Count == 0, "only lists match by hash");
+Check(LootPoolsReader.Find(layered, 99, name => name == "exotic_weapons").Single().List == "catalog:exotic_weapons"
+    && LootPoolsReader.Find(layered, 99).Count == 0, "catalog pools match only when the item is in the catalog");
+var removed = LootPoolsReader.Find([(serverModule, "server"), (LootPoolsReader.Parse("return { pools = { moon_extra = { any = { [\"0x00000001\"] = 0 } } } }"), "overlay")], 1);
+Check(removed.Count == 0, "weight 0 in a later layer removes the item");
+bool badLua = false;
+try { LootPoolsReader.Parse("return { pools = os.exit() }"); } catch (InvalidDataException) { badLua = true; }
+Check(badLua, "code in the module is refused");
 var files = ContentExport.Build([pool, subclass]);
 Check(files.Select(file => file.RelativePath).Order(StringComparer.Ordinal)
     .SequenceEqual(["server/data/subclass_nodes.tsv", "server/scripts/loot_pools.lua", "server/scripts/sol_content.lua"]), "export writes the three server files");
