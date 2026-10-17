@@ -120,5 +120,18 @@ public static partial class NodeLibrary
              Out("result", "Result", PinType.Any)], [Prop("function", "Function", PropertyKind.Choice, "log", "", MissionContextFunctions)], "sdk api invoke");
         yield return Node("mission.lua", "Lua", "Actions", kind, "Raw Lua run in the handler (context, state and event are in scope).",
             [ExecIn, Then], [Prop("code", "Code", PropertyKind.Code, "-- lua")], "script snippet raw custom");
+
+        // Mission library (lib.mission_lib): transitions, cutscenes, boss phases and endings; one node per catalog call.
+        foreach (var call in MissionLibrary.Calls)
+            yield return Node(call.NodeType, call.Title, "Mission Library", kind,
+                call.Description + (call.Pending ? " (Library name pending the server's mission-lib-transitions branch.)" : ""),
+                [ExecIn, Then], call.Parameters.Select(LibraryProperty).ToArray(), "lib mission_lib " + call.Feature + " " + call.Function.Replace('_', ' '));
     }
+
+    /** A library parameter as a node property; slots and Lua fields are typed as text. */
+    private static PropertyDef LibraryProperty(MissionLibParam parameter) => new(parameter.Name, parameter.Label, parameter.Kind switch
+    {
+        MissionLibValue.Integer => PropertyKind.Integer, MissionLibValue.Number => PropertyKind.Number, MissionLibValue.Bool => PropertyKind.Bool,
+        MissionLibValue.Choice => PropertyKind.Choice, _ => PropertyKind.Text
+    }, parameter.Default, parameter.Choices, parameter.Help + (parameter.Required ? " (required)" : ""));
 }

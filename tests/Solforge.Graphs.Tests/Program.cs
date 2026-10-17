@@ -349,6 +349,68 @@ missionSync.Edit("return {\n", 0);
 Expect(!missionSync.TryApply(text => script = SunriseStudio.Missions.MissionGraphDocument.Parse(text), 5, force: true) && script.Source == "return {}\n"
     && missionSync.Error.Length > 0 && missionSync.Draft == "return {\n", "bad mission Lua stays in the source view");
 
+// Mission library nodes (lib.mission_lib): one node per call, compiled to the call, shown again as titled nodes
+// when the Graph panel parses the Lua, and an Arguments edit round-trips.
+foreach (var call in MissionLibrary.Calls)
+    Expect(NodeLibrary.Find(call.NodeType) is { Category: "Mission Library" } type && type.Kinds == GraphKind.Mission
+        && call.Parameters.All(parameter => type.Property(parameter.Name) is not null), $"library node {call.NodeType}");
+Expect(NodeLibrary.Search(GraphKind.Mission, "cutscene").Any(result => result.Type.Id == "lib.play_cutscene")
+    && NodeLibrary.Search(GraphKind.Mission, "boss").Any(result => result.Type.Id == "lib.boss_phase"), "library nodes in the add menu");
+var libGraph = GraphDocument.Create(GraphKind.Mission, "Library");
+var libEditor = new GraphEditor(libGraph);
+string libStart = libGraph.Nodes.First(node => node.Type == "mission.start").Id;
+var fade = libEditor.AddNode("lib.transition", 250, 0, new Dictionary<string, string> { ["teleport"] = "Slot.SPAWN_2", ["state"] = "mission.states.AREA_2" });
+var cut = libEditor.AddNode("lib.play_cutscene", 500, 0, new Dictionary<string, string> { ["cinematic"] = "Slot.CINEMATIC_1" });
+var phase = libEditor.AddNode("lib.boss_phase", 750, 0, new Dictionary<string, string> { ["boss"] = "Slot.BOSS", ["pylons"] = "{Slot.P1, Slot.P2}" });
+var end = libEditor.AddNode("lib.ending", 1000, 0);
+Expect(libEditor.Connect(libStart, "then", fade.Id, "exec") is null && libEditor.Connect(fade.Id, "then", cut.Id, "exec") is null
+    && libEditor.Connect(cut.Id, "then", phase.Id, "exec") is null && libEditor.Connect(phase.Id, "then", end.Id, "exec") is null, "library nodes link");
+var libLua = MissionGraphCompiler.Compile(libEditor.Document);
+Expect(!GraphValidation.HasErrors(libLua.Diagnostics) && libLua.Lua.Contains(MissionLibrary.Require)
+    && libLua.Lua.Contains("mission_lib.transition(context, {fade_out_ms = 500, hold_ms = 1000, fade_in_ms = 500, teleport = Slot.SPAWN_2, state = mission.states.AREA_2})")
+    && libLua.Lua.Contains("pylons = {Slot.P1, Slot.P2}") && libLua.Lua.Contains("shield = \"immune\"")
+    && libLua.Lua.IndexOf("mission_lib.transition", StringComparison.Ordinal) < libLua.Lua.IndexOf("mission_lib.ending", StringComparison.Ordinal),
+    "library nodes compile in exec order: " + libLua.Lua);
+Expect(libLua.Diagnostics.Any(item => item.Severity == DiagnosticSeverity.Info && item.Message.StartsWith("TODO", StringComparison.Ordinal))
+    == MissionLibrary.Calls.Any(call => call.Pending), "pending library names are flagged TODO");
+var missingBoss = GraphDocument.Create(GraphKind.Mission, "No boss");
+var missingEditor = new GraphEditor(missingBoss);
+var noBoss = missingEditor.AddNode("lib.boss_phase", 250, 0);
+missingEditor.Connect(missingBoss.Nodes.First(node => node.Type == "mission.start").Id, "then", noBoss.Id, "exec");
+Expect(GraphValidation.HasErrors(MissionGraphCompiler.Compile(missingEditor.Document).Diagnostics), "a boss phase without a boss is an error");
+var libScript = SunriseStudio.Missions.MissionScriptGraph.Parse(libLua.Lua);
+var libNodes = libScript.LibraryCalls();
+Expect(libNodes.Select(node => node.Title).SequenceEqual(["Fade Transition", "Play Cutscene", "Boss Phase", "Ordered Ending"]),
+    "compiled Lua parses back to library nodes: " + string.Join(",", libNodes.Select(node => node.Title)));
+var cutNode = libNodes.Single(node => node.LibCall!.Call.Function == "play_cutscene");
+Expect(cutNode.LibCall!.Values["cinematic"] == "Slot.CINEMATIC_1" && cutNode.LibCall.Values["signal"] == "cutscene_done", "parsed cutscene values");
+string cutArgs = cutNode.Inputs.Single(input => input.Name == "Arguments").Span.Read(libLua.Lua);
+string libEdited = libScript.SetInput(cutNode, "Arguments", cutArgs.Replace("skippable = true", "skippable = false"));
+var reparsed = SunriseStudio.Missions.MissionScriptGraph.Parse(libEdited).LibraryCalls();
+Expect(reparsed.Count == 4 && reparsed.Single(node => node.LibCall!.Call.Function == "play_cutscene").LibCall!.Values["skippable"] == "false"
+    && libEdited.Replace("skippable = false", "skippable = true") == libLua.Lua, "library node edit round-trips through Lua");
+// The node graph's own source (JSON) keeps library properties through the panel's sync.
+var libReloaded = GraphModels.ParseNodeSource(libEditor.Document.ToJson(), GraphKind.Mission);
+Expect(MissionGraphCompiler.Compile(libReloaded).Lua == libLua.Lua, "library nodes survive the JSON source round trip");
+
+// Mission graph templates (cutscenes, fade moves, boss pylons): each builds, compiles with no errors and parses back.
+foreach (var template in MissionGraphTemplates.All)
+{
+    var built = MissionGraphTemplates.Build(template.Id, template.Title);
+    var templateLua = MissionGraphCompiler.Compile(built);
+    Expect(!GraphValidation.HasErrors(templateLua.Diagnostics) && !templateLua.Diagnostics.Any(item => item.Message.StartsWith("Never runs", StringComparison.Ordinal)),
+        $"template {template.Id} compiles: " + string.Join("; ", templateLua.Diagnostics.Select(item => item.Message)));
+    var parsedCalls = SunriseStudio.Missions.MissionScriptGraph.Parse(templateLua.Lua).LibraryCalls();
+    Expect(parsedCalls.Count == built.Nodes.Count(node => MissionLibrary.ForNode(node.Type) is not null) && parsedCalls.Count > 0,
+        $"template {template.Id} library calls parse back");
+    Expect(MissionGraphCompiler.Compile(GraphModels.ParseNodeSource(built.ToJson(), GraphKind.Mission)).Lua == templateLua.Lua, $"template {template.Id} JSON round trip");
+}
+var pylonLua = MissionGraphCompiler.Compile(MissionGraphTemplates.Build("boss_pylons", "Ghaul")).Lua;
+Expect(pylonLua.Contains("at_health = 0.66") && pylonLua.Contains("at_health = 0.33") && pylonLua.Contains("mission_lib.ending(")
+    && pylonLua.Contains("sf.f.boss_can_die"),"boss pylon template phases");
+Expect(MissionGraphTemplates.Find("FADE_AREA_MOVE") is not null && MissionGraphTemplates.Find("nope") is null, "template lookup");
+try { MissionGraphTemplates.Build("nope", "x"); failures.Add("unknown template accepted"); } catch (InvalidDataException) { passed++; }
+
 Console.WriteLine($"Solforge.Graphs checks: {passed} passed, {failures.Count} failed.");
 foreach (string failure in failures) Console.WriteLine("FAIL: " + failure);
 return failures.Count == 0 ? 0 : 1;

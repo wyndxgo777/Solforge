@@ -6,12 +6,13 @@ internal static class TemplateChecks
     private static MissionSdkReference Row(string table, string key) => new($"mission.{table}.{key}", table, key, null);
 
     /** A small mission SDK: a state, sensors, an objective, a boss, a chest, squads with slots, and directives. */
-    private static readonly MissionSdkReference[] Sdk =
+    internal static readonly MissionSdkReference[] Sdk =
     [
         Row("states", "STATE_A"),
         Row("Slot", "M_DIRECTIVE_SENSOR_1"), Row("Slot", "M_DIALOG_SENSOR_1"), Row("Slot", "M_PUBLIC_EVENT_SENSOR_1"),
         Row("Slot", "OBJ_MAIN"), Row("Slot", "SQ_BOSS"), Row("Slot", "CHEST_1"),
         Row("Slot", "SQ_A"), Row("Slot", "SQ_B"), Row("Slot", "SQ_C"),
+        Row("Slot", "CINEMATIC_1"), Row("Slot", "SPAWN_2"), Row("Slot", "PYLON_1"), Row("Slot", "PYLON_2"),
         Row("Squad", "SQ_A"), Row("Squad", "SQ_B"), Row("Squad", "SQ_C"), Row("Squad", "SQ_BOSS"),
         Row("Directive", "GO_THERE"), Row("Directive", "KILL_BOSS"),
     ];

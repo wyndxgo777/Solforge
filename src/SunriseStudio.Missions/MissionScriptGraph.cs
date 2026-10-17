@@ -45,6 +45,8 @@ public sealed record MissionScriptNode(string Key, MissionScriptNodeKind Kind, s
     public MissionApiCall? ApiCall { get; init; }
     /** Typed API calls in this node's own code, in source order; calls inside a nested function are not its own. */
     public IReadOnlyList<MissionApiCall> ApiCalls { get; init; } = [];
+    /** The mission-library call (lib.mission_lib transition, cutscene, boss phase, ending) this statement is; null otherwise. */
+    public Solforge.Graphs.MissionLibMatch? LibCall { get; init; }
     /** The events a returned callback serves; empty for a start callback and for every other node. */
     public IReadOnlyList<MissionApiEvent> ApiEvents { get; init; } = [];
     internal object? SourceIdentity { get; init; }

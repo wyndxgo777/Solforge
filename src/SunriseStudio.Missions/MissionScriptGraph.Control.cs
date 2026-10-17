@@ -31,6 +31,9 @@ public sealed partial class MissionScriptGraph
         }
     }
 
+    /** Every mission-library call node (transitions, cutscenes, boss phases, endings) at any depth, in walk order. */
+    public IReadOnlyList<MissionScriptNode> LibraryCalls() => AllNodes().Where(node => node.LibCall is not null).ToArray();
+
     /** The scopes (bodies) a node owns, in source order. */
     public IReadOnlyList<MissionScriptScope> Scopes(MissionScriptNode owner)
     {
@@ -176,6 +179,11 @@ public sealed partial class MissionScriptGraph
         node = node with { SourceIdentity = sourceIdentity };
         if (node.Kind is MissionScriptNodeKind.Function or MissionScriptNodeKind.Flow or MissionScriptNodeKind.Module
             or MissionScriptNodeKind.Callback or MissionScriptNodeKind.Setting) return node;
+        // A mission-library call is matched before the API: its names (transition) can also be SDK member names.
+        if (statement is LuaCallStatement { Expression: LuaCall libCall } && IsPath(libCall.Target) && libCall.Method is null
+            && Solforge.Graphs.MissionLibrary.Match(libCall.Callee.Read(Source), libCall.Arguments.Inner.Read(Source)) is { } library)
+            return node with { Kind = MissionScriptNodeKind.Call, Title = library.Call.Title, LibCall = library,
+                Inputs = [new("Call", libCall.Callee), new("Arguments", libCall.Arguments.Inner)] };
         if (DescribeApiCall(node, statement) is { } api) return api;
         int first = node.First, end = node.End;
         if (Text(end - 1) == ";") end--;

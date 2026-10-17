@@ -99,6 +99,7 @@ public static class MissionGraphCompiler
                 lua.Append("mission_modules.").Append(module).Append(" = require(missions.").Append(module).AppendLine(")");
             lua.AppendLine();
         }
+        if (flat.Nodes.Any(node => MissionLibrary.ForNode(node.Type) is not null)) lua.AppendLine(MissionLibrary.Require).AppendLine();
         lua.Append(Header);
         foreach (var node in flat.OfType("flow.delay").OrderBy(node => node.Id, StringComparer.Ordinal))
             lua.Append("delays[").Append(Quote(Key("sf.d.", node.Id))).Append("] = ").AppendLine(Quote(node.Id));
@@ -304,6 +305,9 @@ public static class MissionGraphCompiler
                 case NodeLibrary.Reroute:
                     Chain(lua, node.Id, "out", indent, next);
                     return;
+                case var _ when MissionLibrary.ForNode(node.Type) is { } library:
+                    Line(lua, indent, MissionLibrary.Render(library, node.Properties));
+                    break;
                 default:
                     Line(lua, indent, $"-- {node.Type} does not run in a mission graph");
                     diagnostics.Add(new(DiagnosticSeverity.Warning, NodeLibrary.RemovedMissionNodes.TryGetValue(node.Type, out var removed)

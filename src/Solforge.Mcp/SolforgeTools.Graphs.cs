@@ -16,7 +16,8 @@ namespace Solforge.Mcp;
 public static partial class SolforgeTools
 {
     public static readonly string[] GraphToolNames =
-        ["list_graph_node_types", "list_graphs", "get_graph", "compile_graph", "create_graph", "edit_graph", "apply_graph", "create_mission_script"];
+        ["list_graph_node_types", "list_graphs", "get_graph", "compile_graph", "create_graph", "edit_graph", "apply_graph", "create_mission_script",
+         "list_mission_lib_calls", "insert_mission_lib_call"];
 
     /** create_mission_script's activity ids, also accepted by create_graph(kind=mission, activity=...). */
     private const string ActivityIds = "story, strike, patrol, public_event, lost_sector, raid, encounter, pvp, quest or custom";
@@ -130,7 +131,9 @@ public static partial class SolforgeTools
             Schema(("path", "string", "Project-relative path ending .solgraph.json (not needed with activity)", false), ("kind", "string", "material, weapon or mission", true),
                 ("name", "string", "Display name", false), ("target", "string", "Material or item tag (0x...) the graph edits", false),
                 ("activity", "string", "Mission kind only: " + ActivityIds, false),
-                ("map", "string", "With activity: the missions.lua key or map name (also accepted as 'mission')", false)),
+                ("map", "string", "With activity: the missions.lua key or map name (also accepted as 'mission')", false),
+                ("template", "string", "Mission node graphs: a graph template from list_mission_lib_calls (cutscene_sky_battle, " +
+                    "cutscene_light_restored, cutscene_boss_intro, fade_area_move, boss_pylons)", false)),
             args => McpJson.String(args, "activity") is not null
                 ? GraphCommands.ParseKind(McpJson.String(args, "kind")) != GraphKind.Mission ? "activity needs kind mission."
                     : (McpJson.String(args, "map") ?? McpJson.String(args, "mission")) is null ? "Give map (the mission key or map name) with activity." : null
@@ -158,8 +161,15 @@ public static partial class SolforgeTools
                 string path = GraphPath(host, args, out string? ignored)!;
                 if (File.Exists(path)) return McpToolResult.Error("That graph exists; use edit_graph.");
                 var kind = GraphCommands.ParseKind(McpJson.String(args, "kind"));
-                var document = GraphDocument.Create(kind, McpJson.String(args, "name") ?? Path.GetFileName(path)[..^GraphDocument.Extension.Length],
-                    McpJson.String(args, "target") ?? "");
+                string name = McpJson.String(args, "name") ?? Path.GetFileName(path)[..^GraphDocument.Extension.Length];
+                GraphDocument document;
+                if (McpJson.String(args, "template") is { } template)
+                {
+                    if (kind != GraphKind.Mission) return McpToolResult.Error("Graph templates are mission graphs; use kind mission.");
+                    try { document = MissionGraphTemplates.Build(template, name); }
+                    catch (InvalidDataException exception) { return McpToolResult.Error(exception.Message); }
+                }
+                else document = GraphDocument.Create(kind, name, McpJson.String(args, "target") ?? "");
                 document.Save(path);
                 return McpToolResult.Json(GraphCommands.Describe(document));
             }
@@ -215,5 +225,118 @@ public static partial class SolforgeTools
                 return McpToolResult.Text(await host.RunActionAsync("apply_graph", new JsonObject { ["path"] = McpJson.String(args, "path") }, cancel)
                     .ConfigureAwait(false));
             });
+
+        yield return Read("list_mission_lib_calls", "Mission-library calls (lib.mission_lib) for content: fade/area transitions with " +
+            "teleport, mid-mission cutscenes, boss shield/pylon/invulnerability phases and ordered endings. Each has its Lua function, graph node " +
+            "type (lib.*), fields (name, kind, default, required, help) and pending (true while the name is a placeholder for the server's " +
+            "mission-lib-transitions branch). Also lists the mission graph templates (create_graph kind=mission template=...) built on them. " +
+            "With call and values it renders the Lua line and its problems.",
+            Schema(("call", "string", "Optional function, e.g. transition, play_cutscene, boss_phase, set_invulnerable, break_shield, ending", false),
+                ("values", "object", "Optional field values to render with call", false)),
+            args =>
+            {
+                if (McpJson.String(args, "call") is { } name)
+                {
+                    if (MissionLibrary.Find(name) is not { } one) return McpToolResult.Error("No such call; omit call to list them.");
+                    var values = LibValues(args);
+                    return McpToolResult.Json(new JsonObject
+                    {
+                        ["lua"] = MissionLibrary.Render(one, values), ["require"] = MissionLibrary.Require,
+                        ["problems"] = new JsonArray(MissionLibrary.Check(one, values).Select(problem => (JsonNode)problem).ToArray())
+                    });
+                }
+                var calls = new JsonArray();
+                foreach (var call in MissionLibrary.Calls)
+                    calls.Add(new JsonObject
+                    {
+                        ["function"] = call.Function, ["title"] = call.Title, ["feature"] = call.Feature, ["node_type"] = call.NodeType,
+                        ["description"] = call.Description, ["pending"] = call.Pending,
+                        ["example"] = MissionLibrary.Render(call, call.Parameters.Where(field => field.Required)
+                            .ToDictionary(field => field.Name, _ => "Slot.CHANGE_ME", StringComparer.Ordinal)),
+                        ["fields"] = new JsonArray(call.Parameters.Select(field => (JsonNode)new JsonObject
+                        {
+                            ["name"] = field.Name, ["label"] = field.Label, ["kind"] = field.Kind.ToString().ToLowerInvariant(),
+                            ["default"] = field.Default, ["required"] = field.Required, ["help"] = field.Help,
+                            ["choices"] = field.Choices is null ? null : new JsonArray(field.Choices.Select(choice => (JsonNode)choice).ToArray())
+                        }).ToArray())
+                    });
+                var templates = new JsonArray(MissionGraphTemplates.All.Select(template => (JsonNode)new JsonObject
+                {
+                    ["id"] = template.Id, ["title"] = template.Title, ["examples"] = template.Examples, ["description"] = template.Description
+                }).ToArray());
+                return McpToolResult.Json(new JsonObject
+                {
+                    ["module"] = MissionLibrary.Module, ["require"] = MissionLibrary.Require, ["calls"] = calls, ["graph_templates"] = templates
+                });
+            });
+
+        yield return Act("insert_mission_lib_call", "Insert a mission-library call (list_mission_lib_calls) into content. A .solgraph.json mission " +
+            "graph gets the lib.* node, linked after the node 'after' (its Then; what followed now follows the new node). A .lua mission script " +
+            "gets the Lua line as the first statement of 'function' (a callback such as on_start, or a named function) plus the require " +
+            "line, through Project changes with undo.",
+            Schema(("path", "string", "Project-relative .solgraph.json or .lua path", true), ("call", "string", "Library function, e.g. transition", true),
+                ("values", "object", "Field values (Lua expressions for slots: Slot.X)", false),
+                ("after", "string", "Graphs: node id whose Then runs the new node", false),
+                ("function", "string", "Scripts: function or callback name to insert into", false)),
+            args =>
+            {
+                if (MissionLibrary.Find(McpJson.String(args, "call") ?? "") is null) return "Unknown call; see list_mission_lib_calls.";
+                string path = McpJson.String(args, "path") ?? "";
+                if (!path.EndsWith(".lua", StringComparison.OrdinalIgnoreCase)) return NeedPath(args);
+                if (McpJson.String(args, "function") is null) return "Give function (the callback or function to insert into).";
+                return ProjectFiles.EditablePath(host.ProjectRoot, path, out string? reason) is null ? reason ?? "Refused." : null;
+            },
+            args => $"Insert {McpJson.String(args, "call")} into {McpJson.String(args, "path")}",
+            async (args, cancel) =>
+            {
+                var call = MissionLibrary.Find(McpJson.String(args, "call")!)!;
+                var values = LibValues(args);
+                string relative = McpJson.String(args, "path")!;
+                try
+                {
+                    if (relative.EndsWith(".lua", StringComparison.OrdinalIgnoreCase))
+                    {
+                        string file = ProjectFiles.EditablePath(host.ProjectRoot, relative, out _)!;
+                        if (!File.Exists(file)) return McpToolResult.Error("No such script in the project; create_mission_script makes one.");
+                        string updated = MissionLibrary.InsertIntoLua(await File.ReadAllTextAsync(file, cancel).ConfigureAwait(false),
+                            McpJson.String(args, "function")!, MissionLibrary.Render(call, values));
+                        var write = new JsonObject { ["path"] = relative, ["content"] = updated };
+                        return McpToolResult.Text(await host.RunActionAsync("apply_project_edit", write, cancel).ConfigureAwait(false));
+                    }
+                    string path = GraphPath(host, args, out _)!;
+                    if (!File.Exists(path)) return McpToolResult.Error("No such graph; create_graph first.");
+                    var editor = new GraphEditor(GraphDocument.Load(path));
+                    if (editor.Document.Kind != GraphKind.Mission) return McpToolResult.Error("Library calls go in mission graphs.");
+                    string? after = McpJson.String(args, "after");
+                    var previous = after is null ? null : editor.Node(after);
+                    if (after is not null && previous is null) return McpToolResult.Error("No node " + after + " in the graph.");
+                    var node = editor.AddNode(call.NodeType, (previous?.X ?? 0) + 260, (previous?.Y ?? 0) + 120, values);
+                    if (previous is not null)
+                    {
+                        var next = editor.Links.Where(link => link.FromNode == previous.Id && link.FromPin == "then").ToList();
+                        foreach (var link in next) editor.Disconnect(link);
+                        if (editor.Connect(previous.Id, "then", node.Id, "exec") is { } problem) return McpToolResult.Error(problem);
+                        foreach (var link in next) editor.Connect(node.Id, "then", link.ToNode, link.ToPin);
+                    }
+                    editor.Document.Save(path);
+                    return McpToolResult.Json(new JsonObject
+                    {
+                        ["node"] = node.Id, ["diagnostics"] = GraphCommands.Diagnostics(GraphValidation.Validate(editor.Document))
+                    });
+                }
+                catch (Exception exception) when (exception is IOException or InvalidDataException or System.Text.Json.JsonException or InvalidOperationException)
+                { return McpToolResult.Error("Cannot insert: " + exception.Message); }
+            });
+    }
+
+    /** The values argument as field strings (booleans and numbers as their Lua text). */
+    private static Dictionary<string, string> LibValues(JsonObject args)
+    {
+        var values = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (args["values"] is not JsonObject table) return values;
+        foreach (var (key, value) in table)
+            values[key] = value is JsonValue scalar && scalar.TryGetValue<bool>(out bool flag) ? (flag ? "true" : "false")
+                : value is JsonValue text && text.TryGetValue<string>(out string? written) ? written : value?.ToJsonString() ?? "";
+        return values;
     }
 }
