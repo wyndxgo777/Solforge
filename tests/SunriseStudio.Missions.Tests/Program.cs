@@ -17,6 +17,7 @@ try
     ScriptGraphChecks.Synthetic();
     ScriptControlChecks.Run(temporary);
     TemplateChecks.Synthetic();
+    MissionHostChecks.Synthetic(temporary);
     int root = Array.IndexOf(args, "--game-root");
     if (root >= 0)
     {
@@ -34,6 +35,9 @@ try
         VisualAuthoringChecks.Run(temporary, game);
         SceneEventChecks.Owned(game, references);
         MissionGraphChecks.Installed(catalog, references, temporary);
+        // --red-war <Project Sol scripts folder>: every Red War mission passes Check script and walks in every Simulate mode.
+        int redWar = Array.IndexOf(args, "--red-war");
+        if (redWar >= 0) MissionHostChecks.RedWar(args[redWar + 1], game);
     }
 }
 catch (Exception error) { Console.Error.WriteLine(error); Environment.ExitCode = 1; }

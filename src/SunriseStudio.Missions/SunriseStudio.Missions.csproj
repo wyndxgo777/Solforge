@@ -2,4 +2,7 @@
   <PropertyGroup><TargetFramework>net9.0</TargetFramework></PropertyGroup>
   <ItemGroup><ProjectReference Include="../SunriseStudio.Projects/SunriseStudio.Projects.csproj" /></ItemGroup>
   <ItemGroup><PackageReference Include="Loretta.CodeAnalysis.Lua" Version="0.2.13" /></ItemGroup>
+  <!-- Check script and Simulate run the mission in a bundled Lua 5.4 (KeraLua ships lua54.dll) with mission_host.lua. -->
+  <ItemGroup><PackageReference Include="KeraLua" Version="1.4.10" /></ItemGroup>
+  <ItemGroup><EmbeddedResource Include="Simulation/mission_host.lua" LogicalName="SunriseStudio.Missions.mission_host.lua" /></ItemGroup>
 </Project>
