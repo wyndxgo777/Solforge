@@ -25,8 +25,10 @@ public sealed class SolforgeMcpService : IAsyncDisposable
     {
         // Local server tools (LocalServer/LocalServerTools.cs) sit beside the editor tools; they never reach the VPS.
         var localServer = LocalServer.LocalServerTools.Create(LocalServer.LocalServerManager.CreateDefault(), () => host.ProjectRoot, host.ApproveAsync);
-        var dispatcher = new McpDispatcher([.. SolforgeTools.Create(host), .. localServer], version,
-            SolforgeTools.Instructions + LocalServer.LocalServerTools.Instructions);
+        // get_client_build, testkit_status and testkit_restart live in ClientProvenance/ and Testkit/.
+        var dispatcher = new McpDispatcher([.. SolforgeTools.Create(host), .. localServer, .. ClientProvenance.ClientBuildTools.Create(),
+            .. Testkit.TestkitTools.Create(Testkit.TestkitMonitor.CreateDefault(), host.ApproveAsync)], version,
+            SolforgeTools.Instructions + LocalServer.LocalServerTools.Instructions + ClientProvenance.ClientBuildTools.Instructions + Testkit.TestkitTools.Instructions);
         dispatcher.OnToolCall = tool => host.Automatic?.NoteToolCall(tool);
         var server = new McpHttpServer(dispatcher) { Viewport = host.Viewport, Remote = host.RemoteAiAsync };
         server.Start();
