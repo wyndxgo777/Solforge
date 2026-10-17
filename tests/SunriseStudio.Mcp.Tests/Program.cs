@@ -68,6 +68,8 @@ try
     checks.Add("automatic mode: /automatic parsing, start prompt, idle nudge with progress and remaining, repeat and stuck nudges change tactic, prompt and busy screens wait, goal_complete, goal_blocked, stop, nudge and time limits, nesting guard, saved goal resume, and the automatic_*/goal_* tools with no approve click");
     await McpSetChecks.Run(Path.Combine(scratch, "mcp-set"), FindShim());
     checks.Add("Sol MCP set: solforge, gemini and clinepass run the current shim; .mcp.json servers above the project and sol-testkit/tiger-mcp from the user's configs are carried; Claude's --mcp-config holds them all; agy and Cline merges keep the user's own servers and refresh old shim entries; run copy of solforge-mcp; missing exe/script checks and the initialize probe");
+    await MultiAgentChecks.Run();
+    checks.Add("multi-agent: sessions from initialize clientInfo and the shim pid header, dead and idle sessions dropped, open_map/close_map refuse another session's recent map unless force (expiry, same session, UI change, mission-only claim), builds and deploys say who started them, map=<tag> reads answer from a background view without touching the UI map, get_sessions");
     Approvals();
     checks.Add("auto-allow: Claude Code, agy and Cline allow prompts match only with a one-time Yes/Allow highlighted at the bottom; No, scrollback, quotes, persistent rows and free text never do");
     foreach (string check in checks) Console.WriteLine("PASS " + check);

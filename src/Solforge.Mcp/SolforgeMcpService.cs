@@ -14,6 +14,8 @@ public sealed class SolforgeMcpService : IAsyncDisposable
     }
 
     public McpDispatcher Dispatcher { get; }
+    /** Connected MCP sessions, the map claim and running work (the editor's presence list reads it). */
+    public McpSessionRegistry? Sessions => server.Sessions;
     public string Url => server.Url;
     public int Port => server.Port;
     public int Requests => server.RequestCount;
@@ -26,11 +28,13 @@ public sealed class SolforgeMcpService : IAsyncDisposable
         // Local server tools (LocalServer/LocalServerTools.cs) sit beside the editor tools; they never reach the VPS.
         var localServer = LocalServer.LocalServerTools.Create(LocalServer.LocalServerManager.CreateDefault(), () => host.ProjectRoot, host.ApproveAsync);
         // get_client_build, testkit_status and testkit_restart live in ClientProvenance/ and Testkit/.
-        var dispatcher = new McpDispatcher([.. SolforgeTools.Create(host), .. localServer, .. ClientProvenance.ClientBuildTools.Create(),
-            .. Testkit.TestkitTools.Create(Testkit.TestkitMonitor.CreateDefault(), host.ApproveAsync)], version,
-            SolforgeTools.Instructions + LocalServer.LocalServerTools.Instructions + ClientProvenance.ClientBuildTools.Instructions + Testkit.TestkitTools.Instructions);
+        // Several agents can share this Solforge (MultiAgentTools.cs): sessions, the open_map guard and map-scoped reads.
+        var sessions = new McpSessionRegistry();
+        var dispatcher = new McpDispatcher(MultiAgentTools.Wrap([.. SolforgeTools.Create(host), .. localServer, .. ClientProvenance.ClientBuildTools.Create(),
+            .. Testkit.TestkitTools.Create(Testkit.TestkitMonitor.CreateDefault(), host.ApproveAsync)], host as ISolforgePresence, sessions), version,
+            SolforgeTools.Instructions + LocalServer.LocalServerTools.Instructions + ClientProvenance.ClientBuildTools.Instructions + Testkit.TestkitTools.Instructions + MultiAgentTools.Instructions);
         dispatcher.OnToolCall = tool => host.Automatic?.NoteToolCall(tool);
-        var server = new McpHttpServer(dispatcher) { Viewport = host.Viewport, Remote = host.RemoteAiAsync };
+        var server = new McpHttpServer(dispatcher) { Viewport = host.Viewport, Remote = host.RemoteAiAsync, Sessions = sessions };
         server.Start();
         host.Viewport.LocalUrl = server.ViewportUrl;
         McpDiscovery.CleanStale();

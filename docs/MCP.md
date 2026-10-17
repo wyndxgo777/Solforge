@@ -111,6 +111,13 @@ In the viewport, the player shows as an orange ring with a facing arrow and a br
 - `open_map` takes a map, a mission, or both. A mission alone opens on its own map, and a map alone lists its missions.
 - `list_missions` shows only the open map's missions unless you give `map` or `all=true`.
 
+## Several agents on one Solforge
+
+- Each `solforge-mcp` shim sends its pid (`X-Solforge-Client-Pid`); with the `Mcp-Session-Id` from `initialize` and the clientInfo name, that identifies each agent.
+- `get_sessions` lists the connected sessions, who opened the map the UI shows, and which build, deploy or map load is running and who started it. The AI workspace shows the same list under its header.
+- `find_object`, `get_object`, `list_mission_objects`, `get_mission_object`, `find_world_objects` and `get_placement` take `map=<tag>` (and `mission=<tag>`). They answer from a background copy of that map, and the UI's map does not change. The first call on a large map may say it is still loading; call again. Solforge keeps two copies at most.
+- `open_map` and `close_map` refuse while another session opened the current map less than 10 minutes ago (`SOLFORGE_MAP_GUARD_MINUTES`), unless `force=true`.
+
 ## Shaders, animations and audio
 
 Read-only metadata from the installed game. No map needs to be open, and these tools keep working while context publishing is paused. They use the same package readers as the editor's material, animation and audio pages, and they decode nothing those readers don't already read.

@@ -38,6 +38,8 @@ public sealed class McpHttpServer : IAsyncDisposable
     public string ViewKey { get; }
     /** The remote control AI terminal hook behind POST /remote/ai; null serves 404. */
     public Func<RemoteAiRequest, CancellationToken, Task<JsonObject>>? Remote { get; set; }
+    /** Who is connected (McpSessions.cs); null keeps no record. Each request runs with McpSessionRegistry.Current set. */
+    public McpSessionRegistry? Sessions { get; set; }
     private const int MaximumRemoteBody = 16 << 10, MaximumRemoteText = 4000;
     public string ViewportUrl => $"http://127.0.0.1:{Port}/viewport?key={ViewKey}";
 
@@ -99,6 +101,7 @@ public sealed class McpHttpServer : IAsyncDisposable
         {
             case "DELETE":
                 if (session is not null) lock (sessions) sessions.Remove(session);
+                Sessions?.Remove(session);
                 await Write(stream, 200, "text/plain", "").ConfigureAwait(false);
                 return;
             case "GET":
@@ -112,6 +115,9 @@ public sealed class McpHttpServer : IAsyncDisposable
         }
         string body = Encoding.UTF8.GetString(request.Body);
         bool initialize = body.Contains("\"initialize\"", StringComparison.Ordinal);
+        int? pid = int.TryParse(request.Header(McpSessionRegistry.PidHeader), out int shimPid) && shimPid > 0 ? shimPid : null;
+        // Tools see who called them (get_sessions, the open_map guard, who started a build).
+        McpSessionRegistry.Current = Sessions?.Find(session, pid);
         string? reply = await dispatcher.HandleAsync(body, stop.Token).ConfigureAwait(false);
         var headers = new List<(string, string)>();
         if (initialize && reply is not null && reply.Contains("\"result\"", StringComparison.Ordinal))
@@ -119,6 +125,8 @@ public sealed class McpHttpServer : IAsyncDisposable
             session = Guid.NewGuid().ToString("N");
             lock (sessions) sessions.Add(session);
             headers.Add(("Mcp-Session-Id", session));
+            var (client, version) = ClientInfo(body);
+            Sessions?.Register(session, client, version, pid);
         }
         if (reply is null) { await Write(stream, 202, "text/plain", "", headers).ConfigureAwait(false); return; }
         // A client that accepts only SSE gets the reply as one event; everyone else gets plain JSON.
@@ -234,6 +242,17 @@ public sealed class McpHttpServer : IAsyncDisposable
         catch (TimeoutException) { reply = new JsonObject { ["error"] = "Solforge did not answer in time (busy?)." }; }
         catch (InvalidOperationException exception) { reply = new JsonObject { ["error"] = exception.Message }; }
         await Write(stream, 200, "application/json", reply.ToJsonString()).ConfigureAwait(false);
+    }
+
+    /** initialize params.clientInfo name and version; nulls when absent or not JSON. */
+    private static (string? Name, string? Version) ClientInfo(string body)
+    {
+        try
+        {
+            var info = JsonNode.Parse(body)?["params"]?["clientInfo"];
+            return (info?["name"]?.ToString(), info?["version"]?.ToString());
+        }
+        catch (JsonException) { return (null, null); }
     }
 
     private static bool IsLoopbackOrigin(string origin) =>

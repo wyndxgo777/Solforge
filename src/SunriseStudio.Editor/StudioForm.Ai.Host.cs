@@ -731,8 +731,10 @@ public sealed partial class StudioForm
         private volatile string contextJson = "{}";
         private volatile IReadOnlyList<VisibleObject> visible = [];
         public string ContextJson { get => contextJson; set => contextJson = value; }
-        public IReadOnlyList<VisibleObject> Visible { get => visible; set => visible = value; }
-        public string? CurrentMap { get; set; }
+        // A map-scoped call (MultiAgentTools, map=<tag>) reads a background copy: nothing of it is on screen.
+        public IReadOnlyList<VisibleObject> Visible { get => Scoped is null ? visible : []; set => visible = value; }
+        private string? currentMap;
+        public string? CurrentMap { get => Scoped is { } view ? view.Name : currentMap; set => currentMap = value; }
         public double NextVisible { get; set; }
         public bool Paused => form.aiPaused;
         public string? ProjectRoot => form.workspace.Project?.DirectoryPath;
@@ -746,11 +748,14 @@ public sealed partial class StudioForm
         public string? ReferenceFolder => ReferenceLibrary.Locate(form.aiReferenceStarts);
 
         /** ISolforgeHost: fuzzy object search. */
-        public Task<IReadOnlyList<ObjectEntry>> ObjectsAsync(string query, CancellationToken cancel) => form.AiObjectsAsync(query, cancel);
+        public Task<IReadOnlyList<ObjectEntry>> ObjectsAsync(string query, CancellationToken cancel) =>
+            Scoped is { } view ? form.AiScopedObjectsAsync(view, cancel) : form.AiObjectsAsync(query, cancel);
         /** ISolforgeHost: details of one object. */
-        public Task<JsonObject?> GetObjectAsync(string id, CancellationToken cancel) => form.AiObjectDetailsAsync(id, cancel);
+        public Task<JsonObject?> GetObjectAsync(string id, CancellationToken cancel) =>
+            Scoped is { } view ? form.AiScopedObjectDetailsAsync(view, id, cancel) : form.AiObjectDetailsAsync(id, cancel);
         /** ISolforgeHost: snapshot of the open mission. */
-        public Task<MissionSnapshot?> MissionAsync(CancellationToken cancel) => form.AiMissionAsync(cancel);
+        public Task<MissionSnapshot?> MissionAsync(CancellationToken cancel) =>
+            Scoped is { } view ? form.AiScopedMissionAsync(view, cancel) : form.AiMissionAsync(cancel);
         /** ISolforgeHost: reads the contents of a panel. */
         public Task<JsonObject> ReadPanelAsync(string panel, PanelQuery query, CancellationToken cancel) => form.AiReadPanelAsync(panel, query, cancel);
         /** ISolforgeHost: lists the open documents. */
@@ -813,7 +818,9 @@ public sealed partial class StudioForm
             form.OnUi(() => form.RunAiAction(tool, args)).WaitAsync(cancel);
 
         /** ISolforgeHost: runs a project query tool (see StudioForm.Ai.Query.cs). */
-        public Task<JsonObject> QueryAsync(string tool, JsonObject args, CancellationToken cancel) => form.AiQueryAsync(tool, args, cancel);
+        public Task<JsonObject> QueryAsync(string tool, JsonObject args, CancellationToken cancel) =>
+            Scoped is { } view && tool is "find_world_objects" or "get_placement" ? form.AiScopedQueryAsync(view, tool, args, cancel)
+                : form.AiQueryAsync(tool, args, cancel);
 
         /** Live viewport frames for the frame tools and streams. */
         public ViewportFeed Viewport { get; } = new();
