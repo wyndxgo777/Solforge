@@ -25,7 +25,7 @@ public sealed partial class StudioForm
 
     private void DrawHelpMenuItems()
     {
-        if (ImGui.MenuItem("Keybinds & Tips...", ShortcutInput.Text(ShortcutActions.OpenHelp))) helpDialog = true;
+        if (UiAuto.MenuItem("Keybinds & Tips...", ShortcutInput.Text(ShortcutActions.OpenHelp))) helpDialog = true;
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Every shortcut with your current keys, and workflow, performance and MCP tips");
     }
 
@@ -38,21 +38,21 @@ public sealed partial class StudioForm
         bool open = true;
         if (!ImGui.BeginPopupModal(HelpTitle, ref open, ImGuiWindowFlags.NoSavedSettings)) return;
         ImGui.SetNextItemWidth(320 * scale);
-        ImGui.InputTextWithHint("##help-find", "Search keybinds and tips", ref helpQuery, 128);
+        UiAuto.InputTextWithHint("##help-find", "Search keybinds and tips", ref helpQuery, 128);
         ImGui.SameLine();
         string[] areas = ["All areas", .. HelpCatalog.Areas];
         ImGui.SetNextItemWidth(200 * scale);
-        ImGui.Combo("##help-area", ref helpArea, areas, areas.Length);
+        UiAuto.Combo("##help-area", ref helpArea, areas, areas.Length);
         string? area = helpArea > 0 && helpArea < areas.Length ? areas[helpArea] : null;
         float footer = ImGui.GetFrameHeightWithSpacing();
         if (ImGui.BeginTabBar("help-tabs"))
         {
-            if (ImGui.BeginTabItem("Keybinds"))
+            if (UiAuto.BeginTabItem("Keybinds"))
             {
                 DrawHelpKeys(HelpCatalog.Search(ShortcutInput.Map, helpQuery, area), footer);
-                ImGui.EndTabItem();
+                UiAuto.EndTabItem();
             }
-            if (ImGui.BeginTabItem("Tips"))
+            if (UiAuto.BeginTabItem("Tips"))
             {
                 if (ImGui.BeginChild("help-tips", new(0, -footer), ImGuiChildFlags.Borders))
                 {
@@ -65,13 +65,13 @@ public sealed partial class StudioForm
                     }
                 }
                 ImGui.EndChild();
-                ImGui.EndTabItem();
+                UiAuto.EndTabItem();
             }
             ImGui.EndTabBar();
         }
-        if (ImGui.Button("Edit shortcuts...")) { ImGui.CloseCurrentPopup(); shortcutsDialog = true; }
+        if (UiAuto.Button("Edit shortcuts...")) { ImGui.CloseCurrentPopup(); shortcutsDialog = true; }
         ImGui.SameLine();
-        if (ImGui.Button("Close", new(100 * scale, 0))) ImGui.CloseCurrentPopup();
+        if (UiAuto.Button("Close", new(100 * scale, 0))) ImGui.CloseCurrentPopup();
         ImGui.EndPopup();
     }
 
@@ -111,6 +111,13 @@ public sealed partial class StudioForm
             {
                 ["topic"] = tip.Topic, ["title"] = tip.Title, ["text"] = tip.Text
             }).ToArray());
+        if (section is "all" or "tools")
+        {
+            // Which MCP tool does each menu, panel and dialog (Solforge.Mcp ToolMap and EditorCommands).
+            result["tools"] = Solforge.Mcp.ToolMap.ToJson(query);
+            if (section == "tools") result["commands"] = Solforge.Mcp.EditorCommands.ToJson(query, null);
+            result["tools_hint"] = Solforge.Mcp.SolforgeTools.CommandsHint;
+        }
         result["preset"] = ShortcutInput.Map.Title;
         return result;
     }

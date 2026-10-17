@@ -98,7 +98,7 @@ public static partial class SolforgeTools
         "get_shader, list_animations, get_animation, list_audio and get_audio. Action tools need the user's approve click. " +
         "For how the game client works (functions, xrefs, strings, structs, vtables, tag class handlers in destiny2.exe) and for raw " +
         "tag data, unknown tag classes, localized text and JSON/CSV export, start with decomp_status and read the solforge-decomp skill; " +
-        "paged results return next_cursor, which you pass back as cursor. " + SelfServiceHint + " " + AutomaticHint;
+        "paged results return next_cursor, which you pass back as cursor. " + SelfServiceHint + " " + AutomaticHint + " " + CommandsHint;
 
     /** Shared by the server instructions and the session file, so every engine knows it can do its own setup. */
     public const string SelfServiceHint =
@@ -345,7 +345,8 @@ public static partial class SolforgeTools
             .. PlayerTools(host, Read),
             .. GraphTools(host),
             .. AssetTools(host, Read),
-            .. AutomaticModeTools(host)
+            .. AutomaticModeTools(host),
+            .. CommandTools(host)
         ];
     }
 

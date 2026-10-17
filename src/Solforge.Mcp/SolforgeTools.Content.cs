@@ -157,9 +157,10 @@ public static partial class SolforgeTools
             });
         yield return read("get_help", "Solforge's keybinds (with the user's current keys, grouped by area: General, Viewport, Hierarchy, " +
             "Inspector, Mission & node graphs, AI / MCP, Live) and tips (workflow, performance, MCP setup for other AI clients), as in " +
-            "Help > Keybinds & Tips (F1).",
+            "Help > Keybinds & Tips (F1); section tools maps every menu, panel and dialog to the MCP tools that do it (and the " +
+            "run_command ids).",
             McpJson.Schema(("query", "string", "Optional words to search for", false), ("area", "string", "Optional area name", false),
-                ("section", "string", "keybinds, tips or all (default)", false)),
+                ("section", "string", "keybinds, tips, tools or all (default)", false)),
             async (args, cancel) =>
             {
                 var result = await host.QueryAsync("get_help", args, cancel).ConfigureAwait(false);

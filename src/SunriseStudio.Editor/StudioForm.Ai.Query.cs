@@ -59,6 +59,7 @@ public sealed partial class StudioForm
                 "list_shaders" or "get_shader" or "list_animations" or "get_animation" or "list_audio" or "get_audio" => await AiAssetAsync(tool, args, cancel),
                 "list_creation_types" => AiCreationTypes(McpJson.String(args, "filter")),
                 "get_help" => await OnUi(() => AiHelp(args)).WaitAsync(cancel),
+                "list_commands" => await OnUi(AiCommandStates).WaitAsync(cancel),
                 "get_player_position" => await AiPlayerPositionAsync(args, cancel),
                 "describe_creation" => await OnUi(() => AiDescribeCreation(McpJson.String(args, "key") ?? "", McpJson.String(args, "mode") ?? "")).WaitAsync(cancel),
                 _ => AiError("Unknown tool.")
