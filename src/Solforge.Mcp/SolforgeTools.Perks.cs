@@ -16,7 +16,7 @@ public static partial class SolforgeTools
     /** Read tools of this file, in listing order. */
     public static readonly string[] PerkReadTools = ["get_perk_behavior", "list_perk_node_types"];
     /** Action tools of this file. */
-    public static readonly string[] PerkActionTools = ["edit_perk_behavior", "create_perk", "clone_tags"];
+    public static readonly string[] PerkActionTools = ["edit_perk_behavior", "create_perk", "clone_tags", "fork_subclass_grid"];
 
     /** Phase names the perk tools take. */
     public static readonly string[] PerkPhases = ["activation", "effects", "deactivation"];
@@ -118,5 +118,22 @@ public static partial class SolforgeTools
                 : "Give tags [0x...] and a name.",
             args => $"Copy tags {args["tags"]?.ToJsonString()} as '{McpJson.String(args, "name")}'; replace {args["replace"]?.ToJsonString() ?? "{}"}, " +
                 $"strings {args["strings"]?.ToJsonString() ?? "{}"}");
+        yield return act("fork_subclass_grid", "The talent-grid writer: give a subclass item (e.g. a Stasis clone that still shares its " +
+            "base's grid) its own socket-entry list. Copies the list definition and every pool tag its entries name into the project, " +
+            "points the copy at the copied pools, appends a socket-entry-list table row (investment root slot 97) for it and points " +
+            "the item at that row. The base subclass is untouched; edit the copied pools (clone_tags replace, or their bytes) to change " +
+            "the fork's nodes. The reply gives the new list once the work finishes (call again with the same name).",
+            new JsonObject
+            {
+                ["type"] = "object", ["required"] = new JsonArray("item", "name"),
+                ["properties"] = new JsonObject
+                {
+                    ["item"] = new JsonObject { ["type"] = "string", ["description"] = "Subclass item definition tag (0x...)" },
+                    ["name"] = new JsonObject { ["type"] = "string", ["description"] = "Name for the copies in Project changes" }
+                }
+            },
+            args => !string.IsNullOrWhiteSpace(McpJson.String(args, "item")) && !string.IsNullOrWhiteSpace(McpJson.String(args, "name")) ? null
+                : "Give the subclass item tag and a name.",
+            args => $"Fork the socket-entry list of item {McpJson.String(args, "item")} as '{McpJson.String(args, "name")}'");
     }
 }

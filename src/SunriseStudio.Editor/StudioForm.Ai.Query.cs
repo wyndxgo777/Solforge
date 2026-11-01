@@ -606,9 +606,9 @@ public sealed partial class StudioForm
                 return workspace.Error.Length > 0 ? workspace.Error : "Reverted.";
             }
             case "apply_item_edit": return AiApplyItemEdit(args);
+            case "edit_perk_behavior" or "create_perk" or "clone_tags" or "fork_subclass_grid": return AiPerkAction(tool, args);
             case "apply_graph": return AiApplyGraph(args);
             case "create_mission_script": return AiCreateMissionScript(args);
-            case "edit_perk_behavior" or "create_perk" or "clone_tags": return AiPerkAction(tool, args);
             case "apply_vendor_edit": return AiApplyVendorEdit(args);
             case "revert_to_base": return AiRevertToBase(args);
             case "retail_open_map": return AiRetailOpenMap(args);
