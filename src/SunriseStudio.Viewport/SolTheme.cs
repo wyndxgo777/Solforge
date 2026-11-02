@@ -741,7 +741,7 @@ public static unsafe partial class SolTheme
     /** Space a panel header leaves before its title. */
     public static float HeaderIndent => Space5;
 
-    /** The compact panel header height (28 px at 100 %). */
+    /** The panel header height (30 px at 100 %). */
     public static float PanelHeaderHeight => PanelHeaderSize * Scale;
 
     /**

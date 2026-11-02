@@ -139,8 +139,8 @@ public static partial class SolTheme
     public const float ControlHeight = 26, ControlSmall = 22;
     /** ImGui's own widgets cannot be chamfered, so they are square: no rounding anywhere. */
     public const float Rounding = 0, RoundingPopup = 0, RoundingTab = 0, RoundingScrollbar = 0;
-    /** The compact panel header height, unscaled (the mockup's 30 px panel head). */
-    public const float PanelHeaderSize = 28;
+    /** The panel header height, unscaled (the mockup's 30 px panel head). */
+    public const float PanelHeaderSize = 30;
 
     // ---- Spacing scale: 2, 4, 6, 8, 12, 16, 24 px times the DPI scale ----
     public static float Space1 => 2 * Scale;

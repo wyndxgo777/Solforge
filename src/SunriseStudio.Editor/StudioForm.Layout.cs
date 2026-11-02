@@ -185,6 +185,7 @@ public sealed partial class StudioForm
 
     private void DrawLayoutPanel(StudioLayoutNode node, Vector2 position, Vector2 size)
     {
+        areaFrames.Add((position, position + size));
         if (IsFolded(node) && maximizedPanel != node.Id) { DrawFoldedPanel(node, position, size); return; }
         float header = Math.Min(size.Y, AreaHeaderHeight);
         DrawAreaHeader(node, position, size, header);
@@ -272,6 +273,7 @@ public sealed partial class StudioForm
     {
         if (UiAuto.BeginMenu("Panels"))
         {
+            SolTheme.PopupShadow();
             foreach (var kind in StudioLayout.Pickable.Where(kind => kind != StudioPanelKind.Empty))
                 if (UiAuto.MenuItem(DisplayTitle(kind), "", layout.Find(kind) is not null || IsPoppedOut(kind))
                     && !ShowPopout(kind, true))
@@ -337,6 +339,34 @@ public sealed partial class StudioForm
     };
 
     private float FoldStrip(bool columns) => ImGui.GetFrameHeight() + (columns ? 10 : 8) * scale;
+
+    /** The areas drawn this frame (header top to body bottom), framed by DrawAreaFrames. */
+    private readonly List<(Vector2 Min, Vector2 Max)> areaFrames = [];
+
+    /**
+     * The mockup's framed panels: one input-less overlay window over the tiled areas paints each area's chamfered corners
+     * in the page background and its 1 px Line frame. The areas send themselves to the back every frame
+     * (SolTheme.SendToBack), so this overlay stays above them and below floating windows, popups, dialogs and toasts.
+     */
+    private void DrawAreaFrames()
+    {
+        if (areaFrames.Count == 0) return;
+        const ImGuiWindowFlags flags = ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoBackground
+            | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoNav
+            | ImGuiWindowFlags.NoBringToFrontOnFocus | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize;
+        ImGui.SetNextWindowPos(Vector2.Zero);
+        ImGui.SetNextWindowSize(new(ClientSize.Width, ClientSize.Height));
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
+        if (ImGui.Begin("##area-frames", flags))
+        {
+            var draw = ImGui.GetWindowDrawList();
+            draw.PushClipRectFullScreen();
+            foreach (var (min, max) in areaFrames) SolTheme.PanelFrame(draw, min, max);
+            draw.PopClipRect();
+        }
+        ImGui.End();
+        ImGui.PopStyleVar();
+    }
 
     /** The strip: an expand button and the area's panel names; clicking anywhere on it opens the area. */
     private void DrawFoldedPanel(StudioLayoutNode node, Vector2 position, Vector2 size)
