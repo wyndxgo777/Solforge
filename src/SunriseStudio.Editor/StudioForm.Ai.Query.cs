@@ -58,7 +58,7 @@ public sealed partial class StudioForm
                 "search_items" or "get_item" or "search_perks" or "list_vendors" or "get_vendor" => await AiInvestmentAsync(tool, args, cancel),
                 "list_shaders" or "get_shader" or "list_animations" or "get_animation" or "list_audio" or "get_audio" => await AiAssetAsync(tool, args, cancel),
                 "list_creation_types" => AiCreationTypes(McpJson.String(args, "filter")),
-                "compare_with_base" or "get_item_sources" => await AiItemSourceQueryAsync(tool, args, cancel),
+                "compare_with_base" or "get_item_sources" or "check_item_perk_displays" => await AiItemSourceQueryAsync(tool, args, cancel),
                 "get_perk_behavior" or "list_perk_node_types" => await AiPerkQueryAsync(tool, args, cancel),
                 "get_help" => await OnUi(() => AiHelp(args)).WaitAsync(cancel),
                 "list_commands" => await OnUi(AiCommandStates).WaitAsync(cancel),
@@ -611,6 +611,7 @@ public sealed partial class StudioForm
             case "edit_perk_behavior" or "create_perk" or "clone_tags": return AiPerkAction(tool, args);
             case "apply_vendor_edit": return AiApplyVendorEdit(args);
             case "revert_to_base": return AiRevertToBase(args);
+            case "repair_item_perk_displays": return AiRepairPerkDisplays(args);
             case "retail_open_map": return AiRetailOpenMap(args);
             case "start_creation": return AiStartCreation(args);
             case "replace_texture_pixels":

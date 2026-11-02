@@ -13,6 +13,7 @@ try
     InvestmentDisplayChecks.Run(root);
     InvestmentItemArtChecks.Run();
     InvestmentArrayChecks.StatGroups();
+    InvestmentArrayChecks.PerkDisplayRows();
     InvestmentArrayChecks.Collectibles();
     InvestmentArrayChecks.SocketTypes();
     InvestmentArrayChecks.PerkDisplays();
