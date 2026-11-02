@@ -56,14 +56,20 @@ are copied unchanged into `licenses/`. Studio shows each on its own tab.
 
 Solforge's interface theme (SolTheme) embeds these faces in `SunriseStudio.Viewport.dll`. They come
 unchanged from github.com/google/fonts (`ofl/chakrapetch`) and the Inter 4.1 release (github.com/rsms/inter,
-`extras/ttf`). Each is licensed under the
+`extras/ttf`), except ChakraPetch-Medium.ttf: the Latin subset `ChakraPetch-500.woff2` from the Solforge UI mockup,
+converted from WOFF2 to TrueType with fontTools (container change only; glyphs, metrics and names untouched).
+Each is licensed under the
 SIL Open Font License 1.1; the full license with each project's copyright line is copied unchanged into
 `licenses/chakra-petch-OFL.txt` and `licenses/inter-OFL.txt`, and Studio shows each on its own tab.
 
 | font | files | license | copyright |
 |---|---|---|---|
-| Chakra Petch | ChakraPetch-SemiBold.ttf, ChakraPetch-Bold.ttf | OFL-1.1 | Copyright 2018 The Chakra Petch Project Authors (https://github.com/m4rc1e/Chakra-Petch.git) |
+| Chakra Petch | ChakraPetch-Medium.ttf, ChakraPetch-SemiBold.ttf, ChakraPetch-Bold.ttf | OFL-1.1 | Copyright 2018 The Chakra Petch Project Authors (https://github.com/m4rc1e/Chakra-Petch.git) |
 | Inter | Inter-Regular.ttf, Inter-SemiBold.ttf | OFL-1.1 | Copyright (c) 2016 The Inter Project Authors (https://github.com/rsms/inter) |
+
+Body text uses the Windows system UI face (Segoe UI, `segoeui.ttf` and `seguisb.ttf`) and code uses Consolas,
+read from `%WINDIR%\Fonts` at run time. Solforge does not ship or embed them; when they are missing it falls back
+to the embedded Inter.
 
 ## Ported audio code
 
