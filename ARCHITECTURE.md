@@ -256,3 +256,25 @@ Status: source only. It builds; nothing here has been launched or looked at. Com
 - **Known test conflicts (tests were not edited or run):** the layout UI check expects Reset layout to equal the old
   `Solforge` preset and the one-row title bar geometry; the shortcut check expects the AI terminal's Help rows, which were
   removed with the console.
+## Mockup restyle notes (branch `backup/20261101-ui-redesign`)
+
+The editor follows the HTML mockup (`solforge ui mockup html`). Visual only: behaviour and every command id stay.
+
+- **Tokens** (`Viewport/SolTheme.Tokens.cs`): the mockup's `:root` (bg 5 %, panel 9 %, panel-2 13 %, inset 6.5 %, white
+  hairlines at 7/10/24 %, accent `#ffb648`, accent-hi `#ffcb7a`, ink `#141006`, ok/bad/info, cuts 14/8/5 px) plus
+  graph tokens. Old names (Sun, Line2, Step, ...) remain aliases. Chrome colours come only from here.
+- **Faces:** body Segoe UI from `%WINDIR%\Fonts` (Inter fallback), labels/tabs/menus/buttons Chakra Petch 600 upper-case
+  and tracked (`SolTheme.Label`, `TrackedText`), menu captions Chakra Petch 500 (added from the mockup's woff2), code
+  Consolas (the controller's monospace).
+- **Shapes:** ImGui widgets are square with 1 px LineStrong frames (ImGui cannot chamfer them). Chamfers are drawn by
+  `ChamferFrame`/`ChamferPath`: primary buttons, icon buttons, menu-bar hovers, toasts (`ToastFrame`), popups
+  (`PopupShadow` hides ImGui's square background and draws the 8 px frame), dialogs (`SolTheme.BeginDialog` wraps every
+  `BeginPopupModal`: transparent ImGui decorations, a 14 px chamfered panel and an upper-case title) and the areas
+  (`DrawAreaFrames`: one input-less overlay; tiled panels call `SolTheme.SendToBack` each frame so the overlay stays
+  above them and below floating windows, popups and toasts).
+- **Tabs:** area tabs and ImGui tab bars carry the mockup's amber underline with angled ends (`AngledUnderline`,
+  `UiMotion.TabUnderline`); ImGui's overline is off.
+- **Icons:** `ImGuiIcons` draws the mockup's 16 px stroke-1.5 SVG symbols verbatim through a small SVG path parser;
+  the other `StudioIcon` values are redrawn in the same grid. Enum values were only appended.
+- **Menus:** File, Edit, View, Assets, Map, Mission, Build, AI, Help. `TitleGroup.Window` stays in the enum but is not
+  drawn; its items moved to View and AI. `EditorCommands.Menu` texts follow; ids are unchanged.
