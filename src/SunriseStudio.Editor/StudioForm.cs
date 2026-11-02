@@ -260,16 +260,43 @@ public sealed partial class StudioForm : Form
         catch (Exception error) { Failure = error.ToString(); Close(); }
     }
 
+    private long skipSinceTick;
+    private bool skipLogged, skipPolling;
+
+    /** Adopts worker results on a tick that draws nothing, and logs when such ticks last past 5 s. */
+    internal void PollWhileSkipping(string reason)
+    {
+        long now = Environment.TickCount64;
+        if (skipSinceTick == 0) { skipSinceTick = now; skipLogged = false; }
+        else if (!skipLogged && now - skipSinceTick > 5000)
+        {
+            skipLogged = true;
+            try { Console.Error.WriteLine($"[solforge] frames skipped for over 5 s ({reason}); still polling workers."); } catch { }
+        }
+        if (skipPolling) return;
+        skipPolling = true;
+        try { workspace.Poll(); }
+        catch (Exception error) { try { Console.Error.WriteLine($"[solforge] Poll while skipping frames failed: {error.Message}"); } catch { } }
+        finally { skipPolling = false; }
+    }
+
     /** Worker results are adopted before the frame; native dialogs cannot reenter rendering. */
     private void TickFrame()
     {
-        if (drawing || nativeDialog || closed || renderer is null || gui is null || viewport is null) return;
+        if (drawing || nativeDialog || closed || renderer is null || gui is null || viewport is null)
+        {
+            // Worker results (the item catalog, builds) must still be adopted while a dialog or a stuck frame holds drawing.
+            if (!closed) PollWhileSkipping(drawing ? "drawing" : nativeDialog ? "native dialog" : "renderer not ready");
+            return;
+        }
         if (WindowState == FormWindowState.Minimized)
         {
+            PollWhileSkipping("minimised");
             // Once per minimize: drop caches that only speed up later loads; the next frame looks the same.
             if (!memoryTrimmed && !workspace.IsBusy) { memoryTrimmed = true; workspace.TrimMemory(); }
             return;
         }
+        skipSinceTick = 0;
         memoryTrimmed = false;
 
         long tickNow = Environment.TickCount64;
@@ -309,7 +336,8 @@ public sealed partial class StudioForm : Form
         long profileBytes = options.ProfileFrames is null ? 0 : GC.GetAllocatedBytesForCurrentThread();
         try
         {
-            workspace.Poll();
+            skipPolling = true;
+            try { workspace.Poll(); } finally { skipPolling = false; }
             foreach (var audio in pages.Pages.OfType<AudioPage>()) audio.Update(workspace);
             if (changesOnly && projectRevision != workspace.ProjectRevision) browserDirty = true;
             projectRevision = workspace.ProjectRevision;

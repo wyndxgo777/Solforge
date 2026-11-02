@@ -65,6 +65,7 @@ try
         return 0;
     }
     if (args is ["--scene-selection"]) { SceneSelectionUiChecks.Run(root); return 0; }
+    if (args is ["--tick-poll"]) { TickPollChecks.Run(root); return 0; }
     if (args is ["--browser-filter"]) { BrowserFilterChecks.Run(root); return 0; }
     if (args is ["--browser-added"]) { BrowserAddedChecks.Run(root); BrowserConfigChecks.Run(root); return 0; }
     if (args is ["--creation-history"]) { ImportHistoryChecks.Run(root); CreationSafetyChecks.Run(root); return 0; }
