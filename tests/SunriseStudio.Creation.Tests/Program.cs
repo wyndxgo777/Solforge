@@ -21,6 +21,7 @@ try
     ItemCloneChecks.Run();
     StringBankChecks.Run(root);
     ItemWorkflowChecks.Run(root);
+    ItemTextChecks.Run(root);
     int game = Array.IndexOf(args, "--game-root");
     int keyOption = Array.IndexOf(args, "--keys");
     string? keys = keyOption >= 0 && keyOption + 1 < args.Length ? args[keyOption + 1] : null;

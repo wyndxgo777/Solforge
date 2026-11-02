@@ -14,9 +14,9 @@ public static partial class SolforgeTools
     /** Read tools of this file, in listing order. */
     public static readonly string[] ItemSourceReadTools = ["compare_with_base", "get_item_sources"];
     /** Action tools of this file. */
-    public static readonly string[] ItemSourceActionTools = ["repair_item_perk_displays", "revert_to_base"];
+    public static readonly string[] ItemSourceActionTools = ["repair_item_perk_displays", "revert_to_base", "set_tag_value"];
     /** Every tool of this file, in listing order. */
-    public static readonly string[] ItemSourceToolNames = ["compare_with_base", "get_item_sources", "check_item_perk_displays", "repair_item_perk_displays", "revert_to_base"];
+    public static readonly string[] ItemSourceToolNames = ["compare_with_base", "get_item_sources", "check_item_perk_displays", "repair_item_perk_displays", "revert_to_base", "set_tag_value"];
 
     /** Source kinds get_item_sources reports (its kind filter). */
     public static readonly string[] ItemSourceKinds =
@@ -69,5 +69,16 @@ public static partial class SolforgeTools
             NeedTag,
             args => McpJson.String(args, "field") is { Length: > 0 } field
                 ? $"Revert {field} of {McpJson.String(args, "hash")} to base" : $"Revert {McpJson.String(args, "hash")} to base (drop the project's change)");
+        yield return act("set_tag_value", "Write one little-endian scalar into a tag's raw bytes: hash (tag), offset (8 or more; the " +
+            "first 8 bytes are the size header), type (u8, u16, u32, i32, f32 or hash) and value (decimal, or 0x hex for integers). " +
+            "Refuses an offset past the end. Saved to the project with undo (base tags become deltas, project-added assets are updated " +
+            "with a new checksum); the reply gives the old and new value. The first call opens the tag, call again once it shows. " +
+            "Use get_tag, read_tag_bytes or get_tag_schema to find the offset.",
+            McpJson.Schema(("hash", "string", "Tag hash (0x...)", true), ("offset", "integer", "Byte offset, 8 or more", true),
+                ("type", "string", "u8, u16, u32, i32, f32 or hash", true), ("value", "string", "New value", true)),
+            args => NeedTag(args) ?? (McpJson.String(args, "type") is "u8" or "u16" or "u32" or "i32" or "f32" or "hash" ? null : "type must be u8, u16, u32, i32, f32 or hash.")
+                ?? (args["offset"] is JsonValue offset && offset.TryGetValue(out int at) && at >= 8 ? null : "Give offset as a whole number, 8 or more.")
+                ?? (string.IsNullOrWhiteSpace(McpJson.String(args, "value")) ? "Give the new value." : null),
+            args => $"Set {McpJson.String(args, "type")} at offset {args["offset"]} of {McpJson.String(args, "hash")} to {McpJson.String(args, "value")}");
     }
 }

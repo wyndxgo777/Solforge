@@ -189,6 +189,26 @@ public sealed partial class StudioForm
         return workspace.Error.Length > 0 ? workspace.Error : $"Reverted {span.Name} ({span.Offset:X}+{span.Size}) of {Hex(tag)} to base; other edits stay; undo restores it.";
     }
 
+    // ---- set_tag_value (UI thread, after the approve click) ----
+
+    private string AiSetTagValue(JsonObject args)
+    {
+        if (SolforgeTools.ParseHash(McpJson.String(args, "hash")) is not { } tag) return "Give a tag hash such as 0x80A1B2C3.";
+        if (!workspace.CanEdit || workspace.Project is null) return "No project is open, or Solforge is busy.";
+        string type = (McpJson.String(args, "type") ?? "").ToLowerInvariant();
+        if (StudioWorkspace.TagValueSize(type) == 0) return "type must be u8, u16, u32, i32, f32 or hash.";
+        if (args["offset"] is not JsonValue offsetValue || !offsetValue.TryGetValue(out int offset)) return "Give offset as a whole number of bytes (8 or more).";
+        // ApplyAssetEdits records undo against the open document, as revert_to_base does.
+        if (workspace.Document?.Entry.TagHash != tag) { workspace.Run(() => workspace.Select(tag)); return "Opened the tag; call set_tag_value again once it shows."; }
+        try
+        {
+            var (old, current) = workspace.SetTagValue(tag, offset, type, McpJson.String(args, "value") ?? "");
+            return workspace.Error.Length > 0 ? workspace.Error
+                : $"{Hex(tag)} +0x{offset:X} ({type}): old {old}, new {current}; it is in Project changes with undo.";
+        }
+        catch (Exception error) when (error is InvalidDataException or InvalidOperationException or ArgumentException) { return error.Message; }
+    }
+
     // ---- T1.4 get_item_sources ----
 
     /** What the item report needs, taken on the UI thread. */

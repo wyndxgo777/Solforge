@@ -613,6 +613,7 @@ public sealed partial class StudioForm
             case "create_mission_script": return AiCreateMissionScript(args);
             case "apply_vendor_edit": return AiApplyVendorEdit(args);
             case "revert_to_base": return AiRevertToBase(args);
+            case "set_tag_value": return AiSetTagValue(args);
             case "repair_item_perk_displays": return AiRepairPerkDisplays(args);
             case "retail_open_map": return AiRetailOpenMap(args);
             case "start_creation": return AiStartCreation(args);
@@ -738,6 +739,21 @@ public sealed partial class StudioForm
                 if (AiFindItem(data!, McpJson.String(args, "plug") ?? "") is not { } plug) return "No plug by that index, tag or name; use search_items.";
                 workspace.Run(() => workspace.SetInvestmentSocketPlug(socketIndex, checked((ushort)plug.Index)));
                 break;
+            case "set_text":
+            {
+                string textField = (McpJson.String(args, "field") ?? "").ToLowerInvariant();
+                if (!StudioWorkspace.ItemTextFields.Contains(textField)) return "set_text needs field name, description or type.";
+                if (workspace.ItemDisplayTag(tag) is not { } displayTag) return "The item has no display record.";
+                bool confirmed = args["confirm"] is JsonValue flag && (flag.TryGetValue(out bool yes) && yes
+                    || flag.TryGetValue(out string? word) && string.Equals(word, "true", StringComparison.OrdinalIgnoreCase));
+                if (!workspace.IsProjectTag(displayTag) && !confirmed)
+                    return $"{detail.Item.Name}'s display record 0x{displayTag:X8} is installed and may be shared by other items; "
+                        + "clone the item first, or pass confirm=true to change the installed display for everything that uses it.";
+                ushort textPackage = workspace.CustomPerkPackage() ?? throw new InvalidDataException("No project package can take the strings.");
+                workspace.Run(() => workspace.EditItemText(tag, textField, value, textPackage));
+                return workspace.Error.Length > 0 ? workspace.Error
+                    : $"Saving {detail.Item.Name}'s {textField}; it is in Project changes with undo once get_build_status is idle.";
+            }
             case "own_archetype":
                 ushort package = workspace.CustomPerkPackage() ?? throw new InvalidDataException("No project package can take the archetype.");
                 workspace.Run(() => workspace.OwnWeaponArchetype(package));
