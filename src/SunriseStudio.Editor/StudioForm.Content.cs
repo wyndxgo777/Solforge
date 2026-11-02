@@ -7,7 +7,7 @@ using SunriseStudio.Viewport;
 namespace SunriseStudio.Editor;
 
 /**
- * Window > Content editors (Studio.md §3.6, Phases 35-38): the project's content documents
+ * View > Content editors (Studio.md §3.6, Phases 35-38): the project's content documents
  * (content/<family>/<id>.json) with a structured subclass editor, a JSON editor for every family,
  * validation with cross-document references, and Export to build/server. The MCP content tools
  * write the same files, so this window re-reads a document when its file changes.

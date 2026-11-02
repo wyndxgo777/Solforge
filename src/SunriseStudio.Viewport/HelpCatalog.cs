@@ -96,8 +96,8 @@ public static class HelpCatalog
         new("Workflow", "Find anything by name", "The Asset browser (Ctrl+Space in the Sunrise preset) searches the whole install; Back/Forward " +
             "walk your inspection history like a browser."),
         new("Workflow", "Clone, then edit", "File > New/Clone makes weapons, armor, plugs, subclasses and more with fresh hashes; edit the clone in the " +
-            "inspector. Clone subclass gives a new subclass item; Window > Content editors shapes its nodes."),
-        new("Workflow", "Content editors", "Window > Content editors holds subclasses, abilities, damage types, loot pools, enemies, activities and the " +
+            "inspector. Clone subclass gives a new subclass item; View > Content editors shapes its nodes."),
+        new("Workflow", "Content editors", "View > Content editors holds subclasses, abilities, damage types, loot pools, enemies, activities and the " +
             "seasonal artifact. Each family says whether the game reads it (Live) or it is authoring only. Export writes build/server/."),
         new("Workflow", "Loot pools go live", "Export writes build/server/scripts/loot_pools.lua; copy it to Sunrise\\scripts beside the server. The server " +
             "re-reads it when it changes; weight 0 removes an item from a built-in pool."),
@@ -117,7 +117,7 @@ public static class HelpCatalog
             "With Solforge closed, solforge-mcp.exe --sol still answers the tools that need no editor; editor tools attach when Solforge starts."),
         new("MCP", "Solforge AI", "The toolbar's Solforge AI button (Ctrl+Shift+A) launches the separate Solforge AI app for the open project, or " +
             "brings it to the front; its arrow menu stops it, re-checks it and opens its settings. Requests waiting for approval show as a badge " +
-            "on the button and in the Solforge AI panel (Window > Solforge AI panel); MCP tools can never launch or stop the app."),
+            "on the button and in the Solforge AI panel (AI > Solforge AI panel); MCP tools can never launch or stop the app."),
         new("MCP", "Claude Code, Cline, Antigravity", "Solforge writes one 'sol' MCP entry for Claude Code (.mcp.json in the project and " +
             "~/.claude.json), Cline, Antigravity and the Pi harness. sol aggregates the editor, sol-testkit, tiger-mcp and the delegates; " +
             "it runs solforge-mcp.exe --sol, and no token goes into a config file."),

@@ -206,7 +206,8 @@ internal static partial class LayoutChecks
     private static readonly (string Control, string Group)[] OldBarControls =
     [
         ("File", "File"), ("Edit", "Edit"), ("Assets", "Assets"), ("Build", "Build"), ("View", "View"),
-        ("Window", "Window"), ("Window > Layouts", "Window"), ("Window > Reset layout", "Window"), ("Help", "Help"),
+        // The mockup's menu bar: Window's items moved to View and AI; Map, Mission and AI are menus of existing commands.
+        ("View > Layouts", "View"), ("View > Reset layout", "View"), ("Map", "Map"), ("Mission", "Mission"), ("AI", "Ai"), ("Help", "Help"),
         ("navigate-back", "Navigation"), ("navigate-forward", "Navigation"), ("project name", "Project"),
         ("tb-new", "Project"), ("tb-build", "Project"), ("tb-render", "Render"),
         ("tb-shaders", "Shaders"), ("##quality", "Quality"), ("tb-detail", "Detail"), ("##lighting", "Lighting"),

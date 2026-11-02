@@ -10,7 +10,7 @@ using Solforge.Mcp.LocalServer;
 namespace SunriseStudio.Editor;
 
 /**
- * View > Local Server: the local WSL sol-server for testing (never the VPS). Status with ports, players and the ghost-member
+ * Build > Local Server: the local WSL sol-server for testing (never the VPS). Status with ports, players and the ghost-member
  * check; start, stop and restart; a filtered live log; one-click deploy of the open project with backup and rollback;
  * config editing; selftest; quick actions through the admin API; and what each server subsystem does.
  * All WSL work runs off the UI thread; Draw only reads the latest results.

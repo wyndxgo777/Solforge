@@ -10,7 +10,7 @@ using Solforge.Retail.Porting;
 namespace SunriseStudio.Editor;
 
 /**
- * The Retail workspace window (View > Retail workspace): the live build (245048) dump through the same retail_* tools an
+ * The Retail workspace window (Map > Retail workspace): the live build (245048) dump through the same retail_* tools an
  * AI client gets (activities and destinations, tags in hex / annotated / decoded form, references, strings, port plans,
  * mission previews), the retail map viewer (a bubble opens read-only in the main viewport with a retail inspector for the
  * selection) and the porting buttons that write into the open project. Nothing here touches game packages.

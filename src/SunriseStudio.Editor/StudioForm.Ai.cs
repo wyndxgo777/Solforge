@@ -35,7 +35,7 @@ public sealed partial class StudioForm
     private Vector3 aiLastPivot;
 
     /**
-     * Shows the Solforge AI panel (Window > Solforge AI panel, the approval toast and badge, window.ai_workspace and
+     * Shows the Solforge AI panel (AI > Solforge AI panel, the approval toast and badge, window.ai_workspace and
      * show_panel ai_workspace), or its own window when it is popped out. It never launches the app.
      */
     public void OpenAiWorkspace()

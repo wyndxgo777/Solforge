@@ -28,7 +28,11 @@ public enum CommandInput
 public sealed record EditorCommand(string Id, string Menu, CommandInput Input, string Description, string? Prefer = null,
     IReadOnlyList<string>? Options = null);
 
-/** The catalog. Ids are public API for AI clients; add new commands, never rename. */
+/**
+ * The catalog. Ids are public API for AI clients; add new commands, never rename. Menu is only the path the user sees: the
+ * menu bar follows the Solforge UI mockup (File, Edit, View, Assets, Map, Mission, Build, AI, Help), so some window.* and
+ * view.* commands now sit in other menus while keeping their ids.
+ */
 public static class EditorCommands
 {
     public static readonly string[] Quality = ["Low", "Medium", "High", "Full"];
@@ -50,7 +54,7 @@ public static class EditorCommands
         new("file.new_project", "File > New project", CommandInput.None, "Open the New project dialog.", "create_project"),
         new("file.open_project", "File > Open project...", CommandInput.OpenFile, "Open a sunrise.project.json.", "open_project"),
         new("file.open_recent", "File > Recent projects", CommandInput.Choice, "Open a recent project by folder name or manifest path."),
-        new("file.new_mission_script", "File > New mission script...", CommandInput.None, "Start a new mission script.", "create_mission_script"),
+        new("file.new_mission_script", "Mission > New mission script...", CommandInput.None, "Start a new mission script.", "create_mission_script"),
         new("file.save", "File > Save project / Save script", CommandInput.None, "Save the active document (project, mission script or node graph)."),
         new("file.close_project", "File > Close project", CommandInput.None, "Close the project.", "close_project"),
         new("file.close_world", "File > Close world", CommandInput.None, "Close the open map.", "close_map"),
@@ -101,17 +105,17 @@ public static class EditorCommands
         new("build.install", "Build > Build and install", CommandInput.None, "Build and install the mod.", "build_project (install: true)"),
         new("build.update_running_game", "Build > Update running game", CommandInput.None, "Hot-update the running game.", "update_running_game"),
         new("build.to_folder", "Build > Build to folder...", CommandInput.Folder, "Build into a folder.", "build_to_folder"),
-        new("build.mod_details", "Build > Mod details...", CommandInput.None, "Open the Mod details dialog.", "set_mod_details"),
+        new("build.mod_details", "File > Mod details...", CommandInput.None, "Open the Mod details dialog.", "set_mod_details"),
         new("build.pack_solmod", "Build > Pack .solmod...", CommandInput.Folder, "Zip the installed mod with a manifest into a folder."),
         new("build.restore_snapshot", "Build > Restore install snapshot", CommandInput.Choice,
             "Restore an install snapshot by its stamp (list_commands shows them); Destiny 2 must be closed."),
         // View and toolbar
-        new("view.graph", "View > Graph", CommandInput.None, "Show the Graph panel.", "show_panel"),
-        new("view.live", "View > Live", CommandInput.None, "Show the Live tab.", "show_panel"),
-        new("view.local_server", "View > Local Server", CommandInput.None, "Show the Local Server panel.", "show_panel"),
+        new("view.graph", "Mission > Graph", CommandInput.None, "Show the Graph panel.", "show_panel"),
+        new("view.live", "Map > Live", CommandInput.None, "Show the Live tab.", "show_panel"),
+        new("view.local_server", "Build > Local Server", CommandInput.None, "Show the Local Server panel.", "show_panel"),
         new("view.items", "View > Items", CommandInput.None, "Show the item browser.", "show_panel"),
         new("view.data_explorer", "View > Data explorer", CommandInput.None, "Open the Data explorer.", "show_panel"),
-        new("view.retail", "View > Retail workspace", CommandInput.None, "Open the Retail workspace (live-build data, maps, porting).", "show_panel"),
+        new("view.retail", "Map > Retail workspace", CommandInput.None, "Open the Retail workspace (live-build data, maps, porting).", "show_panel"),
         new("view.frame_selection", "View > Frame selection", CommandInput.None, "Frame the selection in the 3D view.", "focus_camera"),
         new("view.set_cursor_to_selection", "View > Set cursor to selection", CommandInput.None, "Move the 3D cursor to the selection."),
         new("view.wireframe", "View > Wireframe", CommandInput.Toggle, "Wireframe on or off.", "set_viewport_options"),
@@ -120,16 +124,16 @@ public static class EditorCommands
         new("toolbar.game_shaders", "Toolbar > Game shaders", CommandInput.Toggle, "Game shaders on or off.", "set_viewport_options"),
         new("toolbar.full_detail", "Toolbar > Full detail", CommandInput.Toggle, "Full detail on or off.", "set_viewport_options"),
         new("toolbar.quality", "Toolbar > Quality", CommandInput.Choice, "Viewport quality.", "set_viewport_options", Quality),
-        new("toolbar.lighting", "Toolbar > Lighting", CommandInput.Choice, "Lighting mode.", "set_viewport_options", Lighting),
+        new("toolbar.lighting", "Toolbar > Lighting (also View > Lighting)", CommandInput.Choice, "Lighting mode.", "set_viewport_options", Lighting),
         // Window
-        new("window.layout", "Window > Layouts", CommandInput.Choice, "Apply a layout preset.", null, Layouts),
-        new("window.asset_browser", "Window > Asset browser drawer", CommandInput.None, "Toggle the asset browser drawer.", "show_panel"),
-        new("window.ai_workspace", "Window > Solforge AI panel", CommandInput.None, "Show the Solforge AI panel (requests, edits, context); never launches the Solforge AI app.", "show_panel"),
-        new("window.content_editors", "Window > Content editors", CommandInput.None, "Show the Content editors window.", "show_panel"),
-        new("window.panel", "Window > Panels", CommandInput.Choice, "Show a dock panel by its title.", "show_panel",
+        new("window.layout", "View > Layouts", CommandInput.Choice, "Apply a layout preset.", null, Layouts),
+        new("window.asset_browser", "View > Content Browser drawer", CommandInput.None, "Toggle the asset browser drawer.", "show_panel"),
+        new("window.ai_workspace", "AI > Solforge AI panel", CommandInput.None, "Show the Solforge AI panel (requests, edits, context); never launches the Solforge AI app.", "show_panel"),
+        new("window.content_editors", "View > Content editors", CommandInput.None, "Show the Content editors window.", "show_panel"),
+        new("window.panel", "View > Panels", CommandInput.Choice, "Show a dock panel by its title.", "show_panel",
             ["Workspace", "Asset browser", "Inspector", "Project changes", "Object tree", "Graph", "AI", "Local Server"]),
-        new("window.restore_areas", "Window > Restore areas", CommandInput.None, "Undo a maximized area."),
-        new("window.reset_layout", "Window > Reset layout", CommandInput.None, "Reset to the Solforge layout."),
+        new("window.restore_areas", "View > Restore areas", CommandInput.None, "Undo a maximized area."),
+        new("window.reset_layout", "View > Reset layout", CommandInput.None, "Reset to the Solforge layout."),
         // Navigation and Help
         new("nav.back", "Toolbar > Back", CommandInput.None, "Go back in the asset history."),
         new("nav.forward", "Toolbar > Forward", CommandInput.None, "Go forward in the asset history."),

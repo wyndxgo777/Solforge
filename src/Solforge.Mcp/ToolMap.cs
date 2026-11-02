@@ -50,7 +50,7 @@ public static class ToolMap
         new("Local Server", "Status, Log, Deploy, Config, Actions, Subsystems tabs", "local_server_status, local_server_log, local_server_deploy_plan, local_server_deploy, local_server_backups, local_server_rollback, local_server_config_read, local_server_config_write, local_server_command, local_server_quick_action, local_server_subsystems, local_server_start, local_server_stop, local_server_restart, local_server_selftest"),
         new("Settings", "Rendering, Paths, Live link, Interface tabs", "get_settings, set_settings; show_panel settings + ui_* for the rest"),
         new("Settings", "AI tab", "none: the user's only"),
-        new("Window", "Layouts, panels, asset browser drawer, Solforge AI panel (window.ai_workspace shows it, never launches the app), content editors, restore/reset", "show_panel, run_command window.*"),
+        new("View", "Layouts, panels, Content Browser drawer, content editors, restore/reset (run_command window.* ids); AI > Solforge AI panel (window.ai_workspace shows it, never launches the app)", "show_panel, run_command window.*"),
         new("Help", "Keybinds & Tips, shortcuts, notices", "get_help, run_command help.*, edit.shortcuts"),
         new("Reference", "Reference library (08-docs\\reference)", "search_reference, read_reference"),
         new("Retail", "Retail workspace: live-build (245048) tags, activities, strings, maps in the viewport, porting",

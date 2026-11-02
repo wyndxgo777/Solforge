@@ -18,7 +18,7 @@ public sealed partial class StudioForm
     /** The panel each area showed last frame, so a tab switch restarts the content fade. */
     private readonly Dictionary<int, StudioPanelKind> shownAreaPanels = [];
 
-    // UE5 layout: Reset layout uses the default preset (Solforge (UE5)); Window > Layouts keeps every older one.
+    // UE5 layout: Reset layout uses the default preset (Solforge (UE5)); View > Layouts keeps every older one.
     public void ResetLayout() => ApplyLayoutPreset(StudioLayout.DefaultPreset);
 
     /**

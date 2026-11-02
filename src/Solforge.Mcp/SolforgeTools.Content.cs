@@ -12,7 +12,7 @@ namespace Solforge.Mcp;
  * Content tools (Solforge.Content): subclasses, abilities, damage types, loot pools, enemies,
  * activities and the seasonal artifact as JSON documents under <project>\content. Reads work with
  * context paused and need no map; writes wait for the approve click and then change the project files
- * directly (Window > Content editors re-reads them). Plain JSON in and out, so any MCP client and
+ * directly (View > Content editors re-reads them). Plain JSON in and out, so any MCP client and
  * model can use them. get_help answers Help > Keybinds & Tips from the editor's live shortcut map.
  */
 public static partial class SolforgeTools

@@ -139,7 +139,7 @@ public sealed partial class StudioForm
         ImGui.PushStyleColor(ImGuiCol.Text, SolTheme.Muted);
         ImGui.TextWrapped(text);
         ImGui.PopStyleColor();
-        if (ImGui.IsItemHovered()) ImGui.SetTooltip("Window > Panels > Workflows shows the stages, models and outputs.");
+        if (ImGui.IsItemHovered()) ImGui.SetTooltip("View > Panels > Workflows shows the stages, models and outputs.");
     }
 
     /** Run ids saved for a project, newest first (no service needed). */
@@ -205,7 +205,7 @@ public sealed partial class StudioForm
         ImGui.SetNextWindowPos(viewport.GetCenter(), ImGuiCond.Appearing, new Vector2(.5f, .5f));
         ImGui.SetNextWindowSize(new Vector2(640, 520) * scale, ImGuiCond.Appearing);
         bool open = true;
-        if (!ImGui.BeginPopupModal(id, ref open))
+        if (!SolTheme.BeginDialog(id, ref open))
         {
             if (!open || !ImGui.IsPopupOpen(id)) Finish(false);
             return;

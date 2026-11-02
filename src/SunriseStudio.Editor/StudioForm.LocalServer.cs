@@ -5,7 +5,7 @@ namespace SunriseStudio.Editor;
 
 /**
  * The Local Server panel (its own area in the panel picker): the local WSL sol-server manager (LocalServerPage).
- * View > Local Server shows and focuses it; its header carries a running/stopped/ghost status dot.
+ * Build > Local Server shows and focuses it; its header carries a running/stopped/ghost status dot.
  */
 public sealed partial class StudioForm
 {

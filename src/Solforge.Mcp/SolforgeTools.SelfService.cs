@@ -120,7 +120,7 @@ public static partial class SolforgeTools
         modProperties["authors"]!["items"] = new JsonObject { ["type"] = "string" };
         modProperties["incompatible"]!["items"] = new JsonObject { ["type"] = "string" };
         modProperties["dependencies"]!["items"] = new JsonObject { ["type"] = "object" };
-        yield return act("set_mod_details", "Set the open project's mod details (Build > Mod details), which Build and install, Update " +
+        yield return act("set_mod_details", "Set the open project's mod details (File > Mod details), which Build and install, Update " +
             "running game and .solmod packing need. Omitted fields keep their current values (new projects start from the project " +
             "name and version 1.0.0). id: lowercase, at least two dot-separated parts, e.g. sol.my-mod. Config entries are kept.",
             modSchema,

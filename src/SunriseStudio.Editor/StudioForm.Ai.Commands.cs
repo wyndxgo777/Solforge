@@ -264,7 +264,7 @@ public sealed partial class StudioForm
         }
     }
 
-    /** Shows a dock panel the way Window > Panels does. */
+    /** Shows a dock panel the way View > Panels does. */
     private string AiShowLayoutPanel(StudioPanelKind kind)
     {
         if (!ShowPopout(kind, true))
