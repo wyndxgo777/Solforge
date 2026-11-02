@@ -71,7 +71,7 @@ cd SunriseStudio
 
 2. Build Studio
 ```powershell
-.\publish.ps1                  # writes publish\Solforge.exe (see RELEASING.md)
+.\publish.ps1 -Output publish-new # use a new or empty output folder (see RELEASING.md)
 ```
 
 On first start, choose your Sunrise installation; Studio remembers it. `Sunrise Studio.exe --help`

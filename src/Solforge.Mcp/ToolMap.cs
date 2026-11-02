@@ -37,7 +37,7 @@ public static class ToolMap
         new("Assets menu", "Import Blender asset, skinned model, animation controls, collision, delta", "import_asset"),
         new("Assets menu", "Add asset dialog, Edit perk behavior, Resolve asset names", "run_command assets.add_asset, assets.edit_perk_behavior, assets.resolve_names"),
         new("Textures", "Edit texture pixels", "replace_texture_pixels"),
-        new("Items", "Item browser, weapons, armor, perks, vendors", "search_items, get_item, search_perks, apply_item_edit, list_vendors, get_vendor, apply_vendor_edit"),
+        new("Items", "Item browser, weapons, armor, perks, vendors", "search_items, get_item, search_perks, apply_item_edit, check_item_perk_displays, repair_item_perk_displays, list_vendors, get_vendor, apply_vendor_edit"),
         new("Creation", "New weapon, armor, texture, prop, material, exotic, perk, vendor workflows", "list_creation_types, describe_creation, start_creation"),
         new("Graph panel", "Mission scripts: open, edit, compile, apply, reload", "list_mission_scripts, create_mission_script, open_file, get_graph, apply_graph, reload_mission_scripts"),
         new("Graph panel", "Node graphs (material, weapon, mission): new, edit, compile, apply", "list_graphs, create_graph, get_graph, edit_graph, compile_graph, apply_graph, list_graph_node_types"),

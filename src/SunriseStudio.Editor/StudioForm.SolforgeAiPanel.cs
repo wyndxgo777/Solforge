@@ -119,7 +119,7 @@ public sealed partial class StudioForm
         StudioUi.Tip("Off pauses everything the AI can see about the scene (privacy).");
         ImGui.SameLine();
         if (UiAuto.Button("Folders...")) ImGui.OpenPopup(AiFoldersPopup);
-        StudioUi.Tip("Folders outside the project that AI clients may read");
+        StudioUi.Tip("Folders outside the project that AI clients may read, including all subfolders");
         DrawAiFoldersPopup();
         ImGui.BeginDisabled(!CanAskAi);
         if (UiAuto.Button("Ask about this")) AskAiAboutContext();

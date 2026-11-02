@@ -124,8 +124,8 @@ public sealed partial class StudioForm
             + "context and live editing tools with it, and with any other MCP client, through its MCP server. Settings > Solforge AI sets where the app is.");
         bool approveRequests = settings.AutoApproveRequests;
         if (UiAuto.Checkbox("Auto-approve AI requests", ref approveRequests)) { settings.AiAutoApproveRequests = approveRequests; SaveSettings(); }
-        SettingNote("Solforge MCP action requests (open file, edits, builds) run with no Approve click and are listed in the AI LOG (Output Log, MCP). "
-            + "Model-workflow workers are never auto-approved.");
+        SettingNote("Allowed Solforge MCP actions and project edits run with no Approve click and are listed in the AI LOG (Output Log, MCP), including workflow workers. "
+            + "Stale-file, paused-context and cancellation checks still apply. Off requires review. Only you can change this setting.");
         bool mcp = settings.AiMcpEnabled;
         if (UiAuto.Checkbox("MCP server (Solforge live editing tools)", ref mcp)) SetAiMcp(mcp);
         string status = "MCP off";

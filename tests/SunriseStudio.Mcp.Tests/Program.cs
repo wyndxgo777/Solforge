@@ -18,6 +18,10 @@ try
     checks.Add("the attention log folds repeats, lists newest first, and 'the one I just hovered' wins a tie");
     ProjectPaths();
     checks.Add("project files resolve inside the project only; packages, manifest and build output are not editable");
+    await AiAccessChecks.Run(Path.Combine(scratch, "ai-access"));
+    checks.Add("AI folder grants cover nested descendants in MCP reads/search, reject sibling-prefix/traversal escapes and links, revoke immediately; worker actions use a bounded authoring allowlist and approval cancellation is audited correctly");
+    await WorkerAccessChecks.Run(Path.Combine(scratch, "worker-access"), FindShim());
+    checks.Add("native worker aggregate: planner/reviewer read-only metadata reaches HTTP; mutations are hidden and refused, executor authoring remains available, foreign worker tools require explicit read-only annotations");
     Configs();
     checks.Add("client configs: .mcp.json, Cline, Antigravity desktop and CLI get the one sol aggregate entry; an empty agy file merges without .bak; other servers survive; rewrite is idempotent");
     CommandResolution();
@@ -255,10 +259,11 @@ async Task StdioRoundTrip()
         Expect(initialized["serverInfo"]?["name"]?.ToString() == "sol" && initialized["capabilities"]?["tools"] is not null, "initialize");
         await process.StandardInput.WriteLineAsync("{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}");
         var tools = (await Call(2, "tools/list"))["tools"]!.AsArray();
-        string[] expected = ["get_context", "get_open_documents", "find_object", "get_object", "get_viewport_screenshot", "list_visible", "get_attention_log",
+        string[] expected = ["get_context", "get_open_documents", "find_object", "get_object", "get_viewport_screenshot", "list_visible", "get_attention_log", "get_recent_activity",
             "read_project_file", "search_project", "search_reference", "read_reference", "get_tag", "get_package_entry", "get_live_state",
             "list_mission_objects", "get_mission_object", "read_panel",
             "select_object", "focus_camera", "highlight", "open_file", "apply_project_edit",
+            "get_editor_screenshot", "start_model_workflow", "get_model_workflow", "cancel_model_workflow",
             "get_editor_state", "get_project", "list_project_files", "list_project_changes", "get_build_status", "get_settings",
             "list_maps", "list_missions", "list_packages", "list_package_entries", "search_assets", "list_mission_scripts",
             "find_world_objects", "get_placement", "search_items", "get_item", "search_perks", "list_vendors", "get_vendor",
@@ -278,9 +283,9 @@ async Task StdioRoundTrip()
             .. SolforgeTools.CommandToolNames, "mission_coverage", .. SolforgeTools.MissionHostToolNames, .. SolforgeTools.ItemSourceToolNames,
             .. SolforgeTools.RetailToolNames, McpJobs.ToolName];
 
-        string[] actions = ["select_object", "focus_camera", "highlight", "open_file", "apply_project_edit", "open_map", "open_asset",
+        string[] actions = ["select_object", "focus_camera", "highlight", "open_file", "apply_project_edit", "start_model_workflow", "open_map", "open_asset",
             "set_viewport_rendering", "edit_placement", "edit_bounds", "revert_object_edit", "apply_item_edit", "apply_vendor_edit",
-            "start_creation", "replace_texture_pixels", "build_project", "set_settings", "set_mod_details", "close_map", "close_asset", "open_project", "create_project", "close_project", "build_to_folder", "update_running_game", "reload_mission_scripts", "rename_function", "ui_invoke", "ui_set_value", "ui_set_checked", "ui_select", "create_content", "update_content", "delete_content", "export_content", "create_mission_script", "create_graph", "edit_graph", "apply_graph", "insert_mission_lib_call", "revert_to_base", .. SolforgeTools.RetailActionTools, .. SolforgeTools.CommandToolNames.Where(name => name != "list_commands")];
+            "start_creation", "replace_texture_pixels", "build_project", "set_settings", "set_mod_details", "close_map", "close_asset", "open_project", "create_project", "close_project", "build_to_folder", "update_running_game", "reload_mission_scripts", "rename_function", "ui_invoke", "ui_set_value", "ui_set_checked", "ui_select", "create_content", "update_content", "delete_content", "export_content", "create_mission_script", "create_graph", "edit_graph", "apply_graph", "insert_mission_lib_call", .. SolforgeTools.ItemSourceActionTools, .. SolforgeTools.RetailActionTools, .. SolforgeTools.CommandToolNames.Where(name => name != "list_commands")];
         Expect(tools.Select(tool => tool?["name"]?.ToString()).SequenceEqual(expected), "tool names: " + string.Join(",", tools.Select(tool => tool?["name"])));
         foreach (var tool in tools)
         {
@@ -519,6 +524,17 @@ static void PlayerSourceChecks()
         File.WriteAllText(Path.Combine(root, "20261015-120000", "snapshots.jsonl"),
             "{\"ui\":{\"in_world\":true},\"pos\":[1,2,3]}\n{\"mark\":\"note\"}\n");
         Expect(PlayerSources.LatestRecorder(root)?.Position == new Vector3(1, 2, 3), "the newest snapshot, skipping marks");
+        string empty = Path.Combine(root, "empty-session");
+        Directory.CreateDirectory(empty);
+        Directory.SetLastWriteTimeUtc(empty, DateTime.UtcNow.AddMinutes(1));
+        Expect(PlayerSources.LatestRecorder(root)?.Position == new Vector3(1, 2, 3), "an empty session does not hide a recording");
+        string other = Path.Combine(root, "other-root");
+        Directory.CreateDirectory(Path.Combine(other, "session"));
+        string otherSnapshot = Path.Combine(other, "session", "snapshots.jsonl");
+        File.WriteAllText(otherSnapshot, "{\"ui\":{\"in_world\":false}}\n");
+        File.SetLastWriteTimeUtc(otherSnapshot, DateTime.UtcNow.AddSeconds(1));
+        Expect(PlayerSources.LatestRecorderRoot([root, other]) == other && PlayerSources.LatestRecorder(other) is null,
+            "a newer menu in another root wins over stale in-world data");
         File.AppendAllText(Path.Combine(root, "20261015-120000", "snapshots.jsonl"), "{\"ui\":{\"in_world\":false},\"pos\":null}\n");
         Expect(PlayerSources.LatestRecorder(root) is null, "a menu after a position hides the old position");
     }
@@ -1335,6 +1351,10 @@ void CodeRefsCheck()
     var found = CodeRefs.Locate(game, project, []);
     Expect(found.Select(root => root.Name).SequenceEqual(["sdk-missions", "server-scripts", "project"]) && found[0].ByMission
         && found[1].Folder.EndsWith("mission-scripts"), "locate: " + string.Join(", ", found.Select(root => root.Name + "=" + root.Folder)));
+    string canonical = Path.Combine(sol, "02-server", "solserver", "solserverbase", "Destiny-Sol", "02-server", "mission-scripts");
+    Directory.CreateDirectory(canonical);
+    Expect(CodeRefs.Locate(game, project, []).Single(root => root.Name == "server-scripts").Folder == canonical,
+        "current Destiny-Sol checkout wins over the legacy script copy");
     // Settings > Paths (set_settings serverScripts) wins over the guessed folder; scripts:<path> reads inside it only.
     string chosen = Path.Combine(scratch, "layout", "chosen-scripts");
     Directory.CreateDirectory(chosen);
@@ -1535,6 +1555,7 @@ sealed class FixtureHost(string project) : ISolforgeHost
     }
     public string? ProjectRoot => project;
     public IReadOnlyList<string> SdkRoots => [];
+    public IReadOnlyList<string> AllowedReadFolders { get; set; } = [];
     public string? CurrentMap => "Botza District";
     public AttentionLog Attention { get; } = new();
     public string ContextJson => Context;

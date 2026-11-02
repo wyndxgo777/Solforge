@@ -1035,6 +1035,7 @@ public sealed partial class StudioForm : Form
     /** A settings write that fails shows in the status line; it must not close Studio. */
     private void SaveSettings()
     {
+        RefreshAiReadFolders();
         if (options.Smoke) return;
         try { settings.Save(settingsPath); }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException) { workspace.Error = error.Message; }

@@ -41,7 +41,7 @@ public static class SolAggregator
      * Serves the aggregate. @param project the project the session is for (null: whichever project the running editor has
      * open); @param worker a model-workflow worker session (WorkerSessionPolicy applies to the Solforge tools).
      */
-    public static async Task<int> Serve(string? project, string? upstreamFile, bool worker)
+    public static async Task<int> Serve(string? project, string? upstreamFile, bool worker, bool readOnlyWorker = false)
     {
         string? explicitProject = string.IsNullOrWhiteSpace(project) ? null : Path.GetFullPath(project);
         // Child upstreams start in the project folder, or where the client started us.
@@ -52,7 +52,7 @@ public static class SolAggregator
         foreach (var config in configs)
         {
             if (config.Name.Equals(SolMcpServers.Solforge, StringComparison.OrdinalIgnoreCase))
-                solforge ??= new SolforgeRoute(explicitProject ?? ProjectArgument(config.Args), worker);
+                solforge ??= new SolforgeRoute(explicitProject ?? ProjectArgument(config.Args), worker, readOnlyWorker);
             else upstreams.Add(new Upstream(config, workingDirectory));
         }
         bool started = false, initialized = false;
@@ -110,6 +110,9 @@ public static class SolAggregator
             {
                 foreach (var tool in upstreamTools.OfType<JsonObject>())
                 {
+                    // External servers do not share the editor approval gate. Native workers may call only tools the
+                    // upstream explicitly declares read-only; missing annotations never authorize a mutation.
+                    if (worker && tool["annotations"]?["readOnlyHint"]?.GetValueKind() != JsonValueKind.True) continue;
                     string name = tool["name"]!.ToString();
                     var original = toolRoutes[name];
                     if (route.ContainsKey(name)) { name += "_" + route.Count.ToString(System.Globalization.CultureInfo.InvariantCulture); tool["name"] = name; }
@@ -658,6 +661,7 @@ public static class SolAggregator
         private StreamWriter? input;
         private StreamReader? output;
         private int nextId;
+        private bool disposed;
 
         public Upstream(UpstreamConfig config, string project)
         {
@@ -675,6 +679,15 @@ public static class SolAggregator
 
         public async Task InitializeAsync()
         {
+            await gate.WaitAsync().ConfigureAwait(false);
+            try { await InitializeCoreAsync().ConfigureAwait(false); }
+            finally { gate.Release(); }
+        }
+
+        private async Task InitializeCoreAsync()
+        {
+            ObjectDisposedException.ThrowIf(disposed, this);
+            CloseProcess();
             var info = new ProcessStartInfo(config.Command)
             {
                 WorkingDirectory = project, UseShellExecute = false, CreateNoWindow = true,
@@ -693,16 +706,17 @@ public static class SolAggregator
             { throw new InvalidOperationException("could not start", exception); }
             input = new StreamWriter(process.StandardInput.BaseStream, new UTF8Encoding(false)) { AutoFlush = true, NewLine = "\n" };
             output = new StreamReader(process.StandardOutput.BaseStream, new UTF8Encoding(false));
+            var errors = process.StandardError;
             _ = Task.Run(async () =>
             {
                 try
                 {
-                    while (await process.StandardError.ReadLineAsync().ConfigureAwait(false) is { } line)
+                    while (await errors.ReadLineAsync().ConfigureAwait(false) is { } line)
                         Console.Error.WriteLine($"sol[{config.Name}] {line}");
                 }
                 catch (Exception exception) when (exception is IOException or ObjectDisposedException) { }
             });
-            var reply = await RequestAsync("initialize", new JsonObject
+            var reply = await SendAsync("initialize", new JsonObject
             {
                 ["protocolVersion"] = "2025-06-18",
                 ["capabilities"] = new JsonObject(),
@@ -724,29 +738,43 @@ public static class SolAggregator
             await gate.WaitAsync().ConfigureAwait(false);
             try
             {
-                if (process is null || input is null || output is null) throw new InvalidOperationException("upstream is not running");
-                if (process.HasExited) throw new InvalidOperationException("upstream exited");
-                int id = ++nextId;
-                await input.WriteLineAsync(new JsonObject
+                ObjectDisposedException.ThrowIf(disposed, this);
+                // Reconnect before dispatch only. An interrupted action is never replayed.
+                if (!Ready || process is null || process.HasExited)
+                    await InitializeCoreAsync().ConfigureAwait(false);
+                try { return await SendAsync(method, parameters, timeout).ConfigureAwait(false); }
+                catch (Exception error) when (error is IOException or InvalidOperationException or OperationCanceledException)
                 {
-                    ["jsonrpc"] = "2.0", ["id"] = id, ["method"] = method, ["params"] = parameters.DeepClone()
-                }.ToJsonString()).ConfigureAwait(false);
-                await input.FlushAsync().ConfigureAwait(false);
-                using var limit = new CancellationTokenSource(timeout);
-                while (true)
-                {
-                    string? line = await output.ReadLineAsync(limit.Token).ConfigureAwait(false);
-                    if (line is null) throw new InvalidOperationException("upstream closed its output");
-                    if (line.Length == 0) continue;
-                    JsonNode? node;
-                    try { node = JsonNode.Parse(line); }
-                    catch (JsonException) { continue; }
-                    if (node is not JsonObject reply) continue;
-                    if (!int.TryParse(reply["id"]?.ToString(), out int replyId) || replyId != id) continue;
-                    return reply;
+                    Ready = false;
+                    throw new InvalidOperationException("Upstream connection was interrupted; the operation may have run and was not replayed. The next call will reconnect. " + error.Message, error);
                 }
             }
             finally { gate.Release(); }
+        }
+
+        private async Task<JsonObject> SendAsync(string method, JsonObject parameters, TimeSpan timeout)
+        {
+            if (process is null || input is null || output is null) throw new InvalidOperationException("upstream is not running");
+            if (process.HasExited) throw new InvalidOperationException("upstream exited");
+            int id = ++nextId;
+            await input.WriteLineAsync(new JsonObject
+            {
+                ["jsonrpc"] = "2.0", ["id"] = id, ["method"] = method, ["params"] = parameters.DeepClone()
+            }.ToJsonString()).ConfigureAwait(false);
+            await input.FlushAsync().ConfigureAwait(false);
+            using var limit = new CancellationTokenSource(timeout);
+            while (true)
+            {
+                string? line = await output.ReadLineAsync(limit.Token).ConfigureAwait(false);
+                if (line is null) throw new InvalidOperationException("upstream closed its output");
+                if (line.Length == 0) continue;
+                JsonNode? node;
+                try { node = JsonNode.Parse(line); }
+                catch (JsonException) { continue; }
+                if (node is not JsonObject reply) continue;
+                if (!int.TryParse(reply["id"]?.ToString(), out int replyId) || replyId != id) continue;
+                return reply;
+            }
         }
 
         private async Task NotifyAsync(string method)
@@ -756,16 +784,25 @@ public static class SolAggregator
             await input.FlushAsync().ConfigureAwait(false);
         }
 
-        public async ValueTask DisposeAsync()
+        private void CloseProcess()
         {
+            Ready = false;
             // Only the process this upstream started is ever killed.
             try { if (process is { HasExited: false }) process.Kill(true); }
             catch (Exception exception) when (exception is InvalidOperationException or System.ComponentModel.Win32Exception or NotSupportedException) { }
             input?.Dispose();
             output?.Dispose();
             process?.Dispose();
-            gate.Dispose();
-            await Task.CompletedTask.ConfigureAwait(false);
+            input = null;
+            output = null;
+            process = null;
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            await gate.WaitAsync().ConfigureAwait(false);
+            try { disposed = true; CloseProcess(); }
+            finally { gate.Release(); }
         }
     }
 
@@ -837,7 +874,7 @@ public static class SolAggregator
  * One HTTP MCP session with a running editor (streamable HTTP, Authorization: Bearer from its discovery file). Used by
  * SolforgeRoute (the aggregate) and by `solforge-mcp --project` (Program.cs), which forwards client lines verbatim.
  */
-internal sealed class EditorLink(HttpClient http, McpDiscoveryEntry entry, bool worker)
+internal sealed class EditorLink(HttpClient http, McpDiscoveryEntry entry, bool worker, bool readOnlyWorker = false)
 {
     private string? session;
     private int nextId;
@@ -931,6 +968,7 @@ internal sealed class EditorLink(HttpClient http, McpDiscoveryEntry entry, bool 
         // Several agents can share one Solforge: the pid tells their sessions apart in get_sessions and the presence list.
         request.Headers.TryAddWithoutValidation(McpSessionRegistry.PidHeader, Environment.ProcessId.ToString(System.Globalization.CultureInfo.InvariantCulture));
         if (worker) request.Headers.TryAddWithoutValidation(McpSessionRegistry.WorkerHeader, "1");
+        if (readOnlyWorker) request.Headers.TryAddWithoutValidation(McpSessionRegistry.ReadOnlyWorkerHeader, "1");
         using var response = await http.SendAsync(request).ConfigureAwait(false);
         if (response.Headers.TryGetValues("Mcp-Session-Id", out var values)) session = values.FirstOrDefault() ?? session;
         if (response.StatusCode == HttpStatusCode.Accepted) return [];
@@ -947,7 +985,7 @@ internal sealed class EditorLink(HttpClient http, McpDiscoveryEntry entry, bool 
  * headless host otherwise. Discovery is cached for 2 s and re-checked every 5 s in the background; Changed fires when the
  * route switches between an editor (or another editor) and headless.
  */
-internal sealed class SolforgeRoute(string? project, bool worker) : IAsyncDisposable
+internal sealed class SolforgeRoute(string? project, bool worker, bool readOnlyWorker = false) : IAsyncDisposable
 {
     private static readonly TimeSpan CacheAge = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan CheckEvery = TimeSpan.FromSeconds(5);
@@ -1000,7 +1038,7 @@ internal sealed class SolforgeRoute(string? project, bool worker) : IAsyncDispos
         {
             if (entry is not null && editor?.Key != key)
             {
-                var link = new EditorLink(http, entry, worker);
+                var link = new EditorLink(http, entry, worker, readOnlyWorker);
                 try
                 {
                     await link.InitializeAsync(clientParameters).ConfigureAwait(false);
@@ -1045,7 +1083,7 @@ internal sealed class SolforgeRoute(string? project, bool worker) : IAsyncDispos
                     list.Add(entry);
                 }
         foreach (var tool in cached)
-            if (seen.Add(tool.Name) && (!worker || WorkerSessionPolicy.Allows(tool.Name, tool.Entry["annotations"]?["readOnlyHint"]?.GetValueKind() == JsonValueKind.False)))
+            if (seen.Add(tool.Name) && (!worker || WorkerSessionPolicy.Allows(tool.Name, tool.Entry["annotations"]?["readOnlyHint"]?.GetValueKind() != JsonValueKind.True, readOnlyWorker)))
                 list.Add(tool.Entry.DeepClone());
         foreach (var tool in Headless().Dispatcher.Tools)
             if (seen.Add(tool.Name)) list.Add(ToolsCache.Entry(tool));
@@ -1100,7 +1138,7 @@ internal sealed class SolforgeRoute(string? project, bool worker) : IAsyncDispos
         string? wanted = project ?? lastEditorProject;
         if (headless is { } current && string.Equals(current.Project, wanted, StringComparison.OrdinalIgnoreCase)) return current;
         var host = new HeadlessSolforgeHost(wanted);
-        var created = (wanted, HeadlessSolforgeHost.CreateDispatcher(host, ShimVersion, worker), host);
+        var created = (wanted, HeadlessSolforgeHost.CreateDispatcher(host, ShimVersion, worker, readOnlyWorker), host);
         headless = created;
         return created;
     }

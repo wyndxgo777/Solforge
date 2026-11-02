@@ -1,183 +1,49 @@
-# Solforge AI: automatic mode, nudges, auto-allow (port spec)
+# Solforge AI automatic mode
 
-Source: the original Solforge (`d2moddingsuite/09-solforge`, read-only), static reading 2026-10-24. Port the behaviour; re-express terminal-bound parts with the harness's real session/turn/permission events.
+This is the current application contract. Source owners are packages/experimental/solforge-automatic, solforge-model-tiers and the desktop Solforge overlays.
 
-## Original reference files
-- `src/Solforge.Mcp/AutomaticWatchdog.cs`: the state machine. It has no transport and no UI.
-- `src/SunriseStudio.Editor/StudioForm.Ai.Automatic.cs`: the host glue.
-- `src/Solforge.Mcp/SolforgeTools.Automatic.cs`: the MCP tools.
-- `tests/SunriseStudio.Mcp.Tests/AutomaticChecks.cs`: the behaviour contract, on a fake clock.
-- `src/Solforge.Mcp/ApprovalPrompts.cs`: the auto-allow policy.
-- `src/Solforge.Mcp/ApprovalGate.cs`: auto-approve for MCP actions.
-- `src/Solforge.Mcp/AiConsoleAdapters.cs`: the quota regex.
+## Goal lifecycle
 
-## 1. Automatic mode (`/automatic`)
+/automatic <goal> starts a goal in the receiving chat and replaces the prior app-wide automatic goal. /automatic or /automatic status reads status; /automatic stop|off|cancel stops it. Only the exact command name dispatches. Strip buttons use /automatic-strip stop|hide|resume|discard.
 
-### States
-`Off, Running, Complete, Blocked, Stopped, Limit`. Only `Running` is live.
+States are Off, Running, Complete, Blocked, Stopped and Limit. Only Running authorizes continuation. Defaults are unlimited nudges (maxNudges=0), 240 minutes, 45 idle seconds and three rounds before a tactic-change nudge. Options are read on each tick. Goal time includes time spent closed after a resume.
 
-### Options
-Defaults: MaxNudges 50, MaxMinutes 240, IdleSeconds 45, StuckRounds 3.
+A goal binds to one root Session. Its delegated workers belong to its runtime ownership chain, while only the main executor changes goal state. Reports recheck the same goal and Session after asynchronous review. Replacing, stopping, resuming or completing a goal invalidates outstanding reports.
 
-Clamps:
-- MaxNudges 1..1000
-- MaxMinutes 1..1440
-- IdleSeconds 5..600
-- StuckRounds 1..20
+## Model team
 
-The user sets the first three. StuckRounds is fixed at 3. Options are re-read on every tick.
+1. A user-started automatic goal receives a read-only Frontier plan before the Mid executor's first step.
+2. Mid executes with available files, commands, relevant REA and Solforge/Sol MCP capabilities and task skills. It delegates isolated file/function work to Low.
+   Subscription Mid workers request the admitted parent subagent tool through a solforge-delegate JSON block. The parent launches the configured Low route and returns its activation/result; a delegation request cannot also mark the goal complete. The desktop config sets child model defaults on tool-subagent, while the subagent service owns depth and capacity.
+3. Mid reports a finished step with goal_progress(done, remaining?, evidence?), including relevant code/diff excerpts and verification output.
+4. The configured Frontier ladder reviews only the explicit goal, report, evidence and remaining work. Unrelated retained conversation content is excluded.
+5. Corrections return to Mid in the tool result and remaining-work field. A successful progress report ends that execution round; the watchdog schedules continuation when idle.
+6. goal_complete(summary, evidence) requires accepted Frontier review. Rejection keeps the goal Running and immediately returns corrections to Mid. An unavailable or malformed review cannot complete the goal and yields an actionable blocked state.
 
-### Start
-- An empty goal returns "Give a goal: /automatic <goal>."
-- One goal at a time. If a goal is already running and `replace` is false, return: `Automatic mode is already running on "<goal>" (nudge N). Call automatic_stop first, or automatic_start with replace: true to swap goals.`
-- A typed `/automatic <goal>` always replaces the running goal.
-- Starting resets the counters and records the source: `typed`, `mcp` or `resume`.
-- A resume keeps the original Started time and the saved Nudges, progress and remaining steps.
+Frontier receives no action-capable editor MCP or write grant. It distinguishes catalogs, synthetic selftests, endpoint health and actual gameplay evidence. Fallback uses only the configured tier ladder. A worker that may already have written files is never replayed on the next model.
 
-### Command parsing
-`ParseCommand` trims the input and matches `/automatic` case-insensitively. The next character must be whitespace or the end of the input.
-- `""` or `status`: show status.
-- `stop`, `off` or `cancel`: stop.
-- Anything else: start with that text as the goal.
+## Tool admission and delegated clients
 
-`/automaticity` and `fix /automatic later` are not commands. In the harness, intercept the user's message before it reaches the agent.
+automatic_start(goal, replace?, send_prompt?), automatic_status() and automatic_stop(reason?) are application tools. Goal-report tools are admitted only while this Session owns the live goal. Execution repeats the check; an inactive or different chat cannot mutate it.
 
-### Start prompt (one line)
-```
-[Solforge automatic mode] Goal: {goal} -- Work on this autonomously until it is truly done; do not stop to ask me. Break it into steps, do them, and verify the result yourself (build, run checks, read the output, look at the viewport or log). After each step call goal_progress (done, remaining). When the goal is achieved and verified, call goal_complete (summary, evidence). If you truly need me (a decision, a login, hardware, missing access), call goal_blocked (reason). If you go quiet without calling one of those, Solforge will nudge you to continue.
-```
+Historical prompts do not imply current authority after a restart. A saved goal is offered for explicit resume. Resume queues a fresh start prompt and retains progress, remaining work, original time and nudge count.
 
-### Tick (about 1 Hz while Running)
-Check these in order:
+Subscription CLI workers cannot invoke the parent application's tools. Their solforge-result JSON block maps to an admitted parent goal tool. Progress includes done, remaining and evidence; completion includes summary/evidence; blocked names a user prerequisite. Missing goal tools in the worker MCP list are expected. Successful reports conclude the turn through the real executor result. Failed calls and rejected completion never produce a false Recorded success.
 
-1. **Time cap.** If elapsed minutes >= MaxMinutes, end as `Limit` with `Time limit reached ({MaxMinutes:0} min) after {nudges} nudges.`
-2. **Session not alive.** Set `waitingForEngine`, set `lastChange=now`, and do not nudge. Never restart the agent.
-3. **Agent busy.** If a turn is running or new output arrived, set `lastChange=now`.
-4. **Nudge decision.** A nudge is due only when all of these hold:
-   - the agent is idle and waiting for user input;
-   - **no permission request or question of any kind is pending** (this fixes a gap in the original);
-   - nothing is queued;
-   - `now-lastChange >= IdleSeconds`;
-   - `now-lastNudgeAt >= IdleSeconds`.
+## File access and approvals
 
-   When a nudge is due:
-   - If `nudges >= MaxNudges`, end as `Limit` with `Nudge limit reached ({MaxNudges}) without goal_complete.`
-   - Otherwise:
-     - `hash` = SHA1 of the last assistant turn output, trailing whitespace trimmed per line;
-     - `repeated` = `hash == lastHash`;
-     - `progressed` = `!repeated && (toolCalls>0 || progressNotes>0)`;
-     - `stuck` = `progressed ? 0 : stuck+1`;
-     - `kind` = `repeated ? repeat : continue`;
-     - if `stuck >= StuckRounds`, set `kind=tactic`, `tacticChanges++`, `stuck=0`.
-   - Then:
-     - `lastHash=hash`;
-     - reset `toolCalls` and `progressNotes`;
-     - `nudges++`;
-     - `lastNudgeAt=lastChange=now`;
-     - send `Nudge(kind)` as a user message into the session.
+An explicit live Session Full access selection grants Mid/Low system-wide local file and command access; its starting directory is not a confinement boundary. Other modes retain their workspace policy, nested-directory access, tier write settings and one-turn approvals. Frontier remains read-only. Permission changes apply to subsequent worker turns.
 
-Activity counters:
-- `toolCalls` counts this session's own tool calls only, not other clients'.
-- `progressNotes` counts `goal_progress` calls.
+Eligible one-time approvals are automatically allowed and logged while a goal the user typed or resumed covers the asking agent. An agent-started goal cannot grant itself this authority. The optional Auto-allow setting also covers eligible routine requests. Review denials, user hooks, prompt-enhancement consent, trust/elevation changes, sandbox escape and lasting grants remain explicit policy decisions. User questions are never auto-answered.
 
-### Nudge text (one line)
-```
-[Solforge automatic mode, nudge {n}] The goal is not finished yet: {goal}
- + " -- Last progress you reported: {progress}" | " -- You have not reported progress yet (goal_progress)."
- + (remaining ? " -- Remaining steps: {remaining}" : "")
- + resume: " -- Solforge restarted while this ran; check where things stand, then carry on."
- + repeat: " -- Your screen is the same as at the last nudge, so the last approach is not moving. Try something different."
-   (say "Your last reply is the same as..." in the harness)
- + tactic: " -- Several rounds showed no progress. Change tactic: re-read the error or output, question your assumptions, try a different approach or tool, or break the step down smaller."
- + continue: " -- Continue with the next step."
- + " Verify as you go; call goal_complete (summary, evidence) only when it is truly done, or goal_blocked (reason) if you need me."
-```
+The desktop bridge answers eligible editor approvals according to the active goal and editor policy; requests and outcomes remain visible. Shared MCP processes are not restarted merely to reduce an instance count. A failed transport is distinct from a missing frame or gameplay feature.
 
-### Ends
-- `goal_complete(summary, evidence)`: Complete. Both arguments are required.
-- `goal_blocked(reason)`: Blocked.
-- A user stop: Stopped, "Stopped by the user."
-- `automatic_stop(reason?)`: Stopped, with the reason or "Stopped over MCP."
-- The time or nudge cap: Limit.
+## Continuation, stop and persistence
 
-An end clears the queue and deletes the save file.
+A nudge requires an idle live agent, no pending approval/question, an empty inbox and the configured quiet period. Busy turns and compaction postpone nudges. Repeated output gets a repeat nudge; rounds without progress get a tactic-change nudge. Time and optional nudge limits yield Limit.
 
-### Tools
-All of these need no approval and skip the context-pause gate:
-- `automatic_start(goal, replace=false, send_prompt=false)`
-- `automatic_status()`
-- `automatic_stop(reason?)`
-- `goal_progress(done, remaining?)`
-- `goal_complete(summary, evidence)`
-- `goal_blocked(reason)`
+The app never creates or restarts an agent for a nudge. A missing agent sets waitingForEngine. Non-transient terminal model failures stop the goal; transient failures permit the next nudge to retry.
 
-Error texts:
-- "Say what is done."
-- "Automatic mode is not running."
-- "Give both a summary and the evidence that it works."
-- "Say what you need."
+automatic-goal.json contains Goal, Started, Nudges, Progress, Remaining and SessionId, saved with a temporary file and rename. Ended goals withdraw queued nudges and remove the save file. A running goal counts as workspace activity during idle gaps, preventing deletion while it can still wake. Archive-with-stop disarms continuation.
 
-These tools must live in the **Solforge AI app itself**, so they work standalone without the editor.
-
-### Agent hint
-Add a hint to the system and skill instructions saying:
-- the agent cannot type `/automatic` itself, so it uses the tools;
-- only one goal runs at a time.
-
-### Status JSON
-`state, goal, source, nudges, maxNudges, elapsedSeconds, maxMinutes, idleSeconds, quietSeconds, lastNudge, lastNudgeSecondsAgo, tacticChanges, waitingForEngine, progress, remaining, result, evidence`.
-
-### Status line
-`AUTOMATIC {STATE}  nudge {n}/{max}  {time}  {tail}  goal: {goal≤80}`
-
-### UI
-A strip in the conversation shows:
-- the state colour;
-- progress, remaining steps or evidence;
-- Stop while Running, Hide otherwise.
-
-The Settings rows are Max nudges, Max duration (minutes) and Idle seconds. **Only the user can change them**: agents cannot.
-
-### Persistence and resume
-- `automatic-goal.json` sits in the app's user-data dir and holds `{Goal, Started, Nudges, Progress, Remaining}`.
-- It is saved on start, on progress and on any tick that changed something, and deleted when the goal ends.
-- At launch, if a saved goal exists, show `Resume automatic goal? "<goal>" (N nudges so far)` with Resume and Discard. Show this once per launch.
-- Resume keeps the original Started time, so time spent closed counts against MaxMinutes.
-
-## 2. Auto-allow (agent permission requests)
-**Policy, ported:** auto-answer only **one-time allow** permission requests. Never auto-answer any of these:
-- "always allow", "don't ask again" or "keep allowing";
-- workspace trust;
-- elevation or administrator access;
-- sandbox bypass or network escape;
-- model-written questions or user questions;
-- a request with no deny option.
-
-**Settings:**
-- `Auto-allow` is off by default.
-- Automatic mode forces it on while Running.
-- Log every auto-answer, with time, tool and summary, in a visible AI log. The original logged nothing; that is a gap to fix.
-
-In the harness this is a policy over real permission-request events, not screen scraping. Map it onto the DSH approval/permission system, for example a permission preset or an auto-approve rule limited to one-time approvals.
-
-## 3. Auto-approve AI requests (editor MCP actions)
-- Setting: off by default.
-- Off: an action waits for an Approve or Deny click, and counts as declined after 5 minutes. The error text is "The user declined this in Solforge."
-- On: the action runs and is logged as `auto`.
-- The log keeps the newest 50 entries: `HH:mm:ss  auto|approved|denied  tool: summary`.
-- Automatic mode does **not** turn this on.
-
-In Solforge AI, the editor's reviewed-edit approval stays in the editor. Do not bypass it.
-
-## 4. Quota failover
-In the harness, use typed rate-limit and credit errors and the existing Solforge role ladders: fall back only through configured models, keep the task and handoff, and stop on auth or unknown errors. The original's regex can serve as a fallback detector for text errors:
-
-```
-rate.?limit|too many requests|quota (is )?(exceeded|exhausted)|usage limit (reached|exceeded)|out of (credits|usage)|credits exhausted|429|(you've|you have|we) (hit|reached|exceeded) (your )?(usage )?(limit|quota)
-```
-
-An automatic goal survives a failover. The new model is nudged after IdleSeconds.
-
-## Not ported
-- `--dangerously-skip-permissions` / `--yolo` (AiSkipPermissions): dead in the original, and excluded here.
-- Terminal paste and Enter timing, ConPTY screen hashing, footer and pointer regexes, and Cline background shading. These are replaced by harness events.
+The strip exposes state, goal, source, nudge count, elapsed/quiet time, progress, remaining work, result and evidence. The live mode route refreshes connection and automatic-running state. Goal state, resume offers, one-time approvals and explicit Frontier review inputs/decisions are durable plugin records.

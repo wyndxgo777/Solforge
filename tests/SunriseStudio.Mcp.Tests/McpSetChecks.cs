@@ -244,6 +244,12 @@ static class McpSetChecks
                                          "inputSchema": {"type": "object", "properties": {"text": {"type": "string"}}}}]}
                 elif method == "tools/call":
                     text = request.get("params", {}).get("arguments", {}).get("text", "")
+                    if text == "crash":
+                        with open(os.path.join(os.path.dirname(__file__), name + ".actions"), "a") as actions:
+                            actions.write("executed\n")
+                        os._exit(42)
+                    if text == "pid":
+                        text = str(os.getpid())
                     result = {"content": [{"type": "text", "text": name + ":" + text}], "isError": False}
                 elif method == "resources/list":
                     result = {"resources": [{"uri": "fake://resource", "name": "resource", "mimeType": "text/plain"}]}
@@ -340,6 +346,23 @@ static class McpSetChecks
                 ["name"] = "fake_greet", ["arguments"] = new JsonObject { ["who"] = "Ada" }
             });
             Expect(prompt["messages"]?[0]?["content"]?["text"]?.ToString() == "fake:Ada", "aggregate prompt get: " + prompt.ToJsonString());
+            var pidReply = await Call(11, "tools/call", new JsonObject { ["name"] = "fake_echo", ["arguments"] = new JsonObject { ["text"] = "pid" } });
+            int upstreamPid = int.Parse(pidReply["content"]![0]!["text"]!.ToString()[5..]);
+            using (var ownedUpstream = Process.GetProcessById(upstreamPid))
+            {
+                ownedUpstream.Kill(true);
+                await ownedUpstream.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(10));
+            }
+            var reconnected = await Call(12, "tools/call", new JsonObject { ["name"] = "fake_echo", ["arguments"] = new JsonObject { ["text"] = "pid" } });
+            Expect(reconnected["isError"]?.GetValue<bool>() != true && reconnected["content"]![0]!["text"]!.ToString() != "fake:" + upstreamPid,
+                "a dead upstream reconnects before the next request");
+            var interrupted = await Call(13, "tools/call", new JsonObject { ["name"] = "fake_echo", ["arguments"] = new JsonObject { ["text"] = "crash" } });
+            Expect(interrupted["isError"]?.GetValue<bool>() == true && interrupted["content"]![0]!["text"]!.ToString().Contains("not replayed", StringComparison.Ordinal),
+                "interrupted action reports uncertain outcome without replay");
+            var recovered = await Call(14, "tools/call", new JsonObject { ["name"] = "fake_echo", ["arguments"] = new JsonObject { ["text"] = "recovered" } });
+            Expect(recovered["content"]![0]!["text"]!.ToString() == "fake:recovered"
+                && File.ReadAllLines(Path.Combine(folder, "fake.actions")).Length == 1,
+                "the next call reconnects and the interrupted action ran only once");
         }
         finally
         {

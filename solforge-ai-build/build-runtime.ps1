@@ -19,6 +19,8 @@ $start.UseShellExecute = $false
 $start.Environment.Remove('NODE_OPTIONS') | Out-Null
 $start.Environment.Remove('NODE_PATH') | Out-Null
 $start.Environment['COREPACK_ENABLE_NETWORK'] = '0'
+$start.Environment['npm_config_verify_deps_before_run'] = 'false'
+$start.Environment['npm_config_manage_package_manager_versions'] = 'false'
 $start.Environment['DSH_CLIENT_TITLE'] = $ClientTitle
 # The owned fork carries no .git; build metadata uses the upstream commit it was copied from.
 if (!$start.Environment.ContainsKey('DSH_CLIENT_COMMIT_HASH') -or !$start.Environment['DSH_CLIENT_COMMIT_HASH']) {
