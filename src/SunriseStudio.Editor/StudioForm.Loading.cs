@@ -47,13 +47,14 @@ public sealed partial class StudioForm
         ImGui.SetNextWindowPos(new(ClientSize.Width - margin, ClientSize.Height - status - margin + rise), ImGuiCond.Always, Vector2.One);
         ImGui.SetNextWindowBgAlpha(.96f);
         ImGui.PushStyleVar(ImGuiStyleVar.Alpha, Math.Max(.05f, alpha) * ImGui.GetStyle().Alpha);
-        ImGui.PushStyleVar(ImGuiStyleVar.WindowRounding, 4 * scale);
-        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(12 * scale, 8 * scale));
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowRounding, 0f);
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(18 * scale, 9 * scale));
         const ImGuiWindowFlags flags = ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoSavedSettings
             | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.AlwaysAutoResize;
         if (ImGui.Begin("##load-toast", flags))
         {
-            SolTheme.PopupShadow();
+            // The mockup's progress toast: chamfered, amber frame.
+            SolTheme.ToastFrame();
             float line = ImGui.GetTextLineHeight();
             DrawSpinner(ImGui.GetCursorScreenPos() + new Vector2(line / 2), line * .42f);
             ImGui.Dummy(new(line));

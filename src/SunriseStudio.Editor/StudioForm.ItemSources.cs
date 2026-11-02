@@ -44,7 +44,7 @@ public sealed partial class StudioForm
     {
         if (InvestmentPage.TakeWhereUsedRequest() is { } requested) BeginItemSources(requested);
         if (openItemSources) { ImGui.OpenPopup("Where is this used"); openItemSources = false; }
-        if (!ImGui.BeginPopupModal("Where is this used", ImGuiWindowFlags.AlwaysAutoResize)) return;
+        if (!SunriseStudio.Viewport.SolTheme.BeginDialog("Where is this used", ImGuiWindowFlags.AlwaysAutoResize)) return;
         var report = Volatile.Read(ref itemSources);
         if (report is null) ImGui.TextWrapped(itemSourcesNote);
         else if (report["error"] is JsonNode error) ImGui.TextWrapped(error.ToString());

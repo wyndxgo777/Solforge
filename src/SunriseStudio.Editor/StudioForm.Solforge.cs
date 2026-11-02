@@ -41,7 +41,8 @@ public sealed partial class StudioForm
         ImGui.SameLine(0, spacing);
         var draw = ImGui.GetWindowDrawList();
         var at = ImGui.GetCursorScreenPos();
-        draw.AddLine(at + new Vector2(0, line * .1f), at + new Vector2(0, line * .9f), SolTheme.U32(SolTheme.BorderHi), 1);
+        // The mockup's status bar: segments split by Line hairlines.
+        draw.AddLine(at + new Vector2(0, -line * .2f), at + new Vector2(0, line * 1.2f), SolTheme.U32(SolTheme.Line), 1);
         ImGui.SetCursorScreenPos(at + new Vector2(spacing * 2, 0));
         var start = ImGui.GetCursorScreenPos();
         if (UiAuto.InvisibleButton("status-mcp", "MCP", new(mcpWidth, line))) OpenAiWorkspace();

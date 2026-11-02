@@ -91,7 +91,7 @@ internal sealed class BlueprintCanvas
 
         var draw = ImGui.GetWindowDrawList();
         draw.PushClipRect(origin, origin + size, true);
-        draw.AddRectFilled(origin, origin + size, U32(new Vector4(.07f, .075f, .09f, 1)));
+        draw.AddRectFilled(origin, origin + size, U32(SolTheme.GraphCanvas));
         DrawGrid(draw);
         DrawComments(draw, editor);
         DrawLinks(draw, editor, hit);
@@ -600,7 +600,7 @@ internal sealed class BlueprintCanvas
             if (connected) draw.AddTriangleFilled(a, b, c, color); else draw.AddTriangle(a, b, c, color, 1.5f);
             return;
         }
-        draw.AddCircleFilled(at, radius, U32(new Vector4(.08f, .08f, .1f, 1)));
+        draw.AddCircleFilled(at, radius, U32(SolTheme.Inset));
         draw.AddCircle(at, radius, color, 0, 1.6f);
         if (connected) draw.AddCircleFilled(at, radius * .55f, color);
     }
@@ -625,11 +625,11 @@ internal sealed class BlueprintCanvas
         }
         float rounding = 6 * zoom;
         draw.AddRectFilled(min + new Vector2(3, 4) * zoom, max + new Vector2(3, 4) * zoom, U32(new Vector4(0, 0, 0, .35f)), rounding);
-        draw.AddRectFilled(min, max, U32(new Vector4(.12f, .13f, .16f, .96f)), rounding);
+        draw.AddRectFilled(min, max, U32(SolTheme.Alpha(SolTheme.NodeBody, .96f)), rounding);
         draw.AddRectFilled(min, new(max.X, min.Y + GraphLayout.Header * zoom), U32(HeaderColor(type)), rounding,
             node.Collapsed ? ImDrawFlags.None : ImDrawFlags.RoundCornersTop);
-        var outline = selected ? StudioTheme.Accent : error ? new Vector4(.95f, .25f, .25f, 1) : warning ? new Vector4(.95f, .7f, .2f, 1)
-            : hot ? new Vector4(.6f, .65f, .72f, 1) : new Vector4(.05f, .05f, .06f, 1);
+        var outline = selected ? StudioTheme.Accent : error ? SolTheme.Bad : warning ? SolTheme.Warn
+            : hot ? SolTheme.Muted : SolTheme.NodeLine;
         draw.AddRect(min, max, U32(outline), rounding, ImDrawFlags.None, selected || error ? 2.5f : 1.2f);
 
         var font = ImGui.GetFont();
@@ -642,8 +642,8 @@ internal sealed class BlueprintCanvas
         if (error || warning)
         {
             var badge = new Vector2(max.X - 12 * zoom, min.Y + GraphLayout.Header / 2 * zoom);
-            draw.AddCircleFilled(badge, 7 * zoom, U32(error ? new Vector4(.9f, .2f, .2f, 1) : new Vector4(.95f, .7f, .2f, 1)));
-            if (text) draw.AddText(font, fontSize * .9f, badge - new Vector2(2, 7) * zoom, U32(new Vector4(0, 0, 0, 1)), "!");
+            draw.AddCircleFilled(badge, 7 * zoom, U32(error ? SolTheme.Bad : SolTheme.Warn));
+            if (text) draw.AddText(font, fontSize * .9f, badge - new Vector2(2, 7) * zoom, U32(SolTheme.AccentInk), "!");
         }
         if (node.Collapsed)
         {
@@ -653,8 +653,8 @@ internal sealed class BlueprintCanvas
                         pins.First(pin => pin.Output == output).Type, pins.Any(pin => pin.Output == output && linked.Contains((node.Id, pin.Id))), false);
             return;
         }
-        var label = U32(new Vector4(.82f, .85f, .9f, 1));
-        var dim = U32(new Vector4(.55f, .6f, .68f, 1));
+        var label = U32(SolTheme.Text);
+        var dim = U32(SolTheme.Muted);
         foreach (var pin in pins)
         {
             var at = PinPosition(editor, node, pin);
@@ -692,11 +692,11 @@ internal sealed class BlueprintCanvas
     private void DrawOverlay(ImDrawListPtr draw, GraphEditor editor)
     {
         string scope = editor.Scope is { } function ? $"{editor.Document.Name}  >  {function.Name}   (Esc returns)" : editor.Document.Name;
-        draw.AddText(origin + new Vector2(10, 8), U32(new Vector4(1, 1, 1, .55f)), $"{editor.Document.Kind} graph  |  {scope}  |  {zoom * 100:0}%");
+        draw.AddText(origin + new Vector2(10, 8), U32(SolTheme.Muted), $"{editor.Document.Kind} graph  |  {scope}  |  {zoom * 100:0}%");
         if (status.Length > 0 && ImGui.GetTime() < statusUntil)
-            draw.AddText(origin + new Vector2(10, size.Y - 26), U32(new Vector4(1, .75f, .4f, 1)), status);
+            draw.AddText(origin + new Vector2(10, size.Y - 26), U32(SolTheme.Warn), status);
         if (editor.Nodes.Count == 0)
-            draw.AddText(origin + size / 2 - new Vector2(150, 8), U32(new Vector4(1, 1, 1, .4f)), "Right-click or press Tab to add a node");
+            draw.AddText(origin + size / 2 - new Vector2(150, 8), U32(SolTheme.Dim), "Right-click or press Tab to add a node");
     }
 
     // Minimap.
@@ -726,16 +726,16 @@ internal sealed class BlueprintCanvas
     {
         if (MapSpace(editor) is not { } space) return;
         var (min, max) = MapRect();
-        draw.AddRectFilled(min, max, U32(new Vector4(.04f, .045f, .055f, .88f)), 4);
+        draw.AddRectFilled(min, max, U32(SolTheme.Alpha(SolTheme.Bg, .88f)), 4);
         draw.AddRect(min, max, U32(new Vector4(1, 1, 1, hovered && InMinimap(io.MousePos) ? .35f : .15f)), 4);
         Vector2 Map(Vector2 world) => min + (world - space.WorldMin) * space.Scale;
         foreach (var comment in editor.Scope is null ? editor.Document.Comments : new List<GraphComment>())
-            draw.AddRectFilled(Map(new(comment.X, comment.Y)), Map(new(comment.X + comment.Width, comment.Y + comment.Height)), U32(new Vector4(.4f, .5f, .6f, .18f)));
+            draw.AddRectFilled(Map(new(comment.X, comment.Y)), Map(new(comment.X + comment.Width, comment.Y + comment.Height)), U32(SolTheme.Alpha(SolTheme.Info, .18f)));
         foreach (var node in editor.Nodes)
         {
             var (width, height) = GraphLayout.Size(editor.Document, node, editor.Scope);
             var color = editor.Selection.Contains(node.Id) ? StudioTheme.Accent : Problems.ContainsKey(node.Id) && Problems[node.Id].Any(problem => problem.Severity == DiagnosticSeverity.Error)
-                ? new Vector4(.9f, .25f, .25f, 1) : HeaderColor(NodeLibrary.Find(node.Type));
+                ? SolTheme.Bad : HeaderColor(NodeLibrary.Find(node.Type));
             draw.AddRectFilled(Map(new(node.X, node.Y)), Map(new(node.X + width, node.Y + height)), U32(color));
         }
         draw.AddRect(Vector2.Max(min, Map(World(origin))), Vector2.Min(max, Map(World(origin + size))), U32(new Vector4(1, 1, 1, .7f)));

@@ -24,7 +24,7 @@ public sealed partial class StudioForm
         ImGui.SetNextWindowPos(new(ClientSize.Width / 2f, ClientSize.Height / 2f), ImGuiCond.Appearing, new(.5f));
         ImGui.SetNextWindowSize(new(Math.Min(860 * scale, ClientSize.Width - 40), Math.Min(640 * scale, ClientSize.Height - 40)),
             ImGuiCond.Appearing);
-        if (!ImGui.BeginPopupModal("Third-party notices", ImGuiWindowFlags.NoSavedSettings)) return;
+        if (!SunriseStudio.Viewport.SolTheme.BeginDialog("Third-party notices", ImGuiWindowFlags.NoSavedSettings)) return;
         notices ??= NoticeTabs.Select(tab => NoticeBlock.Parse(ReadNotice(tab.Resource), tab.Markdown))
             .ToArray();
         if (ImGui.BeginTabBar("notice-tabs"))

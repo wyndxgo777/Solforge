@@ -200,7 +200,7 @@ public sealed partial class StudioForm
         var viewport = ImGui.GetMainViewport();
         ImGui.SetNextWindowPos(viewport.GetCenter(), ImGuiCond.Appearing, new Vector2(.5f, .5f));
         ImGui.SetNextWindowSize(new Vector2(Math.Min(1100 * scale, viewport.Size.X * .9f), Math.Min(720 * scale, viewport.Size.Y * .85f)), ImGuiCond.Appearing);
-        if (!ImGui.BeginPopupModal(id, ImGuiWindowFlags.NoSavedSettings))
+        if (!SolTheme.BeginDialog(id, ImGuiWindowFlags.NoSavedSettings))
         {
             pending.Opened = false;
             return;
@@ -270,7 +270,7 @@ public sealed partial class StudioForm
     private static void CloseOrphanModal(string id)
     {
         if (!ImGui.IsPopupOpen(id)) return;
-        if (ImGui.BeginPopupModal(id, ImGuiWindowFlags.NoSavedSettings))
+        if (SolTheme.BeginDialog(id, ImGuiWindowFlags.NoSavedSettings))
         {
             ImGui.CloseCurrentPopup();
             ImGui.EndPopup();

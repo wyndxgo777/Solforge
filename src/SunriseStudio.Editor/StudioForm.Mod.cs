@@ -98,7 +98,7 @@ public sealed partial class StudioForm
     private void DrawModDialog()
     {
         CenterModal(620);
-        if (!ImGui.BeginPopupModal("Mod details", ImGuiWindowFlags.AlwaysAutoResize)) return;
+        if (!SunriseStudio.Viewport.SolTheme.BeginDialog("Mod details", ImGuiWindowFlags.AlwaysAutoResize)) return;
         float wide = 600 * scale;
         ImGui.TextUnformatted("Id"); ImGui.SetNextItemWidth(wide);
         UiAuto.InputTextWithHint("##modId", "dev.example.mod", ref modId, 256);

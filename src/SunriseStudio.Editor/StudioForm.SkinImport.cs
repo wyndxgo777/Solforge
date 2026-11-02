@@ -81,7 +81,7 @@ public sealed partial class StudioForm
         if (skinReviewPending && !workspace.IsBusy) { skinReviewPending = false; skinImportDialog = true; }
         if (skinImportDialog) { ImGui.OpenPopup("Import skinned model"); skinImportDialog = false; }
         CenterModal(540);
-        if (!ImGui.BeginPopupModal("Import skinned model", ImGuiWindowFlags.AlwaysAutoResize)) return;
+        if (!SunriseStudio.Viewport.SolTheme.BeginDialog("Import skinned model", ImGuiWindowFlags.AlwaysAutoResize)) return;
         if ((preparedSkin is not null || preparedSkinEntity is not null) && !SkinReviewIdentityMatches()) ClearSkinReview();
         if (skinTemplates.Count == 0 || (uint)skinTemplateIndex >= skinTemplates.Count)
         { ImGui.CloseCurrentPopup(); ImGui.EndPopup(); return; }

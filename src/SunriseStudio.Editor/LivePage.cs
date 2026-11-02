@@ -198,12 +198,12 @@ public sealed partial class LivePage : IDisposable
             return;
         }
         if (connection.WorldBridgeDiagnostic is { Length: > 0 } bridgeDiagnostic)
-            ImGui.TextColored(new Vector4(1, .6f, .35f, 1), bridgeDiagnostic);
+            ImGui.TextColored(SolTheme.Warn, bridgeDiagnostic);
         // The Screens tab sets this again while it is drawn.
         bool cuiInUse = CuiInUse;
         screensShown = false;
         if (cuiInUse && connection.CuiBridgeDiagnostic is { Length: > 0 } cuiDiagnostic)
-            ImGui.TextColored(new Vector4(1, .6f, .35f, 1), cuiDiagnostic);
+            ImGui.TextColored(SolTheme.Warn, cuiDiagnostic);
         DrawSummary(workspace);
         var size = ImGui.GetContentRegionAvail();
         float panel = showPanel ? Math.Clamp(size.X * .3f, 280, 460) : 0;

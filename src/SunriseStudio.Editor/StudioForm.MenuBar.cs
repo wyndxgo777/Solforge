@@ -188,13 +188,13 @@ public sealed partial class StudioForm
     private float TitleLead(TitleGroup group) => group is TitleGroup.Tools or TitleGroup.Place or TitleGroup.Project or TitleGroup.Render
         ? 14 * scale : 0;
 
-    /** A BorderHi hairline one control tall, centred at x between two toolbar sections. */
+    /** A Line hairline one control tall, centred at x between two toolbar sections (the mockup's .tb-group border). */
     private static void TitleDivider(float x, float row)
     {
         var origin = ImGui.GetWindowPos();
         float top = row + ImGui.GetFrameHeight() * .15f, bottom = row + ImGui.GetFrameHeight() * .85f;
         x = MathF.Round(x) + .5f;
-        ImGui.GetWindowDrawList().AddLine(origin + new Vector2(x, top), origin + new Vector2(x, bottom), SolTheme.U32(SolTheme.BorderHi), 1);
+        ImGui.GetWindowDrawList().AddLine(origin + new Vector2(x, top), origin + new Vector2(x, bottom), SolTheme.U32(SolTheme.Line), 1);
     }
 
     /** A group's width when last drawn, or a guess before its first frame on the row. */

@@ -85,7 +85,7 @@ public sealed partial class InvestmentPage
     private unsafe void DrawCostEditor(StudioPageContext context, InvestmentCatalog catalog)
     {
         if (openCostEditor) { ImGui.OpenPopup("Edit cost"); openCostEditor = false; }
-        if (!ImGui.BeginPopupModal("Edit cost", ImGuiWindowFlags.AlwaysAutoResize)) return;
+        if (!SunriseStudio.Viewport.SolTheme.BeginDialog("Edit cost", ImGuiWindowFlags.AlwaysAutoResize)) return;
         InvalidateCostDraft(context.Workspace);
         if (costSale is not { } sale || costRow is not { } row)
         { ImGui.CloseCurrentPopup(); ImGui.EndPopup(); return; }

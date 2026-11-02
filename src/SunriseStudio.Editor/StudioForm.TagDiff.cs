@@ -29,7 +29,7 @@ public sealed partial class StudioForm
     private unsafe void DrawTagDiff()
     {
         if (openTagDiff) { ImGui.OpenPopup("Compare with base"); openTagDiff = false; }
-        if (!ImGui.BeginPopupModal("Compare with base", ImGuiWindowFlags.AlwaysAutoResize)) return;
+        if (!SunriseStudio.Viewport.SolTheme.BeginDialog("Compare with base", ImGuiWindowFlags.AlwaysAutoResize)) return;
         if (tagDiff is { } diff)
         {
             ImGui.TextUnformatted($"[{diff.TagHash:X8}]  base {diff.Base.Length} bytes, authored {diff.Authored.Length} bytes");

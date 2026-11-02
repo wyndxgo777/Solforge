@@ -260,7 +260,7 @@ public sealed partial class InvestmentPage : IPreparedStudioPage
     private void DrawEdit(StudioPageContext context, InvestmentCatalog catalog)
     {
         if (openEditor) { ImGui.OpenPopup("Edit investment field"); openEditor = false; }
-        if (!ImGui.BeginPopupModal("Edit investment field", ImGuiWindowFlags.AlwaysAutoResize)) return;
+        if (!SolTheme.BeginDialog("Edit investment field", ImGuiWindowFlags.AlwaysAutoResize)) return;
         if (!ReferenceEquals(editingDocument, context.Workspace.Document)
             || !ReferenceEquals(editingProject, context.Workspace.Project)
             || editingOverlayRevision != context.Workspace.Catalog?.OverlayRevision)

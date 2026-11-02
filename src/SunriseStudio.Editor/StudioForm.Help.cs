@@ -36,7 +36,7 @@ public sealed partial class StudioForm
         ImGui.SetNextWindowPos(new(ClientSize.Width / 2f, ClientSize.Height / 2f), ImGuiCond.Appearing, new(.5f));
         ImGui.SetNextWindowSize(new(Math.Min(900 * scale, ClientSize.Width - 40), Math.Min(640 * scale, ClientSize.Height - 40)), ImGuiCond.Appearing);
         bool open = true;
-        if (!ImGui.BeginPopupModal(HelpTitle, ref open, ImGuiWindowFlags.NoSavedSettings)) return;
+        if (!SolTheme.BeginDialog(HelpTitle, ref open, ImGuiWindowFlags.NoSavedSettings)) return;
         ImGui.SetNextItemWidth(320 * scale);
         UiAuto.InputTextWithHint("##help-find", "Search keybinds and tips", ref helpQuery, 128);
         ImGui.SameLine();

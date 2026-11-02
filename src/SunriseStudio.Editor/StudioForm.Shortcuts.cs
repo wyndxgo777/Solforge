@@ -24,7 +24,7 @@ public sealed partial class StudioForm
         ImGui.SetNextWindowPos(new(ClientSize.Width / 2f, ClientSize.Height / 2f), ImGuiCond.Appearing, new(.5f));
         ImGui.SetNextWindowSize(new(Math.Min(900 * scale, ClientSize.Width - 40), Math.Min(620 * scale, ClientSize.Height - 40)),
             ImGuiCond.Appearing);
-        if (!ImGui.BeginPopupModal("Shortcuts", ImGuiWindowFlags.NoSavedSettings)) { ShortcutInput.Suspended = false; return; }
+        if (!SolTheme.BeginDialog("Shortcuts", ImGuiWindowFlags.NoSavedSettings)) { ShortcutInput.Suspended = false; return; }
         ShortcutInput.Suspended = true;
         var map = ShortcutInput.Map;
         ImGui.SetNextItemWidth(280 * scale);
@@ -121,7 +121,7 @@ public sealed partial class StudioForm
     /** Reads one input until the action accepts it; Escape cancels. */
     private void DrawShortcutCapture(ShortcutMap map)
     {
-        if (!ImGui.BeginPopupModal("Press a shortcut", ImGuiWindowFlags.AlwaysAutoResize)) return;
+        if (!SolTheme.BeginDialog("Press a shortcut", ImGuiWindowFlags.AlwaysAutoResize)) return;
         if (ShortcutActions.Find(captureAction) is not { } action) { ImGui.CloseCurrentPopup(); ImGui.EndPopup(); return; }
         ImGui.TextUnformatted($"{ShortcutLabel(action)}");
         ImGui.TextDisabled(action.Allows(ShortcutKind.Key) ? "Press a key."

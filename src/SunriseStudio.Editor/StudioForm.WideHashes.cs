@@ -73,7 +73,7 @@ public sealed partial class StudioForm
     private unsafe void DrawWideHashes()
     {
         if (openWideHashes) { ImGui.OpenPopup("Wide-hash aliases"); openWideHashes = false; }
-        if (!ImGui.BeginPopupModal("Wide-hash aliases", ImGuiWindowFlags.AlwaysAutoResize)) return;
+        if (!SunriseStudio.Viewport.SolTheme.BeginDialog("Wide-hash aliases", ImGuiWindowFlags.AlwaysAutoResize)) return;
         if (wideHashDraft is { } draft)
         {
             ImGui.TextUnformatted($"{draft.AssetName}  [{draft.Tag:X8}]");

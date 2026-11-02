@@ -43,7 +43,7 @@ public sealed class CreationDialog
         ImGui.SetNextWindowSize(new Vector2(Math.Min(720 * scale, display.X - 40), Math.Min(700 * scale, display.Y - 40)),
             ImGuiCond.Appearing);
         // Only Cancel and finish end a workflow; a loading frame that closed the popup reopens it with the draft.
-        if (!ImGui.BeginPopupModal(workflow.Title + PopupId, ImGuiWindowFlags.NoSavedSettings)) { open = true; return; }
+        if (!SolTheme.BeginDialog(workflow.Title + PopupId, ImGuiWindowFlags.NoSavedSettings)) { open = true; return; }
         Finish(workspace);
         if (closing) { closing = false; workflow = null; ImGui.CloseCurrentPopup(); ImGui.EndPopup(); return; }
         // A failed read waits for Retry instead of rereading every frame.

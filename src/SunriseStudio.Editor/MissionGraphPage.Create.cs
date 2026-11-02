@@ -85,7 +85,7 @@ public sealed partial class MissionGraphPage
             newFlowProblem = catalog is null ? "" : MissionScriptFactory.FlowRuntimeProblem(catalog);
             ImGui.OpenPopup("New mission script");
         }
-        if (!ImGui.BeginPopupModal("New mission script", ImGuiWindowFlags.AlwaysAutoResize)) return;
+        if (!SunriseStudio.Viewport.SolTheme.BeginDialog("New mission script", ImGuiWindowFlags.AlwaysAutoResize)) return;
         if (catalog is not { } installed) { ImGui.CloseCurrentPopup(); ImGui.EndPopup(); return; }
         if (UiAuto.RadioButton("Activity type template", newFromTemplate)) newFromTemplate = true;
         Tip("A starter script for any activity: story, strike, patrol, public event, lost sector, raid, encounter, PvP-style mode, quest or blank.");

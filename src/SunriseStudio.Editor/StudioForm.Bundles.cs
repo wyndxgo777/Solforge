@@ -72,7 +72,7 @@ public sealed partial class StudioForm
         if (observedTransferRevision != workspace.TransferRevision)
         { observedTransferRevision = workspace.TransferRevision; ImGui.OpenPopup("Asset transfer"); }
         CenterModal(520);
-        if (ImGui.BeginPopupModal("Import Blender asset", ImGuiWindowFlags.AlwaysAutoResize))
+        if (SunriseStudio.Viewport.SolTheme.BeginDialog("Import Blender asset", ImGuiWindowFlags.AlwaysAutoResize))
         {
             ImGui.TextUnformatted(Path.GetFileName(Path.GetDirectoryName(bundlePath)));
             if (ImGui.IsItemHovered()) ImGui.SetTooltip(bundlePath);
@@ -101,7 +101,7 @@ public sealed partial class StudioForm
             ImGui.EndPopup();
         }
         CenterModal(580);
-        if (!ImGui.BeginPopupModal("Asset transfer", ImGuiWindowFlags.AlwaysAutoResize)) return;
+        if (!SunriseStudio.Viewport.SolTheme.BeginDialog("Asset transfer", ImGuiWindowFlags.AlwaysAutoResize)) return;
         IReadOnlyList<BundleNotice> notices = [];
         if (workspace.LastTransferWasExport && workspace.LastAssetExport is { } exported)
         {
@@ -145,7 +145,7 @@ public sealed partial class StudioForm
         if (!ReferenceEquals(observedWorldExport, result))
         { observedWorldExport = result; ImGui.OpenPopup("World export"); }
         CenterModal(520);
-        if (!ImGui.BeginPopupModal("World export", ImGuiWindowFlags.AlwaysAutoResize)) return;
+        if (!SunriseStudio.Viewport.SolTheme.BeginDialog("World export", ImGuiWindowFlags.AlwaysAutoResize)) return;
         var stats = result.Manifest.Statistics;
         ImGui.TextUnformatted(result.Manifest.Name);
         ImGui.TextDisabled($"{stats.Instances:N0} placements | {stats.Geometries:N0} meshes | {stats.Textures:N0} textures");

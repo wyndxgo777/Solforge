@@ -124,6 +124,16 @@ public static partial class SolTheme
     public static readonly Vector4 Bad = Hex(0xf07a7a);
     /** Hashes, data pins, information: #86b4e6. */
     public static readonly Vector4 Info = Hex(0x86b4e6);
+    // ---- Node graphs (the mockup's .graph-wrap and .node) ----
+    /** Graph canvas: hsl(0,0%,6.5%). */
+    public static readonly Vector4 GraphCanvas = Grey(6.5f);
+    /** Node body and header: hsl(0,0%,12%) and hsl(0,0%,17%). */
+    public static readonly Vector4 NodeBody = Grey(12), NodeHead = Grey(17);
+    /** Node outline at rest: white at 22 %. */
+    public static readonly Vector4 NodeLine = White(.22f);
+    /** Exec wires: #9a9a9a; data wires use Info. */
+    public static readonly Vector4 Wire = Hex(0x9a9a9a);
+
     /** Axis colours of the X/Y/Z fields. */
     public static readonly Vector4 AxisX = Hex(0xe0675a), AxisY = Hex(0x6cbd66), AxisZ = Hex(0x5f8fe0);
 

@@ -20,7 +20,7 @@ public sealed partial class StudioForm
     private void DrawCacheDialog()
     {
         CenterModal(480);
-        if (!ImGui.BeginPopupModal("Disk cache", ImGuiWindowFlags.AlwaysAutoResize)) return;
+        if (!SunriseStudio.Viewport.SolTheme.BeginDialog("Disk cache", ImGuiWindowFlags.AlwaysAutoResize)) return;
         bool enabled = settings.DiskCacheEnabled;
         int limit = settings.DiskCacheLimitMiB;
         bool toggled = UiAuto.Checkbox("Cache package loads", ref enabled);

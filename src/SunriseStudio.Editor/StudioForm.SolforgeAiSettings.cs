@@ -135,7 +135,7 @@ public sealed partial class StudioForm
     private void DrawStandaloneRegisterConfirm()
     {
         bool open = true;
-        if (!ImGui.BeginPopupModal("Register standalone MCP##confirm", ref open, ImGuiWindowFlags.AlwaysAutoResize)) return;
+        if (!SolTheme.BeginDialog("Register standalone MCP##confirm", ref open, ImGuiWindowFlags.AlwaysAutoResize)) return;
         ImGui.PushTextWrapPos(ImGui.GetCursorPosX() + 520 * scale);
         ImGui.TextWrapped("This changes two files outside Solforge:");
         ImGui.BulletText(StandaloneRegistration.ClaudeConfigFile() + ": adds mcpServers." + StandaloneRegistration.ServerName
@@ -623,7 +623,7 @@ public sealed partial class StudioForm
             }
         }
         bool open = true;
-        if (ImGui.BeginPopupModal("Replace Solforge AI's credential file?##credential-share-confirm", ref open, ImGuiWindowFlags.AlwaysAutoResize))
+        if (SolTheme.BeginDialog("Replace Solforge AI's credential file?##credential-share-confirm", ref open, ImGuiWindowFlags.AlwaysAutoResize))
         {
             ImGui.TextUnformatted("Solforge AI currently reads " + shared + ".");
             ImGui.TextUnformatted("Use " + editorPath + " instead? Only the path is written; no key is read or copied.");

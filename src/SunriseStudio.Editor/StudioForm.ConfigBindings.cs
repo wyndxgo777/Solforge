@@ -70,10 +70,10 @@ public sealed partial class StudioForm
     private void DrawConfigBindings()
     {
         if (openConfigBindings) { ImGui.OpenPopup("Config bindings"); openConfigBindings = false; }
-        if (!ImGui.BeginPopupModal("Config bindings", ImGuiWindowFlags.AlwaysAutoResize)) return;
+        if (!SunriseStudio.Viewport.SolTheme.BeginDialog("Config bindings", ImGuiWindowFlags.AlwaysAutoResize)) return;
         if (configBindingDraft is { } draft)
         {
-            if (draft.Settings.Count == 0) ImGui.TextWrapped("Add a setting in Build > Mod details first.");
+            if (draft.Settings.Count == 0) ImGui.TextWrapped("Add a setting in File > Mod details first.");
             ImGui.SetNextItemWidth(520 * scale);
             UiAuto.InputTextWithHint("##configSiteFilter", "Find scalar property or comparison", ref configBindingFilter, 128);
             StudioUi.Help("Studio shows defaults; the game applies settings after restart.");

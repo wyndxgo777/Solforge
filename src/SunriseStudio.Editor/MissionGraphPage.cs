@@ -471,7 +471,7 @@ public sealed partial class MissionGraphPage
     private void DrawSwitch()
     {
         if (showSwitch) { ImGui.OpenPopup("Unsaved mission script"); showSwitch = false; }
-        if (!ImGui.BeginPopupModal("Unsaved mission script", ImGuiWindowFlags.AlwaysAutoResize)) return;
+        if (!SolTheme.BeginDialog("Unsaved mission script", ImGuiWindowFlags.AlwaysAutoResize)) return;
         ImGui.TextUnformatted(script?.Name ?? "Mission script");
         if (HasLuaDrafts) ImGui.TextWrapped("Apply or revert Lua edits to save. Discard drops them.");
         ImGui.BeginDisabled(!CanSave);

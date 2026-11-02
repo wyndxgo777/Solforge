@@ -363,7 +363,7 @@ public sealed class ExoticWeaponWorkflow : CreationWorkflow
         StudioUi.Tip("Activation / effect / deactivation");
         var size = ImGui.GetIO().DisplaySize;
         ImGui.SetNextWindowSize(new(Math.Min(1180 * CreationWidgets.Scale, size.X - 40), Math.Min(760 * CreationWidgets.Scale, size.Y - 40)), ImGuiCond.Appearing);
-        if (!ImGui.BeginPopupModal(title, ImGuiWindowFlags.NoSavedSettings)) return;
+        if (!SolTheme.BeginDialog(title, ImGuiWindowFlags.NoSavedSettings)) return;
         ImGui.TextUnformatted(perkName.Length == 0 ? title : perkName);
         ImGui.BeginChild("perk-node-editor", new(0, -38 * CreationWidgets.Scale));
         editor.Draw(title, workspace.CanEdit);

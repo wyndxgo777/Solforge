@@ -53,7 +53,7 @@ public sealed class GraphPage : IStudioPage
                 || Math.Max(from.Y, to.Y) < origin.Y || Math.Min(from.Y, to.Y) > end.Y) continue;
             float bend = Math.Max(40, Math.Abs(to.X - from.X) * .5f);
             draw.AddBezierCubic(from, from + new Vector2(bend, 0), to - new Vector2(bend, 0), to,
-                ImGui.GetColorU32(new Vector4(.42f, .33f, .28f, 1)), Math.Max(1, 1.5f * zoom));
+                ImGui.GetColorU32(SolTheme.Wire), Math.Max(1, 1.5f * zoom));
         }
         foreach (var node in graph.Nodes)
         {
@@ -67,10 +67,10 @@ public sealed class GraphPage : IStudioPage
                 selected = node.Id;
                 context.SelectProperty(new("Node", node.Label, node.Offset));
             }
-            draw.AddRectFilled(min, max, ImGui.GetColorU32(hit ? new Vector4(.14f, .16f, .20f, 1)
-                : new Vector4(.095f, .11f, .14f, 1)), 5 * zoom);
+            draw.AddRectFilled(min, max, ImGui.GetColorU32(hit ? SolTheme.NodeHead
+                : SolTheme.NodeBody), 5 * zoom);
             draw.AddRect(min, max, ImGui.GetColorU32(selected == node.Id ? StudioTheme.Accent
-                : new Vector4(.22f, .25f, .30f, 1)), 5 * zoom);
+                : SolTheme.NodeLine), 5 * zoom);
             draw.PushClipRect(min + new Vector2(8, 0) * zoom, max - new Vector2(8, 0) * zoom, true);
             draw.AddText(ImGui.GetFont(), ImGui.GetFontSize() * zoom, min + new Vector2(10, 9) * zoom,
                 ImGui.GetColorU32(ImGuiCol.Text), node.Label);

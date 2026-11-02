@@ -264,6 +264,8 @@ public static unsafe partial class SolTheme
         Set(ImGuiCol.NavWindowingDimBg, new(0, 0, 0, .5f));
         // The dialog backdrop: hsla(0,0%,0%,.66).
         Set(ImGuiCol.ModalWindowDimBg, new(0, 0, 0, .66f));
+        // Collapsing headers stay neutral (--panel-2), so only selected rows carry the amber wash.
+        UiAuto.HeaderColors = (Panel2, Grey(16), Pressed);
         style.ScaleAllSizes(Scale);
         ImGui.GetIO().FontGlobalScale = 1;
     }
@@ -434,6 +436,9 @@ public static unsafe partial class SolTheme
      * true. (The name is kept from the soft shadow it used to draw.)
      */
     public static void PopupShadow() => ChamferWindow(CutSmall, Popup, LineStrong);
+
+    /** The mockup's toast: an 8 px chamfered hsl(0,0%,12%) fill with a 1 px amber frame, in place of the window's background. */
+    public static void ToastFrame() => ChamferWindow(CutSmall, ToastFill, Accent);
 
     /** A chamfered frame around a rectangle, for a popup drawn by hand. */
     public static void PopupShadow(ImDrawListPtr draw, Vector2 min, Vector2 max)

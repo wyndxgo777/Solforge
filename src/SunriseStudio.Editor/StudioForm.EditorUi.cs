@@ -154,7 +154,7 @@ public sealed partial class StudioForm
         ImGui.SetNextWindowPos(ImGui.GetMainViewport().GetCenter(), ImGuiCond.Appearing, new Vector2(.5f, .5f));
         ImGui.SetNextWindowSize(new Vector2(520, 0) * scale, ImGuiCond.Appearing);
         bool open = true;
-        if (!ImGui.BeginPopupModal(id, ref open, ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.AlwaysAutoResize))
+        if (!SolTheme.BeginDialog(id, ref open, ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.AlwaysAutoResize))
         {
             if (!open) Decide(false);
             return;

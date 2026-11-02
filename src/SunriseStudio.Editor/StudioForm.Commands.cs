@@ -267,7 +267,7 @@ public sealed partial class StudioForm
     private void DrawLocationDialog()
     {
         CenterModal(600);
-        if (!ImGui.BeginPopupModal("Sunrise location", ImGuiWindowFlags.AlwaysAutoResize)) return;
+        if (!SolTheme.BeginDialog("Sunrise location", ImGuiWindowFlags.AlwaysAutoResize)) return;
         ImGui.TextUnformatted("Installation folder");
         ImGui.SetNextItemWidth(465 * scale);
         UiAuto.InputText("##install", ref location, 4096);
@@ -306,7 +306,7 @@ public sealed partial class StudioForm
     private void DrawProjectDialog()
     {
         CenterModal(600);
-        if (!ImGui.BeginPopupModal("New project", ImGuiWindowFlags.AlwaysAutoResize)) return;
+        if (!SolTheme.BeginDialog("New project", ImGuiWindowFlags.AlwaysAutoResize)) return;
         ImGui.TextUnformatted("Name"); ImGui.SetNextItemWidth(-1);
         UiAuto.InputText("##projectName", ref projectName, 128);
         ImGui.TextUnformatted("Parent folder");
@@ -338,7 +338,7 @@ public sealed partial class StudioForm
     private void DrawAddDialog()
     {
         CenterModal(600);
-        if (!ImGui.BeginPopupModal("Add asset", ImGuiWindowFlags.AlwaysAutoResize)) return;
+        if (!SolTheme.BeginDialog("Add asset", ImGuiWindowFlags.AlwaysAutoResize)) return;
         if (cloneSource is { } source) { ImGui.TextDisabled("Source"); ImGui.TextWrapped(source.Name); }
         else
         {

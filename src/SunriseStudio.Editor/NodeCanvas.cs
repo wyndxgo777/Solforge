@@ -31,11 +31,11 @@ internal sealed class NodeCanvas
     // Code previews kept between frames; cleared when full.
     private const int MaxPreviews = 1024;
     /** Hovered links and ports. */
-    private static readonly Vector4 Highlight = new(1, .85f, .65f, 1);
+    private static readonly Vector4 Highlight = SolTheme.AccentHover;
     /** Input ports, and fixed links of the selected node. */
-    private static readonly Vector4 PortColor = new(.62f, .72f, .86f, 1);
+    private static readonly Vector4 PortColor = SolTheme.Info;
     /** Links set by code. */
-    private static readonly Vector4 FixedLink = new(.36f, .43f, .54f, 1);
+    private static readonly Vector4 FixedLink = SolTheme.Wire;
     private readonly Dictionary<string, View> views = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> previews = new(StringComparer.Ordinal);
     private string dragNode = "", linkFrom = "";
@@ -318,12 +318,12 @@ internal sealed class NodeCanvas
     {
         var size = Size(node) * zoom; var max = min + size;
         float rounding = 5 * zoom;
-        draw.AddRectFilled(min, max, ImGui.GetColorU32(selected ? new Vector4(.15f, .17f, .21f, 1) : StudioTheme.Panel), rounding);
-        var tint = node.Tint ?? new Vector4(.2f, .24f, .3f, 1);
+        draw.AddRectFilled(min, max, ImGui.GetColorU32(selected ? SolTheme.NodeHead : SolTheme.NodeBody), rounding);
+        var tint = node.Tint ?? SolTheme.NodeHead;
         draw.AddRectFilled(min, new(max.X, min.Y + Header * zoom), ImGui.GetColorU32(tint with { W = .55f }), rounding,
             node.Code is null && node.Rows is not { Count: > 0 } ? ImDrawFlags.RoundCornersAll : ImDrawFlags.RoundCornersTop);
-        draw.AddRect(min, max, ImGui.GetColorU32(selected ? StudioTheme.Accent : hovered ? new Vector4(.5f, .55f, .62f, 1)
-            : new Vector4(.28f, .31f, .36f, 1)), rounding, ImDrawFlags.None, selected ? 2 : 1);
+        draw.AddRect(min, max, ImGui.GetColorU32(selected ? StudioTheme.Accent : hovered ? SolTheme.Muted
+            : SolTheme.NodeLine), rounding, ImDrawFlags.None, selected ? 2 : 1);
         draw.PushClipRect(min + new Vector2(6, 0) * zoom, max - new Vector2(6, 0) * zoom, true);
         var font = ImGui.GetFont(); float fontSize = ImGui.GetFontSize();
         draw.AddText(font, fontSize * zoom, min + new Vector2(14, 7) * zoom, ImGui.GetColorU32(ImGuiCol.Text), node.Title);
@@ -338,7 +338,7 @@ internal sealed class NodeCanvas
             {
                 foreach (string text in CodeLines(code))
                 {
-                    draw.AddText(codeFont, fontSize * .82f * zoom, new(min.X + 12 * zoom, y), ImGui.GetColorU32(new Vector4(.78f, .82f, .88f, 1)), text);
+                    draw.AddText(codeFont, fontSize * .82f * zoom, new(min.X + 12 * zoom, y), ImGui.GetColorU32(SolTheme.Text), text);
                     y += line;
                 }
             }
@@ -348,7 +348,7 @@ internal sealed class NodeCanvas
             float line = CodeLine * zoom, y = min.Y + (Header + 5) * zoom;
             foreach (string text in Capped(rows))
             {
-                draw.AddText(font, fontSize * .82f * zoom, new(min.X + 12 * zoom, y), ImGui.GetColorU32(new Vector4(.72f, .78f, .86f, 1)), text);
+                draw.AddText(font, fontSize * .82f * zoom, new(min.X + 12 * zoom, y), ImGui.GetColorU32(SolTheme.Muted), text);
                 y += line;
             }
         }

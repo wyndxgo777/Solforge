@@ -49,7 +49,7 @@ public sealed partial class InvestmentPage
     {
         string title = addingPerk ? "Add perk" : "Add stat";
         if (openAddRow) { ImGui.OpenPopup(title); openAddRow = false; }
-        if (!ImGui.BeginPopupModal(title, ImGuiWindowFlags.AlwaysAutoResize)) return;
+        if (!SunriseStudio.Viewport.SolTheme.BeginDialog(title, ImGuiWindowFlags.AlwaysAutoResize)) return;
         var workspace = context.Workspace;
         if (!ReferenceEquals(rowDocument, workspace.Document) || !ReferenceEquals(rowProject, workspace.Project)
             || rowOverlayRevision != workspace.Catalog?.OverlayRevision)
