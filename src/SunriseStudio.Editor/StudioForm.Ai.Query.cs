@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Numerics;
 using System.Text.Json.Nodes;
 using Solforge.Mcp;
+using Solforge.Weapons;
 using SunriseStudio.Authoring;
 using SunriseStudio.Editor.Creation;
 using SunriseStudio.Formats;
@@ -58,7 +59,8 @@ public sealed partial class StudioForm
                 "search_items" or "get_item" or "search_perks" or "list_vendors" or "get_vendor" => await AiInvestmentAsync(tool, args, cancel),
                 "list_shaders" or "get_shader" or "list_animations" or "get_animation" or "list_audio" or "get_audio" => await AiAssetAsync(tool, args, cancel),
                 "list_creation_types" => AiCreationTypes(McpJson.String(args, "filter")),
-                "compare_with_base" or "get_item_sources" => await AiItemSourceQueryAsync(tool, args, cancel),
+                "compare_with_base" or "get_item_sources" or "check_item_perk_displays" => await AiItemSourceQueryAsync(tool, args, cancel),
+                "get_perk_behavior" or "list_perk_node_types" => await AiPerkQueryAsync(tool, args, cancel),
                 "get_help" => await OnUi(() => AiHelp(args)).WaitAsync(cancel),
                 "list_commands" => await OnUi(AiCommandStates).WaitAsync(cancel),
                 "get_player_position" => await AiPlayerPositionAsync(args, cancel),
@@ -163,8 +165,10 @@ public sealed partial class StudioForm
         ["textureCacheMiB"] = settings.TextureCacheMiB,
         ["fpsFocused"] = settings.FpsFocused, ["fpsBackground"] = settings.FpsBackground, ["uiScale"] = Math.Round(settings.UiScale, 2),
         ["memory"] = AiMemory(),
-        ["aiEngine"] = AiEngines[aiEngine].Name, ["aiAutoAllow"] = settings.AiAutoAllow, ["mcp"] = settings.AiMcpEnabled,
-        ["aiFolders"] = new JsonArray(settings.AiFolders.Select(folder => (JsonNode)folder).ToArray())
+        ["aiEngine"] = AiEngines[aiEngine].Name, ["autoApproveRequests"] = settings.AutoApproveRequests, ["mcp"] = settings.AiMcpEnabled,
+        ["aiFolders"] = new JsonArray(settings.AiFolders.Select(folder => (JsonNode)folder).ToArray()),
+        ["aiReadFolders"] = new JsonArray((aiHost?.AllowedReadFolders ?? []).Select(folder => (JsonNode)folder).ToArray()),
+        ["aiFoldersIncludeSubfolders"] = true
     };
 
     /** Where RAM goes, in MiB: process, managed heap, and the caches that only speed up reloads. */
@@ -605,12 +609,19 @@ public sealed partial class StudioForm
                 return workspace.Error.Length > 0 ? workspace.Error : "Reverted.";
             }
             case "apply_item_edit": return AiApplyItemEdit(args);
+            case "edit_perk_behavior" or "create_perk" or "clone_tags" or "fork_subclass_grid" or "set_display_icons" or "set_item_screen_art"
+                or "add_icon_row" or "set_icon_container_fingerprint" or "set_subclass_element" or "add_list_presentation_rows"
+                or "add_talent_display_rows" or "set_icon_layer_texture" or "set_item_lore" or "fork_list_text_bank"
+                or "set_talent_display_record":
+                return AiPerkAction(tool, args);
             case "apply_graph": return AiApplyGraph(args);
             case "create_mission_script": return AiCreateMissionScript(args);
             case "apply_vendor_edit": return AiApplyVendorEdit(args);
             case "revert_to_base": return AiRevertToBase(args);
+            case "repair_item_perk_displays": return AiRepairPerkDisplays(args);
             case "retail_open_map": return AiRetailOpenMap(args);
             case "start_creation": return AiStartCreation(args);
+            case "start_parhelion_weapon_recipe": return AiStartParhelionWeaponRecipe(args);
             case "replace_texture_pixels":
             {
                 if (SolforgeTools.ParseHash(McpJson.String(args, "tag")) is not { } tag) return "Give the texture tag.";
@@ -728,6 +739,16 @@ public sealed partial class StudioForm
                     || string.Equals(row.Name, perkText, StringComparison.OrdinalIgnoreCase)) is not { } gone) return "The item has no such perk.";
                 workspace.Run(() => workspace.RemoveInvestmentPerk(gone));
                 break;
+            case "set_socket_plug":
+                if (args["socket"] is not JsonValue socketValue || !socketValue.TryGetValue(out int socketIndex)) return "Give socket, an index from get_item.";
+                if (AiFindItem(data!, McpJson.String(args, "plug") ?? "") is not { } plug) return "No plug by that index, tag or name; use search_items.";
+                workspace.Run(() => workspace.SetInvestmentSocketPlug(socketIndex, checked((ushort)plug.Index)));
+                break;
+            case "own_archetype":
+                ushort package = workspace.CustomPerkPackage() ?? throw new InvalidDataException("No project package can take the archetype.");
+                workspace.Run(() => workspace.OwnWeaponArchetype(package));
+                return workspace.Error.Length > 0 ? workspace.Error
+                    : $"Copying {detail.Item.Name}'s archetype into package {package:X4}; once get_build_status is idle, Edit in workflow shows its fire rate, damage and magazine.";
             default:
                 return "Unknown op.";
         }
@@ -794,5 +815,28 @@ public sealed partial class StudioForm
         creation.Open(workflow);
         return $"Opened {workflow.Title} in Solforge; the user reviews it and presses {workflow.CreateLabel}."
             + (missing.Count > 0 ? " Not filled (unknown label or kind): " + string.Join(", ", missing) + "." : "");
+    }
+
+    /** Opens the normal clone dialog from an approved, project-local recipe whose exact bytes were reviewed. */
+    private string AiStartParhelionWeaponRecipe(JsonObject args)
+    {
+        if (!workspace.CanEdit) return "Open a project and installation first.";
+        string relative = McpJson.String(args, "path") ?? "";
+        if (!relative.EndsWith(WeaponRecipeJson.Extension, StringComparison.OrdinalIgnoreCase))
+            return "Give a project-local *.weapon.json path.";
+        if (ProjectFiles.Resolve(workspace.Project?.DirectoryPath, aiHost?.SdkRoots ?? [], relative) is not { } path
+            || !File.Exists(path)) return "Recipe path is missing or outside the active project.";
+        var info = new FileInfo(path);
+        if (info.Length > 1 << 20) return "Recipe exceeds the 1 MiB limit.";
+        byte[] bytes = File.ReadAllBytes(path);
+        if (!string.Equals(ProjectFiles.Sha256(bytes), McpJson.String(args, "expected_sha256"), StringComparison.OrdinalIgnoreCase))
+            return "The recipe changed after approval. Validate and start it again.";
+        WeaponRecipe recipe;
+        try { recipe = WeaponRecipeJson.Parse(new System.Text.UTF8Encoding(false, true).GetString(bytes)); }
+        catch (Exception error) when (error is WeaponRecipeException or System.Text.DecoderFallbackException)
+        { return error.Message; }
+        var workflow = new ItemWorkflow(workspace, recipe);
+        creation.Open(workflow);
+        return $"Opened '{recipe.Name}' in Solforge's weapon clone workflow. Review the listed fields and notes, then press Create to apply the supported recipe fields.";
     }
 }

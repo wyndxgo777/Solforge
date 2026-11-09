@@ -193,8 +193,14 @@ public static class ItemIconAuthoring
             art = InvestmentItemArt.SynchronizeSandboxPerks(art, item.Index, catalog.Read(item.Tag));
             ushort icon = InvestmentItemClone.ReadDisplayIcon(catalog.Read(displays[item.Index].Tag));
             if (icon == ushort.MaxValue) continue;
+            // A clone that kept its source's icon already has the source's art row; exotic art with several
+            // containers cannot be rewritten as one primary icon, and needs no rewrite.
+            if (origins[item.Tag] is { } originTag && items.SingleOrDefault(row => row.Tag == originTag) is { } origin
+                && InvestmentItemClone.ReadDisplayIcon(catalog.Read(displays[origin.Index].Tag)) == icon) continue;
             if (icon >= icons.Count) throw new InvalidDataException("The item icon leaves its table.");
-            art = InvestmentItemArt.SetPrimaryIcon(art, item.Index, icons[icon].Tag);
+            // Exotic art with several containers has no single primary icon to set; the clone keeps its source's art row.
+            try { art = InvestmentItemArt.SetPrimaryIcon(art, item.Index, icons[icon].Tag); }
+            catch (NotSupportedException) when (origins[item.Tag] is not null) { }
         }
         return InvestmentItemArt.Rebuild(catalog.ReadOriginal(sources.ItemArt), art);
     }

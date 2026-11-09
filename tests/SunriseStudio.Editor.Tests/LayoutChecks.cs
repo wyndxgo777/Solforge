@@ -55,6 +55,8 @@ internal static partial class LayoutChecks
         Check(restored.Split(restored.Panels.Last().Id, StudioSplitAxis.Rows) is null, "Area capacity was not bounded.");
         var min = StudioLayout.MinimumSize(restored.Root);
         Check(float.IsFinite(min.X) && float.IsFinite(min.Y) && min.X > 0 && min.Y > 0, "Nested area bounds are invalid.");
+        var scaledMin = StudioLayout.MinimumSize(new StudioLayoutNode { Panel = StudioPanelKind.Workspace }, 2);
+        Check(scaledMin.X == 280 && scaledMin.Y == 220, "Panel minimums do not scale with the interface.");
         foreach (string invalid in new[]
         {
             "null", "[]", "{\"Id\":0}", "{\"Id\":1,\"Panel\":\"Missing\"}",
@@ -96,6 +98,9 @@ internal static partial class LayoutChecks
         Check(StudioLayout.Canonical(StudioPanelKind.MissionGraph) == StudioPanelKind.Graph && StudioLayout.Canonical(StudioPanelKind.AI) == StudioPanelKind.AI,
             "Old graph ids do not map to Graph.");
         Check(StudioLayoutNode.Collapsible(StudioPanelKind.Graph), "The Graph panel no longer folds while empty.");
+        foreach (var kind in StudioLayout.Pickable.Where(kind => kind != StudioPanelKind.Empty))
+            Check(StudioLayoutNode.Collapsible(kind), $"The {kind} panel cannot fold to a strip.");
+        Check(!StudioLayoutNode.Collapsible(StudioPanelKind.Empty), "An empty area can fold to a strip.");
         Console.WriteLine("editor_layout persistence=pass swap=pass split=pass join=pass bounds=pass corrupt=pass graph=pass");
     }
 
@@ -148,8 +153,10 @@ internal static partial class LayoutChecks
                     }
                     else if (phase == 4)
                     {
-                        Check(form.EditorLayout.Save().GetRawText() == StudioLayout.Preset(StudioLayout.SolforgePreset).Save().GetRawText(),
-                            "Reset did not restore the full Solforge preset tree.");
+                        var expected = StudioLayout.Preset(StudioLayout.DefaultPreset);
+                        expected.Remove(StudioPanelKind.AI);
+                        Check(form.EditorLayout.Save().GetRawText() == expected.Save().GetRawText(),
+                            "Reset did not restore the MCP-only default layout.");
                         var tree = form.EditorLayout.Split(form.EditorLayout.Find(StudioPanelKind.Browser)!.Id, StudioSplitAxis.Rows)!;
                         form.EditorLayout.SetPanel(tree.Id, StudioPanelKind.ObjectTree);
                         phase++;
@@ -201,22 +208,13 @@ internal static partial class LayoutChecks
     private static readonly (string Control, string Group)[] OldBarControls =
     [
         ("File", "File"), ("Edit", "Edit"), ("Assets", "Assets"), ("Build", "Build"), ("View", "View"),
-        ("Window", "Window"), ("Window > Layouts", "Window"), ("Window > Reset layout", "Window"), ("Help", "Help"),
+        // The MCP-only editor omits the assistant menu and toolbar pill.
+        ("View > Layouts", "View"), ("View > Reset layout", "View"), ("Map", "Map"), ("Mission", "Mission"), ("Help", "Help"),
         ("navigate-back", "Navigation"), ("navigate-forward", "Navigation"), ("project name", "Project"),
-        ("tb-new", "Project"), ("tb-add", "Project"), ("tb-build", "Project"), ("tb-render", "Render"),
+        ("tb-new", "Project"), ("tb-build", "Project"), ("tb-render", "Render"),
         ("tb-shaders", "Shaders"), ("##quality", "Quality"), ("tb-detail", "Detail"), ("##lighting", "Lighting"),
-        ("tb-settings", "Settings"), ("window buttons", "WindowButtons"), .. OwnerBarControls()
+        ("tb-settings", "Settings"), ("window buttons", "WindowButtons")
     ];
-
-    /** Controls only owner builds (SolforgeRelay=true, RELEASING.md) put on the title bar; none in public builds. */
-    private static List<(string Control, string Group)> OwnerBarControls()
-    {
-        var controls = new List<(string Control, string Group)>();
-        AddOwnerBarControls(controls);
-        return controls;
-    }
-
-    static partial void AddOwnerBarControls(List<(string Control, string Group)> controls);
 
     /**
      * The window buttons fill the bar's height at its right end; every control on the row and the "»" button stays
@@ -240,11 +238,11 @@ internal static partial class LayoutChecks
         foreach (var rect in form.TitleBarRects)
         {
             string at = $"Title bar at {width}: '{rect.Name}' ({rect.Min.X:0.#},{rect.Min.Y:0.#})-({rect.Max.X:0.#},{rect.Max.Y:0.#})";
-            Check(rect.Max.X < buttonsLeft - slack, $"{at} reaches the window buttons at x {buttonsLeft:0.#}.");
+            Check(rect.Max.X < (rect.CaptionRow ? buttonsLeft : form.ClientSize.Width) - slack, $"{at} reaches the window buttons at x {buttonsLeft:0.#}.");
             if (rect.Menu) continue;
-            Check(rect.Min.Y >= -slack && rect.Max.Y <= height + slack, $"{at} leaves the bar's 0-{height:0.#}.");
-            Check(Math.Abs(rect.Max.Y - rect.Min.Y - frame) <= slack, $"{at} is not one control ({frame:0.#}) tall.");
-            Check(Math.Abs((rect.Min.Y + rect.Max.Y) / 2 - height / 2) <= slack, $"{at} is not centred in the bar.");
+            Check(rect.Min.Y >= -slack && rect.Max.Y <= rect.RowHeight + slack, $"{at} leaves the bar's 0-{height:0.#}.");
+            Check(Math.Abs(rect.Max.Y - rect.Min.Y - (rect.Name == "SolforgeAi" ? 26 * height / 36 : frame)) <= slack, $"{at} is not one control ({frame:0.#}) tall.");
+            Check(Math.Abs((rect.Min.Y + rect.Max.Y) / 2 - rect.RowHeight / 2) <= slack, $"{at} is not centred in the bar.");
         }
     }
 
@@ -253,6 +251,7 @@ internal static partial class LayoutChecks
         var reachable = form.TitleBarReachable;
         foreach (var (control, group) in OldBarControls)
             Check(reachable.Contains(group), $"Title bar at {width}: '{control}' ({group}) is not reachable.");
+        Check(!reachable.Contains("Ai") && !reachable.Contains("SolforgeAi"), $"Title bar at {width}: assistant controls remain visible.");
         Check(form.TitleBarOverflow.Distinct().Count() == form.TitleBarOverflow.Count
             && form.TitleBarOverflow.All(reachable.Contains), $"Title bar at {width}: the overflow menu repeats or invents a group.");
         Check(!form.TitleBarOverflow.Contains("WindowButtons"), $"Title bar at {width}: the window buttons left the row.");

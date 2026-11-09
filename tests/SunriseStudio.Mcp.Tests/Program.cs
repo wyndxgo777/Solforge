@@ -18,20 +18,28 @@ try
     checks.Add("the attention log folds repeats, lists newest first, and 'the one I just hovered' wins a tie");
     ProjectPaths();
     checks.Add("project files resolve inside the project only; packages, manifest and build output are not editable");
+    await AiAccessChecks.Run(Path.Combine(scratch, "ai-access"));
+    checks.Add("AI folder grants cover nested descendants in MCP reads/search, reject sibling-prefix/traversal escapes and links, revoke immediately; worker actions use a bounded authoring allowlist and approval cancellation is audited correctly");
+    await WorkerAccessChecks.Run(Path.Combine(scratch, "worker-access"), FindShim());
+    checks.Add("native worker aggregate: planner/reviewer read-only metadata reaches HTTP; mutations are hidden and refused, executor authoring remains available, foreign worker tools require explicit read-only annotations");
     Configs();
-    checks.Add("client configs: .mcp.json, Cline, Antigravity desktop and CLI get the solforge stdio entry; an empty agy file merges without .bak; other servers survive; rewrite is idempotent");
+    checks.Add("client configs: .mcp.json, Cline, Antigravity desktop and CLI get the one sol aggregate entry; an empty agy file merges without .bak; other servers survive; rewrite is idempotent");
     CommandResolution();
     checks.Add("engine commands resolve on PATH + PATHEXT like cmd: .cmd beats npm's bare script, folders with spaces, missing is null");
     ClaudeLaunch();
     checks.Add("Claude launch: --mcp-config, --settings hook, --append-system-prompt and --add-dir survive argv parsing with spaced paths; agy gets the same --add-dir folders");
+    PiHarness();
+    checks.Add("Pi harness: discovers pi-cust.cmd from a configured path, a folder, the Desktop build or PATH; launches with Solforge's prompt and --continue; its MCP file holds one sol aggregate entry and no carried credentials");
+    AiConsoleAdapterChecks.Run(Path.Combine(scratch, "ai-consoles"));
+    checks.Add("AI consoles: Claude Code, Cline, Codex and OpenCode are registered; quota detection filters ordinary text; Codex/OpenCode receive idempotent project MCP config while user settings survive");
     Providers();
-    checks.Add("providers: Cline 'Claude Code subscription' passes -P claude-code -m sonnet and strips Anthropic keys; ClinePass passes -P cline-pass; gateway sets only the base URL; agy has no presets");
+    checks.Add("providers: Claude subscription is the default, subscription keys are stripped, and retired Cline providers have no presets");
     ResumeSessions();
     checks.Add("resume: claude --continue only when ~/.claude/projects/<folder> has a session; agy --conversation and cline --id pick the newest session for the same folder; none means a fresh start");
     DualEngines();
-    checks.Add("dual engines: ask_gemini builds agy -p argv and reads its JSON reply; its MCP stdio answers initialize, list and call; the gemini server and prompt join Claude's config only on request; claude/agy first prompts; handoff note from the last session");
-    ClinePassEngines();
-    checks.Add("clinepass: ask_clinepass builds cline --json -P cline-pass argv, reads its JSONL result and finds cline without cmd.exe; its MCP stdio answers; the clinepass server and prompt join Claude's config only on request; Claude Code on ClinePass strips Claude logins, translates Anthropic requests, replies and streams, and its localhost proxy takes only its local token and sends only CLINE_API_KEY");
+    checks.Add("handoff: Claude receives its first prompt and retained transcript context; retired delegates are absent from launch files");
+    RetiredDelegates();
+    checks.Add("retired provider delegates are never added or forwarded, including saved upstream definitions");
     ContextText();
     checks.Add("context summary: compact lines under 2 KB with map, hovered, selected values, open documents; nothing when paused");
     MissionObjects();
@@ -49,6 +57,8 @@ try
     checks.Add("viewport feed: luminance grid, unchanged captures add no frame and skip encoding, change text says how much and where, ids, since, ring capacity, wait_for_change wakes and times out");
     ReferenceCheck();
     checks.Add("reference library: found above the project, index.json plus unindexed front matter, ranked search with tag filter, read by path or url with paging, half-written index and path escapes are safe");
+    await JobChecks();
+    checks.Add("per-call deadline: a slow tool replies pending with a job id instead of blocking, a repeat call attaches without rerunning, mcp_job waits for and returns the result, lists and cancels jobs");
     await StdioRoundTrip();
     checks.Add("initialize, tools/list (all tools with object schemas), tools/call, get_open_documents, mission, read_panel and reference tools round trip over the stdio shim");
     checks.Add("ui and viewport tools: list_ui_controls pages, ui_* resolve before asking and wait for approval, an approved ui_set_checked reaches the host, get_viewport_frame sends JPEG plus text and skips the image for a known id, wait_for_viewport_change times out, /viewport pages need the view key");
@@ -67,7 +77,7 @@ try
     await AutomaticChecks.Run(Path.Combine(scratch, "automatic"), new FixtureHost(dataProject));
     checks.Add("automatic mode: /automatic parsing, start prompt, idle nudge with progress and remaining, repeat and stuck nudges change tactic, prompt and busy screens wait, goal_complete, goal_blocked, stop, nudge and time limits, nesting guard, saved goal resume, and the automatic_*/goal_* tools with no approve click");
     await McpSetChecks.Run(Path.Combine(scratch, "mcp-set"), FindShim());
-    checks.Add("Sol MCP set: solforge, gemini and clinepass run the current shim; .mcp.json servers above the project and sol-testkit/tiger-mcp from the user's configs are carried; Claude's --mcp-config holds them all; agy and Cline merges keep the user's own servers and refresh old shim entries; run copy of solforge-mcp; missing exe/script checks and the initialize probe");
+    checks.Add("Sol MCP set: retired delegates are filtered; enabled stdio servers above the project and from user configs are carried; every client gets one sol aggregate; the aggregate lists and routes upstream tools, resources, resource templates and prompts; run copy of solforge-mcp; missing exe/script checks and the initialize probe");
     await MultiAgentChecks.Run();
     checks.Add("multi-agent: sessions from initialize clientInfo and the shim pid header, dead and idle sessions dropped, open_map/close_map refuse another session's recent map unless force (expiry, same session, UI change, mission-only claim), builds and deploys say who started them, map=<tag> reads answer from a background view without touching the UI map, get_sessions");
     await CommandChecks.Run(Path.Combine(scratch, "commands"), new FixtureHost(dataProject));
@@ -177,28 +187,29 @@ void Configs()
     Expect(written.Select(item => item.Client).SequenceEqual(
         ["Claude Code", "Cline", "Cline (VS Code)", "Antigravity (desktop)", "Antigravity CLI"]), "clients");
     Expect(written[^1].Path == agy && !File.Exists(agy + ".bak"), "agy file without .bak");
-    var agyEntry = new JsonObject { ["args"] = new JsonArray("--project", project), ["command"] = shim, ["disabled"] = false };
-    Expect(JsonNode.DeepEquals(JsonNode.Parse(File.ReadAllText(agy))?["mcpServers"]?["solforge"], agyEntry), "agy entry");
+    var agyEntry = SolMcpServers.ClientEntry(project, shim, null);
+    agyEntry["disabled"] = false;
+    Expect(JsonNode.DeepEquals(JsonNode.Parse(File.ReadAllText(agy))?["mcpServers"]?["sol"], agyEntry), "agy entry");
     var claude = JsonNode.Parse(File.ReadAllText(Path.Combine(project, ".mcp.json")))!;
     Expect(claude["mcpServers"]?["other"]?["command"]?.ToString() == "x" && claude["keep"]?.GetValue<int>() == 1, "kept other entries");
-    var entry = claude["mcpServers"]?["solforge"];
+    var entry = claude["mcpServers"]?["sol"];
     Expect(entry?["command"]?.ToString() == shim && entry?["type"]?.ToString() == "stdio", "claude entry");
-    Expect(entry?["args"]?.AsArray().Select(node => node?.ToString()).SequenceEqual(["--project", project]) == true, "project scope");
+    Expect(entry?["args"]?.AsArray().Select(node => node?.ToString()).SequenceEqual(["--sol", "--project", project]) == true, "project scope");
     foreach (var item in written.Skip(1))
-        Expect(JsonNode.Parse(File.ReadAllText(item.Path))?["mcpServers"]?["solforge"]?["command"]?.ToString() == shim, item.Client);
+        Expect(JsonNode.Parse(File.ReadAllText(item.Path))?["mcpServers"]?["sol"]?["command"]?.ToString() == shim, item.Client);
     var stamps = written.Select(item => File.GetLastWriteTimeUtc(item.Path)).ToArray();
     McpClientConfigs.WriteAll(project, shim, home, appData);
     Expect(written.Select(item => File.GetLastWriteTimeUtc(item.Path)).SequenceEqual(stamps), "idempotent");
     // Whitespace counts as empty; a damaged file is kept as .bak and replaced.
-    var solforge = new JsonObject { ["command"] = shim };
+    var sol = new JsonObject { ["command"] = shim };
     string blank = Path.Combine(scratch, "blank.json"), damaged = Path.Combine(scratch, "damaged.json");
     File.WriteAllText(blank, "  \n");
-    McpClientConfigs.Merge(blank, solforge.DeepClone().AsObject());
-    Expect(!File.Exists(blank + ".bak") && JsonNode.Parse(File.ReadAllText(blank))?["mcpServers"]?["solforge"] is not null, "blank merges");
+    McpClientConfigs.Merge(blank, sol.DeepClone().AsObject());
+    Expect(!File.Exists(blank + ".bak") && JsonNode.Parse(File.ReadAllText(blank))?["mcpServers"]?["sol"] is not null, "blank merges");
     File.WriteAllText(damaged, "{not json");
-    McpClientConfigs.Merge(damaged, solforge.DeepClone().AsObject());
+    McpClientConfigs.Merge(damaged, sol.DeepClone().AsObject());
     Expect(File.Exists(damaged + ".bak") && File.ReadAllText(damaged + ".bak") == "{not json"
-        && JsonNode.Parse(File.ReadAllText(damaged))?["mcpServers"]?["solforge"] is not null, "damaged kept as .bak");
+        && JsonNode.Parse(File.ReadAllText(damaged))?["mcpServers"]?["sol"] is not null, "damaged kept as .bak");
 }
 
 async Task StdioRoundTrip()
@@ -245,13 +256,14 @@ async Task StdioRoundTrip()
     {
         var initialized = await Call(1, "initialize", new JsonObject { ["protocolVersion"] = "2025-06-18", ["capabilities"] = new JsonObject(),
             ["clientInfo"] = new JsonObject { ["name"] = "checks", ["version"] = "1" } });
-        Expect(initialized["serverInfo"]?["name"]?.ToString() == "solforge" && initialized["capabilities"]?["tools"] is not null, "initialize");
+        Expect(initialized["serverInfo"]?["name"]?.ToString() == "sol" && initialized["capabilities"]?["tools"] is not null, "initialize");
         await process.StandardInput.WriteLineAsync("{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}");
         var tools = (await Call(2, "tools/list"))["tools"]!.AsArray();
-        string[] expected = ["get_context", "get_open_documents", "find_object", "get_object", "get_viewport_screenshot", "list_visible", "get_attention_log",
+        string[] expected = ["get_context", "get_open_documents", "find_object", "get_object", "get_viewport_screenshot", "list_visible", "get_attention_log", "get_recent_activity",
             "read_project_file", "search_project", "search_reference", "read_reference", "get_tag", "get_package_entry", "get_live_state",
             "list_mission_objects", "get_mission_object", "read_panel",
             "select_object", "focus_camera", "highlight", "open_file", "apply_project_edit",
+            "get_editor_screenshot", "start_model_workflow", "get_model_workflow", "cancel_model_workflow",
             "get_editor_state", "get_project", "list_project_files", "list_project_changes", "get_build_status", "get_settings",
             "list_maps", "list_missions", "list_packages", "list_package_entries", "search_assets", "list_mission_scripts",
             "find_world_objects", "get_placement", "search_items", "get_item", "search_perks", "list_vendors", "get_vendor",
@@ -259,21 +271,21 @@ async Task StdioRoundTrip()
             "open_map", "open_asset", "set_viewport_rendering", "edit_placement", "edit_bounds", "revert_object_edit",
             "apply_item_edit", "apply_vendor_edit", "start_creation", "replace_texture_pixels", "build_project",
             "set_settings", "set_mod_details", "close_map", "close_asset", "open_project", "create_project", "close_project", "build_to_folder", "update_running_game", "reload_mission_scripts",
-            .. SolforgeTools.DecompToolNames, .. SolforgeTools.PackageDataToolNames, .. SolforgeTools.SchemaToolNames, .. SolforgeTools.MediaToolNames,
+            .. SolforgeTools.DecompToolNames, .. SolforgeTools.PackageDataToolNames, .. SolforgeTools.SchemaToolNames, .. SolforgeTools.MediaToolNames, .. SolforgeTools.CuiToolNames,
             "list_content_families", "list_content", "get_content", "validate_content", "get_subclass_layout", "check_subclass_build", "get_help",
             "create_content", "update_content", "delete_content", "export_content",
             "list_ui_controls", "ui_invoke", "ui_set_value", "ui_set_checked", "ui_select",
-            "get_viewport_frame", "get_viewport_frames", "wait_for_viewport_change", "read_screen_text", "get_viewport_stream", .. SolforgeTools.OwnerToolNames,
+            "get_viewport_frame", "get_viewport_frames", "wait_for_viewport_change", "read_screen_text", "get_viewport_stream",
             "get_player_position", "wait_for_player_near",
             "list_graph_node_types", "list_graphs", "get_graph", "compile_graph", "create_mission_script", "create_graph", "edit_graph", "apply_graph",
             "list_mission_lib_calls", "insert_mission_lib_call",
             "list_shaders", "get_shader", "list_animations", "get_animation", "list_audio", "get_audio", .. SolforgeTools.AutomaticTools,
-            .. SolforgeTools.CommandToolNames, "mission_coverage", .. SolforgeTools.MissionHostToolNames, .. SolforgeTools.ItemSourceToolNames,
-            .. SolforgeTools.RetailToolNames];
+            .. SolforgeTools.CommandToolNames, "mission_coverage", .. SolforgeTools.MissionHostToolNames, .. SolforgeTools.ItemSourceToolNames, "get_parhelion_context", "list_parhelion_weapon_recipes", "validate_parhelion_weapon_recipe", "start_parhelion_weapon_recipe",
+            .. SolforgeTools.PerkReadTools, .. SolforgeTools.PerkActionTools, .. SolforgeTools.RetailToolNames, McpJobs.ToolName];
 
-        string[] actions = ["select_object", "focus_camera", "highlight", "open_file", "apply_project_edit", "open_map", "open_asset",
+        string[] actions = ["select_object", "focus_camera", "highlight", "open_file", "apply_project_edit", "start_model_workflow", "open_map", "open_asset",
             "set_viewport_rendering", "edit_placement", "edit_bounds", "revert_object_edit", "apply_item_edit", "apply_vendor_edit",
-            "start_creation", "replace_texture_pixels", "build_project", "set_settings", "set_mod_details", "close_map", "close_asset", "open_project", "create_project", "close_project", "build_to_folder", "update_running_game", "reload_mission_scripts", "rename_function", "ui_invoke", "ui_set_value", "ui_set_checked", "ui_select", .. SolforgeTools.OwnerToolNames, "create_content", "update_content", "delete_content", "export_content", "create_mission_script", "create_graph", "edit_graph", "apply_graph", "insert_mission_lib_call", "revert_to_base", .. SolforgeTools.RetailActionTools, .. SolforgeTools.CommandToolNames.Where(name => name != "list_commands")];
+            "start_creation", "replace_texture_pixels", "build_project", "set_settings", "set_mod_details", "close_map", "close_asset", "open_project", "create_project", "close_project", "build_to_folder", "update_running_game", "reload_mission_scripts", "rename_function", "ui_invoke", "ui_set_value", "ui_set_checked", "ui_select", "create_content", "update_content", "delete_content", "export_content", "create_mission_script", "create_graph", "edit_graph", "apply_graph", "insert_mission_lib_call", .. SolforgeTools.ItemSourceActionTools, "start_parhelion_weapon_recipe", .. SolforgeTools.PerkActionTools, .. SolforgeTools.RetailActionTools, .. SolforgeTools.CommandToolNames.Where(name => name != "list_commands")];
         Expect(tools.Select(tool => tool?["name"]?.ToString()).SequenceEqual(expected), "tool names: " + string.Join(",", tools.Select(tool => tool?["name"])));
         foreach (var tool in tools)
         {
@@ -395,7 +407,6 @@ async Task StdioRoundTrip()
         Expect(still["changed"]?.GetValue<bool>() == false && still["latest"]?.GetValue<long>() == 1, "wait_for_viewport_change times out on a still view");
         var streamInfo = Body(await Call(49, "tools/call", new JsonObject { ["name"] = "get_viewport_stream", ["arguments"] = new JsonObject() }));
         Expect(streamInfo["status"] is not null && streamInfo["fps"] is not null, "get_viewport_stream: " + streamInfo.ToJsonString());
-        OwnerChecks.StreamInfo(streamInfo.AsObject());
         // Player position.
         var player = Body(await Call(50, "tools/call", new JsonObject { ["name"] = "get_player_position", ["arguments"] = new JsonObject() }));
         Expect(player["source"]?.ToString() == "recorder" && host.Queries.Contains("get_player_position"), "get_player_position reaches the host");
@@ -463,10 +474,10 @@ async Task GenericClient(FixtureHost host, McpHttpServer server, string shim, st
         foreach (string argument in arguments) start.ArgumentList.Add(argument);
         start.Environment["SOLFORGE_MCP_DISCOVERY"] = discovery;
         start.Environment["PYTHONIOENCODING"] = "utf-8";
-        Process? process;
-        try { process = Process.Start(start); }
+        Process process;
+        try { process = Process.Start(start)!; }
         catch (System.ComponentModel.Win32Exception) { Console.WriteLine("SKIP generic client: python is not on PATH"); return null; }
-        using var _ = process!;
+        using var _ = process;
         var output = process.StandardOutput.ReadToEndAsync();
         var errors = process.StandardError.ReadToEndAsync();
         if (!process.WaitForExit(60_000)) { process.Kill(); Expect(false, "generic client hung: " + await errors); }
@@ -478,7 +489,7 @@ async Task GenericClient(FixtureHost host, McpHttpServer server, string shim, st
     {
         if (result is null) continue;
         var tools = result["tools"]!.AsArray().Select(node => node!.ToString()).ToArray();
-        Expect(result["server"]?.ToString() == "solforge" && tools.Contains("ui_invoke") && tools.Contains("wait_for_viewport_change")
+        Expect(result["server"]?.ToString() == "sol" && tools.Contains("ui_invoke") && tools.Contains("wait_for_viewport_change")
             && result["schemas"]?.GetValue<bool>() == true, "generic client sees the tools: " + result.ToJsonString());
         Expect(result["mimes"]?[0]?.ToString() == "image/jpeg" && result["frameText"]?.ToString().Contains("\"frame\"", StringComparison.Ordinal) == true,
             "generic client gets the frame with its text");
@@ -513,6 +524,17 @@ static void PlayerSourceChecks()
         File.WriteAllText(Path.Combine(root, "20261015-120000", "snapshots.jsonl"),
             "{\"ui\":{\"in_world\":true},\"pos\":[1,2,3]}\n{\"mark\":\"note\"}\n");
         Expect(PlayerSources.LatestRecorder(root)?.Position == new Vector3(1, 2, 3), "the newest snapshot, skipping marks");
+        string empty = Path.Combine(root, "empty-session");
+        Directory.CreateDirectory(empty);
+        Directory.SetLastWriteTimeUtc(empty, DateTime.UtcNow.AddMinutes(1));
+        Expect(PlayerSources.LatestRecorder(root)?.Position == new Vector3(1, 2, 3), "an empty session does not hide a recording");
+        string other = Path.Combine(root, "other-root");
+        Directory.CreateDirectory(Path.Combine(other, "session"));
+        string otherSnapshot = Path.Combine(other, "session", "snapshots.jsonl");
+        File.WriteAllText(otherSnapshot, "{\"ui\":{\"in_world\":false}}\n");
+        File.SetLastWriteTimeUtc(otherSnapshot, DateTime.UtcNow.AddSeconds(1));
+        Expect(PlayerSources.LatestRecorderRoot([root, other]) == other && PlayerSources.LatestRecorder(other) is null,
+            "a newer menu in another root wins over stale in-world data");
         File.AppendAllText(Path.Combine(root, "20261015-120000", "snapshots.jsonl"), "{\"ui\":{\"in_world\":false},\"pos\":null}\n");
         Expect(PlayerSources.LatestRecorder(root) is null, "a menu after a position hides the old position");
     }
@@ -630,7 +652,6 @@ static void ViewportFeedChecks()
     Expect(feed.WaitForChangeAsync(3, TimeSpan.Zero, CancellationToken.None).Result?.Id == 5, "an old id returns the newest frame at once");
     Expect(new ViewportFrame(1, DateTimeOffset.UnixEpoch, 1, 1, [0xFF, 0xD8, 0xFF], 1, "x").Jpeg.Length == 3
         && McpToolResult.MimeType([0xFF, 0xD8, 0xFF]) == "image/jpeg" && McpToolResult.MimeType([0x89, 0x50]) == "image/png", "image MIME types");
-    OwnerChecks.Feed(feed);
 }
 
 void CommandResolution()
@@ -660,9 +681,9 @@ void ClaudeLaunch()
     File.WriteAllText(Path.Combine(top, "10-Project Sol", "CLAUDE.md"), "rules");
     string shim = Path.Combine(scratch, "Solforge App", "solforge-mcp.exe");
     var files = EngineLaunch.WriteClaudeFiles(project, shim, Path.Combine(scratch, "mcp"));
-    var config = JsonNode.Parse(File.ReadAllText(files.McpConfig))!["mcpServers"]?["solforge"];
+    var config = JsonNode.Parse(File.ReadAllText(files.McpConfig))!["mcpServers"]?["sol"];
     Expect(config?["command"]?.ToString() == shim && config?["type"]?.ToString() == "stdio"
-        && config?["args"]?.AsArray().Select(node => node?.ToString()).SequenceEqual(["--project", project]) == true, "mcp-config entry");
+        && config?["args"]?.AsArray().Select(node => node?.ToString()).SequenceEqual(["--sol", "--project", project]) == true, "mcp-config entry");
     string? hook = JsonNode.Parse(File.ReadAllText(files.Settings))?["hooks"]?["UserPromptSubmit"]?[0]?["hooks"]?[0]?["command"]?.ToString();
     Expect(hook == $"\"{shim.Replace('\\', '/')}\" --context --project \"{project.Replace('\\', '/')}\"", "prompt hook: " + hook);
     // The scratch folder stands in for the user profile: ancestors stop below it.
@@ -688,62 +709,67 @@ void ClaudeLaunch()
     Expect(EngineLaunch.AgyArguments([]).Length == 0, "agy without folders");
 }
 
+void PiHarness()
+{
+    string desktop = Path.Combine(scratch, "pi desktop");
+    string launcher = Path.Combine(desktop, "pi-cust", "pi-cust-harness-build", "build-1", "pi-cust.cmd");
+    Directory.CreateDirectory(Path.GetDirectoryName(launcher)!);
+    File.WriteAllText(launcher, "@echo off\r\n");
+    string? prior = Environment.GetEnvironmentVariable("PI_CUST_HARNESS");
+    string? priorPath = Environment.GetEnvironmentVariable("PI_CUST_HARNESS_PATH");
+    try
+    {
+        Environment.SetEnvironmentVariable("PI_CUST_HARNESS", null);
+        Environment.SetEnvironmentVariable("PI_CUST_HARNESS_PATH", null);
+        Expect(EngineCommands.FindPiHarness(launcher, "", desktop) == launcher, "configured launcher");
+        Expect(EngineCommands.FindPiHarness(Path.GetDirectoryName(launcher), "", Path.Combine(scratch, "none")) == launcher, "launcher folder");
+        Expect(EngineCommands.FindPiHarness(null, "", desktop) == launcher, "default Desktop build");
+        Expect(EngineCommands.FindPiHarness(null, "", Path.Combine(scratch, "none")) is null, "missing launcher");
+    }
+    finally
+    {
+        Environment.SetEnvironmentVariable("PI_CUST_HARNESS", prior);
+        Environment.SetEnvironmentVariable("PI_CUST_HARNESS_PATH", priorPath);
+    }
+    string fresh = EngineLaunch.PiArguments(false), resumed = EngineLaunch.PiArguments(true);
+    Expect(fresh.StartsWith("--append-system-prompt ", StringComparison.Ordinal) && !fresh.Contains("--continue", StringComparison.Ordinal)
+        && resumed.EndsWith("--continue", StringComparison.Ordinal), "Pi launch arguments");
+    Expect(Argv("pi-cust.cmd " + fresh).Skip(1).SequenceEqual(["--append-system-prompt", EngineLaunch.PiSystemPrompt]),
+        "Pi system prompt argv");
+    Expect(!EngineLaunch.PiSystemPrompt.Contains('"') && !EngineLaunch.PiSystemPrompt.Contains('%'), "Pi prompt is safe through cmd");
+    Expect(EngineLaunch.SkipPermissionsArguments("pi-cust").Length == 0, "Pi has no skip-permissions flag");
+    string folder = Path.Combine(scratch, "pi project");
+    var servers = new[]
+    {
+        new SolMcpServers.Server("solforge", @"C:\Solforge\solforge-mcp.exe", ["--project", folder], new JsonObject(), true, "Solforge"),
+        new("gemini", @"C:\Solforge\solforge-mcp.exe", ["--gemini"], new JsonObject(), true, "Solforge"),
+        new("mine", "mine.exe", [], new JsonObject { ["TOKEN"] = "secret" }, false, ".mcp.json")
+    };
+    McpClientConfigs.WritePi(folder, servers);
+    string piText = File.ReadAllText(Path.Combine(folder, ".pi", "mcp.json"));
+    var pi = JsonNode.Parse(piText)!["mcpServers"]!.AsObject();
+    var piArgs = pi["sol"]?["args"]?.AsArray().Select(node => node?.ToString()).ToArray() ?? [];
+    Expect(pi.Count == 1 && pi["sol"]?["type"]?.ToString() == "stdio" && pi["sol"]?["exposure"]?.ToString() == "direct"
+        && pi["sol"]?["command"]?.ToString() == @"C:\Solforge\solforge-mcp.exe"
+        && piArgs.Contains("--sol") && piArgs.Contains("--project") && piArgs.Contains("--upstreams")
+        && pi["gemini"] is null && pi["mine"] is null && !piText.Contains("secret", StringComparison.Ordinal), "Pi MCP config");
+}
+
 void Providers()
 {
-    var claudeCode = EngineProviders.Resolve("cline", EngineProviders.ClineClaudeCode)!;
-    Expect(EngineProviders.Arguments(claudeCode, null) == "-P claude-code -m sonnet", "cline claude-code args");
-    Expect(EngineProviders.Arguments(claudeCode, new() { Model = "opus" }) == "-P claude-code -m opus", "cline claude-code model");
-    var env = EngineProviders.Environment(claudeCode, null);
-    Expect(env.Count == 3 && env.Values.All(value => value.Length == 0) && env.ContainsKey("ANTHROPIC_API_KEY"), "subscription strips keys");
-    var pass = EngineProviders.Resolve("cline", EngineProviders.ClinePass)!;
-    Expect(EngineProviders.Arguments(pass, null) == "-P cline-pass" && EngineProviders.Environment(pass, null).Count == 0, "clinepass");
-    Expect(EngineProviders.Resolve("cline", "gone")!.Id == EngineProviders.ClineSaved
-        && EngineProviders.Arguments(EngineProviders.Resolve("cline", null), null).Length == 0, "cline default");
-    var gateway = EngineProviders.Resolve("claude", EngineProviders.ClaudeGateway)!;
-    var routed = EngineProviders.Environment(gateway, new() { BaseUrl = " https://gw.example/anthropic " });
-    Expect(routed.Count == 1 && routed["ANTHROPIC_BASE_URL"] == "https://gw.example/anthropic", "gateway base url");
-    Expect(EngineProviders.Environment(gateway, null).Count == 0 && EngineProviders.Arguments(gateway, null).Length == 0, "gateway unset");
-    Expect(EngineProviders.Resolve("agy", null) is null && EngineProviders.Resolve("claude", null)!.Id == EngineProviders.ClaudeSubscription, "defaults");
+    var subscription = EngineProviders.Resolve("claude", null)!;
+    Expect(subscription.Id == EngineProviders.ClaudeSubscription, "Claude subscription default");
+    Expect(EngineProviders.Environment(subscription, null).Values.All(value => value.Length == 0), "subscription strips API keys");
+    Expect(!EngineProviders.For("cline").Any(), "retired engine has no presets");
 }
 
 void DualEngines()
 {
-    var (argv, error) = AgyDelegate.Arguments(new JsonObject { ["prompt"] = " review x ", ["model"] = "gemini-3-pro", ["conversation"] = "c1", ["timeout_seconds"] = 5 });
-    Expect(error is null && argv!.SequenceEqual(["-p", "review x", "--output-format", "json", "--mode", "plan", "--print-timeout", "30s",
-        "--model", "gemini-3-pro", "--conversation", "c1"]), "agy argv: " + string.Join(" | ", argv ?? []));
-    Expect(AgyDelegate.Arguments(new JsonObject { ["prompt"] = "x", ["mode"] = "auto" }).Error is not null, "auto mode refused");
-    Expect(AgyDelegate.Arguments(new JsonObject()).Error is not null && AgyDelegate.Arguments(null).Error is not null, "prompt required");
-    Expect(AgyDelegate.Arguments(new JsonObject { ["prompt"] = new string('a', AgyDelegate.MaxPrompt + 1) }).Error is not null, "long prompt refused");
-    var ok = AgyDelegate.Result("""{"conversation_id":"40cf","status":"SUCCESS","response":"OK\n","num_turns":1}""", "", 0);
-    Expect(!ok.Error && ok.Text.StartsWith("OK\n\n[agy SUCCESS; conversation 40cf", StringComparison.Ordinal), "agy reply: " + ok.Text);
-    Expect(AgyDelegate.Result("""{"status":"ERROR","response":"quota"}""", "", 1).Error
-        && AgyDelegate.Result("not json", "boom", 2).Text.Contains("boom"), "agy failures");
-    var input = new StringReader(string.Join("\n",
-        """{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26"}}""",
-        """{"jsonrpc":"2.0","method":"notifications/initialized"}""",
-        """{"jsonrpc":"2.0","id":2,"method":"tools/list"}""",
-        """{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"ask_gemini","arguments":{"prompt":"hi"}}}""",
-        """{"jsonrpc":"2.0","id":4,"method":"nope"}""") + "\n");
-    var output = new StringWriter();
-    AgyDelegate.Serve(input, output, (args, _) => Task.FromResult(("echo " + args?["prompt"], false))).GetAwaiter().GetResult();
-    var replies = output.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(line => JsonNode.Parse(line)!)
-        .ToDictionary(node => (int)node["id"]!);
-    Expect(replies.Count == 4 && replies[1]["result"]?["protocolVersion"]?.ToString() == "2025-03-26"
-        && replies[2]["result"]?["tools"]?[0]?["name"]?.ToString() == AgyDelegate.ToolName
-        && replies[3]["result"]?["content"]?[0]?["text"]?.ToString() == "echo hi"
-        && (int?)replies[4]["error"]?["code"] == -32601, "mcp stdio: " + output);
     string project = Path.Combine(scratch, "dual project"), shim = Path.Combine(scratch, "solforge-mcp.exe");
     Directory.CreateDirectory(project);
     var plain = EngineLaunch.WriteClaudeFiles(project, shim, Path.Combine(scratch, "dual-mcp-a"));
-    Expect(JsonNode.Parse(File.ReadAllText(plain.McpConfig))!["mcpServers"]?[AgyDelegate.ServerName] is null
+    Expect(JsonNode.Parse(File.ReadAllText(plain.McpConfig))!["mcpServers"]?["gemini"] is null
         && !EngineLaunch.ClaudeArguments(plain, []).Contains("ask_gemini"), "no gemini unless asked");
-    var both = EngineLaunch.WriteClaudeFiles(project, shim, Path.Combine(scratch, "dual-mcp-b"), gemini: true);
-    var gemini = JsonNode.Parse(File.ReadAllText(both.McpConfig))!["mcpServers"]?[AgyDelegate.ServerName];
-    Expect(gemini?["command"]?.ToString() == shim && gemini?["args"]?[0]?.ToString() == "--gemini"
-        && Argv("claude.exe " + EngineLaunch.ClaudeArguments(both, [])).Contains(EngineLaunch.SystemPrompt + " " + EngineLaunch.GeminiPrompt),
-        "gemini server + prompt");
-    Expect(!EngineLaunch.GeminiPrompt.Contains('"') && !EngineLaunch.GeminiPrompt.Contains('%')
-        && !EngineLaunch.HandoffPrompt.Contains('"') && !EngineLaunch.HandoffPrompt.Contains('%'), "prompts are safe through cmd");
     Expect(Argv("claude.exe " + EngineLaunch.WithPrompt("claude", "--add-dir x", EngineLaunch.HandoffPrompt)).Skip(1)
         .SequenceEqual([EngineLaunch.HandoffPrompt, "--add-dir", "x"]), "claude first prompt goes first");
     Expect(Argv("agy.exe " + EngineLaunch.WithPrompt("agy", "--add-dir x", "go on")).Skip(1).SequenceEqual(["--add-dir", "x", "-i", "go on"])
@@ -781,158 +807,14 @@ void DualEngines()
         "handoff without a session");
 }
 
-void ClinePassEngines()
+void RetiredDelegates()
 {
-    // ask_clinepass argv: cline --json on the cline-pass provider, plan by default, clamped timeout, the prompt last after --.
-    var (argv, error) = ClineDelegate.Arguments(new JsonObject { ["prompt"] = " review x ", ["model"] = "kimi-k3", ["timeout_seconds"] = 5 });
-    Expect(error is null && argv!.SequenceEqual(["--json", "-P", "cline-pass", "-m", "cline-pass/kimi-k3", "-p", "-t", "30", "--", "review x"]),
-        "cline argv: " + string.Join(" | ", argv ?? []));
-    var act = ClineDelegate.Arguments(new JsonObject { ["prompt"] = "-x", ["mode"] = "act", ["model"] = "cline-pass/glm-5.3", ["timeout_seconds"] = 99999 }).Arguments!;
-    Expect(act.SequenceEqual(["--json", "-P", "cline-pass", "-m", "cline-pass/glm-5.3", "-t", "1800", "--", "-x"]), "cline act argv: " + string.Join(" | ", act));
-    Expect(ClineDelegate.Arguments(new JsonObject { ["prompt"] = "x", ["mode"] = "yolo" }).Error is not null, "yolo mode refused");
-    Expect(ClineDelegate.Arguments(new JsonObject()).Error is not null && ClineDelegate.Arguments(null).Error is not null, "cline prompt required");
-    Expect(ClineDelegate.Arguments(new JsonObject { ["prompt"] = new string('a', ClineDelegate.MaxPrompt + 1) }).Error is not null, "cline long prompt refused");
-    // A real cline 3.0.71 --json run, trimmed.
-    string run = string.Join("\n",
-        """{"ts":"t","type":"hook_event","hookEventName":"agent_start","taskId":"conv_1"}""",
-        """{"ts":"t","type":"agent_event","event":{"type":"content_start","contentType":"text","text":"OK","accumulated":"OK"}}""",
-        """{"ts":"t","type":"agent_event","event":{"type":"done","reason":"completed","text":"OK","iterations":1}}""",
-        """{"ts":"t","type":"run_result","finishReason":"completed","iterations":1,"text":"OK","model":{"id":"cline-pass/deepseek-v4.1-flash","provider":"cline-pass"}}""");
-    var ok = ClineDelegate.Result(run, "", 0);
-    Expect(!ok.Error && ok.Text == "OK\n\n[cline cline-pass/deepseek-v4.1-flash completed]", "cline reply: " + ok.Text);
-    var refused = ClineDelegate.Result("""{"ts":"t","type":"error","message":"Not signed in to cline-pass"}""", "", 1);
-    Expect(refused.Error && refused.Text.Contains("Not signed in"), "cline error line: " + refused.Text);
-    Expect(ClineDelegate.Result("""{"type":"run_result","finishReason":"aborted","text":""}""", "", 0).Error
-        && ClineDelegate.Result("garbage", "boom", 2).Text.Contains("boom"), "cline failures");
-
-    // cline resolves to a native cline.exe, else node.exe + npm's bin/cline script; never cline.cmd through cmd.exe.
-    string npm = Path.Combine(scratch, "npm bin"), nodeDir = Path.Combine(scratch, "node dir"), native = Path.Combine(scratch, "native");
-    Directory.CreateDirectory(Path.Combine(npm, "node_modules", "cline", "bin"));
-    Directory.CreateDirectory(nodeDir);
-    Directory.CreateDirectory(native);
-    File.WriteAllText(Path.Combine(npm, "cline.cmd"), "");
-    File.WriteAllText(Path.Combine(npm, "node_modules", "cline", "bin", "cline"), "");
-    File.WriteAllText(Path.Combine(nodeDir, "node.exe"), "");
-    File.WriteAllText(Path.Combine(native, "cline.exe"), "");
-    var viaNode = ClineDelegate.FindCline(npm + ";" + nodeDir);
-    Expect(viaNode is { } found && found.Program.EndsWith("node.exe", StringComparison.OrdinalIgnoreCase)
-        && found.Prefix.SequenceEqual([Path.Combine(npm, "node_modules", "cline", "bin", "cline")]), "cline via node");
-    Expect(ClineDelegate.FindCline(native + ";" + npm)?.Program.EndsWith("cline.exe", StringComparison.OrdinalIgnoreCase) == true
-        && ClineDelegate.FindCline(npm) is null && ClineDelegate.FindCline(nodeDir) is null, "native cline.exe; no node or no cline is null");
-
-    // Its own stdio server: initialize, list, call, an unknown tool.
-    var input = new StringReader(string.Join("\n",
-        """{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26"}}""",
-        """{"jsonrpc":"2.0","method":"notifications/initialized"}""",
-        """{"jsonrpc":"2.0","id":2,"method":"tools/list"}""",
-        """{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"ask_clinepass","arguments":{"prompt":"hi"}}}""",
-        """{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"ask_gemini","arguments":{"prompt":"hi"}}}""") + "\n");
-    var output = new StringWriter();
-    ClineDelegate.Serve(input, output, (args, _) => Task.FromResult(("pass " + args?["prompt"], false))).GetAwaiter().GetResult();
-    var replies = output.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(line => JsonNode.Parse(line)!)
-        .ToDictionary(node => (int)node["id"]!);
-    Expect(replies.Count == 4 && replies[1]["result"]?["serverInfo"]?["name"]?.ToString() == "solforge-clinepass"
-        && replies[2]["result"]?["tools"]?.AsArray().Count == 1 && replies[2]["result"]?["tools"]?[0]?["name"]?.ToString() == ClineDelegate.ToolName
-        && replies[3]["result"]?["content"]?[0]?["text"]?.ToString() == "pass hi"
-        && (int?)replies[4]["error"]?["code"] == -32602, "clinepass stdio: " + output);
-
-    // Claude's config gets the clinepass server and prompt only when asked.
-    string project = Path.Combine(scratch, "clinepass project"), shim = Path.Combine(scratch, "solforge-mcp.exe");
+    string project = Path.Combine(scratch, "retired-project");
     Directory.CreateDirectory(project);
-    var plain = EngineLaunch.WriteClaudeFiles(project, shim, Path.Combine(scratch, "clinepass-mcp-a"), gemini: true);
-    Expect(JsonNode.Parse(File.ReadAllText(plain.McpConfig))!["mcpServers"]?[ClineDelegate.ServerName] is null
-        && !EngineLaunch.ClaudeArguments(plain, []).Contains("ask_clinepass"), "no clinepass unless asked");
-    var both = EngineLaunch.WriteClaudeFiles(project, shim, Path.Combine(scratch, "clinepass-mcp-b"), gemini: true, clinePass: true);
-    var servers = JsonNode.Parse(File.ReadAllText(both.McpConfig))!["mcpServers"]!;
-    Expect(servers[ClineDelegate.ServerName]?["command"]?.ToString() == shim && servers[ClineDelegate.ServerName]?["args"]?[0]?.ToString() == "--clinepass"
-        && servers[AgyDelegate.ServerName] is not null
-        && Argv("claude.exe " + EngineLaunch.ClaudeArguments(both, [])).Contains(
-            EngineLaunch.SystemPrompt + " " + EngineLaunch.GeminiPrompt + " " + EngineLaunch.ClinePassPrompt), "clinepass server + prompt");
-    Expect(!EngineLaunch.ClinePassPrompt.Contains('"') && !EngineLaunch.ClinePassPrompt.Contains('%'), "clinepass prompt is safe through cmd");
-
-    // "Claude Code on ClinePass": no Claude login reaches the run; the editor adds the translator's URL and local token.
-    var onPass = EngineProviders.Resolve("claude", EngineProviders.ClaudeClinePass)!;
-    var stripped = EngineProviders.Environment(onPass, null);
-    Expect(stripped.Count == 4 && stripped.Values.All(value => value.Length == 0) && stripped.ContainsKey("CLAUDE_CODE_OAUTH_TOKEN")
-        && EngineProviders.Arguments(onPass, null).Length == 0 && EngineProviders.Model(onPass, null) == ClinePassProxy.DefaultModel, "claude on clinepass preset");
-
-    // Anthropic Messages -> OpenAI Chat Completions.
-    var request = AnthropicTranslator.Request(JsonNode.Parse("""
-        {"model":"claude-sonnet-4-5","max_tokens":100,"stream":true,"system":[{"type":"text","text":"be brief"}],
-         "tools":[{"name":"Read","description":"read a file","input_schema":{"type":"object","properties":{"path":{"type":"string"}}}},{"type":"web_search_20250305","name":"web_search"}],
-         "tool_choice":{"type":"any"},
-         "messages":[{"role":"user","content":"hi"},
-           {"role":"assistant","content":[{"type":"thinking","thinking":"hm","signature":"s"},{"type":"text","text":"reading"},{"type":"tool_use","id":"tu1","name":"Read","input":{"path":"a.txt"}}]},
-           {"role":"user","content":[{"type":"tool_result","tool_use_id":"tu1","content":[{"type":"text","text":"file body"}]},{"type":"text","text":"now?"}]}]}
-        """)!.AsObject(), "cline-pass/kimi-k3");
-    var messages = request["messages"]!.AsArray();
-    Expect(request["model"]?.ToString() == "cline-pass/kimi-k3" && (bool?)request["stream"] == true && (bool?)request["stream_options"]?["include_usage"] == true
-        && request["tool_choice"]?.ToString() == "required" && request["tools"]!.AsArray().Count == 1
-        && request["tools"]![0]!["function"]!["name"]!.ToString() == "Read" && messages.Count == 5
-        && messages[0]!["role"]!.ToString() == "system" && messages[0]!["content"]!.ToString() == "be brief"
-        && messages[2]!["content"]!.ToString() == "reading" && messages[2]!["tool_calls"]![0]!["function"]!["arguments"]!.ToString() == """{"path":"a.txt"}"""
-        && messages[3]!["role"]!.ToString() == "tool" && messages[3]!["tool_call_id"]!.ToString() == "tu1" && messages[3]!["content"]!.ToString() == "file body"
-        && messages[4]!["content"]!.ToString() == "now?", "translated request: " + request.ToJsonString());
-    // OpenAI reply (in Cline's envelope) -> Anthropic message.
-    var reply = AnthropicTranslator.Response(JsonNode.Parse("""
-        {"success":true,"data":{"id":"c1","choices":[{"message":{"content":"ok","tool_calls":[{"id":"call_1","type":"function","function":{"name":"Read","arguments":"{\"path\":\"b\"}"}}]},"finish_reason":"tool_calls"}],
-         "usage":{"prompt_tokens":12,"completion_tokens":3}}}
-        """)!.AsObject(), "cline-pass/kimi-k3");
-    Expect(reply["stop_reason"]?.ToString() == "tool_use" && reply["content"]![0]!["text"]!.ToString() == "ok"
-        && reply["content"]![1]!["type"]!.ToString() == "tool_use" && reply["content"]![1]!["input"]!["path"]!.ToString() == "b"
-        && (int?)reply["usage"]?["input_tokens"] == 12 && (int?)reply["usage"]?["output_tokens"] == 3, "translated reply: " + reply.ToJsonString());
-    // Stream chunks -> Anthropic SSE events.
-    var stream = new AnthropicStream("cline-pass/kimi-k3");
-    var events = stream.Start().Concat(stream.Feed(JsonNode.Parse("""{"choices":[{"delta":{"content":"Hel"}}]}""")!.AsObject()))
-        .Concat(stream.Feed(JsonNode.Parse("""{"choices":[{"delta":{"content":"lo"}}]}""")!.AsObject()))
-        .Concat(stream.Feed(JsonNode.Parse("""{"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_9","function":{"name":"Read","arguments":"{\"pa"}}]}}]}""")!.AsObject()))
-        .Concat(stream.Feed(JsonNode.Parse("""{"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"arguments":"th\":1}"}}]},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":7,"completion_tokens":5}}""")!.AsObject()))
-        .Concat(stream.Finish()).ToList();
-    Expect(events.Select(item => item.Event).SequenceEqual(["message_start", "content_block_start", "content_block_delta", "content_block_delta",
-            "content_block_stop", "content_block_start", "content_block_delta", "content_block_delta", "content_block_stop", "message_delta", "message_stop"])
-        && events[5].Data["content_block"]!["id"]!.ToString() == "call_9" && (int?)events[5].Data["index"] == 1
-        && events[7].Data["delta"]!["partial_json"]!.ToString() == "th\":1}"
-        && events[9].Data["delta"]!["stop_reason"]!.ToString() == "tool_use" && (int?)events[9].Data["usage"]!["output_tokens"] == 5,
-        "stream events: " + string.Join(",", events.Select(item => item.Event)));
-
-    // The localhost translator end to end with a fake ClinePass: only the local token gets in, only CLINE_API_KEY goes out.
-    var upstream = new FakeClinePass();
-    string? key = "test-cline-key";
-    var proxy = new ClinePassProxy("https://cline.test/api/v1", () => key, upstream);
-    try
-    {
-        proxy.Start();
-        var environment = proxy.ClaudeEnvironment();
-        Expect(environment["ANTHROPIC_BASE_URL"] == proxy.Url && proxy.Url.StartsWith("http://127.0.0.1:", StringComparison.Ordinal)
-            && environment["ANTHROPIC_AUTH_TOKEN"] == proxy.LocalToken && environment["ANTHROPIC_API_KEY"] == "" && environment["CLAUDE_CODE_OAUTH_TOKEN"] == ""
-            && !environment.Values.Contains(key), "claude environment");
-        Expect(proxy.MapModel("claude-haiku-4-5") == ClinePassProxy.DefaultFastModel && proxy.MapModel("claude-opus-4-1") == ClinePassProxy.DefaultModel
-            && proxy.MapModel("qwen3.8-max") == "cline-pass/qwen3.8-max" && proxy.MapModel("cline-pass/glm-5.3") == "cline-pass/glm-5.3", "model mapping");
-        using var http = new HttpClient();
-        string Post(string token, string json, out int code)
-        {
-            using var message = new HttpRequestMessage(HttpMethod.Post, proxy.Url + "/v1/messages?beta=true")
-            { Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json") };
-            message.Headers.TryAddWithoutValidation("Authorization", "Bearer " + token);
-            using var response = http.Send(message);
-            code = (int)response.StatusCode;
-            return response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-        }
-        string body = """{"model":"claude-sonnet-4-5","max_tokens":50,"stream":true,"messages":[{"role":"user","content":"hi"}]}""";
-        Post("someone-elses-oauth-token", body, out int denied);
-        Expect(denied == 401 && upstream.Requests == 0, "wrong token refused before ClinePass");
-        string sse = Post(proxy.LocalToken, body, out int status);
-        Expect(status == 200 && sse.Contains("event: message_start") && sse.Contains("\"text\":\"Hi there\"") && sse.Contains("event: message_stop"), "proxied stream: " + sse);
-        Expect(upstream.Authorization == "Bearer test-cline-key" && upstream.Url == "https://cline.test/api/v1/chat/completions"
-            && upstream.Body?["model"]?.ToString() == ClinePassProxy.DefaultModel && upstream.Body?["messages"]?[0]?["content"]?.ToString() == "hi"
-            && upstream.Body?.ToJsonString().Contains(proxy.LocalToken) == false, "upstream request");
-        string whole = Post(proxy.LocalToken, body.Replace("\"stream\":true", "\"stream\":false"), out int plainStatus);
-        Expect(plainStatus == 200 && JsonNode.Parse(whole)?["content"]?[0]?["text"]?.ToString() == "Hi there", "proxied reply: " + whole);
-        key = null;
-        string missing = Post(proxy.LocalToken, body, out int noKey);
-        Expect(noKey == 401 && missing.Contains("CLINE_API_KEY") && upstream.Requests == 2, "missing key: " + missing);
-    }
-    finally { proxy.DisposeAsync().AsTask().GetAwaiter().GetResult(); }
+    var servers = SolMcpServers.Collect(project, "shim.exe", true, true, Path.Combine(scratch, "empty-home"));
+    Expect(servers.All(server => !SolMcpServers.IsRetired(server)), "retired delegates removed");
+    Expect(!SolMcpServers.For(SolMcpServers.Engine.Claude,
+        [new("clinepass", "shim.exe", ["--clinepass"], new JsonObject(), true, "old")]).Any(), "saved delegates filtered");
 }
 
 void ResumeSessions()
@@ -1285,6 +1167,10 @@ void CodeRefsCheck()
     var found = CodeRefs.Locate(game, project, []);
     Expect(found.Select(root => root.Name).SequenceEqual(["sdk-missions", "server-scripts", "project"]) && found[0].ByMission
         && found[1].Folder.EndsWith("mission-scripts"), "locate: " + string.Join(", ", found.Select(root => root.Name + "=" + root.Folder)));
+    string canonical = Path.Combine(sol, "02-server", "solserver", "solserverbase", "Destiny-Sol", "02-server", "mission-scripts");
+    Directory.CreateDirectory(canonical);
+    Expect(CodeRefs.Locate(game, project, []).Single(root => root.Name == "server-scripts").Folder == canonical,
+        "current Destiny-Sol checkout wins over the legacy script copy");
     // Settings > Paths (set_settings serverScripts) wins over the guessed folder; scripts:<path> reads inside it only.
     string chosen = Path.Combine(scratch, "layout", "chosen-scripts");
     Directory.CreateDirectory(chosen);
@@ -1323,6 +1209,57 @@ void ReferenceCheck()
     Expect(ReferenceLibrary.Read(folder, "../../secret.md", null, 1, 10) is null, "path escape refused");
     File.WriteAllText(Path.Combine(folder, "index.json"), "[{\"path\": \"unreal/repl");
     Expect(ReferenceLibrary.Load(folder).Count == 2, "half-written index.json");
+}
+
+static async Task JobChecks()
+{
+    int runs = 0;
+    var gate = new TaskCompletionSource();
+    var slow = new McpTool("slow_tool", "waits for the gate", McpJson.Schema(("x", "integer", "anything", false)), false, async (args, cancel) =>
+    {
+        Interlocked.Increment(ref runs);
+        McpJobs.Report("halfway");
+        await gate.Task.WaitAsync(cancel);
+        return McpToolResult.Text("done " + McpJson.Int(args, "x", 0));
+    });
+    var forever = new McpTool("forever_tool", "never ends unless cancelled", McpJson.Schema(), false, async (_, cancel) =>
+    {
+        await Task.Delay(Timeout.Infinite, cancel);
+        return McpToolResult.Text("unreachable");
+    });
+    var jobs = new McpJobs { Deadline = TimeSpan.FromMilliseconds(300) };
+    var dispatcher = new McpDispatcher([slow, forever], "0.1.0", "checks", jobs);
+    Expect(dispatcher.Tools.Select(tool => tool.Name).SequenceEqual(["slow_tool", "forever_tool", McpJobs.ToolName]), "mcp_job is listed last");
+    async Task<JsonNode> Call(string name, JsonObject arguments)
+    {
+        string? reply = await dispatcher.HandleAsync(new JsonObject { ["jsonrpc"] = "2.0", ["id"] = 1, ["method"] = "tools/call",
+            ["params"] = new JsonObject { ["name"] = name, ["arguments"] = arguments } }.ToJsonString(), CancellationToken.None);
+        return JsonNode.Parse(reply!)!["result"]!;
+    }
+    static string Text(JsonNode result) => result["content"]![0]!["text"]!.ToString();
+    var clock = Stopwatch.StartNew();
+    var first = JsonNode.Parse(Text(await Call("slow_tool", new JsonObject { ["x"] = 7 })))!;
+    Expect(clock.Elapsed < TimeSpan.FromSeconds(10) && first["pending"]?.GetValue<bool>() == true && first["job"]?.ToString() is { Length: > 0 }
+        && first["progress"]?.ToString() == "halfway", "pending reply: " + first.ToJsonString());
+    string job = first["job"]!.ToString();
+    var again = JsonNode.Parse(Text(await Call("slow_tool", new JsonObject { ["x"] = 7 })))!;
+    Expect(again["job"]?.ToString() == job && again["attached"]?.GetValue<bool>() == true && runs == 1, "a repeat attaches: " + again.ToJsonString());
+    var listed = JsonNode.Parse(Text(await Call(McpJobs.ToolName, new JsonObject())))!;
+    Expect(listed["jobs"]?.AsArray().Any(row => row?["job"]?.ToString() == job && row["state"]?.ToString() == "running") == true, "jobs listed: " + listed.ToJsonString());
+    gate.SetResult();
+    var done = await Call(McpJobs.ToolName, new JsonObject { ["job"] = job, ["wait"] = 5 });
+    Expect(Text(done) == "done 7" && done["isError"]?.GetValue<bool>() == false, "mcp_job returns the tool's result: " + done.ToJsonString());
+    var fresh = await Call("slow_tool", new JsonObject { ["x"] = 7 });
+    Expect(Text(fresh) == "done 7" && runs == 2, "after collection a repeat runs again");
+    var quick = await Call("slow_tool", new JsonObject { ["x"] = 8 });
+    Expect(Text(quick) == "done 8", "a call inside the deadline answers directly");
+    var stuck = JsonNode.Parse(Text(await Call("forever_tool", new JsonObject())))!;
+    Expect(stuck["pending"]?.GetValue<bool>() == true, "forever_tool goes pending");
+    await Call(McpJobs.ToolName, new JsonObject { ["job"] = stuck["job"]!.ToString(), ["cancel"] = true });
+    var cancelled = await Call(McpJobs.ToolName, new JsonObject { ["job"] = stuck["job"]!.ToString(), ["wait"] = 5 });
+    Expect(cancelled["isError"]?.GetValue<bool>() == true && Text(cancelled).Contains("cancelled", StringComparison.Ordinal), "cancel stops the job: " + cancelled.ToJsonString());
+    Expect(jobs.DeadlineFor(new JsonObject { ["timeout"] = 30 }) == TimeSpan.FromSeconds(45) && jobs.DeadlineFor(new JsonObject()) == jobs.Deadline
+        && jobs.DeadlineFor(new JsonObject { ["timeout"] = 9999 }) == jobs.MaximumDeadline, "a tool's own timeout extends the deadline, capped");
 }
 
 /** A small EDZ-like mission and the Lua folders that name its slots. */
@@ -1434,6 +1371,7 @@ sealed class FixtureHost(string project) : ISolforgeHost
     }
     public string? ProjectRoot => project;
     public IReadOnlyList<string> SdkRoots => [];
+    public IReadOnlyList<string> AllowedReadFolders { get; set; } = [];
     public string? CurrentMap => "Botza District";
     public AttentionLog Attention { get; } = new();
     public string ContextJson => Context;
@@ -1504,27 +1442,5 @@ sealed class FixtureHost(string project) : ISolforgeHost
             "get_animation" => new JsonObject { ["error"] = "That tag is neither an animation clip nor an entity; use list_animations." },
             _ => new JsonObject { ["total"] = 0, ["rows"] = new JsonArray() }
         });
-    }
-}
-
-/** A stand-in for api.cline.bot's Chat Completions: records the last request and answers "Hi there". */
-sealed class FakeClinePass : HttpMessageHandler
-{
-    public int Requests;
-    public string? Authorization, Url;
-    public JsonObject? Body;
-
-    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancel)
-    {
-        Interlocked.Increment(ref Requests);
-        Authorization = request.Headers.Authorization?.ToString();
-        Url = request.RequestUri?.ToString();
-        Body = JsonNode.Parse(await request.Content!.ReadAsStringAsync(cancel)) as JsonObject;
-        bool stream = Body?["stream"] is JsonValue flag && flag.TryGetValue(out bool on) && on;
-        string text = stream
-            ? "data: {\"choices\":[{\"delta\":{\"content\":\"Hi there\"}}]}\n\ndata: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":3,\"completion_tokens\":2}}\n\ndata: [DONE]\n\n"
-            : "{\"id\":\"c2\",\"choices\":[{\"message\":{\"content\":\"Hi there\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":3,\"completion_tokens\":2}}";
-        return new HttpResponseMessage(System.Net.HttpStatusCode.OK)
-        { Content = new StringContent(text, System.Text.Encoding.UTF8, stream ? "text/event-stream" : "application/json") };
     }
 }

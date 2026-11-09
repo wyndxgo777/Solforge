@@ -37,8 +37,9 @@ public static class ToolMap
         new("Assets menu", "Import Blender asset, skinned model, animation controls, collision, delta", "import_asset"),
         new("Assets menu", "Add asset dialog, Edit perk behavior, Resolve asset names", "run_command assets.add_asset, assets.edit_perk_behavior, assets.resolve_names"),
         new("Textures", "Edit texture pixels", "replace_texture_pixels"),
-        new("Items", "Item browser, weapons, armor, perks, vendors", "search_items, get_item, search_perks, apply_item_edit, list_vendors, get_vendor, apply_vendor_edit"),
+        new("Items", "Item browser, weapons, armor, perks, vendors", "search_items, get_item, search_perks, apply_item_edit, check_item_perk_displays, repair_item_perk_displays, list_vendors, get_vendor, apply_vendor_edit"),
         new("Creation", "New weapon, armor, texture, prop, material, exotic, perk, vendor workflows", "list_creation_types, describe_creation, start_creation"),
+        new("Parhelion", "Project-local weapon recipe discovery, validation and native clone workflow", "get_parhelion_context, list_parhelion_weapon_recipes, validate_parhelion_weapon_recipe, start_parhelion_weapon_recipe"),
         new("Graph panel", "Mission scripts: open, edit, compile, apply, reload", "list_mission_scripts, create_mission_script, open_file, get_graph, apply_graph, reload_mission_scripts"),
         new("Graph panel", "Node graphs (material, weapon, mission): new, edit, compile, apply", "list_graphs, create_graph, get_graph, edit_graph, compile_graph, apply_graph, list_graph_node_types"),
         new("Missions", "Mission objects and slots", "list_mission_objects, get_mission_object, find_object"),
@@ -50,13 +51,13 @@ public static class ToolMap
         new("Local Server", "Status, Log, Deploy, Config, Actions, Subsystems tabs", "local_server_status, local_server_log, local_server_deploy_plan, local_server_deploy, local_server_backups, local_server_rollback, local_server_config_read, local_server_config_write, local_server_command, local_server_quick_action, local_server_subsystems, local_server_start, local_server_stop, local_server_restart, local_server_selftest"),
         new("Settings", "Rendering, Paths, Live link, Interface tabs", "get_settings, set_settings; show_panel settings + ui_* for the rest"),
         new("Settings", "AI tab", "none: the user's only"),
-        new("Window", "Layouts, panels, asset browser drawer, AI workspace, content editors, restore/reset", "show_panel, run_command window.*"),
+        new("Window", "Layouts, panels, asset browser drawer, Solforge AI panel (window.ai_workspace shows it, never launches the app), content editors, restore/reset", "show_panel, run_command window.*"),
         new("Help", "Keybinds & Tips, shortcuts, notices", "get_help, run_command help.*, edit.shortcuts"),
         new("Reference", "Reference library (08-docs\\reference)", "search_reference, read_reference"),
         new("Retail", "Retail workspace: live-build (245048) tags, activities, strings, maps in the viewport, porting",
-            "retail_status, retail_search, retail_tag, retail_read, retail_references, retail_strings, retail_class_map, retail_activity, " +
-            "retail_map, retail_port_plan, retail_preview_mission, retail_engine, retail_open_map, retail_port_mission, retail_port_strings, retail_convert_tag"),
-        new("AI workspace", "Context, attention, automatic mode", "get_context, get_attention_log, get_open_documents, read_screen_text, automatic_start, automatic_status, automatic_stop, goal_progress, goal_complete, goal_blocked")
+            "retail_status, retail_capabilities, retail_search, retail_tag, retail_read, retail_references, retail_strings, retail_class_map, retail_activity, " +
+            "retail_map, retail_port_plan, retail_preview_mission, retail_engine, retail_open_map, retail_port_mission, retail_port_strings, retail_convert_tag, retail_port_audio, retail_export_geometry"),
+        new("Solforge AI panel", "Context, attention, automatic mode (off: it needed the removed console)", "get_context, get_attention_log, get_open_documents, read_screen_text, automatic_start, automatic_status, automatic_stop, goal_progress, goal_complete, goal_blocked")
     ];
 
     /** Rows whose area, feature or tools contain every word of query. */
