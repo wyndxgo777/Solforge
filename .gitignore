@@ -23,6 +23,9 @@ __pycache__/
 /captures/
 /logs/
 /.local/
+/.claude/
+/build-logs/
+/solforge-ai/
 
 # Game data (Phase 01). Nothing from a game installation is committed.
 *.pkg

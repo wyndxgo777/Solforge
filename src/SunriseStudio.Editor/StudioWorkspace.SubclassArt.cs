@@ -149,7 +149,7 @@ public sealed partial class StudioWorkspace
             // The list names either the installed bank (first fork) or a project copy of it (re-run).
             uint? existingCopy = handles.Where(handle => handle.Type == 9).Select(handle => handle.Handle)
                 .FirstOrDefault(handle => project.AddedAssets.Any(asset => asset.Native is { } native
-                    && ProjectTags.Tag(native.PackageId, native.EntryIndex ?? 0) == handle && asset.BaseTagHash == bank)) is uint copy and not 0
+                    && ProjectTags.Tag(native.PackageId, native.EntryIndex ?? 0) == handle && asset.Name == $"list{list}_bank_{bank:x8}.strings")) is uint copy and not 0
                 ? copy : null;
             if (existingCopy is null && !handles.Any(handle => handle.Type == 9 && handle.Handle == bank))
                 throw new InvalidDataException($"List {list}'s text fields do not name bank 0x{bank:X8} ("
@@ -159,8 +159,6 @@ public sealed partial class StudioWorkspace
             byte[] baseContainer = planned.ReadOriginal(bank);
             uint baseData = BinaryPrimitives.ReadUInt32LittleEndian(baseContainer.AsSpan(0x18));
             if (!planned.TryGetEntry(baseData, out var dataEntry)) throw new InvalidDataException("The bank's English data is missing.");
-            var template = StringBankTemplate.Read(bank, baseContainer, baseData, planned.ReadOriginal(baseData),
-                tag => planned.TryGetEntry(tag, out var entry) && entry.Reference == StringBankWriter.DataClass);
             var merged = StringBankWriter.Read(baseContainer, planned.ReadOriginal(baseData)).ToList();
             int replaced = 0, added = 0;
             foreach (var (hash, text) in texts)
@@ -169,7 +167,12 @@ public sealed partial class StudioWorkspace
                 if (at >= 0) { merged[at] = new StringBankText(hash, text); replaced++; }
                 else { merged.Add(new StringBankText(hash, text)); added++; }
             }
-            StringBankWriter.Validate(template, merged);
+            // Some installed banks use layouts the writer cannot reproduce (e.g. subclass banks with the undecoded array
+            // at +24); like the project bank, the copy takes the first installed bank that can encode these strings.
+            var template = StringBankWriter.FindTemplate(planned,
+                new[] { bank }.Concat(bankRows.Select(row => row.ContainerTag)), merged);
+            if (!planned.TryGetEntry(template.ContainerTag, out var templateContainer) || !planned.TryGetEntry(template.DataTag, out var templateData))
+                throw new InvalidDataException("The template string bank is missing.");
             uint containerTag, dataTag;
             int bankIndex;
             if (existingCopy is uint current)
@@ -191,9 +194,9 @@ public sealed partial class StudioWorkspace
                 string stem = $"list{list}_bank_{bank:x8}";
                 plan.Add([
                     new ProjectAssetAddition($"{stem}.strings", container,
-                        new(packageId, StringBankWriter.ContainerClass, containerEntry.TypeInfo, stem, entry), bank),
+                        new(packageId, StringBankWriter.ContainerClass, templateContainer.TypeInfo, stem, entry), template.ContainerTag),
                     new ProjectAssetAddition($"{stem}_en.strings", data,
-                        new(packageId, StringBankWriter.DataClass, dataEntry.TypeInfo, stem + "_en", entry + 1), baseData)
+                        new(packageId, StringBankWriter.DataClass, templateData.TypeInfo, stem + "_en", entry + 1), template.DataTag)
                 ]);
                 uint nameHash = InvestmentItemClone.NewBankNameHash($"sunrise_list{list}_{bank:x8}_{packageId:x4}", bankRows);
                 (bankTable, bankIndex) = InvestmentItemClone.AppendBankRow(bankTable, nameHash, containerTag);

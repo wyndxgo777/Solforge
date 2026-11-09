@@ -81,8 +81,7 @@ Opening Solforge exports in Blender, and making files Solforge imports from Blen
 ### Run checks
 
 ```powershell
-.\verify.ps1                    # all checks (no game required)
-.\verify.ps1 -Game <path>       # adds package-reading checks
+dotnet test                     # run test suite across the solution
 ```
 
 ## Layout
@@ -108,11 +107,11 @@ Opening Solforge exports in Blender, and making files Solforge imports from Blen
 | `src/Solforge.Harness` | Provider catalog, model discovery, shared harness resources |
 | `src/Solforge.Harness.Runtime` | Worker skills, subscription model worker, editor gateway |
 | `src/Solforge.AiLauncher` | Standalone Solforge AI desktop launcher |
-| `tests/` | Check programs; `verify.ps1` runs all except RootManifest and Sandbox |
+| `tests/` | Check programs and automated tests |
 | `licenses/` | Notice files for .NET runtime and Community Toolkit |
 | `blender/` | Sunrise Blender add-on (Python, GPLv3, git subtree) |
 | `skills/` | MCP playbooks for AI clients |
-| `docs/` | Architecture, UI, feature and handoff docs |
+| `docs/` | Architecture, UI, features, client, weapons and MCP documentation |
 
 ## Contributing
 
@@ -121,7 +120,7 @@ Pull requests are welcome. Please follow these rules:
 - **No Copyrighted Data** — All game data is read from the user's installation at runtime.
 - **Clean Code** — Follow the project's existing style; comment and add docs.
 - **Provide Documentation** — Explain what you changed, why, and the effects.
-- **Run the Checks** — Run `verify.ps1`, with `-Game` if your change reads game data.
+- **Run the Checks** — Run `dotnet test` before submitting.
 - **One Feature per PR** — Don't bundle unrelated changes.
 - **Honest WIP** — Mark anything known to be broken or incomplete as WIP.
 
@@ -129,7 +128,7 @@ Pull requests are welcome. Please follow these rules:
 
 ### Upstream
 
-Solforge is a fork of [Sunrise Studio](https://github.com/stanuwu/SunriseStudio) by [stan](https://github.com/stanuwu). The original project, all its contributors, and its credits apply in full — see [UPSTREAM.md](UPSTREAM.md) and [THIRD_PARTY.md](THIRD_PARTY.md).
+Solforge is a fork of [Sunrise Studio](https://github.com/stanuwu/SunriseStudio) by [stan](https://github.com/stanuwu). The original project, all its contributors, and its credits apply in full — see [docs/THIRD_PARTY.md](docs/THIRD_PARTY.md).
 
 ### Team
 
@@ -158,7 +157,7 @@ Audio decoder ported from:
 
 [wwiser](https://github.com/bnnm/wwiser) was used to verify composition results. No wwiser code is in Solforge.
 
-See [THIRD_PARTY.md](THIRD_PARTY.md) for full license details on all ported code and libraries.
+See [docs/THIRD_PARTY.md](docs/THIRD_PARTY.md) for full license details on all ported code and libraries.
 
 ### Inspiration / Reference Repos
 

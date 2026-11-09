@@ -252,3 +252,28 @@ The AI console/terminal is gone from the editor; the toolbar's Solforge AI butto
 - `start_model_workflow`, `get_model_workflow`, `cancel_model_workflow`: the model team from Settings > Models & workflows.
   A start always opens Solforge's own confirm dialog (task and routed models); it is never auto-approved. Workers reach the
   editor through `solforge-mcp --worker --project <p>`.
+
+## Worker and approval permissions
+
+### Recursive context folder read grants
+
+Enabled found folders and manually added folders in the editor's **Context → Folders** list become an immutable MCP read-grant snapshot:
+- `read_project_file` accepts an absolute path anywhere below one of those roots, including arbitrarily nested subfolders.
+- `search_project` searches those roots recursively and accepts an optional `folder` argument to narrow the search. Overlapping grants do not duplicate hits.
+- Project edits remain project-relative overlay operations. Read grants do not authorize writes, installations or credential disclosure. Directory junctions and symlinks cannot expand a grant outside its physical root.
+
+### Automatic approval
+
+The user-controlled **Auto-approve AI requests** preference covers permitted workflow-worker actions and `apply_project_edit`:
+- Automatic approvals produce AI-log audit entries recording the requesting session.
+- Project edits validate project-relative paths, credential protection, current file contents, cancellation, and paused context.
+- With the preference disabled, mutating actions wait for user approval in Solforge's AI panel (AI Requests tab), and file edits open a side-by-side before/after diff review.
+- Pairing and starting a native model workflow still require explicit user confirmation.
+
+### Native workflow worker capabilities
+
+Native workers connect to the `--sol --worker` aggregate:
+- External worker tools must advertise `readOnlyHint: true`; unknown and mutating foreign tools do not pass through.
+- The worker policy permits an explicit set of project-authoring actions: file edits, selection/camera/map/asset navigation, placement/bounds/item/vendor edits, project content edits, graphs and mission-script authoring.
+- Planner, Reviewer, SubagentPlanner and SubagentReviewer stages receive `--worker-readonly`, which filters mutation tools from discovery and refuses mutation calls over HTTP.
+- Workers cannot manage parent workflows/automatic goals, issue arbitrary UI/menu commands, change editor settings, install/deploy builds, or restart shared processes.
