@@ -60,13 +60,16 @@ cd Solforge
 
 2. Build Solforge
 ```powershell
-.\publish.ps1 -Output publish-new   # use a new or empty output folder (see RELEASING.md)
+.\build.ps1                              # build into a timestamped test folder
+.\build.ps1 -Output my-build            # build into a specific new/empty folder
+.\build.ps1 -FinalOutput <deploy-path>  # build + sync into an existing deployment directory
 ```
 
-Or use the convenience scripts:
+Or double-click `build.cmd` for a quick build with a pause at the end.
+
+For a low-level publish (just the dotnet step, no validation):
 ```powershell
-.\build-solforge.ps1       # build only
-.\build-and-publish.ps1    # build + publish
+.\publish.ps1 -Output publish-new   # use a new or empty folder (see RELEASING.md)
 ```
 
 On first start, choose your Sunrise installation; Solforge remembers it. `Solforge.exe --help` lists all command-line options.
