@@ -46,7 +46,8 @@ public sealed partial class StudioWorkspace
         Action<OriginalAssetInspection?, string> done)
     {
         var catalog = Catalog ?? throw new InvalidOperationException("Open your Sunrise installation first.");
-        InspectExport(() => WeaponOriginalAssetImporter.Inspect(catalog, path, variants), done);
+        InspectExport(() => RigidExoticImport.IsManifest(path) ? RigidExoticImport.Inspect(path, variants)
+            : WeaponOriginalAssetImporter.Inspect(catalog, path, variants), done);
     }
 
     /** Reads an original asset's surface report on a worker; done runs between frames. */

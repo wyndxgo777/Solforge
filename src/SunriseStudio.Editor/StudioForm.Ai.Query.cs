@@ -797,6 +797,9 @@ public sealed partial class StudioForm
         var type = CreationTypes.For(McpJson.String(args, "key") ?? "", mode);
         if (!type.Available) return $"{type.Name}: {type.Blocker}";
         if (!workspace.CanEdit) return "No project is open, or Solforge is busy.";
+        if (args["perk_graphs"] is not null && (mode != CreationMode.New
+            || !string.Equals(McpJson.String(args, "key"), "Weapons", StringComparison.OrdinalIgnoreCase)))
+            return "perk_graphs is only available for a new exotic weapon.";
         uint? source = SolforgeTools.ParseHash(McpJson.String(args, "source"));
         if (type.Factory is null) { StartCreation(type, source, source is { } tag ? workspace.DisplayName(tag) : ""); return "Started the Duplicate."; }
         if (source is { } picked && workspace.CloneBaseOf(picked) is var owner && owner != picked) source = owner;
@@ -811,6 +814,13 @@ public sealed partial class StudioForm
             if (field.Kind == CreationFieldKind.Tag && SolforgeTools.ParseHash(text) is { } tag) { field.Tag = tag; field.TagLabel = workspace.DisplayName(tag); }
             else if (field.Kind is CreationFieldKind.Text or CreationFieldKind.Scalar or CreationFieldKind.File) field.Text = text;
             else missing.Add(label);
+        }
+        if (args["perk_graphs"] is JsonObject graphs && workflow is ExoticWeaponWorkflow exotic)
+        {
+            try { AiFillExoticPerks(exotic, graphs); }
+            catch (Exception error) when (error is InvalidDataException or ArgumentException or FormatException
+                or OverflowException or InvalidOperationException)
+            { return "Perk graphs were not loaded: " + error.Message; }
         }
         creation.Open(workflow);
         return $"Opened {workflow.Title} in Solforge; the user reviews it and presses {workflow.CreateLabel}."

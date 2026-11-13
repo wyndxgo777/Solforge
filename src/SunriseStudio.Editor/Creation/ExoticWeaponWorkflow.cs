@@ -82,8 +82,8 @@ public sealed class ExoticWeaponWorkflow : CreationWorkflow
             Part = new("New graph", "", [bonusName, bonusDescription, bonusGraph, bonusIcon])
         };
         normalPerk.MakeNew = true;
-        file = new("Blender asset", CreationFieldKind.File, true, "Original weapon scene and its sidecars")
-        { FileFilter = ExportFilter, Hint = ExportHint };
+        file = new("Blender asset", CreationFieldKind.File, true, "Sunrise weapon export or Borealis rigid art manifest")
+        { FileFilter = ExportFilter + "|Rigid weapon art manifest|*.json", Hint = ExportHint + " For Borealis, choose a rigid art manifest." };
         collection = new("Collections", CreationFieldKind.Scalar, false, "New collectible and collection page")
         { Text = "0", Choices = CollectionChoices };
         firstGraph = new("Intrinsic behavior", CreationFieldKind.Rows, false, "Fresh native behavior graph")
@@ -130,8 +130,13 @@ public sealed class ExoticWeaponWorkflow : CreationWorkflow
             inspectionError = workspace.Error.Length != 0 ? workspace.Error : "Read stopped. Export again to retry.";
         }
         if (!InvestmentReady(workspace)) return;
-        if (baseWeapon.Tag is null && workspace.Investment!.FindItem(CheckedBaseItem) is { } supported)
-        { baseWeapon.Tag = supported.Tag; baseWeapon.TagLabel = supported.Name; }
+        uint targetBase = RigidExoticImport.IsManifest(file.Text.Trim()) ? RigidExoticImport.BaseItem : CheckedBaseItem;
+        if (baseWeapon.Tag != targetBase)
+        {
+            var supported = workspace.Investment!.FindItem(targetBase);
+            baseWeapon.Tag = supported?.Tag;
+            baseWeapon.TagLabel = supported?.Name ?? "";
+        }
         if (baseWeapon.Tag != loadedBase || loadedOverlay != workspace.Catalog?.OverlayRevision) LoadBase();
         InspectSource();
     }
@@ -151,8 +156,8 @@ public sealed class ExoticWeaponWorkflow : CreationWorkflow
             byte[] bytes = workspace.Catalog!.Read(source.Tag);
             detail = investment.ReadItem(source.Tag, bytes);
             var profile = WeaponArchetypeAuthoring.Read(workspace.Catalog, bytes);
-            if (profile.EntityTag != WeaponPresentationAuthoring.GameplayTemplate
-                || !WeaponAssetEntityCompiler.Supports(profile.Variants))
+            if (tag != RigidExoticImport.BaseItem && (profile.EntityTag != WeaponPresentationAuthoring.GameplayTemplate
+                || !WeaponAssetEntityCompiler.Supports(profile.Variants)))
                 throw new NotSupportedException("Tommy's Matchbook does not have the checked layout.");
             variants = profile.Variants;
             firstSocket = detail.Sockets.FirstOrDefault(socket => socket.Type == 176)?.Index ?? -1;
@@ -164,7 +169,11 @@ public sealed class ExoticWeaponWorkflow : CreationWorkflow
                 if (socket.Index == firstSocket && templates.Count != 0) firstTemplate = templates[0];
                 if (socket.Index == secondSocket && templates.Count != 0) secondTemplate = templates[0];
                 var catalyst = templates.FirstOrDefault(index => investment.ItemName(index).Contains("Catalyst", StringComparison.OrdinalIgnoreCase)
-                    && !investment.ItemName(index).Contains("Empty", StringComparison.OrdinalIgnoreCase), ushort.MaxValue);
+                    && !investment.ItemName(index).Contains("Empty", StringComparison.OrdinalIgnoreCase)
+                    && investment.Items[index].Bucket == 37, ushort.MaxValue);
+                if (catalyst == ushort.MaxValue)
+                    catalyst = templates.FirstOrDefault(index => investment.ItemName(index).Contains("Catalyst", StringComparison.OrdinalIgnoreCase)
+                        && !investment.ItemName(index).Contains("Empty", StringComparison.OrdinalIgnoreCase), ushort.MaxValue);
                 if (catalyst != ushort.MaxValue) { catalystSocket = socket.Index; catalystTemplate = catalyst; }
             }
             collections = investment.CollectionNodes();
@@ -195,8 +204,18 @@ public sealed class ExoticWeaponWorkflow : CreationWorkflow
         if (path == stampedPath && now < nextStamp) return;
         stampedPath = path; nextStamp = now + StampInterval;
         string key = "";
-        try { if (variants.Count != 0 && File.Exists(path)) key = SourceStamp(path); }
-        catch (Exception error) when (error is ArgumentException or IOException or NotSupportedException) { }
+        try
+        {
+            if (variants.Count != 0 && File.Exists(path))
+                key = RigidExoticImport.IsManifest(path)
+                    ? string.Join("|", RigidExoticImport.SourceFiles(path, variants).Select(IconChecks.Stamp))
+                    : SourceStamp(path);
+        }
+        catch (Exception error) when (error is ArgumentException or IOException or NotSupportedException
+            or InvalidDataException or System.Text.Json.JsonException)
+        {
+            if (RigidExoticImport.IsManifest(path) && File.Exists(path)) key = IconChecks.Stamp(path);
+        }
         if (key.Length == 0) { inspection = null; inspectionError = ""; inspectedKey = ""; return; }
         if (key == inspectedKey || workspace.IsBusy) return;
         inspectedKey = key; inspection = null; inspectionError = ""; inspecting = true;
@@ -213,7 +232,7 @@ public sealed class ExoticWeaponWorkflow : CreationWorkflow
         if (sourceError.Length != 0) yield return sourceError;
         if (source is null || detail is null)
         {
-            if (sourceError.Length == 0) yield return "Tommy's Matchbook is not in this install.";
+            if (sourceError.Length == 0) yield return "The required base weapon is not in this install.";
             yield break;
         }
         // The catalyst part checks its own new fields; closed sections are checked here.
@@ -242,7 +261,7 @@ public sealed class ExoticWeaponWorkflow : CreationWorkflow
             yield return "Choose a perk with normal presentation for the catalyst.";
         if (inspectionError.Length != 0) yield return inspectionError;
         else if (inspecting) yield return "Reading the Blender export.";
-        else if (inspection is null) yield return "Choose a Blender export.";
+        else if (inspection is null) yield return "Choose a Blender export or a rigid art manifest.";
         else foreach (var surface in inspection.Surfaces.Where(value => value.Present && !value.Supported))
             yield return surface.Name + ": " + surface.Detail;
         if (!weaponIcon.IsEmpty && IconChecks.Size(weaponIcon.Text.Trim(), 96, 96) is { } weaponProblem)
@@ -294,7 +313,7 @@ public sealed class ExoticWeaponWorkflow : CreationWorkflow
             IconPath = OptionalIcon(catalystIcon)
         };
         return new(name.Text.Trim(), description.Text.Trim(), archetype.Text.Trim(),
-            baseWeapon.Tag ?? throw new InvalidDataException("Tommy's Matchbook is not in this install."),
+            baseWeapon.Tag ?? throw new InvalidDataException("The required base weapon is not in this install."),
             new(firstName.Text.Trim(), firstDescription.Text.Trim(), FirstBehavior.Document, firstSocket, firstTemplate)
                 { IconPath = OptionalIcon(firstIcon) },
             new(secondName.Text.Trim(), secondDescription.Text.Trim(), SecondBehavior.Document, secondSocket, secondTemplate)
@@ -350,8 +369,8 @@ public sealed class ExoticWeaponWorkflow : CreationWorkflow
     private void DrawBase()
     {
         ImGui.SameLine();
-        ImGui.TextUnformatted(baseWeapon.Tag is null ? "Tommy's Matchbook (not installed)" : baseWeapon.TagLabel);
-        StudioUi.Tip("The only supported base.");
+        ImGui.TextUnformatted(baseWeapon.Tag is null ? "Required base not installed" : baseWeapon.TagLabel);
+        StudioUi.Tip("Blender exports use Tommy's Matchbook. Rigid art manifests use Borealis.");
     }
 
     private void DrawBehavior(PerkBehaviorEditor editor, string title, string perkName)

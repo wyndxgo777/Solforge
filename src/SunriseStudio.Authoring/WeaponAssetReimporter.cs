@@ -117,7 +117,9 @@ public static class WeaponAssetReimporter
         var map = new Dictionary<uint, uint>();
         foreach (var asset in imported.Assets)
             map[Tag(asset.Native!)] = layoutNames.TryGetValue(asset.Name, out uint kept) && Keeps(asset, kept) ? kept
-                : checked(0x80800000u + ((uint)profile.PackageId << 13) + (uint)nextEntry++);
+                // Entries past 8191 would name a tag in the next package (upstream 3a0e6f7).
+                : nextEntry < 8192 ? checked(0x80800000u + ((uint)profile.PackageId << 13) + (uint)nextEntry++)
+                : throw new InvalidDataException("The weapon's package has no free entry for a new record.");
         var prepared = imported.Assets.ToDictionary(asset => map[Tag(asset.Native!)], asset => asset with
         {
             Data = Remap(asset.Data, map),

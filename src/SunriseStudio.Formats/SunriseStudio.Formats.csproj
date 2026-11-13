@@ -7,4 +7,7 @@
     <ProjectReference Include="../SunriseStudio.Scene/SunriseStudio.Scene.csproj" />
     <ProjectReference Include="../SunriseStudio.Animation/SunriseStudio.Animation.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="SunriseStudio.Formats.Tests" />
+  </ItemGroup>
 </Project>

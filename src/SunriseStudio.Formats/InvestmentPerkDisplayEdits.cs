@@ -19,14 +19,25 @@ public static class InvestmentPerkDisplayEdits
         if (perkCount < 0 || perkCount > 4096)
             throw new InvalidDataException("The item has too many perk display rows.");
         var rows = Read(display);
-        if (rows.Field < 0)
-        {
-            if (perkCount == 0) return display.ToArray();
-            throw new NotSupportedException("The item needs an existing native perk display block.");
-        }
         byte[] empty = new byte[Stride];
         BinaryPrimitives.WriteUInt16LittleEndian(empty, ushort.MaxValue);
         BinaryPrimitives.WriteUInt32LittleEndian(empty.AsSpan(4), InvestmentItemClone.EmptyStringHash);
+        if (rows.Field < 0)
+        {
+            if (perkCount == 0) return display.ToArray();
+            int newBlock = checked((display.Length + 19) & ~15);
+            int newHeader = newBlock + 32;
+            byte[] newOutput = new byte[checked(newHeader + 16 + perkCount * Stride)];
+            display.Span.CopyTo(newOutput);
+            BinaryPrimitives.WriteUInt32LittleEndian(newOutput.AsSpan(newBlock - 4), BlockClass);
+            BinaryPrimitives.WriteInt64LittleEndian(newOutput.AsSpan(newBlock + 8), perkCount);
+            BinaryPrimitives.WriteInt64LittleEndian(newOutput.AsSpan(newBlock + 16), newHeader - (newBlock + 16L));
+            TagArrayRelocation.WriteHeader(newOutput, newHeader, perkCount, RowClass);
+            for (int index = 0; index < perkCount; index++) empty.CopyTo(newOutput, newHeader + 16 + index * Stride);
+            BinaryPrimitives.WriteInt64LittleEndian(newOutput.AsSpan(BlockPointer), newBlock - (long)BlockPointer);
+            BinaryPrimitives.WriteInt64LittleEndian(newOutput, newOutput.Length);
+            return newOutput;
+        }
         if (rows.Count == perkCount && Enumerable.Range(0, rows.Count)
             .All(index => display.Span.Slice(rows.Data + index * Stride, Stride).SequenceEqual(empty)))
             return display.ToArray();
@@ -57,7 +68,10 @@ public static class InvestmentPerkDisplayEdits
             throw new InvalidDataException("The item has too many perk display rows.");
         var rows = Read(display);
         if (rows.Field < 0)
-            throw new InvalidDataException("The item display has no perk display block, so its perk rows cannot be kept in step.");
+        {
+            if (newCount == 0) return (byte[])display.Clone();
+            return Reset(display, newCount);
+        }
         if (removedIndex is { } gone && (gone < 0 || gone >= rows.Count))
             throw new InvalidDataException("The removed perk display row is outside its array.");
         if (removedIndex is null && rows.Count == newCount) return (byte[])display.Clone();

@@ -20,7 +20,14 @@ public static partial class WorldSceneExport
             if (mesh.Native is { } native && NativeMeshBasis.IsSupported(catalog, native)) basis = NativeMeshBasis.Read(catalog, mesh);
         }
         catch (Exception error) when (Recoverable(error)) { notices.Add(new("Normals", "Diagnostic", error.Message, mesh.TagHash)); }
-        try { motion = NativeVertexMotion.Read(catalog, mesh, materials) ?? NativeVertexInputs.Motion(catalog, mesh, materials, null); }
+        try
+        {
+            motion = NativeVertexMotion.Read(catalog, mesh, materials);
+            // A world motion holds per-vertex colours and constants; it has no field for a shader program (upstream 0f41c40).
+            if (motion is null && NativeVertexInputs.Motion(catalog, mesh, materials, null) is not null)
+                notices.Add(new("Vertex motion", "Not exported",
+                    "World scenes do not carry shader program motion; the part keeps its rest shape.", mesh.TagHash));
+        }
         catch (Exception error) when (Recoverable(error)) { notices.Add(new("Vertex motion", "Unavailable", error.Message, mesh.TagHash)); }
         if (basis is null && !notices.Any(notice => notice.Surface == "Normals" && notice.TagHash == mesh.TagHash))
             notices.Add(new("Normals", "Diagnostic", "Tangent frame not decoded; preview normals used.", mesh.TagHash));

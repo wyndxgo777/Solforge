@@ -83,6 +83,7 @@ internal static class WorldSceneChecks
         Terrain(root, keep is null ? null : Path.GetFullPath(keep) + "-terrain");
         Inputs(root, keep is null ? null : Path.GetFullPath(keep) + "-inputs");
         Decorators(root, keep is null ? null : Path.GetFullPath(keep) + "-decorators");
+        ProgramMotion(root, keep is null ? null : Path.GetFullPath(keep) + "-motion");
         Console.WriteLine($"world_export shared_geometry=pass placements=3 parts=6 matrices=pass visibility=pass cancellation=clean path={output}");
 
         byte[] View(WorldBufferView view, int size)
@@ -337,6 +338,68 @@ internal static class WorldSceneChecks
                 float expected = row == 2 ? 0 : lane < 4 ? values[row].Record[lane] : values[row].Occlusion[lane - 4];
                 Check(Lane(row, lane) == expected, "A placement's decorator inputs differ from its record.");
             }
+    }
+
+    /**
+     * An entity part whose vertex shader adds a clock-driven offset exports in its rest shape, with a notice.
+     * A world motion holds only colour-wave constants, so it cannot carry a shader program.
+     */
+    private static void ProgramMotion(string root, string? keep)
+    {
+        string game = Path.Combine(root, "motion-game"); Directory.CreateDirectory(Path.Combine(game, "packages"));
+        byte[] vertex = Compiler.Compile("""
+            cbuffer Material:register(b0) {float4 rows[1];};
+            cbuffer Object:register(b11) {float4 objectRows[8];};
+            struct VsIn {float4 p:POSITION; float4 c:COLOR0;};
+            struct VsOut {float4 color:TEXCOORD0; float4 position:SV_POSITION;};
+            VsOut main(VsIn i) {VsOut o; o.color=i.c;
+                o.position=float4(i.p.xyz*objectRows[5].w+objectRows[5].xyz+float3(0,0,rows[0].x*i.c.x),1); return o;}
+            """, "main", "WorldMotionVertex", "vs_5_0", ShaderFlags.OptimizationLevel3).ToArray();
+        byte[] pixel = Compiler.Compile("""
+            struct Input {float4 color:TEXCOORD0;};
+            struct Output {float4 color:SV_Target0; float4 normal:SV_Target1; float4 third:SV_Target2;};
+            Output main(Input i) {Output o; o.color=float4(i.color.xyz,1); o.normal=float4(.5,.5,1,0); o.third=0; return o;}
+            """, "main", "WorldMotionPixel", "ps_5_0", ShaderFlags.OptimizationLevel3).ToArray();
+        static byte[] Header(byte[] code)
+        {
+            byte[] header = new byte[12]; BinaryPrimitives.WriteUInt64LittleEndian(header, 12);
+            BinaryPrimitives.WriteUInt32LittleEndian(header.AsSpan(8), (uint)code.Length);
+            return header;
+        }
+        byte[] material = new byte[0x4D0]; BinaryPrimitives.WriteUInt64LittleEndian(material, (ulong)material.Length);
+        BinaryPrimitives.WriteUInt32LittleEndian(material.AsSpan(0x48), 0x80A00001);
+        BinaryPrimitives.WriteUInt32LittleEndian(material.AsSpan(0x2C8), 0x80A00003);
+        // Vertex TFX at +0x68 copies extern 1 float 0, the clock, to cb0 row 0; +0x98 holds the 1-row template.
+        void TypedArray(int field, int header, uint elementClass, byte[] data, int count)
+        {
+            BinaryPrimitives.WriteUInt64LittleEndian(material.AsSpan(field), (ulong)count);
+            BinaryPrimitives.WriteUInt64LittleEndian(material.AsSpan(field + 8), (ulong)(header - field - 8));
+            BinaryPrimitives.WriteUInt32LittleEndian(material.AsSpan(header - 4), 0x80809FBD);
+            BinaryPrimitives.WriteUInt64LittleEndian(material.AsSpan(header), (ulong)count);
+            BinaryPrimitives.WriteUInt32LittleEndian(material.AsSpan(header + 8), elementClass);
+            data.CopyTo(material, header + 16);
+        }
+        TypedArray(0x68, 0x404, 0x80800009, [0x3C, 1, 0, 0x43, 0], 5);
+        TypedArray(0x98, 0x434, 0x80800090, new byte[16], 1);
+        PackageWriter.WriteNew(Path.Combine(game, "packages", "w64_motion_0100_0.pkg"), 0x100,
+            [new(0x808071E8, 8 << 9, material), new(0x80A00002, (33 << 9) | (1 << 6), Header(vertex)),
+             new(uint.MaxValue, (41 << 9) | (1 << 6), vertex), new(0x80A00004, 33 << 9, Header(pixel)), new(uint.MaxValue, 41 << 9, pixel)]);
+        using var catalog = PackageCatalog.Open(game, cacheOptions: new() { Enabled = false });
+        // Stride 16: POSITION0 as four snorm16 lanes, then COLOR0 as four unorm8 lanes and four unused bytes.
+        byte[] stream = new byte[48];
+        for (int row = 0; row < 3; row++) stream[row * 16 + 8] = 255;
+        var triangle = Triangle(0x80A00010, 0x80A00000, 0);
+        var mesh = new MeshData { TagHash = triangle.TagHash, MaterialTag = triangle.MaterialTag, Vertices = triangle.Vertices,
+            Indices = triangle.Indices, SourceVertexIndices = [0, 1, 2],
+            Native = new() { Kind = NativeMeshKind.Entity, VertexStreams = [new(0, 0, 16, 0, stream)], IndexData = [], SourceHeader = [],
+                InputLayoutVerified = true, RenderStage = 0, PositionScale = Vector4.One,
+                InputElements = [new("POSITION", 0, 0, 0, NativeVertexFormat.R16G16B16A16SNorm), new("COLOR", 0, 0, 8, NativeVertexFormat.R8G8B8A8UNorm)] } };
+        var scene = new SceneDocument { Name = "Program motion", TagHash = 0x80A00000 };
+        scene.Instances.Add(new() { Mesh = mesh, Name = "Pulse", Transform = Matrix4x4.Identity });
+        string output = keep ?? Path.Combine(root, "motion-export");
+        var result = WorldSceneExport.Export(catalog, scene, output).Manifest;
+        Check(result.Geometry.Single().Motion is null && result.Notices.Any(notice => notice.Surface == "Vertex motion"
+            && notice.Status == "Not exported" && notice.TagHash == mesh.TagHash), "A shader program motion did not leave a notice.");
     }
 
     // ShaderVaryings is internal to the exporter; its program operation name is part of the export format.

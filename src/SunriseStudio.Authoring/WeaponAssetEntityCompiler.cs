@@ -16,6 +16,9 @@ public static class WeaponAssetEntityCompiler
     private sealed record Profile(uint Config, uint Model, string RootHash, string ConfigHash);
     private static readonly IReadOnlyDictionary<uint, Profile> Profiles = new Dictionary<uint, Profile>
     {
+        [0x80BBDE17] = new(0x80BBDE0F, 0x80EF45C2,
+            "4E318C3D60B72F337C56712C2638CB5323CF89850348B8535670C33E53D2D178",
+            "0987D5FF313989C093F96F0B31564B410F3E6AFBBF4AB261F20E749756D6D90C"),
         [0x81A6B357] = new(0x81A6B355, 0x81A6B350,
             "36D53E070E3D2C451C8109EC41EFF3EDF517E24E7D8E451CADE9A64A5FBFB8AB",
             "64F7F4A72ED5850E77C0434AD3DA95BDEE4D05E0699BDB25BB707F43A63B2A74"),
@@ -43,9 +46,20 @@ public static class WeaponAssetEntityCompiler
     public static PreparedWeaponArtEntity Prepare(PackageCatalog catalog, uint sourceEntityTag,
         uint modelTag, ushort packageId, int firstEntry, string name)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(name);
         if (!Profiles.TryGetValue(sourceEntityTag, out var profile))
-            throw new NotSupportedException("Weapon art creation needs a checked Tommy art profile.");
+            throw new NotSupportedException("Weapon art creation needs a checked donor art profile.");
+        return Prepare(catalog, sourceEntityTag, modelTag, packageId, firstEntry, name, profile);
+    }
+
+    /** Compiles art for an explicitly fingerprinted donor component using the same typed layout checks. */
+    internal static PreparedWeaponArtEntity PrepareRigid(PackageCatalog catalog, uint entity, uint config,
+        uint sourceModel, string entityHash, string configHash, uint model, ushort package, int entry, string name)
+        => Prepare(catalog, entity, model, package, entry, name, new(config, sourceModel, entityHash, configHash));
+
+    private static PreparedWeaponArtEntity Prepare(PackageCatalog catalog, uint sourceEntityTag,
+        uint modelTag, ushort packageId, int firstEntry, string name, Profile profile)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
         if (!PackageWriter.IsNewPackageId(packageId) || catalog.ContainsInstalledPackage(packageId)
             || firstEntry < 0 || firstEntry > 8190)
             throw new InvalidDataException("Weapon art creation needs two unused package entries.");

@@ -5,6 +5,7 @@
 using System.Globalization;
 using System.Text.Json.Nodes;
 using Solforge.Mcp;
+using SunriseStudio.Editor.Creation;
 using SunriseStudio.Formats;
 using SunriseStudio.Packages;
 
@@ -323,6 +324,31 @@ public sealed partial class StudioForm
     {
         int index = (int)AiPerkNumber(row["index"], -1);
         return index >= 0 && index < phase.Count ? phase[index] : throw new InvalidDataException($"index {index} is outside 0..{phase.Count - 1}.");
+    }
+
+    private static void AiFillExoticPerks(ExoticWeaponWorkflow exotic, JsonObject graphs)
+    {
+        foreach (var (role, value) in graphs)
+        {
+            var editor = role switch
+            {
+                "intrinsic" => exotic.FirstBehavior,
+                "trait" => exotic.SecondBehavior,
+                "catalyst" => exotic.CatalystBehavior,
+                _ => throw new InvalidDataException($"Unknown perk role '{role}'. Use intrinsic, trait or catalyst.")
+            };
+            if (value is not JsonObject phases || phases.Any(pair =>
+                pair.Key is not ("activation" or "effects" or "deactivation") || pair.Value is not JsonArray))
+                throw new InvalidDataException($"The {role} graph needs arrays named activation, effects and optional deactivation.");
+            var graph = NativePerkBehavior.New();
+            AiPerkFill(graph.Activation, phases["activation"] as JsonArray);
+            AiPerkFill(graph.Effects, phases["effects"] as JsonArray);
+            AiPerkFill(graph.Deactivation, phases["deactivation"] as JsonArray);
+            var problems = NativePerkBehavior.Validate(graph);
+            if (problems.Count != 0)
+                throw new InvalidDataException($"{role}: {string.Join(" ", problems)}");
+            editor.Load(graph);
+        }
     }
 
     private static void AiPerkFill(List<PerkBehaviorNode> phase, JsonArray? nodes)

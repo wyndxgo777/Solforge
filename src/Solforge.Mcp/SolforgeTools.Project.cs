@@ -199,12 +199,16 @@ public static partial class SolforgeTools
                 .Where(key => args[key] is not null).Select(key => $" {key}={Arg(args, key)}")));
         yield return act("start_creation", "Open Solforge's New or Clone dialog for a type (list_creation_types) with fields " +
             "prefilled by label (describe_creation). The user reviews and presses Create; Solforge assigns new hashes. " +
+            "For a new exotic weapon, perk_graphs can prefill intrinsic, trait and catalyst behavior graphs. " +
             "See skills solforge-new-weapon, solforge-new-armor.",
             McpJson.Schema(("key", "string", "Type key", true), ("mode", "string", "new or clone", true),
-                ("source", "string", "Clone source tag (0x...)", false), ("fields", "object", "Field label to value, e.g. {\"Name\": \"Sol Fang\"}", false)),
+                ("source", "string", "Clone source tag (0x...)", false), ("fields", "object", "Field label to value, e.g. {\"Name\": \"Sol Fang\"}", false),
+                ("perk_graphs", "object", "New exotic only: intrinsic, trait or catalyst, each with activation, effects and optional deactivation arrays. Nodes use {primitive, values?, inner?}; see list_perk_node_types.", false)),
             args => Need(args, "key", "Give a type key from list_creation_types.") ?? (Arg(args, "mode") is "new" or "clone" ? null : "mode must be new or clone."),
             args => $"Open {Arg(args, "mode")} {Arg(args, "key")}" + (McpJson.String(args, "source") is { Length: > 0 } source ? $" from {source}" : "")
-                + (args["fields"] is JsonObject { Count: > 0 } fields ? $" with {fields.Count} field(s) prefilled" : ""));
+                + (args["fields"] is JsonObject { Count: > 0 } fields ? $" with {fields.Count} field(s) prefilled" : "")
+                + (args["perk_graphs"] is JsonObject { Count: > 0 } graphs
+                    ? $" and authored perk graphs: {graphs.ToJsonString()}" : ""));
         yield return act("replace_texture_pixels", "Replace a texture's pixels from a PNG (same size; converted to the texture's own " +
             "format) or a DDS file on disk, as Import as delta does. The texture must be open (open_asset); saved to the project with undo. " +
             "Startup (_unp1_) packages such as w64_ui_bootflow_unp1_0 cannot be installed as package replacements.",

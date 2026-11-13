@@ -174,6 +174,9 @@ public sealed partial class StudioWorkspace
         RequireEditable();
         definition = JsonSerializer.Deserialize<ExoticWeaponDefinition>(JsonSerializer.Serialize(definition))
             ?? throw new InvalidDataException("The exotic weapon draft is missing.");
+        bool rigid = RigidExoticImport.IsManifest(blenderPath);
+        if (rigid != (definition.BaseWeaponTag == RigidExoticImport.BaseItem))
+            throw new InvalidDataException("Rigid art manifests require the checked Borealis base.");
         var project = Project!; var catalog = Catalog!; var selected = Document;
         var manifest = File.ReadAllBytes(project.ManifestPath);
         int revision = ProjectRevision;
@@ -189,6 +192,12 @@ public sealed partial class StudioWorkspace
             var plan = ExoticWeaponAuthoring.Prepare(project, catalog, definition, (staged, variants, entry) =>
             {
                 token.ThrowIfCancellationRequested();
+                if (rigid)
+                {
+                    var art = RigidExoticImport.Prepare(staged, blenderPath, definition.PackageId,
+                        entry, definition.Name, variants);
+                    return new(art.Assets, art.Entities, SourceHashes: art.SourceHashes);
+                }
                 var assets = WeaponOriginalAssetImporter.Prepare(staged, blenderPath,
                     definition.PackageId, entry, definition.Name, variants);
                 return new(assets.Assets, assets.VariantEntities, assets.SurfaceReport, assets.SourceHashes,
@@ -219,8 +228,11 @@ public sealed partial class StudioWorkspace
                 ProjectRevision++;
                 LastExoticWeapon = plan;
                 Status = "Exotic weapon created";
-                pendingOwnership = plan.WeaponTag;
-                pendingFiringSource = blenderPath;
+                if (!rigid)
+                {
+                    pendingOwnership = plan.WeaponTag;
+                    pendingFiringSource = blenderPath;
+                }
                 SelectAdded(id);
             };
         });

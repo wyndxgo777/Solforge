@@ -247,8 +247,12 @@ public static class InvestmentItemArt
         int primary = PrimaryField(reader, fields);
         var handles = reader.Array(HandlesField, HandleClass, 4);
         var allFields = reader.Array(FieldsField, FieldClass, FieldStride);
+        int firstHandle = reader.I32(primary), handleCount = reader.U8(primary + 5);
         byte[] handle = new byte[4];
         BinaryPrimitives.WriteUInt32LittleEndian(handle, containerTag);
+        var newHandles = new List<byte[]> { handle };
+        for (int h = 1; h < handleCount; h++)
+            newHandles.Add(table.Span.Slice(handles.Data + (firstHandle + h) * 4, 4).ToArray());
         var copies = new List<byte[]>();
         for (int index = 0; index < fields.Count; index++)
         {
@@ -257,7 +261,7 @@ public static class InvestmentItemArt
             if (at == primary) BinaryPrimitives.WriteInt32LittleEndian(field, handles.Count);
             copies.Add(field);
         }
-        byte[] output = Append(table, handles: [handle], fields: copies);
+        byte[] output = Append(table, handles: newHandles, fields: copies);
         int target = ItemOffset(new TagReader(output), itemIndex);
         BinaryPrimitives.WriteInt32LittleEndian(output.AsSpan(target + 8), allFields.Count);
         return output;
@@ -334,7 +338,7 @@ public static class InvestmentItemArt
         {
             int at = fields.Data + index * FieldStride;
             if (reader.U8(at + 4) != 1) continue;
-            if (result >= 0 || reader.U8(at + 5) != 1)
+            if (result >= 0 || reader.U8(at + 5) == 0)
                 throw new NotSupportedException("Custom item icons need one primary art container.");
             result = at;
         }
